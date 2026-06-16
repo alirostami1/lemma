@@ -1,0 +1,20 @@
+services:
+  libreoffice-worker:
+    build:
+      context: ..
+      dockerfile: apps/libreoffice-worker/Dockerfile
+    image: localhost/lemma-libreoffice-worker:${LEMMA_IMAGE_TAG:-local}
+    environment:
+      WORKBOOK_WORKER_HOST: 0.0.0.0
+      WORKBOOK_WORKER_PORT: 8080
+      WORKBOOK_WORKER_MAX_UPLOAD_BYTES: ${LEMMA_WORKBOOK_MAX_FILE_BYTES:-20971520}
+      WORKBOOK_WORKER_MAX_RESPONSE_BYTES: ${LEMMA_WORKBOOK_MAX_RESPONSE_BYTES:-10485760}
+      WORKBOOK_WORKER_TIMEOUT_SECONDS: ${LEMMA_WORKBOOK_LIBREOFFICE_WORKER_TIMEOUT_SECONDS:-30}
+    ports:
+      - "127.0.0.1:${LEMMA_WORKBOOK_LIBREOFFICE_WORKER_PORT:-8080}:8080"
+    networks:
+      - lemma
+
+networks:
+  lemma:
+    driver: bridge

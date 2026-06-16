@@ -1,0 +1,62 @@
+{
+  "name": "@lemma/notifications",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./domain": {
+      "types": "./src/domain/index.ts",
+      "development": "./src/domain/index.ts",
+      "import": "./dist/domain/index.js",
+      "default": "./dist/domain/index.js"
+    },
+    "./application": {
+      "types": "./src/application/index.ts",
+      "development": "./src/application/index.ts",
+      "import": "./dist/application/index.js",
+      "default": "./dist/application/index.js"
+    },
+    "./http": {
+      "types": "./src/http/index.ts",
+      "development": "./src/http/index.ts",
+      "import": "./dist/http/index.js",
+      "default": "./dist/http/index.js"
+    },
+    "./infrastructure": {
+      "types": "./src/infrastructure/index.ts",
+      "development": "./src/infrastructure/index.ts",
+      "import": "./dist/infrastructure/index.js",
+      "default": "./dist/infrastructure/index.js"
+    },
+    "./module": {
+      "types": "./src/module.ts",
+      "development": "./src/module.ts",
+      "import": "./dist/module.js",
+      "default": "./dist/module.js"
+    }
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "build": "tsc",
+    "test": "pnpm build && node --test dist/**/*.test.js"
+  },
+  "dependencies": {
+    "@lemma/domain": "workspace:*",
+    "@lemma/events": "workspace:*",
+    "@lemma/identity": "workspace:*",
+    "@lemma/observability": "workspace:*",
+    "@lemma/questions": "workspace:*",
+    "hono": "catalog:"
+  },
+  "devDependencies": {
+    "@lemma/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

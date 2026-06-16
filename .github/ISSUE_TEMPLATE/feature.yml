@@ -1,0 +1,36 @@
+name: Feature
+description: Propose product capability
+title: "[Feature]: "
+labels: ["feature"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What user outcome should this create?
+    validations:
+      required: true
+
+  - type: textarea
+    id: user-flow
+    attributes:
+      label: User flow
+      description: How should the user experience it?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: What proves this is done?
+      placeholder: |
+        -
+    validations:
+      required: true
+
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: What should not be included?

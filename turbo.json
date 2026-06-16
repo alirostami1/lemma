@@ -1,0 +1,55 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "ui": "stream",
+  "concurrency": "20",
+  "noUpdateNotifier": true,
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build", "generate:openapi", "generate:api"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["dist/**", ".output/**"]
+    },
+    "lint": {
+      "dependsOn": ["^lint"]
+    },
+    "format": {
+      "dependsOn": ["^format"]
+    },
+    "check-types": {
+      "dependsOn": ["generate:openapi", "generate:api", "^check-types"]
+    },
+    "test": {
+      "dependsOn": ["^test"]
+    },
+    "generate:openapi": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "package.json",
+        "orval.config.ts",
+        "openapi/**",
+        "$TURBO_ROOT$/scripts/run-openapi-generator.mjs",
+        "$TURBO_ROOT$/packages/openapi-hono-generator/dist/**"
+      ],
+      "outputs": ["src/gen/**"]
+    },
+    "generate:api": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "package.json",
+        "orval.config.ts",
+        "src/lib/custom-fetch.ts",
+        "$TURBO_ROOT$/packages/api-contract/src/**"
+      ],
+      "outputs": ["src/api/generated/**"]
+    },
+    "check:architecture": {
+      "dependsOn": ["^check:architecture"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "interruptible": true,
+      "passThroughEnv": ["LEMMA_*"]
+    }
+  }
+}

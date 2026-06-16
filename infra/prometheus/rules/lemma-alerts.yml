@@ -1,0 +1,47 @@
+groups:
+  - name: lemma-ops
+    rules:
+      - alert: LemmaOutboxFailedEvents
+        expr: max(lemma_outbox_failed_count) > 0
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: Lemma outbox has failed events
+          description: "Failed outbox events need review or replay."
+
+      - alert: LemmaOutboxPendingStale
+        expr: max(lemma_outbox_oldest_pending_age_seconds) > 900
+        for: 5m
+        labels:
+          severity: warn
+        annotations:
+          summary: Lemma outbox pending age is high
+          description: "Oldest pending outbox event has waited over 15 minutes."
+
+      - alert: LemmaQueueFailedJobs
+        expr: max(lemma_queue_failed_count) > 0
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: Lemma queue has unreconciled failed jobs
+          description: "Failed PgBoss jobs remain unreconciled."
+
+      - alert: LemmaQueuePendingStale
+        expr: max(lemma_queue_oldest_pending_age_seconds) > 900
+        for: 5m
+        labels:
+          severity: warn
+        annotations:
+          summary: Lemma queue pending age is high
+          description: "Oldest pending queue job has waited over 15 minutes."
+
+      - alert: LemmaQuestionGenerationSlow
+        expr: max(lemma_question_generation_average_duration_seconds) > 120
+        for: 10m
+        labels:
+          severity: warn
+        annotations:
+          summary: Lemma question generation is slow
+          description: "Average question generation duration is over two minutes."

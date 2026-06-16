@@ -1,0 +1,18 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.5/schema.json",
+  "extends": "//",
+  "files": {
+    "includes": [
+      "src/**/*",
+      "*.ts",
+      "*.tsx",
+      "**/vite.config.ts",
+      "!src/routeTree.gen.ts"
+    ]
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  }
+}

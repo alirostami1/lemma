@@ -1,0 +1,31 @@
+{
+  "name": "lemma",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "dev:env": "node scripts/run-with-env.mjs .env pnpm dev",
+    "lint": "pnpm check:architecture && turbo run lint",
+    "format": "turbo run format",
+    "test": "turbo run test",
+    "check-types": "turbo run check-types",
+    "check:architecture": "node scripts/check-package-boundaries.mjs && turbo run check:architecture",
+    "check:generated": "pnpm generate:openapi && node scripts/check-generated-clean.mjs",
+    "generate:openapi": "turbo run generate:openapi generate:api",
+    "db:migrate": "pnpm --filter @lemma/db migrate:latest",
+    "db:migrate:env": "node scripts/run-with-env.mjs .env pnpm db:migrate",
+    "db:seed:dev": "node scripts/run-with-env.mjs .env pnpm --filter @lemma/db seed:dev",
+    "infra:config": "podman compose --env-file infra/.env.example -f infra/compose-dev.yml -f infra/compose-keycloak.yml -f infra/compose-libreoffice-worker.yml -f infra/compose-realtime.yml -f infra/compose-observability.yml -f infra/compose-apps.yml config",
+    "infra:dev": "podman compose --env-file infra/.env -f infra/compose-dev.yml -f infra/compose-keycloak.yml -f infra/compose-libreoffice-worker.yml -f infra/compose-realtime.yml -f infra/compose-observability.yml up --build",
+    "infra:up": "podman compose --env-file infra/.env -f infra/compose-dev.yml -f infra/compose-keycloak.yml -f infra/compose-libreoffice-worker.yml -f infra/compose-realtime.yml -f infra/compose-observability.yml -f infra/compose-apps.yml up --build",
+    "infra:down": "podman compose --env-file infra/.env -f infra/compose-dev.yml -f infra/compose-keycloak.yml -f infra/compose-libreoffice-worker.yml -f infra/compose-realtime.yml -f infra/compose-observability.yml -f infra/compose-apps.yml down"
+  },
+  "devDependencies": {
+    "turbo": "^2.9.8",
+    "typescript": "catalog:"
+  },
+  "packageManager": "pnpm@11.1.3",
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

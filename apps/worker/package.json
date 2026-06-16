@@ -1,0 +1,42 @@
+{
+  "name": "worker",
+  "type": "module",
+  "imports": {
+    "#/*": {
+      "types": "./dist/*.d.ts",
+      "development": "./src/*.ts",
+      "import": "./dist/*.js",
+      "default": "./dist/*.js"
+    }
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "format": "biome format",
+    "lint": "biome lint",
+    "check": "biome check",
+    "dev": "tsx watch --conditions=development --clear-screen=false src/index.ts",
+    "build": "tsc",
+    "test": "tsx --test src/**/*.test.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@lemma/config": "workspace:*",
+    "@lemma/db": "workspace:*",
+    "@lemma/domain": "workspace:*",
+    "@lemma/events": "workspace:*",
+    "@lemma/files": "workspace:*",
+    "@lemma/jobs": "workspace:*",
+    "@lemma/notifications": "workspace:*",
+    "@lemma/observability": "workspace:*",
+    "@lemma/questions": "workspace:*",
+    "@lemma/workbook": "workspace:*",
+    "uuid": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

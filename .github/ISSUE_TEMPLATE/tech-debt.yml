@@ -1,0 +1,36 @@
+name: Tech Debt
+description: Improve code health without product behavior change
+title: "[Tech Debt]: "
+labels: ["tech-debt"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What code or process issue exists?
+    validations:
+      required: true
+
+  - type: textarea
+    id: desired
+    attributes:
+      label: Desired end state
+      description: What should be true after cleanup?
+    validations:
+      required: true
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      description: What must not change?
+      placeholder: |
+        - No behavior change
+        - Keep public APIs stable unless noted
+
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation
+      placeholder: |
+        - `pnpm check-types && pnpm lint && pnpm test`

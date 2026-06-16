@@ -1,0 +1,42 @@
+{
+  "name": "admin",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#/*": "./src/*"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "format": "biome format",
+    "lint": "biome lint",
+    "check": "biome check",
+    "dev": "vite dev --port 3003 --clearScreen false",
+    "build": "vite build",
+    "preview": "vite preview --port 3003",
+    "test": "vitest run",
+    "check:architecture": "node ./scripts/check-architecture.mjs"
+  },
+  "dependencies": {
+    "@lemma/http": "workspace:*",
+    "@lemma/ui": "workspace:*",
+    "@t3-oss/env-core": "^0.13.10",
+    "@tanstack/react-query": "catalog:",
+    "lucide-react": "catalog:",
+    "oidc-spa": "^10.2.3",
+    "radix-ui": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "@tailwindcss/vite": "^4.1.18",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "^6.0.1",
+    "typescript": "catalog:",
+    "vite": "^8.0.0",
+    "vitest": "catalog:"
+  }
+}

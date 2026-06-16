@@ -1,0 +1,25 @@
+{
+  "name": "@lemma/api-contract",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/openapi.ts"
+  },
+  "scripts": {
+    "lint": "tsx src/lint.ts"
+  },
+  "dependencies": {
+    "@lemma/files": "workspace:*",
+    "@lemma/http": "workspace:*",
+    "@lemma/identity": "workspace:*",
+    "@lemma/ops": "workspace:*",
+    "@lemma/questions": "workspace:*",
+    "@lemma/workbook": "workspace:*",
+    "@redocly/cli": "^2.13.0",
+    "@redocly/openapi-core": "^2.13.0"
+  },
+  "devDependencies": {
+    "tsx": "catalog:"
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "name": "@lemma/identity",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./http": {
+      "types": "./src/http/index.ts",
+      "development": "./src/http/index.ts",
+      "import": "./dist/http/index.js",
+      "default": "./dist/http/index.js"
+    },
+    "./application": {
+      "types": "./src/application/index.ts",
+      "development": "./src/application/index.ts",
+      "import": "./dist/application/index.js",
+      "default": "./dist/application/index.js"
+    },
+    "./domain": {
+      "types": "./src/domain/index.ts",
+      "development": "./src/domain/index.ts",
+      "import": "./dist/domain/index.js",
+      "default": "./dist/domain/index.js"
+    },
+    "./infrastructure": {
+      "types": "./src/infrastructure/index.ts",
+      "development": "./src/infrastructure/index.ts",
+      "import": "./dist/infrastructure/index.js",
+      "default": "./dist/infrastructure/index.js"
+    },
+    "./module": {
+      "types": "./src/module.ts",
+      "development": "./src/module.ts",
+      "import": "./dist/module.js",
+      "default": "./dist/module.js"
+    },
+    "./openapi": {
+      "types": "./openapi/openapi.ts",
+      "import": "./openapi/openapi.ts"
+    }
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "build": "tsc",
+    "generate:openapi": "node ../../scripts/run-openapi-generator.mjs",
+    "test": "pnpm build && node --test dist/**/*.test.js"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "catalog:",
+    "@lemma/db": "workspace:*",
+    "@lemma/domain": "workspace:*",
+    "@lemma/error": "workspace:*",
+    "@lemma/http": "workspace:*",
+    "@lemma/observability": "workspace:*",
+    "hono": "catalog:",
+    "zod": "catalog:",
+    "jose": "catalog:"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "@lemma/openapi-hono-generator": "workspace:*",
+    "@lemma/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "kysely": "catalog:",
+    "orval": "^8.10.0",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

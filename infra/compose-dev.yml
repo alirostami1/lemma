@@ -1,0 +1,98 @@
+services:
+  postgres:
+    image: docker.io/library/postgres:18-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lemma}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lemma}
+      POSTGRES_DB: ${POSTGRES_DB:-lemma}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    networks:
+      - lemma
+    ports:
+      - "${POSTGRES_PUBLIC_PORT:-5432}:5432"
+  garage:
+    image: docker.io/dxflrs/garage:v2.3.0
+    command:
+      - /garage
+      - server
+      - --single-node
+      - --default-bucket
+    environment:
+      GARAGE_DEFAULT_ACCESS_KEY: ${GARAGE_DEFAULT_ACCESS_KEY:-garagelemma}
+      GARAGE_DEFAULT_SECRET_KEY: ${GARAGE_DEFAULT_SECRET_KEY:-lemma-garage-secret-key}
+      GARAGE_DEFAULT_BUCKET: ${LEMMA_S3_BUCKET:-lemma-files}
+    ports:
+      - "${GARAGE_S3_API_PORT:-3900}:3900"
+      - "${GARAGE_RPC_PORT:-3901}:3901"
+      - "${GARAGE_S3_WEB_PORT:-3902}:3902"
+      - "${GARAGE_ADMIN_API_PORT:-3903}:3903"
+    volumes:
+      - ./garage/garage.toml:/etc/garage.toml:ro,Z
+      - garage-data:/var/lib/garage/data
+      - garage-meta:/var/lib/garage/meta
+    networks:
+      - lemma
+  garage-cors:
+    image: docker.io/amazon/aws-cli:latest
+    depends_on:
+      garage:
+        condition: service_started
+    entrypoint:
+      - /bin/sh
+    command:
+      - -ceu
+      - |
+        bucket="$${LEMMA_S3_BUCKET:-lemma-files}"
+        origin="$${LEMMA_WEB_APP_URL:-http://localhost:3000}"
+        endpoint="http://garage:3900"
+        echo "[garage-cors] start"
+        echo "[garage-cors] bucket=$${bucket}"
+        echo "[garage-cors] origin=$${origin}"
+        echo "[garage-cors] endpoint=$${endpoint}"
+        cat > /tmp/cors.json <<EOF
+        {
+          "CORSRules": [
+            {
+              "AllowedOrigins": ["$${origin}"],
+              "AllowedMethods": ["PUT", "GET", "HEAD"],
+              "AllowedHeaders": ["*"],
+              "ExposeHeaders": ["ETag"],
+              "MaxAgeSeconds": 3000
+            }
+          ]
+        }
+        EOF
+        echo "[garage-cors] cors config:"
+        cat /tmp/cors.json
+        attempt=1
+        until aws s3api head-bucket --endpoint-url "$${endpoint}" --bucket "$${bucket}" >/dev/null 2>&1; do
+          echo "[garage-cors] waiting for bucket '$${bucket}' at $${endpoint} (attempt $${attempt})"
+          attempt=$$((attempt + 1))
+          sleep 1
+        done
+        echo "[garage-cors] bucket ready; applying CORS"
+        aws s3api put-bucket-cors --endpoint-url "$${endpoint}" --bucket "$${bucket}" --cors-configuration file:///tmp/cors.json
+        echo "[garage-cors] applied CORS; reading back"
+        aws s3api get-bucket-cors --endpoint-url "$${endpoint}" --bucket "$${bucket}"
+        echo "[garage-cors] done"
+    environment:
+      AWS_ACCESS_KEY_ID: ${GARAGE_DEFAULT_ACCESS_KEY:-garagelemma}
+      AWS_SECRET_ACCESS_KEY: ${GARAGE_DEFAULT_SECRET_KEY:-lemma-garage-secret-key}
+      AWS_DEFAULT_REGION: garage
+      LEMMA_S3_BUCKET: ${LEMMA_S3_BUCKET:-lemma-files}
+      LEMMA_WEB_APP_URL: ${LEMMA_WEB_APP_URL:-http://localhost:3000}
+    networks:
+      - lemma
+volumes:
+  postgres-data:
+  garage-data:
+  garage-meta:
+networks:
+  lemma:
+    driver: bridge

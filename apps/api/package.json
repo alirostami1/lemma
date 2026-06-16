@@ -1,0 +1,57 @@
+{
+  "name": "api",
+  "type": "module",
+  "exports": {
+    "./app": {
+      "types": "./dist/app.d.ts",
+      "development": "./src/app.ts",
+      "import": "./dist/app.js",
+      "default": "./dist/app.js"
+    }
+  },
+  "imports": {
+    "#/*": {
+      "types": "./dist/*.d.ts",
+      "development": "./src/*.ts",
+      "import": "./dist/*.js",
+      "default": "./dist/*.js"
+    }
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "format": "biome format",
+    "lint": "biome lint",
+    "check": "biome check",
+    "dev": "tsx watch --conditions=development --clear-screen=false src/index.ts",
+    "build": "tsc",
+    "test": "tsx --test src/**/*.test.ts",
+    "db:migrate": "pnpm --filter @lemma/db db:migrate",
+    "db:rollback": "pnpm --filter @lemma/db db:rollback",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@hono/node-server": "catalog:",
+    "@lemma/config": "workspace:*",
+    "@lemma/db": "workspace:*",
+    "@lemma/domain": "workspace:*",
+    "@lemma/files": "workspace:*",
+    "@lemma/error": "workspace:*",
+    "@lemma/events": "workspace:*",
+    "@lemma/identity": "workspace:*",
+    "@lemma/notifications": "workspace:*",
+    "@lemma/observability": "workspace:*",
+    "@lemma/ops": "workspace:*",
+    "@lemma/questions": "workspace:*",
+    "@lemma/workbook": "workspace:*",
+    "hono": "catalog:",
+    "kysely": "catalog:",
+    "uuid": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

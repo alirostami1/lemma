@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json.schemastore.org/tsconfig",
+  "extends": "@lemma/typescript-config/library.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./",
+    "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo"
+  },
+  "include": ["src", "openapi"],
+  "exclude": ["node_modules", "dist"]
+}

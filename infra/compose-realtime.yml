@@ -1,0 +1,19 @@
+services:
+  centrifugo:
+    image: docker.io/centrifugo/centrifugo:${LEMMA_CENTRIFUGO_IMAGE_TAG:-v6}
+    restart: unless-stopped
+    environment:
+      CENTRIFUGO_CLIENT_ALLOWED_ORIGINS: ${LEMMA_WEB_APP_URL:-http://localhost:3000}
+      CENTRIFUGO_CLIENT_TOKEN_HMAC_SECRET_KEY: ${LEMMA_CENTRIFUGO_TOKEN_HMAC_SECRET_KEY:-lemma-centrifugo-token-secret-key-32chars}
+      CENTRIFUGO_CHANNEL_NAMESPACES: '[{"name":"user"},{"name":"question-generation-run"},{"name":"question-set"}]'
+      CENTRIFUGO_HTTP_API_KEY: ${LEMMA_CENTRIFUGO_HTTP_API_KEY:-lemma-centrifugo-api-key}
+      CENTRIFUGO_HTTP_SERVER_PORT: 8000
+      CENTRIFUGO_LOG_LEVEL: ${LEMMA_CENTRIFUGO_LOG_LEVEL:-info}
+    ports:
+      - "${LEMMA_CENTRIFUGO_PORT:-8000}:8000"
+    networks:
+      - lemma
+
+networks:
+  lemma:
+    driver: bridge

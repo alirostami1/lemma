@@ -1,0 +1,38 @@
+{
+  "name": "@lemma/http",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./browser": {
+      "types": "./src/browser.ts",
+      "development": "./src/browser.ts",
+      "import": "./dist/src/browser.js",
+      "default": "./dist/src/browser.js"
+    },
+    "./openapi": "./openapi/openapi.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "catalog:",
+    "@lemma/domain": "workspace:*",
+    "@lemma/error": "workspace:*",
+    "hono": "catalog:",
+    "openapi-types": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@lemma/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

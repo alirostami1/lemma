@@ -1,0 +1,72 @@
+services:
+  otel-collector:
+    image: docker.io/otel/opentelemetry-collector-contrib:${LEMMA_OTEL_COLLECTOR_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./otel/otel-collector.yml:/etc/otelcol-contrib/config.yaml:ro,Z
+    depends_on:
+      jaeger:
+        condition: service_started
+    ports:
+      - "${LEMMA_OTEL_COLLECTOR_GRPC_PORT:-4317}:4317"
+      - "${LEMMA_OTEL_COLLECTOR_HTTP_PORT:-4318}:4318"
+      - "${LEMMA_OTEL_COLLECTOR_METRICS_PORT:-8888}:8888"
+      - "${LEMMA_OTEL_PROMETHEUS_EXPORTER_PORT:-8889}:8889"
+    networks:
+      - lemma
+
+  jaeger:
+    image: docker.io/jaegertracing/all-in-one:${LEMMA_JAEGER_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "${LEMMA_JAEGER_UI_PORT:-16686}:16686"
+    networks:
+      - lemma
+
+  prometheus:
+    image: docker.io/prom/prometheus:${LEMMA_PROMETHEUS_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro,Z
+      - ./prometheus/rules:/etc/prometheus/rules:ro,Z
+      - prometheus-data:/prometheus
+    depends_on:
+      otel-collector:
+        condition: service_started
+    ports:
+      - "${LEMMA_PROMETHEUS_PORT:-9090}:9090"
+    networks:
+      - lemma
+
+  grafana:
+    image: docker.io/grafana/grafana-oss:${LEMMA_GRAFANA_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    user: "0"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${LEMMA_GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${LEMMA_GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro,Z
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro,Z
+    depends_on:
+      prometheus:
+        condition: service_started
+    ports:
+      - "${LEMMA_GRAFANA_PORT:-3002}:3000"
+    networks:
+      - lemma
+
+volumes:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  lemma:
+    driver: bridge

@@ -1,0 +1,18 @@
+{
+  "name": "api-docs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --clearScreen false",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@lemma/api-contract": "workspace:*",
+    "@scalar/api-reference": "^1.55.3"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0"
+  }
+}

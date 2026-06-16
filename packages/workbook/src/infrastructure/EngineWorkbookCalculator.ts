@@ -1,0 +1,138 @@
+import { instrumentExternal } from "@lemma/observability";
+import {
+  type WorkbookEngineConfig,
+  WorkbookEngineError,
+  type WorkbookEngineOperationOptions,
+} from "@lemma/workbook-engine/domain";
+import {
+  createWorkbookEngine,
+  recalculateWorkbookSparseValues,
+  recalculateWorkbookSparseValuesBatch,
+} from "@lemma/workbook-engine/runtime";
+import { WorkbookEngineFailureError } from "../application/errors.js";
+import {
+  type WorkbookCalculator,
+  type WorkbookCalculatorOptions,
+} from "../application/ports.js";
+import type { WorkbookInspection } from "../domain/index.js";
+
+const instrumentation = instrumentExternal("workbook", "engine");
+
+export class EngineWorkbookCalculator implements WorkbookCalculator {
+  constructor(private readonly config: WorkbookEngineConfig) {}
+
+  async inspect(
+    path: string,
+    options?: WorkbookCalculatorOptions,
+  ): Promise<WorkbookInspection> {
+    return this.engineOperation(
+      "inspect",
+      {},
+      options,
+      () =>
+        this.withWorkbookEngineError(async () => {
+          const engine = createWorkbookEngine(this.config);
+          const engineOptions = workbookEngineOptions(options);
+          const inspection = await engine.inspect(path, engineOptions);
+          const health = await engine.health(engineOptions);
+          return { ...inspection, libreOfficeVersion: health.version };
+        }),
+    );
+  }
+
+  async calculate(path: string, options?: WorkbookCalculatorOptions) {
+    return this.engineOperation(
+      "calculate",
+      {},
+      options,
+      () =>
+        this.withWorkbookEngineError(() =>
+          recalculateWorkbookSparseValues(
+            path,
+            this.config,
+            workbookEngineOptions(options),
+          ),
+        ),
+    );
+  }
+
+  async calculateBatch(
+    path: string,
+    count: number,
+    options?: WorkbookCalculatorOptions,
+  ) {
+    return this.engineOperation(
+      "calculate_batch",
+      { "workbook.snapshot_count": count },
+      options,
+      () =>
+        this.withWorkbookEngineError(() =>
+          recalculateWorkbookSparseValuesBatch(
+            path,
+            count,
+            this.config,
+            workbookEngineOptions(options),
+          ),
+        ),
+    );
+  }
+
+  async health(options?: WorkbookCalculatorOptions) {
+    return this.engineOperation(
+      "health",
+      {},
+      options,
+      () =>
+        this.withWorkbookEngineError(() =>
+          createWorkbookEngine(this.config).health(
+            workbookEngineOptions(options),
+          ),
+        ),
+    );
+  }
+
+  private async withWorkbookEngineError<T>(
+    operation: () => Promise<T>,
+  ): Promise<T> {
+    try {
+      return await operation();
+    } catch (error) {
+      if (error instanceof WorkbookEngineError) {
+        throw new WorkbookEngineFailureError(error.message, error.code, {
+          cause: error,
+        });
+      }
+      throw new WorkbookEngineFailureError(
+        error instanceof Error ? error.message : "workbook engine failed",
+        "engine_failure",
+        { cause: error },
+      );
+    }
+  }
+
+  private async engineOperation<T>(
+    operation: string,
+    attributes: Record<string, string | number | boolean>,
+    options: WorkbookCalculatorOptions | undefined,
+    fn: () => Promise<T>,
+  ): Promise<T> {
+    return instrumentation.run(
+      operation,
+      {
+        lineage: options?.lineage,
+        attributes: {
+          "workbook.engine": this.config.engine,
+          ...attributes,
+        },
+      },
+      fn,
+    );
+  }
+}
+
+function workbookEngineOptions(
+  options?: WorkbookCalculatorOptions,
+): WorkbookEngineOperationOptions | undefined {
+  const requestId = options?.lineage?.requestId;
+  return requestId ? { requestId } : undefined;
+}

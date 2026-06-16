@@ -1,0 +1,10 @@
+export type {
+  GrantUserRoleRequest as GrantUserRoleRequestDto,
+  IdentityUser as IdentityUserDto,
+  IdentityUserResponse as IdentityUserResponseDto,
+  Role as RoleDto,
+  RolesResponse as RolesResponseDto,
+  UpdateCurrentUserRequest as UpdateCurrentUserRequestDto,
+  UserRole as UserRoleDto,
+  UserRolesResponse as UserRolesResponseDto,
+} from "../gen/types/index.js";

@@ -1,0 +1,25 @@
+{
+  "name": "@lemma/error",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/error.ts",
+      "development": "./src/error.ts",
+      "import": "./dist/error.js",
+      "default": "./dist/error.js"
+    }
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@lemma/typescript-config": "workspace:*",
+    "hono": "catalog:",
+    "zod": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

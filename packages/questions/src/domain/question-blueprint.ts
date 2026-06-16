@@ -1,0 +1,221 @@
+import { type Timestamped, touch } from "@lemma/domain";
+import { InvalidQuestionFieldError, InvalidQuestionStateTransitionError } from "./errors.js";
+import {
+  type QuestionBlueprintId,
+  questionBlueprintId,
+  type QuestionBlueprintVersionId,
+  questionBlueprintVersionId,
+  type UserId,
+  userId,
+  type WorkbookId,
+  workbookId,
+} from "./ids.js";
+import {
+  type QuestionBlueprintDescription,
+  type QuestionBlueprintName,
+  type QuestionBlueprintStatus,
+  type QuestionBlueprintVisibility,
+  questionBlueprintDescription,
+  questionBlueprintName,
+  questionBlueprintStatus,
+  questionBlueprintVisibility,
+} from "./question-values.js";
+import {
+  questionBlueprintDocument,
+  type QuestionBlueprintDocument,
+} from "./question-blueprint-document.js";
+
+export type QuestionBlueprint = Timestamped & {
+  id: QuestionBlueprintId;
+  ownerUserId: UserId;
+  createdByUserId: UserId;
+  name: QuestionBlueprintName;
+  description: QuestionBlueprintDescription | null;
+  visibility: QuestionBlueprintVisibility;
+  workbookId: WorkbookId | null;
+  currentVersionId: QuestionBlueprintVersionId | null;
+  status: QuestionBlueprintStatus;
+  archivedAt: Date | null;
+};
+
+export type QuestionBlueprintVersion = {
+  id: QuestionBlueprintVersionId;
+  questionBlueprintId: QuestionBlueprintId;
+  versionNumber: number;
+  document: QuestionBlueprintDocument;
+  workbookId: WorkbookId | null;
+  createdByUserId: UserId;
+  createdAt: Date;
+};
+
+export function createQuestionBlueprint(
+  input: {
+    id: QuestionBlueprintId;
+    ownerUserId: UserId;
+    createdByUserId: UserId;
+    name: QuestionBlueprintName;
+    description: QuestionBlueprintDescription | null;
+    workbookId?: WorkbookId | null;
+    visibility?: QuestionBlueprintVisibility;
+  },
+  at: Date,
+): QuestionBlueprint {
+  return {
+    id: input.id,
+    ownerUserId: input.ownerUserId,
+    createdByUserId: input.createdByUserId,
+    name: input.name,
+    description: input.description,
+    visibility: input.visibility ?? "private",
+    workbookId: input.workbookId ?? null,
+    currentVersionId: null,
+    status: "active",
+    archivedAt: null,
+    createdAt: at,
+    updatedAt: at,
+  };
+}
+
+export function createQuestionBlueprintVersion(
+  input: {
+    id: QuestionBlueprintVersionId;
+    questionBlueprintId: QuestionBlueprintId;
+    versionNumber: number;
+    document: QuestionBlueprintDocument;
+    workbookId?: string | null;
+    createdByUserId: UserId;
+  },
+  at: Date,
+): QuestionBlueprintVersion {
+  assertPositiveVersionNumber(input.versionNumber);
+  return {
+    id: input.id,
+    questionBlueprintId: input.questionBlueprintId,
+    versionNumber: input.versionNumber,
+    document: input.document,
+    workbookId:
+      input.workbookId === undefined || input.workbookId === null
+        ? null
+        : workbookId(input.workbookId),
+    createdByUserId: input.createdByUserId,
+    createdAt: at,
+  };
+}
+
+export function reconstituteQuestionBlueprint(input: {
+  id: string;
+  ownerUserId: string;
+  createdByUserId: string;
+  name: string;
+  description: string | null;
+  visibility?: string;
+  workbookId: string | null;
+  currentVersionId: string | null;
+  status: string;
+  archivedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}): QuestionBlueprint {
+  return {
+    id: questionBlueprintId(input.id),
+    ownerUserId: userId(input.ownerUserId),
+    createdByUserId: userId(input.createdByUserId),
+    name: questionBlueprintName(input.name),
+    description: questionBlueprintDescription(input.description),
+    visibility: questionBlueprintVisibility(input.visibility ?? "private"),
+    workbookId: input.workbookId === null ? null : workbookId(input.workbookId),
+    currentVersionId:
+      input.currentVersionId === null
+        ? null
+        : questionBlueprintVersionId(input.currentVersionId),
+    status: questionBlueprintStatus(input.status),
+    archivedAt: input.archivedAt,
+    createdAt: input.createdAt,
+    updatedAt: input.updatedAt,
+  };
+}
+
+export function reconstituteQuestionBlueprintVersion(input: {
+  id: string;
+  questionBlueprintId: string;
+  versionNumber: number;
+  document: unknown;
+  workbookId: string | null;
+  createdByUserId: string;
+  createdAt: Date;
+}): QuestionBlueprintVersion {
+  assertPositiveVersionNumber(input.versionNumber);
+  return {
+    id: questionBlueprintVersionId(input.id),
+    questionBlueprintId: questionBlueprintId(input.questionBlueprintId),
+    versionNumber: input.versionNumber,
+    document: questionBlueprintDocument(input.document),
+    workbookId: input.workbookId === null ? null : workbookId(input.workbookId),
+    createdByUserId: userId(input.createdByUserId),
+    createdAt: input.createdAt,
+  };
+}
+
+function assertPositiveVersionNumber(versionNumber: number): void {
+  if (!Number.isInteger(versionNumber) || versionNumber <= 0) {
+    throw new InvalidQuestionFieldError(
+      "question blueprint version number must be a positive integer",
+    );
+  }
+}
+
+export function updateQuestionBlueprintMetadata(
+  blueprint: QuestionBlueprint,
+  patch: {
+    name?: string;
+    description?: string | null;
+    visibility?: QuestionBlueprintVisibility;
+    status?: QuestionBlueprintStatus;
+  },
+  at: Date,
+): QuestionBlueprint {
+  assertQuestionBlueprintCanChange(blueprint);
+  const status =
+    patch.status !== undefined
+      ? questionBlueprintStatus(patch.status)
+      : blueprint.status;
+  return {
+    ...touch(blueprint, at),
+    name: patch.name !== undefined ? questionBlueprintName(patch.name) : blueprint.name,
+    description:
+      patch.description !== undefined
+        ? questionBlueprintDescription(patch.description)
+        : blueprint.description,
+    visibility:
+      patch.visibility !== undefined
+        ? questionBlueprintVisibility(patch.visibility)
+        : blueprint.visibility,
+    status,
+    archivedAt:
+      status === "archived" ? blueprint.archivedAt ?? at : null,
+  };
+}
+
+export function archiveQuestionBlueprint(
+  blueprint: QuestionBlueprint,
+  at: Date,
+): QuestionBlueprint {
+  assertQuestionBlueprintCanChange(blueprint);
+  return { ...touch(blueprint, at), status: "archived", archivedAt: at };
+}
+
+export function deleteQuestionBlueprint(
+  blueprint: QuestionBlueprint,
+  at: Date,
+): QuestionBlueprint {
+  assertQuestionBlueprintCanChange(blueprint);
+  return { ...touch(blueprint, at), status: "deleted", archivedAt: null };
+}
+
+function assertQuestionBlueprintCanChange(blueprint: QuestionBlueprint): void {
+  if (blueprint.status === "deleted") {
+    throw new InvalidQuestionStateTransitionError(
+      "deleted question blueprints cannot be changed",
+    );
+  }
+}

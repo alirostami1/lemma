@@ -1,0 +1,48 @@
+services:
+  postgres-keycloak:
+    image: docker.io/library/postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${KC_POSTGRES_USER:-keycloak}
+      POSTGRES_PASSWORD: ${KC_POSTGRES_PASSWORD:-keycloak}
+      POSTGRES_DB: ${KC_POSTGRES_DB:-keycloak}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "${KC_POSTGRES_PUBLIC_PORT:-8002}:5432"
+    volumes:
+      - postgres-data-keycloak:/var/lib/postgresql
+    networks:
+      - lemma
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.6.2
+    restart: unless-stopped
+    command: start-dev --import-realm
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres-keycloak
+      KC_DB_USERNAME: ${KC_POSTGRES_USER:-keycloak}
+      KC_DB_PASSWORD: ${KC_POSTGRES_PASSWORD:-keycloak}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PW:-admin}
+      KC_HEALTH_ENABLED: "true"
+      KC_HOSTNAME: ${KC_HOSTNAME:-http://localhost:8001}
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+    ports:
+      - "${KC_HTTP_PORT:-8001}:8080"
+    volumes:
+      - ./keycloak-realm.json:/opt/keycloak/data/import/lemma-realm.json:ro,Z
+    depends_on:
+      postgres-keycloak:
+        condition: service_healthy
+    networks:
+      - lemma
+volumes:
+  postgres-data-keycloak:
+networks:
+  lemma:
+    driver: bridge

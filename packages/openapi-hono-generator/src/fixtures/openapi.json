@@ -1,0 +1,110 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Fixture",
+    "version": "1.0.0"
+  },
+  "security": [{ "keycloakAccessToken": [] }],
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Healthy.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HealthResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/files": {
+      "post": {
+        "operationId": "createFile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateFileRequest" }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Created.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FileResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/files/{fileId}": {
+      "security": [{ "keycloakAccessToken": [] }],
+      "parameters": [
+        {
+          "name": "fileId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "get": {
+        "operationId": "getFile",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FileResponse" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteFile",
+        "responses": {
+          "204": { "description": "Deleted." }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "keycloakAccessToken": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "CreateFileRequest": {
+        "type": "object",
+        "properties": { "name": { "type": "string" } },
+        "required": ["name"]
+      },
+      "FileResponse": {
+        "type": "object",
+        "properties": { "file": { "type": "object" } },
+        "required": ["file"]
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": { "status": { "type": "string" } },
+        "required": ["status"]
+      }
+    }
+  }
+}
