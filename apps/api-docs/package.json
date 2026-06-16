@@ -13,6 +13,6 @@
     "@scalar/api-reference": "^1.55.3"
   },
   "devDependencies": {
-    "vite": "^7.0.0"
+    "vite": "^7.3.5"
   }
 }
