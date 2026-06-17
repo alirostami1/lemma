@@ -143,6 +143,29 @@ describe("QuestionGenerationWorkerService", () => {
     assert.equal(state.events.length, 0);
   });
 
+  it("skips duplicate materialization after a run reaches a terminal state", async () => {
+    const state = createHarness();
+    const processed = await state.service.materializeQuestionGenerationRun({
+      questionGenerationRunId: runId,
+      workbookSnapshotIds: [snapshotId],
+      lineage,
+    });
+    const eventCount = state.outboxEvents.length;
+
+    const duplicate = await state.service.materializeQuestionGenerationRun({
+      questionGenerationRunId: runId,
+      workbookSnapshotIds: [snapshotId],
+      lineage,
+    });
+
+    assert.equal(processed.status, "processed");
+    assert.equal(duplicate.status, "skipped");
+    assert.equal(duplicate.reason, "terminal");
+    assert.equal(state.createdQuestions.length, 1);
+    assert.equal(state.memberships.length, 1);
+    assert.equal(state.outboxEvents.length, eventCount);
+  });
+
   it("skips missing runs", async () => {
     const state = createHarness({ run: null });
     const result = await state.service.orchestrateQuestionGenerationRun({

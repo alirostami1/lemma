@@ -15,3 +15,7 @@ below.
 - Treat migrations as deployment work, not just schema edits.
 - Keep runtime secrets in environment-specific secret stores or server-side env
   files, not in Git.
+- Async jobs use deterministic queue ids. Outbox-dispatched jobs use the outbox
+  event id; question generation materialization uses the generation run id.
+  Handlers must remain safe to retry and must check terminal domain state before
+  committing side effects.
