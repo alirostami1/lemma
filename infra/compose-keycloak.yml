@@ -36,6 +36,7 @@ services:
       - "${KC_HTTP_PORT:-8001}:8080"
     volumes:
       - ./keycloak-realm.json:/opt/keycloak/data/import/lemma-realm.json:ro,Z
+      - ../apps/keycloak-theme/dist_keycloak:/opt/keycloak/providers:ro,Z
     depends_on:
       postgres-keycloak:
         condition: service_healthy

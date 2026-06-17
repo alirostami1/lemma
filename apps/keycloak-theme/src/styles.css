@@ -1,0 +1,8 @@
+@import "@lemma/ui/styles.css";
+
+@source "./**/*.{ts,tsx}";
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
+
+body {
+  min-width: 320px;
+}
