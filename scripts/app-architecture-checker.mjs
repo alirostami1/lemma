@@ -18,6 +18,12 @@ export function runAppArchitectureCheck(options) {
   const ignoredFilePatterns =
     options.ignoredFilePatterns ?? defaultIgnoredFilePatterns;
   const rules = {
+    generatedApiImportAllowedFiles: [],
+    generatedApiImportRestrictedPrefixes: [
+      "components/",
+      "features/",
+      "routes/",
+    ],
     routesMayImportFeaturePublicApisOnly: false,
     ...options.rules,
   };
@@ -144,6 +150,17 @@ function checkImportRules(context, { file, importRecord, resolved }) {
   const specifier = importRecord.specifier;
   const importedPath = resolved ? toSrcRelativePath(context, resolved) : null;
 
+  if (
+    isGeneratedApiImport(specifier, importedPath) &&
+    isGeneratedApiRestrictedFile(context, relativeFile)
+  ) {
+    addViolation(
+      context,
+      relativeFile,
+      `generated API imports must stay behind domain adapters: ${specifier}`,
+    );
+  }
+
   if (context.rules.routesMayImportFeaturePublicApisOnly) {
     if (isRouteFile(relativeFile)) {
       const featureImport = getFeatureImport(specifier, importedPath);
@@ -174,13 +191,6 @@ function checkImportRules(context, { file, importRecord, resolved }) {
   }
 
   if (isFeatureUiFile(relativeFile)) {
-    if (isGeneratedApiImport(specifier, importedPath)) {
-      addViolation(
-        context,
-        relativeFile,
-        `feature UI may not import generated API: ${specifier}`,
-      );
-    }
     if (isDomainHookOrKeyImport(specifier, importedPath, importRecord)) {
       addViolation(
         context,
@@ -198,13 +208,6 @@ function checkImportRules(context, { file, importRecord, resolved }) {
   }
 
   if (isFeatureControllerFile(relativeFile)) {
-    if (isGeneratedApiImport(specifier, importedPath)) {
-      addViolation(
-        context,
-        relativeFile,
-        `feature controllers may not import generated API: ${specifier}`,
-      );
-    }
     if (isDomainKeyImport(specifier, importedPath, importRecord)) {
       addViolation(
         context,
@@ -357,6 +360,15 @@ function isGeneratedApiImport(specifier, importedPath) {
   return (
     specifier.startsWith("#/api/generated") ||
     importedPath?.startsWith("api/generated/")
+  );
+}
+
+function isGeneratedApiRestrictedFile(context, relativeFile) {
+  if (context.rules.generatedApiImportAllowedFiles.includes(relativeFile)) {
+    return false;
+  }
+  return context.rules.generatedApiImportRestrictedPrefixes.some((prefix) =>
+    relativeFile.startsWith(prefix),
   );
 }
 
