@@ -12,7 +12,7 @@ const SKIPPED_DIRS = new Set([
 const SUPPORTED_MERMAID_START =
   /^(architecture-beta|classDiagram|erDiagram|flowchart|gantt|gitGraph|graph|journey|mindmap|pie|quadrantChart|requirementDiagram|sequenceDiagram|stateDiagram-v2|timeline|xychart-beta)\b/;
 const FLOWCHART_START = /^(flowchart|graph)\b/;
-const UNQUOTED_SPECIAL_LABEL = /[A-Za-z_][\w-]*\[[^\]"'\n]*[@/#][^\]"'\n]*\]/;
+const UNQUOTED_SPECIAL_LABEL = /[A-Za-z_][\w-]*\[[^\]"'\n]*[@#][^\]"'\n]*\]/;
 
 const markdownFiles = await collectMarkdownFiles(ROOT);
 const failures = [];
