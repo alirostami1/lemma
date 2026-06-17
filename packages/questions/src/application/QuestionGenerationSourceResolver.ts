@@ -11,7 +11,9 @@ import {
 import type { WorkbookAccessPort } from "./ports.js";
 import { blueprintRequiresWorkbookSource } from "./question-blueprint-analysis.js";
 
-export type GenerationWorkbookSource = ReturnType<typeof workbookQuestionSource>;
+export type GenerationWorkbookSource = ReturnType<
+  typeof workbookQuestionSource
+>;
 
 export class QuestionGenerationSourceResolver {
   constructor(

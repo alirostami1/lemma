@@ -49,11 +49,11 @@ import type {
   QuestionsRepository,
   WorkbookAccessPort,
 } from "./ports.js";
+import { QuestionGenerationSourceResolver } from "./QuestionGenerationSourceResolver.js";
 import {
   questionGenerationRunCancelledEvent,
   questionGenerationRunRequestedEvent,
 } from "./question-generation-events.js";
-import { QuestionGenerationSourceResolver } from "./QuestionGenerationSourceResolver.js";
 
 const instrumentation = instrumentService("questions", "generation_service");
 

@@ -21,9 +21,7 @@ export function createLoadedBlueprintDraftSnapshotState(input: {
   blueprint: QuestionBlueprintAuthoring;
   blueprintId: string;
   initialWorkbookId: string;
-}):
-  | { ok: true; value: LoadedBlueprintDraftSnapshotState }
-  | { ok: false } {
+}): { ok: true; value: LoadedBlueprintDraftSnapshotState } | { ok: false } {
   let authoringModel: ComposedEditorModel;
   try {
     authoringModel = questionBlueprintDocumentToComposedEditorModel(

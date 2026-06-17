@@ -30,14 +30,14 @@ import type {
   QuestionValueResolverPort,
   WorkbookCalculationPort,
 } from "./ports.js";
+import { QuestionGenerationMaterializationInputResolver } from "./QuestionGenerationMaterializationInputResolver.js";
+import { QuestionGenerationRunMaterializer } from "./QuestionGenerationRunMaterializer.js";
 import {
   questionGenerationRunFailedEvent,
   questionGenerationRunMaterializingEvent,
   questionGenerationRunSucceededEvent,
   questionSetQuestionsAddedEvent,
 } from "./question-generation-events.js";
-import { QuestionGenerationMaterializationInputResolver } from "./QuestionGenerationMaterializationInputResolver.js";
-import { QuestionGenerationRunMaterializer } from "./QuestionGenerationRunMaterializer.js";
 
 const instrumentation = instrumentService("questions", "generation_worker");
 
