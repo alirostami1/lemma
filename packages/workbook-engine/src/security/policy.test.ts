@@ -5,6 +5,7 @@ import {
   collectRelationshipXmlFindings,
   collectWorkbookXmlFindings,
   collectWorksheetXmlFindings,
+  collectXmlSafetyFindings,
 } from "./policy.js";
 
 describe("workbook security policy", () => {
@@ -34,6 +35,15 @@ describe("workbook security policy", () => {
         '<Relationship TargetMode="External" />',
       ),
     ).toEqual(["external_relationship:xl/_rels/workbook.xml.rels"]);
+  });
+
+  it("rejects XML document type and entity declarations", () => {
+    expect(collectXmlSafetyFindings("<!DOCTYPE workbook>")).toEqual([
+      "xml_external_entity",
+    ]);
+    expect(
+      collectXmlSafetyFindings("<!ENTITY xxe SYSTEM 'file:///etc/passwd'>"),
+    ).toEqual(["xml_external_entity"]);
   });
 });
 

@@ -56,8 +56,21 @@ export async function inspectXlsx(
   let sheetCount = 0;
   let cellCount = 0;
   let formulaCount = 0;
+  let relationshipPartCount = 0;
   for (const entry of container.entries) {
     if (entry.name.endsWith(".rels")) {
+      relationshipPartCount += 1;
+      if (relationshipPartCount > (config.maxRelationshipParts ?? 1_000)) {
+        throw new InvalidWorkbookError(
+          "Workbook has too many relationship parts.",
+          {
+            sheetCount,
+            cellCount,
+            formulaCount,
+            forbiddenFeatureFindings: ["relationship_part_count_exceeded"],
+          },
+        );
+      }
       const xml = await readBoundedXmlPart({
         partName: entry.name,
         read: () => container.readTextEntry(entry),

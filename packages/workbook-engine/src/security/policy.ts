@@ -33,7 +33,7 @@ export function collectForbiddenEntryFindings(entries: ZipEntry[]): string[] {
 }
 
 export function collectWorkbookXmlFindings(xml: string): string[] {
-  const findings: string[] = [];
+  const findings = collectXmlSafetyFindings(xml);
   if (/<workbookProtection(?:\s|>)/i.test(xml)) {
     findings.push("workbook_protection");
   }
@@ -41,7 +41,7 @@ export function collectWorkbookXmlFindings(xml: string): string[] {
 }
 
 export function collectWorksheetXmlFindings(xml: string): string[] {
-  const findings: string[] = [];
+  const findings = collectXmlSafetyFindings(xml);
   if (/<sheetProtection(?:\s|>)/i.test(xml)) {
     findings.push("sheet_protection");
   }
@@ -55,10 +55,19 @@ export function collectRelationshipXmlFindings(
   partName: string,
   xml: string,
 ): string[] {
+  const findings = collectXmlSafetyFindings(xml);
   if (/TargetMode\s*=\s*["']External["']/i.test(xml)) {
-    return [`external_relationship:${partName}`];
+    findings.push(`external_relationship:${partName}`);
   }
-  return [];
+  return findings;
+}
+
+export function collectXmlSafetyFindings(xml: string): string[] {
+  const findings: string[] = [];
+  if (/<!DOCTYPE/i.test(xml) || /<!ENTITY/i.test(xml)) {
+    findings.push("xml_external_entity");
+  }
+  return findings;
 }
 
 export function uniqueFindings(findings: string[]): string[] {

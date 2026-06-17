@@ -18,6 +18,7 @@ export type WorkbookEngineConfig = {
   maxZipCompressionRatio?: number;
   maxXmlPartBytes?: number;
   maxCachedValueBytes?: number;
+  maxRelationshipParts?: number;
 };
 
 export type ZipEntry = {
@@ -49,6 +50,7 @@ export type WorkbookRejectionReason =
   | "zip_path_traversal"
   | "zip_unsupported_compression"
   | "xml_part_too_large"
+  | "relationship_part_count_exceeded"
   | "not_xlsx"
   | "too_many_sheets"
   | "too_many_cells"
