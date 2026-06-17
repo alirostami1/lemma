@@ -1,6 +1,7 @@
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import type { QuestionGenerationRun } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
+import type { WorkbookPreview } from "#/domains/questions/workbook-preview";
 import type {
   WorkbookPickerController,
   WorkbookPickerRequest,
@@ -91,6 +92,7 @@ export type StudioController = {
   generateDialog: GenerateQuestionsDialogProps;
   workbookPicker: {
     file: File | null;
+    workbookPreview: WorkbookPreview | null;
     fileName: string;
     open: boolean;
     request: WorkbookPickerRequest | null;

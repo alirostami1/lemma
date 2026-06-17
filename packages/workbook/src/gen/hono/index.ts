@@ -18,6 +18,7 @@ import type {
   WorkbookCalculationsResponse,
   WorkbookEngineHealthResponse,
   WorkbookResponse,
+  WorkbookSnapshotPreviewResponse,
   WorkbookSnapshotResponse,
   WorkbookSnapshotsResponse,
   WorkbookSnapshotValueResponse,
@@ -32,6 +33,8 @@ import {
   GetWorkbookCalculationParams,
   GetWorkbookParams,
   GetWorkbookSnapshotParams,
+  GetWorkbookSnapshotPreviewParams,
+  GetWorkbookSnapshotPreviewQueryParams,
   ListWorkbookCalculationsParams,
   ListWorkbookCalculationsQueryParams,
   ListWorkbookSnapshotsParams,
@@ -171,6 +174,15 @@ type GetWorkbookSnapshotResponses = {
   "409": ErrorResponse;
   "502": ErrorResponse;
 };
+type GetWorkbookSnapshotPreviewResponses = {
+  "200": WorkbookSnapshotPreviewResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
 type ResolveWorkbookSnapshotValueResponses = {
   "200": WorkbookSnapshotValueResponse;
   "400": ErrorResponse;
@@ -288,6 +300,17 @@ export type WorkbookHandlerMap = {
     { out: { param: z.infer<typeof GetWorkbookSnapshotParams> } },
     TypedHandlerResponse<GetWorkbookSnapshotResponses>
   >;
+  getWorkbookSnapshotPreview: Handler<
+    WorkbookAppEnv,
+    "/workbook-snapshots/:workbookSnapshotId/preview",
+    {
+      out: {
+        param: z.infer<typeof GetWorkbookSnapshotPreviewParams>;
+        query: z.infer<typeof GetWorkbookSnapshotPreviewQueryParams>;
+      };
+    },
+    TypedHandlerResponse<GetWorkbookSnapshotPreviewResponses>
+  >;
   resolveWorkbookSnapshotValue: Handler<
     WorkbookAppEnv,
     "/workbook-snapshots/:workbookSnapshotId/values",
@@ -404,6 +427,14 @@ export function createWorkbookRoutes(deps: {
     deps.requireIdentity,
     zValidator("param", GetWorkbookSnapshotParams, validationHook),
     deps.handlers.getWorkbookSnapshot,
+  );
+
+  app.get(
+    "/workbook-snapshots/:workbookSnapshotId/preview",
+    deps.requireIdentity,
+    zValidator("param", GetWorkbookSnapshotPreviewParams, validationHook),
+    zValidator("query", GetWorkbookSnapshotPreviewQueryParams, validationHook),
+    deps.handlers.getWorkbookSnapshotPreview,
   );
 
   app.get(

@@ -11,6 +11,7 @@ import {
   createWorkbookCalculation,
   deleteWorkbook,
   getWorkbook,
+  getWorkbookSnapshotPreview,
   listWorkbookCalculations,
   listWorkbookSnapshots,
   listWorkbooks,
@@ -22,6 +23,7 @@ import type {
   CreateWorkbookCalculationInput,
   CreateWorkbookInput,
   DeleteWorkbookInput,
+  GetWorkbookSnapshotPreviewInput,
   ListWorkbookCalculationsInput,
   ListWorkbookSnapshotsInput,
   ListWorkbooksInput,
@@ -30,6 +32,7 @@ import type {
   Workbook,
   WorkbookCalculation,
   WorkbookCalculationsPage,
+  WorkbookSnapshotPreview,
   WorkbookSnapshotsPage,
   WorkbooksPage,
 } from "./model";
@@ -100,6 +103,23 @@ export function useWorkbookSnapshotsQuery(
     queryKey: workbookKeys.snapshotsList(workbookCalculationId, params),
     queryFn: () => listWorkbookSnapshots(input),
     enabled: Boolean(workbookCalculationId),
+    ...options,
+  });
+}
+
+export function useWorkbookSnapshotPreviewQuery(
+  input: GetWorkbookSnapshotPreviewInput,
+  options?: Omit<
+    UseQueryOptions<WorkbookSnapshotPreview>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  const { workbookSnapshotId, ...params } = input;
+
+  return useQuery({
+    queryKey: workbookKeys.snapshotPreview(workbookSnapshotId, params),
+    queryFn: () => getWorkbookSnapshotPreview(input),
+    enabled: Boolean(workbookSnapshotId),
     ...options,
   });
 }

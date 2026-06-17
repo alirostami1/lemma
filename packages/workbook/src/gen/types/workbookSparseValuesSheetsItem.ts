@@ -5,11 +5,13 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { WorkbookSparseValuesSheetsItemCells } from "./workbookSparseValuesSheetsItemCells.js";
+import type { WorkbookSparseValuesSheetsItemCellTypes } from "./workbookSparseValuesSheetsItemCellTypes.js";
 
 export type WorkbookSparseValuesSheetsItem = {
   /** @minLength 1 */
   name: string;
   cells: WorkbookSparseValuesSheetsItemCells;
+  cellTypes?: WorkbookSparseValuesSheetsItemCellTypes;
   /** @minimum 0 */
   rowCount: number;
   /** @minimum 0 */

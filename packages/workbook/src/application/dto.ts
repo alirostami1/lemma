@@ -4,6 +4,7 @@ import type {
   WorkbookCalculation,
   WorkbookEngineHealth,
   WorkbookSnapshot,
+  WorkbookSnapshotPreview,
 } from "../domain/index.js";
 
 export type WorkbooksResult = {
@@ -23,5 +24,8 @@ export type WorkbookSnapshotsResult = {
   nextCursor: string | null;
 };
 export type WorkbookSnapshotResult = { workbookSnapshot: WorkbookSnapshot };
+export type WorkbookSnapshotPreviewResult = {
+  workbookSnapshotPreview: WorkbookSnapshotPreview;
+};
 export type WorkbookSnapshotValueResult = { value: JsonValue };
 export type WorkbookEngineHealthResult = { health: WorkbookEngineHealth };

@@ -64,9 +64,19 @@ export interface WorkbookSparseValues {
 export interface WorkbookSparseValuesSheet {
   name: string;
   cells: Record<string, string>;
+  cellTypes?: Record<string, WorkbookCellType>;
   rowCount: number;
   columnCount: number;
 }
+
+export type WorkbookCellType =
+  | "string"
+  | "number"
+  | "boolean"
+  | "date_like"
+  | "error"
+  | "blank"
+  | "formula_cached";
 
 export interface WorkbookSnapshot {
   id: string;
@@ -75,6 +85,17 @@ export interface WorkbookSnapshot {
   snapshotIndex: number;
   values: WorkbookSparseValues;
   createdAt: Date;
+}
+
+export interface WorkbookSnapshotPreview {
+  sheets: WorkbookSnapshotPreviewSheet[];
+}
+
+export interface WorkbookSnapshotPreviewSheet {
+  name: string;
+  rowCount: number;
+  columnCount: number;
+  rows: string[][];
 }
 
 export interface ListWorkbooksInput {
@@ -119,6 +140,12 @@ export interface ListWorkbookSnapshotsInput {
   workbookCalculationId: string;
   limit?: number;
   cursor?: string;
+}
+
+export interface GetWorkbookSnapshotPreviewInput {
+  workbookSnapshotId: string;
+  rowLimit?: number;
+  columnLimit?: number;
 }
 
 export interface WorkbooksPage {

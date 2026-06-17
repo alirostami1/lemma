@@ -1,5 +1,6 @@
 import { instrumentService } from "@lemma/observability";
 import {
+  createWorkbookSnapshotPreview,
   resolveWorkbookSnapshotValue,
   workbookCalculationId as toWorkbookCalculationId,
   workbookSnapshotId as toWorkbookSnapshotId,
@@ -9,8 +10,10 @@ import type {
   ListWorkbookSnapshotsCommand,
   ResolveWorkbookSnapshotValueCommand,
   WorkbookSnapshotByIdCommand,
+  WorkbookSnapshotPreviewCommand,
 } from "./commands.js";
 import type {
+  WorkbookSnapshotPreviewResult,
   WorkbookSnapshotResult,
   WorkbookSnapshotsResult,
   WorkbookSnapshotValueResult,
@@ -86,6 +89,21 @@ export class WorkbookSnapshotService {
         "You cannot view this workbook snapshot.",
       );
       return { workbookSnapshot: snapshot };
+    });
+  }
+
+  async getWorkbookSnapshotPreview(
+    command: WorkbookSnapshotPreviewCommand,
+  ): Promise<WorkbookSnapshotPreviewResult> {
+    return this.operation("get_workbook_snapshot_preview", async () => {
+      const snapshot = (await this.getWorkbookSnapshot(command))
+        .workbookSnapshot;
+      return {
+        workbookSnapshotPreview: createWorkbookSnapshotPreview(snapshot, {
+          rowLimit: command.rowLimit,
+          columnLimit: command.columnLimit,
+        }),
+      };
     });
   }
 

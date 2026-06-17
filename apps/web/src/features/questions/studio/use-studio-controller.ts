@@ -183,6 +183,7 @@ export function useStudioController(
     generateDialog: generation.generateDialog,
     workbookPicker: {
       file: source.workbookPreviewController.workbookFile,
+      workbookPreview: source.workbookPreviewController.workbookPreview,
       fileName:
         source.workbookPreviewController.workbookFile?.name ??
         source.selectedWorkbook?.originalName ??

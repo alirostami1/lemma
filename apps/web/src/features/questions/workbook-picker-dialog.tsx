@@ -14,6 +14,7 @@ import {
   useSpreadsheetSheet,
 } from "@lemma/ui/components/spreadsheet";
 import { useEffect } from "react";
+import type { WorkbookPreview } from "#/domains/questions/workbook-preview";
 import type {
   WorkbookRangeSelection,
   WorkbookSelectionRequirement,
@@ -28,6 +29,7 @@ import {
 
 type WorkbookPickerDialogProps = {
   file: File | null;
+  workbookPreview?: WorkbookPreview | null;
   fileName: string;
   open: boolean;
   onOpenChange(open: boolean): void;
@@ -37,13 +39,20 @@ type WorkbookPickerDialogProps = {
 
 export function WorkbookPickerDialog({
   file,
+  workbookPreview,
   fileName,
   open,
   onOpenChange,
   selectionRequirement,
   onSelectRange,
 }: WorkbookPickerDialogProps) {
-  const { workbook, status } = useWorkbookPreview(file, open);
+  const { workbook: fileWorkbook, status: fileStatus } = useWorkbookPreview(
+    file,
+    open && !workbookPreview,
+  );
+  const workbook = workbookPreview ?? fileWorkbook;
+  const status = workbookPreview ? "idle" : fileStatus;
+  const hasSource = Boolean(file || workbookPreview);
   const sheets = workbook?.sheets ?? [];
   const { activeSheet, activeSheetName, setActiveSheetName } =
     useSpreadsheetSheet(sheets);
@@ -92,11 +101,11 @@ export function WorkbookPickerDialog({
         </DialogHeader>
 
         <div className="flex min-h-0 flex-1 flex-col bg-muted/20">
-          {!file && fileName === "Selected source could not be found." ? (
+          {!hasSource && fileName === "Selected source could not be found." ? (
             <div className="flex flex-1 items-center justify-center p-8 text-sm text-destructive">
               Selected source could not be found.
             </div>
-          ) : !file ? (
+          ) : !hasSource ? (
             <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
               {fileName ? "Loading source..." : "No source selected."}
             </div>

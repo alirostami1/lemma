@@ -23,7 +23,10 @@ import {
 import {
   MAX_WORKBOOK_CALCULATION_COUNT,
   MAX_WORKBOOK_NAME_LENGTH,
+  MAX_WORKBOOK_SNAPSHOT_PREVIEW_COLUMNS,
+  MAX_WORKBOOK_SNAPSHOT_PREVIEW_ROWS,
   WORKBOOK_CALCULATION_STATUS_ACCEPTED_VALUES,
+  WORKBOOK_CELL_TYPE_ACCEPTED_VALUES,
   WORKBOOK_STATUS_ACCEPTED_VALUES,
 } from "../src/domain/index.ts";
 
@@ -78,6 +81,13 @@ const sparseValuesSchema: Schema = {
           properties: {
             name: { type: "string", minLength: 1 },
             cells: { type: "object", additionalProperties: { type: "string" } },
+            cellTypes: {
+              type: "object",
+              additionalProperties: {
+                type: "string",
+                enum: WORKBOOK_CELL_TYPE_ACCEPTED_VALUES as unknown as string[],
+              },
+            },
             rowCount: { type: "integer", minimum: 0 },
             columnCount: { type: "integer", minimum: 0 },
           },
@@ -221,6 +231,37 @@ const snapshotSchema: Schema = {
   },
 };
 
+const snapshotPreviewSchema: Schema = {
+  name: "WorkbookSnapshotPreview",
+  schema: {
+    type: "object",
+    required: ["sheets"],
+    properties: {
+      sheets: {
+        type: "array",
+        items: {
+          type: "object",
+          required: ["name", "rowCount", "columnCount", "rows"],
+          properties: {
+            name: { type: "string", minLength: 1 },
+            rowCount: { type: "integer", minimum: 0 },
+            columnCount: { type: "integer", minimum: 0 },
+            rows: {
+              type: "array",
+              maxItems: MAX_WORKBOOK_SNAPSHOT_PREVIEW_ROWS,
+              items: {
+                type: "array",
+                maxItems: MAX_WORKBOOK_SNAPSHOT_PREVIEW_COLUMNS,
+                items: { type: "string" },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+};
+
 const healthSchema: Schema = {
   name: "WorkbookEngineHealth",
   schema: {
@@ -288,6 +329,10 @@ const snapshotResponseSchema = named(
   "WorkbookSnapshotResponse",
   objectWith("workbookSnapshot", schemaRef(snapshotSchema)),
 );
+const snapshotPreviewResponseSchema = named(
+  "WorkbookSnapshotPreviewResponse",
+  objectWith("workbookSnapshotPreview", schemaRef(snapshotPreviewSchema)),
+);
 const snapshotsResponseSchema = named(
   "WorkbookSnapshotsResponse",
   listWith("workbookSnapshots", schemaRef(snapshotSchema)),
@@ -311,6 +356,7 @@ const schemas = [
   workbookSchema,
   calculationSchema,
   snapshotSchema,
+  snapshotPreviewSchema,
   inspectionSchema,
   sparseValuesSchema,
   healthSchema,
@@ -322,6 +368,7 @@ const schemas = [
   calculationResponseSchema,
   calculationsResponseSchema,
   snapshotResponseSchema,
+  snapshotPreviewResponseSchema,
   snapshotsResponseSchema,
   valueResponseSchema,
   healthResponseSchema,
@@ -453,6 +500,28 @@ const paths: Paths = {
       "Get workbook snapshot",
       "200",
       snapshotResponseSchema,
+    ),
+  },
+  "/workbook-snapshots/{workbookSnapshotId}/preview": {
+    parameters: [paramRef(snapshotIdParam)],
+    get: op(
+      "getWorkbookSnapshotPreview",
+      "Get workbook snapshot preview",
+      "200",
+      snapshotPreviewResponseSchema,
+      undefined,
+      [
+        query("rowLimit", {
+          type: "integer",
+          minimum: 1,
+          maximum: MAX_WORKBOOK_SNAPSHOT_PREVIEW_ROWS,
+        }),
+        query("columnLimit", {
+          type: "integer",
+          minimum: 1,
+          maximum: MAX_WORKBOOK_SNAPSHOT_PREVIEW_COLUMNS,
+        }),
+      ],
     ),
   },
   "/workbook-snapshots/{workbookSnapshotId}/values": {

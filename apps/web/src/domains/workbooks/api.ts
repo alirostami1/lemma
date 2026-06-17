@@ -5,6 +5,7 @@ import {
   getWorkbookCalculation as getWorkbookCalculationGenerated,
   getWorkbook as getWorkbookGenerated,
   getWorkbookSnapshot as getWorkbookSnapshotGenerated,
+  getWorkbookSnapshotPreview as getWorkbookSnapshotPreviewGenerated,
   listWorkbookCalculations as listWorkbookCalculationsGenerated,
   listWorkbookSnapshots as listWorkbookSnapshotsGenerated,
   listWorkbooks as listWorkbooksGenerated,
@@ -15,6 +16,7 @@ import {
   mapWorkbookCalculationResponse,
   mapWorkbookCalculationsResponse,
   mapWorkbookResponse,
+  mapWorkbookSnapshotPreviewResponse,
   mapWorkbookSnapshotResponse,
   mapWorkbookSnapshotsResponse,
   mapWorkbooksResponse,
@@ -23,6 +25,7 @@ import type {
   CreateWorkbookCalculationInput,
   CreateWorkbookInput,
   DeleteWorkbookInput,
+  GetWorkbookSnapshotPreviewInput,
   ListWorkbookCalculationsInput,
   ListWorkbookSnapshotsInput,
   ListWorkbooksInput,
@@ -32,6 +35,7 @@ import type {
   WorkbookCalculation,
   WorkbookCalculationsPage,
   WorkbookSnapshot,
+  WorkbookSnapshotPreview,
   WorkbookSnapshotsPage,
   WorkbooksPage,
 } from "./model";
@@ -111,5 +115,14 @@ export async function getWorkbookSnapshot(
 ): Promise<WorkbookSnapshot> {
   return mapWorkbookSnapshotResponse(
     await getWorkbookSnapshotGenerated(workbookSnapshotId),
+  );
+}
+
+export async function getWorkbookSnapshotPreview({
+  workbookSnapshotId,
+  ...input
+}: GetWorkbookSnapshotPreviewInput): Promise<WorkbookSnapshotPreview> {
+  return mapWorkbookSnapshotPreviewResponse(
+    await getWorkbookSnapshotPreviewGenerated(workbookSnapshotId, input),
   );
 }

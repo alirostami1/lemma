@@ -10,9 +10,13 @@ import type {
 } from "./ids.js";
 import {
   type ValueSource,
+  type WorkbookSparseSheet,
   type WorkbookSparseValues,
   workbookSparseValues,
 } from "./workbook-values.js";
+
+export const MAX_WORKBOOK_SNAPSHOT_PREVIEW_ROWS = 50;
+export const MAX_WORKBOOK_SNAPSHOT_PREVIEW_COLUMNS = 20;
 
 export type WorkbookSnapshot = {
   id: WorkbookSnapshotId;
@@ -21,6 +25,17 @@ export type WorkbookSnapshot = {
   snapshotIndex: number;
   values: WorkbookSparseValues;
   createdAt: Date;
+};
+
+export type WorkbookSnapshotPreview = {
+  sheets: WorkbookSnapshotPreviewSheet[];
+};
+
+export type WorkbookSnapshotPreviewSheet = {
+  name: string;
+  rowCount: number;
+  columnCount: number;
+  rows: string[][];
 };
 
 export function createWorkbookSnapshot(
@@ -45,6 +60,31 @@ export function createWorkbookSnapshot(
     snapshotIndex: input.snapshotIndex,
     values: workbookSparseValues(input.values),
     createdAt: at,
+  };
+}
+
+export function createWorkbookSnapshotPreview(
+  snapshot: WorkbookSnapshot,
+  input?: {
+    rowLimit?: number;
+    columnLimit?: number;
+  },
+): WorkbookSnapshotPreview {
+  const rowLimit = normalizePreviewLimit(
+    input?.rowLimit,
+    MAX_WORKBOOK_SNAPSHOT_PREVIEW_ROWS,
+    "rowLimit",
+  );
+  const columnLimit = normalizePreviewLimit(
+    input?.columnLimit,
+    MAX_WORKBOOK_SNAPSHOT_PREVIEW_COLUMNS,
+    "columnLimit",
+  );
+
+  return {
+    sheets: snapshot.values.sheets.map((sheet) =>
+      createWorkbookSnapshotPreviewSheet(sheet, rowLimit, columnLimit),
+    ),
   };
 }
 
@@ -198,6 +238,49 @@ function parseWorkbookRangeRef(ref: unknown): WorkbookRangeRef {
     sheetName,
     startCellAddress,
     endCellAddress,
+  };
+}
+
+function normalizePreviewLimit(
+  value: number | undefined,
+  maximum: number,
+  name: string,
+): number {
+  if (value === undefined) {
+    return maximum;
+  }
+  if (!Number.isInteger(value) || value < 1 || value > maximum) {
+    throw new InvalidWorkbookSnapshotReferenceError(
+      `${name} must be between 1 and ${maximum}.`,
+    );
+  }
+  return value;
+}
+
+function createWorkbookSnapshotPreviewSheet(
+  sheet: WorkbookSparseSheet,
+  rowLimit: number,
+  columnLimit: number,
+): WorkbookSnapshotPreviewSheet {
+  const rows: string[][] = [];
+  const visibleRowCount = Math.min(sheet.rowCount, rowLimit);
+  const visibleColumnCount = Math.min(sheet.columnCount, columnLimit);
+
+  for (let row = 1; row <= visibleRowCount; row += 1) {
+    const values: string[] = [];
+
+    for (let column = 1; column <= visibleColumnCount; column += 1) {
+      values.push(sheet.cells[`${columnNumberToName(column)}${row}`] ?? "");
+    }
+
+    rows.push(values);
+  }
+
+  return {
+    name: sheet.name,
+    rowCount: sheet.rowCount,
+    columnCount: sheet.columnCount,
+    rows,
   };
 }
 

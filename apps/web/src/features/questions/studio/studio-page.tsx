@@ -87,6 +87,7 @@ export function StudioPage(input: StudioRouteSearch = {}) {
         />
         <WorkbookPickerDialog
           file={studio.workbookPicker.file}
+          workbookPreview={studio.workbookPicker.workbookPreview}
           fileName={studio.workbookPicker.fileName}
           open={studio.workbookPicker.open}
           onOpenChange={studio.workbookPicker.onOpenChange}

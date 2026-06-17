@@ -59,6 +59,11 @@ export type WorkbookSnapshotByIdCommand = ListCommand & {
   workbookSnapshotId: string;
 };
 
+export type WorkbookSnapshotPreviewCommand = WorkbookSnapshotByIdCommand & {
+  rowLimit?: number;
+  columnLimit?: number;
+};
+
 export type ResolveWorkbookSnapshotValueCommand =
   WorkbookSnapshotByIdCommand & {
     source:

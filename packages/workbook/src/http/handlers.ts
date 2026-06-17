@@ -12,6 +12,7 @@ import {
   presentWorkbookCalculations,
   presentWorkbookEngineHealth,
   presentWorkbookSnapshot,
+  presentWorkbookSnapshotPreview,
   presentWorkbookSnapshots,
   presentWorkbookSnapshotValue,
   presentWorkbooks,
@@ -211,6 +212,23 @@ export function createWorkbookHandlers(
         200,
       );
     }),
+    getWorkbookSnapshotPreview: workbookHandler(
+      "getWorkbookSnapshotPreview",
+      async (c) => {
+        const { workbookSnapshotId } = c.req.valid("param");
+        const query = c.req.valid("query");
+        return c.json(
+          presentWorkbookSnapshotPreview(
+            await deps.workbookCalculationService.getWorkbookSnapshotPreview({
+              currentUser: c.var.identity,
+              workbookSnapshotId,
+              ...query,
+            }),
+          ),
+          200,
+        );
+      },
+    ),
     resolveWorkbookSnapshotValue: workbookHandler(
       "resolveWorkbookSnapshotValue",
       async (c) => {

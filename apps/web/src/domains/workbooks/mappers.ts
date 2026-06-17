@@ -6,6 +6,8 @@ import type {
   WorkbookInspection as WorkbookInspectionDto,
   WorkbookResponse,
   WorkbookSnapshot as WorkbookSnapshotDto,
+  WorkbookSnapshotPreview as WorkbookSnapshotPreviewDto,
+  WorkbookSnapshotPreviewResponse,
   WorkbookSnapshotResponse,
   WorkbookSnapshotsResponse,
   WorkbooksResponse,
@@ -16,6 +18,7 @@ import type {
   WorkbookCalculationsPage,
   WorkbookInspection,
   WorkbookSnapshot,
+  WorkbookSnapshotPreview,
   WorkbookSnapshotsPage,
   WorkbooksPage,
 } from "./model";
@@ -56,9 +59,21 @@ export function mapWorkbookSnapshot(
       sheets: dto.values.sheets.map((sheet) => ({
         ...sheet,
         cells: { ...sheet.cells },
+        cellTypes: sheet.cellTypes ? { ...sheet.cellTypes } : undefined,
       })),
     },
     createdAt: new Date(dto.createdAt),
+  };
+}
+
+export function mapWorkbookSnapshotPreview(
+  dto: WorkbookSnapshotPreviewDto,
+): WorkbookSnapshotPreview {
+  return {
+    sheets: dto.sheets.map((sheet) => ({
+      ...sheet,
+      rows: sheet.rows.map((row) => [...row]),
+    })),
   };
 }
 
@@ -105,4 +120,10 @@ export function mapWorkbookSnapshotResponse(
   response: WorkbookSnapshotResponse,
 ): WorkbookSnapshot {
   return mapWorkbookSnapshot(response.workbookSnapshot);
+}
+
+export function mapWorkbookSnapshotPreviewResponse(
+  response: WorkbookSnapshotPreviewResponse,
+): WorkbookSnapshotPreview {
+  return mapWorkbookSnapshotPreview(response.workbookSnapshotPreview);
 }

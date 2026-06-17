@@ -16,11 +16,13 @@ import type {
   RetryWorkbookCalculationCommand,
   WorkbookCalculationByIdCommand,
   WorkbookSnapshotByIdCommand,
+  WorkbookSnapshotPreviewCommand,
 } from "./commands.js";
 import type {
   WorkbookCalculationDto,
   WorkbookCalculationsResult,
   WorkbookEngineHealthResult,
+  WorkbookSnapshotPreviewResult,
   WorkbookSnapshotResult,
   WorkbookSnapshotsResult,
   WorkbookSnapshotValueResult,
@@ -202,6 +204,12 @@ export class WorkbookCalculationService {
     command: WorkbookSnapshotByIdCommand,
   ): Promise<WorkbookSnapshotResult> {
     return this.snapshotService.getWorkbookSnapshot(command);
+  }
+
+  async getWorkbookSnapshotPreview(
+    command: WorkbookSnapshotPreviewCommand,
+  ): Promise<WorkbookSnapshotPreviewResult> {
+    return this.snapshotService.getWorkbookSnapshotPreview(command);
   }
 
   async resolveWorkbookSnapshotValue(

@@ -4,6 +4,7 @@ import type {
   WorkbookCalculationsResult,
   WorkbookEngineHealthResult,
   WorkbookResult,
+  WorkbookSnapshotPreviewResult,
   WorkbookSnapshotResult,
   WorkbookSnapshotsResult,
   WorkbookSnapshotValueResult,
@@ -64,6 +65,12 @@ export function presentWorkbookSnapshot(
   return {
     workbookSnapshot: toWorkbookSnapshotDto(result.workbookSnapshot),
   };
+}
+
+export function presentWorkbookSnapshotPreview(
+  result: WorkbookSnapshotPreviewResult,
+): WorkbookSnapshotPreviewResponse {
+  return { workbookSnapshotPreview: result.workbookSnapshotPreview };
 }
 
 export function presentWorkbookSnapshots(

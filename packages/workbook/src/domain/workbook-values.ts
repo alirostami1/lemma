@@ -55,9 +55,19 @@ export type WorkbookInspection = {
 export type WorkbookSparseSheet = {
   name: string;
   cells: Record<string, string>;
+  cellTypes?: Record<string, WorkbookCellType>;
   rowCount: number;
   columnCount: number;
 };
+
+export type WorkbookCellType =
+  | "string"
+  | "number"
+  | "boolean"
+  | "date_like"
+  | "error"
+  | "blank"
+  | "formula_cached";
 
 export type WorkbookSparseValues = {
   sheets: WorkbookSparseSheet[];
@@ -76,6 +86,15 @@ export type ValueSource =
   | { type: "literal"; value: JsonValue };
 
 const A1_CELL_ADDRESS_PATTERN = /^\$?[A-Z]+\$?[1-9][0-9]*$/i;
+export const WORKBOOK_CELL_TYPE_ACCEPTED_VALUES = [
+  "string",
+  "number",
+  "boolean",
+  "date_like",
+  "error",
+  "blank",
+  "formula_cached",
+] as const;
 
 export function workbookName(value: string): WorkbookName {
   return assertMaxLength(
@@ -212,9 +231,13 @@ export function workbookSparseValues(value: unknown): WorkbookSparseValues {
           return [address.toUpperCase().replaceAll("$", ""), cellValue];
         }),
       );
+      const cellTypes = sparseSheet.cellTypes
+        ? parseCellTypes(sparseSheet.cellTypes, index)
+        : undefined;
       return {
         name: sparseSheet.name,
         cells,
+        ...(cellTypes ? { cellTypes } : {}),
         rowCount: sparseSheet.rowCount,
         columnCount: sparseSheet.columnCount,
       };
@@ -230,4 +253,38 @@ function isPlainObject(
   }
   const prototype = Object.getPrototypeOf(value);
   return prototype === Object.prototype || prototype === null;
+}
+
+function parseCellTypes(
+  value: JsonValue,
+  sheetIndex: number,
+): Record<string, WorkbookCellType> {
+  if (!isPlainObject(value)) {
+    throw new InvalidWorkbookSparseValuesError(
+      `values.sheets[${sheetIndex}].cellTypes must be an object.`,
+    );
+  }
+  return Object.fromEntries(
+    Object.entries(value).map(([address, cellType]) => {
+      if (!A1_CELL_ADDRESS_PATTERN.test(address)) {
+        throw new InvalidWorkbookSparseValuesError(
+          `values.sheets[${sheetIndex}].cellTypes has invalid cell address.`,
+        );
+      }
+      if (
+        typeof cellType !== "string" ||
+        !WORKBOOK_CELL_TYPE_ACCEPTED_VALUES.includes(
+          cellType as WorkbookCellType,
+        )
+      ) {
+        throw new InvalidWorkbookSparseValuesError(
+          `values.sheets[${sheetIndex}].cellTypes has invalid cell type.`,
+        );
+      }
+      return [
+        address.toUpperCase().replaceAll("$", ""),
+        cellType as WorkbookCellType,
+      ];
+    }),
+  );
 }

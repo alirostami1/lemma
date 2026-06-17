@@ -5,6 +5,7 @@ import { createUser } from "@lemma/identity/domain";
 import {
   createWorkbookCalculation,
   createWorkbookSnapshot,
+  InvalidWorkbookSnapshotReferenceError,
   userId,
   type Workbook,
   type WorkbookCalculation,
@@ -57,6 +58,42 @@ describe("WorkbookSnapshotService", () => {
     assert.equal(result.value, "42");
   });
 
+  it("returns a bounded snapshot preview for the owner", async () => {
+    const harness = createHarness();
+
+    const result = await harness.service.getWorkbookSnapshotPreview({
+      currentUser: currentUser(ownerUserId),
+      workbookSnapshotId: targetSnapshotId,
+      rowLimit: 1,
+      columnLimit: 1,
+    });
+
+    assert.deepEqual(result.workbookSnapshotPreview, {
+      sheets: [
+        {
+          name: "Sheet1",
+          rowCount: 2,
+          columnCount: 2,
+          rows: [["42"]],
+        },
+      ],
+    });
+  });
+
+  it("rejects preview limits outside the public bounds", async () => {
+    const harness = createHarness();
+
+    await assert.rejects(
+      () =>
+        harness.service.getWorkbookSnapshotPreview({
+          currentUser: currentUser(ownerUserId),
+          workbookSnapshotId: targetSnapshotId,
+          rowLimit: 0,
+        }),
+      InvalidWorkbookSnapshotReferenceError,
+    );
+  });
+
   it("denies snapshots for other users", async () => {
     const harness = createHarness();
 
@@ -105,9 +142,9 @@ function createSnapshot(): WorkbookSnapshot {
         sheets: [
           {
             name: "Sheet1",
-            cells: { A1: "42" },
-            rowCount: 1,
-            columnCount: 1,
+            cells: { A1: "42", B2: "84" },
+            rowCount: 2,
+            columnCount: 2,
           },
         ],
       },

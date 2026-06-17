@@ -29,6 +29,10 @@ describe("workbook snapshot values", () => {
               A2: "20",
               B2: "40",
             },
+            cellTypes: {
+              A1: "number",
+              B1: "number",
+            },
             rowCount: 2,
             columnCount: 2,
           },
@@ -46,6 +50,13 @@ describe("workbook snapshot values", () => {
       }),
       "10",
     );
+  });
+
+  it("preserves cell type metadata", () => {
+    assert.deepEqual(snapshot.values.sheets[0]?.cellTypes, {
+      A1: "number",
+      B1: "number",
+    });
   });
 
   it("resolves a range as a 2D array", () => {

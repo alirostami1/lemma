@@ -61,7 +61,7 @@ export function useSourceController(input: {
   const workbookPreviewController = useSelectedWorkbookPreview({
     selectedWorkbook: selectedWorkbook
       ? {
-          fileId: selectedWorkbook.fileId,
+          id: selectedWorkbook.id,
           originalName: selectedWorkbook.originalName,
           status: selectedWorkbook.status,
         }

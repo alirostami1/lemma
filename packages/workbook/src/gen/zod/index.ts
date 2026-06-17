@@ -1417,6 +1417,20 @@ export const ListWorkbookSnapshots200Response = zod.strictObject({
           zod.strictObject({
             name: zod.string().min(1),
             cells: zod.record(zod.string(), zod.string()),
+            cellTypes: zod
+              .record(
+                zod.string(),
+                zod.enum([
+                  "string",
+                  "number",
+                  "boolean",
+                  "date_like",
+                  "error",
+                  "blank",
+                  "formula_cached",
+                ]),
+              )
+              .optional(),
             rowCount: zod
               .number()
               .min(
@@ -1540,6 +1554,20 @@ export const GetWorkbookSnapshot200Response = zod.strictObject({
         zod.strictObject({
           name: zod.string().min(1),
           cells: zod.record(zod.string(), zod.string()),
+          cellTypes: zod
+            .record(
+              zod.string(),
+              zod.enum([
+                "string",
+                "number",
+                "boolean",
+                "date_like",
+                "error",
+                "blank",
+                "formula_cached",
+              ]),
+            )
+            .optional(),
           rowCount: zod
             .number()
             .min(
@@ -1603,6 +1631,130 @@ export const GetWorkbookSnapshot409Response = zod.strictObject({
 });
 
 export const GetWorkbookSnapshot502Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+/**
+ * @summary Get workbook snapshot preview
+ */
+export const getWorkbookSnapshotPreviewPathWorkbookSnapshotIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+
+export const GetWorkbookSnapshotPreviewParams = zod.strictObject({
+  workbookSnapshotId: zod
+    .string()
+    .regex(getWorkbookSnapshotPreviewPathWorkbookSnapshotIdRegExp),
+});
+
+export const getWorkbookSnapshotPreviewQueryRowLimitMax = 50;
+
+export const getWorkbookSnapshotPreviewQueryColumnLimitMax = 20;
+
+export const GetWorkbookSnapshotPreviewQueryParams = zod.object({
+  rowLimit: zod.coerce
+    .number()
+    .min(1)
+    .max(getWorkbookSnapshotPreviewQueryRowLimitMax)
+    .optional(),
+  columnLimit: zod.coerce
+    .number()
+    .min(1)
+    .max(getWorkbookSnapshotPreviewQueryColumnLimitMax)
+    .optional(),
+});
+
+export const getWorkbookSnapshotPreview200ResponseWorkbookSnapshotPreviewSheetsItemRowCountMin = 0;
+
+export const getWorkbookSnapshotPreview200ResponseWorkbookSnapshotPreviewSheetsItemColumnCountMin = 0;
+
+export const getWorkbookSnapshotPreview200ResponseWorkbookSnapshotPreviewSheetsItemRowsItemMax = 20;
+
+export const getWorkbookSnapshotPreview200ResponseWorkbookSnapshotPreviewSheetsItemRowsMax = 50;
+
+export const GetWorkbookSnapshotPreview200Response = zod.strictObject({
+  workbookSnapshotPreview: zod.strictObject({
+    sheets: zod.array(
+      zod.strictObject({
+        name: zod.string().min(1),
+        rowCount: zod
+          .number()
+          .min(
+            getWorkbookSnapshotPreview200ResponseWorkbookSnapshotPreviewSheetsItemRowCountMin,
+          ),
+        columnCount: zod
+          .number()
+          .min(
+            getWorkbookSnapshotPreview200ResponseWorkbookSnapshotPreviewSheetsItemColumnCountMin,
+          ),
+        rows: zod
+          .array(
+            zod
+              .array(zod.string())
+              .max(
+                getWorkbookSnapshotPreview200ResponseWorkbookSnapshotPreviewSheetsItemRowsItemMax,
+              ),
+          )
+          .max(
+            getWorkbookSnapshotPreview200ResponseWorkbookSnapshotPreviewSheetsItemRowsMax,
+          ),
+      }),
+    ),
+  }),
+});
+
+export const GetWorkbookSnapshotPreview400Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotPreview401Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotPreview403Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotPreview404Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotPreview409Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotPreview502Response = zod.strictObject({
   error: zod.strictObject({
     code: zod.string(),
     message: zod.string(),

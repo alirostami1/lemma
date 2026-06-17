@@ -106,6 +106,8 @@ sequenceDiagram
   API->>Workbook: Register source
   Workbook->>Engine: Inspect or calculate workbook
   Engine-->>Workbook: Values and findings
+  Workbook-->>API: Persist sanitized snapshot values
+  Web->>API: Read bounded snapshot preview
 ```
 
 ## OpenAPI Generation Flow

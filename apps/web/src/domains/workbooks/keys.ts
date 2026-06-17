@@ -1,4 +1,5 @@
 import type {
+  GetWorkbookSnapshotPreviewInput,
   ListWorkbookCalculationsInput,
   ListWorkbookSnapshotsInput,
   ListWorkbooksInput,
@@ -11,6 +12,10 @@ type ListCalculationsKeyInput = Omit<
 type ListSnapshotsKeyInput = Omit<
   ListWorkbookSnapshotsInput,
   "workbookCalculationId"
+>;
+type SnapshotPreviewKeyInput = Omit<
+  GetWorkbookSnapshotPreviewInput,
+  "workbookSnapshotId"
 >;
 
 export const workbookKeys = {
@@ -38,4 +43,15 @@ export const workbookKeys = {
     workbookCalculationId: string,
     input?: ListSnapshotsKeyInput,
   ) => [...workbookKeys.snapshots(workbookCalculationId), input ?? {}] as const,
+  snapshotPreview: (
+    workbookSnapshotId: string,
+    input?: SnapshotPreviewKeyInput,
+  ) =>
+    [
+      ...workbookKeys.all,
+      "snapshot",
+      workbookSnapshotId,
+      "preview",
+      input ?? {},
+    ] as const,
 };
