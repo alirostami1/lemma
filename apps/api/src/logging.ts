@@ -1,11 +1,11 @@
 import {
-  createConsoleStructuredLogger,
+  createPinoStructuredLogger,
   errorLogFields,
   type LogFields,
 } from "@lemma/observability";
 import type { Context } from "hono";
 
-const apiLogger = createConsoleStructuredLogger("api");
+const apiLogger = createPinoStructuredLogger("api");
 
 export function logApiError(
   message: string,

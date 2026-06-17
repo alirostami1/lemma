@@ -1,5 +1,5 @@
 import {
-  createConsoleStructuredLogger,
+  createPinoStructuredLogger,
   errorLogFields,
   type LogFields,
   type StructuredLogger,
@@ -8,13 +8,12 @@ import {
 export type WorkerLogFields = LogFields;
 export type WorkerLogger = Pick<StructuredLogger, "info" | "error">;
 
-export const consoleWorkerLogger: WorkerLogger =
-  createConsoleStructuredLogger("worker");
+export const workerLogger: WorkerLogger = createPinoStructuredLogger("worker");
 
 export function logWorkerInfo(
   message: string,
   fields?: WorkerLogFields,
-  logger = consoleWorkerLogger,
+  logger = workerLogger,
 ): void {
   logger.info(message, fields);
 }
@@ -23,7 +22,7 @@ export function logWorkerError(
   message: string,
   fields: WorkerLogFields,
   error: unknown,
-  logger = consoleWorkerLogger,
+  logger = workerLogger,
 ): void {
   logger.error(message, {
     ...fields,

@@ -11,7 +11,7 @@ import {
 
 export {
   compactLogFields,
-  createConsoleStructuredLogger,
+  createPinoStructuredLogger,
   errorLogFields,
   type LogFields,
   type StructuredLogger,

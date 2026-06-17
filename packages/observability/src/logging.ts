@@ -1,3 +1,5 @@
+import pino, { type Logger } from "pino";
+
 export type LogFieldValue = string | number | boolean | null | undefined;
 export type LogFields = Record<string, LogFieldValue>;
 
@@ -7,18 +9,23 @@ export type StructuredLogger = {
   error(message: string, fields?: LogFields): void;
 };
 
-export function createConsoleStructuredLogger(
+export function createPinoStructuredLogger(
   component: string,
 ): StructuredLogger {
+  const logger = pino().child({ "log.component": component });
+  return createStructuredLogger(logger);
+}
+
+function createStructuredLogger(logger: Logger): StructuredLogger {
   return {
     info(message, fields) {
-      console.info(message, withComponent(component, fields));
+      logger.info(compactLogFields(fields), message);
     },
     warn(message, fields) {
-      console.warn(message, withComponent(component, fields));
+      logger.warn(compactLogFields(fields), message);
     },
     error(message, fields) {
-      console.error(message, withComponent(component, fields));
+      logger.error(compactLogFields(fields), message);
     },
   };
 }
@@ -43,11 +50,4 @@ export function compactLogFields(fields?: LogFields): LogFields {
   return Object.fromEntries(
     Object.entries(fields).filter(([, value]) => value !== undefined),
   ) as LogFields;
-}
-
-function withComponent(component: string, fields?: LogFields): LogFields {
-  return compactLogFields({
-    "log.component": component,
-    ...fields,
-  });
 }

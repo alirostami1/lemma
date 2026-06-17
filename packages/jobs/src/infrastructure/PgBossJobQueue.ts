@@ -1,6 +1,6 @@
 import type { JsonObject } from "@lemma/domain";
 import {
-  createConsoleStructuredLogger,
+  createPinoStructuredLogger,
   errorLogFields,
   instrumentExternal,
 } from "@lemma/observability";
@@ -20,7 +20,7 @@ export type PgBossJobQueueConfig = {
 };
 
 const instrumentation = instrumentExternal("jobs", "pg_boss");
-const logger = createConsoleStructuredLogger("jobs.pg_boss");
+const logger = createPinoStructuredLogger("jobs.pg_boss");
 
 export class PgBossJobQueue implements JobQueuePort {
   private readonly boss: PgBoss;
