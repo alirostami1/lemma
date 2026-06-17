@@ -1,0 +1,382 @@
+x-lemma-runtime-env: &lemma-runtime-env
+  NODE_ENV: production
+  LEMMA_S3_REGION: ${LEMMA_S3_REGION:-garage}
+  LEMMA_S3_BUCKET: ${LEMMA_S3_BUCKET:-lemma-files}
+  LEMMA_S3_ACCESS_KEY_ID: ${GARAGE_DEFAULT_ACCESS_KEY}
+  LEMMA_S3_SECRET_ACCESS_KEY: ${GARAGE_DEFAULT_SECRET_KEY}
+  LEMMA_S3_ENDPOINT: http://garage:3900
+  LEMMA_S3_FORCE_PATH_STYLE: "true"
+  LEMMA_S3_UPLOAD_URL_EXPIRES_IN_SECONDS: ${LEMMA_S3_UPLOAD_URL_EXPIRES_IN_SECONDS:-900}
+  LEMMA_S3_DOWNLOAD_URL_EXPIRES_IN_SECONDS: ${LEMMA_S3_DOWNLOAD_URL_EXPIRES_IN_SECONDS:-900}
+  LEMMA_WORKBOOK_ENGINE: ${LEMMA_WORKBOOK_ENGINE:-libreoffice}
+  LEMMA_WORKBOOK_LIBREOFFICE_SERVICE_URL: http://libreoffice-worker:8080
+  LEMMA_WORKBOOK_ENGINE_TIMEOUT_MS: ${LEMMA_WORKBOOK_ENGINE_TIMEOUT_MS:-30000}
+  LEMMA_WORKBOOK_VALIDATION_TIMEOUT_MS: ${LEMMA_WORKBOOK_VALIDATION_TIMEOUT_MS:-30000}
+  LEMMA_WORKBOOK_MAX_FILE_BYTES: ${LEMMA_WORKBOOK_MAX_FILE_BYTES:-20971520}
+  LEMMA_WORKBOOK_MAX_SHEETS: ${LEMMA_WORKBOOK_MAX_SHEETS:-50}
+  LEMMA_WORKBOOK_MAX_CELLS: ${LEMMA_WORKBOOK_MAX_CELLS:-500000}
+  LEMMA_WORKBOOK_MAX_FORMULAS: ${LEMMA_WORKBOOK_MAX_FORMULAS:-50000}
+  LEMMA_WORKBOOK_MAX_RESPONSE_BYTES: ${LEMMA_WORKBOOK_MAX_RESPONSE_BYTES:-10485760}
+  LEMMA_CENTRIFUGO_PUBLIC_URL: ${LEMMA_CENTRIFUGO_PUBLIC_URL}
+  LEMMA_CENTRIFUGO_HTTP_API_URL: http://centrifugo:8000/api
+  LEMMA_CENTRIFUGO_HTTP_API_KEY: ${LEMMA_CENTRIFUGO_HTTP_API_KEY}
+  LEMMA_CENTRIFUGO_TOKEN_HMAC_SECRET_KEY: ${LEMMA_CENTRIFUGO_TOKEN_HMAC_SECRET_KEY}
+  LEMMA_CENTRIFUGO_TOKEN_TTL_SECONDS: ${LEMMA_CENTRIFUGO_TOKEN_TTL_SECONDS:-3600}
+  LEMMA_OTEL_ENABLED: ${LEMMA_OTEL_ENABLED:-false}
+  LEMMA_OTEL_EXPORTER_OTLP_ENDPOINT: ${LEMMA_OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318}
+  LEMMA_OTEL_METRIC_EXPORT_INTERVAL_MS: ${LEMMA_OTEL_METRIC_EXPORT_INTERVAL_MS:-30000}
+
+x-api-env: &api-env
+  <<: *lemma-runtime-env
+  LEMMA_API_PORT: 3000
+  LEMMA_API_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+  LEMMA_API_WEB_ORIGINS: ${LEMMA_API_WEB_ORIGINS}
+  LEMMA_OIDC_ISSUER_URL: ${LEMMA_OIDC_ISSUER_URL}
+  LEMMA_OIDC_JWKS_URL: ${LEMMA_OIDC_JWKS_URL}
+  LEMMA_OIDC_AUDIENCE: ${LEMMA_OIDC_AUDIENCE:-lemma-api}
+
+x-worker-env: &worker-env
+  <<: *lemma-runtime-env
+  LEMMA_WORKER_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+  LEMMA_WORKER_ID: ${LEMMA_WORKER_ID:-lemma-worker-vps}
+  LEMMA_WORKER_OUTBOX_BATCH_SIZE: ${LEMMA_WORKER_OUTBOX_BATCH_SIZE:-25}
+  LEMMA_WORKER_OUTBOX_POLL_INTERVAL_MS: ${LEMMA_WORKER_OUTBOX_POLL_INTERVAL_MS:-1000}
+  LEMMA_WORKER_OUTBOX_LOCK_TIMEOUT_MS: ${LEMMA_WORKER_OUTBOX_LOCK_TIMEOUT_MS:-60000}
+  LEMMA_WORKER_OUTBOX_RETRY_DELAY_MS: ${LEMMA_WORKER_OUTBOX_RETRY_DELAY_MS:-5000}
+  LEMMA_WORKER_OUTBOX_MAX_ATTEMPTS: ${LEMMA_WORKER_OUTBOX_MAX_ATTEMPTS:-10}
+  LEMMA_WORKER_OUTBOX_CLEANUP_INTERVAL_MS: ${LEMMA_WORKER_OUTBOX_CLEANUP_INTERVAL_MS:-3600000}
+  LEMMA_WORKER_OUTBOX_CLEANUP_BATCH_SIZE: ${LEMMA_WORKER_OUTBOX_CLEANUP_BATCH_SIZE:-500}
+  LEMMA_WORKER_OUTBOX_PUBLISHED_RETENTION_MS: ${LEMMA_WORKER_OUTBOX_PUBLISHED_RETENTION_MS:-604800000}
+  LEMMA_WORKER_QUESTION_GENERATION_CONCURRENCY: ${LEMMA_WORKER_QUESTION_GENERATION_CONCURRENCY:-1}
+  LEMMA_WORKER_WORKBOOK_VALIDATION_CONCURRENCY: ${LEMMA_WORKER_WORKBOOK_VALIDATION_CONCURRENCY:-1}
+  LEMMA_WORKER_WORKBOOK_CALCULATION_CONCURRENCY: ${LEMMA_WORKER_WORKBOOK_CALCULATION_CONCURRENCY:-1}
+  LEMMA_WORKER_QUEUE_RETRY_LIMIT: ${LEMMA_WORKER_QUEUE_RETRY_LIMIT:-3}
+  LEMMA_WORKER_QUEUE_RETRY_DELAY_SECONDS: ${LEMMA_WORKER_QUEUE_RETRY_DELAY_SECONDS:-30}
+  LEMMA_WORKER_FAILED_QUEUE_RECONCILE_INTERVAL_MS: ${LEMMA_WORKER_FAILED_QUEUE_RECONCILE_INTERVAL_MS:-10000}
+  LEMMA_WORKER_FAILED_QUEUE_RECONCILE_BATCH_SIZE: ${LEMMA_WORKER_FAILED_QUEUE_RECONCILE_BATCH_SIZE:-25}
+  LEMMA_WORKER_FAILED_QUEUE_RECONCILE_LOCK_TIMEOUT_MS: ${LEMMA_WORKER_FAILED_QUEUE_RECONCILE_LOCK_TIMEOUT_MS:-60000}
+
+x-web-env: &web-env
+  NODE_ENV: production
+  HOST: 0.0.0.0
+  PORT: 3000
+  LEMMA_WEB_APP_TITLE: ${LEMMA_WEB_APP_TITLE:-Lemma}
+  LEMMA_WEB_APP_URL: ${LEMMA_WEB_APP_URL}
+  LEMMA_WEB_API_URL: ${LEMMA_WEB_API_URL}
+  LEMMA_WEB_REALTIME_URL: ${LEMMA_WEB_REALTIME_URL}
+  LEMMA_WEB_OIDC_ISSUER_URI: ${LEMMA_WEB_OIDC_ISSUER_URI}
+  LEMMA_WEB_OIDC_CLIENT_ID: ${LEMMA_WEB_OIDC_CLIENT_ID:-lemma-web}
+
+x-admin-env: &admin-env
+  LEMMA_ADMIN_APP_TITLE: ${LEMMA_ADMIN_APP_TITLE:-Lemma Admin}
+  LEMMA_ADMIN_APP_URL: ${LEMMA_ADMIN_APP_URL}
+  LEMMA_ADMIN_API_URL: ${LEMMA_ADMIN_API_URL}
+  LEMMA_ADMIN_OIDC_ISSUER_URI: ${LEMMA_ADMIN_OIDC_ISSUER_URI}
+  LEMMA_ADMIN_OIDC_CLIENT_ID: ${LEMMA_ADMIN_OIDC_CLIENT_ID:-lemma-admin}
+
+x-api-healthcheck: &api-healthcheck
+  test:
+    [
+      "CMD",
+      "node",
+      "-e",
+      "fetch('http://127.0.0.1:3000/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+    ]
+  interval: 10s
+  timeout: 5s
+  retries: 12
+  start_period: 20s
+
+x-web-healthcheck: &web-healthcheck
+  test:
+    [
+      "CMD",
+      "node",
+      "-e",
+      "fetch('http://127.0.0.1:3000/').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+    ]
+  interval: 10s
+  timeout: 5s
+  retries: 12
+  start_period: 20s
+
+x-admin-healthcheck: &admin-healthcheck
+  test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/"]
+  interval: 10s
+  timeout: 5s
+  retries: 12
+  start_period: 20s
+
+services:
+  caddy:
+    image: docker.io/library/caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      LEMMA_ACTIVE_COLOR: ${LEMMA_ACTIVE_COLOR:-blue}
+      LEMMA_WEB_DOMAIN: ${LEMMA_WEB_DOMAIN}
+      LEMMA_API_DOMAIN: ${LEMMA_API_DOMAIN}
+      LEMMA_ADMIN_DOMAIN: ${LEMMA_ADMIN_DOMAIN}
+      LEMMA_AUTH_DOMAIN: ${LEMMA_AUTH_DOMAIN}
+      LEMMA_REALTIME_DOMAIN: ${LEMMA_REALTIME_DOMAIN}
+      LEMMA_TLS_EMAIL: ${LEMMA_TLS_EMAIL:-admin@example.com}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - lemma
+
+  postgres:
+    image: docker.io/library/postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    networks:
+      - lemma
+
+  garage:
+    image: docker.io/dxflrs/garage:v2.3.0
+    command: ["/garage", "server", "--single-node", "--default-bucket"]
+    restart: unless-stopped
+    environment:
+      GARAGE_DEFAULT_ACCESS_KEY: ${GARAGE_DEFAULT_ACCESS_KEY}
+      GARAGE_DEFAULT_SECRET_KEY: ${GARAGE_DEFAULT_SECRET_KEY}
+      GARAGE_DEFAULT_BUCKET: ${LEMMA_S3_BUCKET:-lemma-files}
+    volumes:
+      - ../garage/garage.toml:/etc/garage.toml:ro
+      - garage-data:/var/lib/garage/data
+      - garage-meta:/var/lib/garage/meta
+    networks:
+      - lemma
+
+  garage-cors:
+    image: docker.io/amazon/aws-cli:latest
+    depends_on:
+      garage:
+        condition: service_started
+    entrypoint: ["/bin/sh"]
+    command:
+      - -ceu
+      - |
+        bucket="$${LEMMA_S3_BUCKET:-lemma-files}"
+        endpoint="http://garage:3900"
+        cat > /tmp/cors.json <<EOF
+        {"CORSRules":[{"AllowedOrigins":["$${LEMMA_WEB_APP_URL}"],"AllowedMethods":["PUT","GET","HEAD"],"AllowedHeaders":["*"],"ExposeHeaders":["ETag"],"MaxAgeSeconds":3000}]}
+        EOF
+        until aws s3api head-bucket --endpoint-url "$${endpoint}" --bucket "$${bucket}" >/dev/null 2>&1; do sleep 1; done
+        aws s3api put-bucket-cors --endpoint-url "$${endpoint}" --bucket "$${bucket}" --cors-configuration file:///tmp/cors.json
+    environment:
+      AWS_ACCESS_KEY_ID: ${GARAGE_DEFAULT_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${GARAGE_DEFAULT_SECRET_KEY}
+      AWS_DEFAULT_REGION: garage
+      LEMMA_S3_BUCKET: ${LEMMA_S3_BUCKET:-lemma-files}
+      LEMMA_WEB_APP_URL: ${LEMMA_WEB_APP_URL}
+    networks:
+      - lemma
+    restart: "no"
+
+  postgres-keycloak:
+    image: docker.io/library/postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${KC_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${KC_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${KC_POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - postgres-keycloak-data:/var/lib/postgresql
+    networks:
+      - lemma
+
+  keycloak:
+    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-keycloak:${LEMMA_IMAGE_TAG}
+    restart: unless-stopped
+    command: ["start", "--optimized", "--import-realm"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres-keycloak
+      KC_DB_USERNAME: ${KC_POSTGRES_USER}
+      KC_DB_PASSWORD: ${KC_POSTGRES_PASSWORD}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_ADMIN}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PW}
+      KC_HEALTH_ENABLED: "true"
+      KC_HOSTNAME: ${KC_HOSTNAME}
+      KC_HOSTNAME_STRICT: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+    depends_on:
+      postgres-keycloak:
+        condition: service_healthy
+    volumes:
+      - ./keycloak-realm.json:/opt/keycloak/data/import/lemma-realm.json:ro
+    networks:
+      - lemma
+
+  centrifugo:
+    image: docker.io/centrifugo/centrifugo:${LEMMA_CENTRIFUGO_IMAGE_TAG:-v6}
+    restart: unless-stopped
+    environment:
+      CENTRIFUGO_CLIENT_ALLOWED_ORIGINS: ${LEMMA_WEB_APP_URL}
+      CENTRIFUGO_CLIENT_TOKEN_HMAC_SECRET_KEY: ${LEMMA_CENTRIFUGO_TOKEN_HMAC_SECRET_KEY}
+      CENTRIFUGO_CHANNEL_NAMESPACES: '[{"name":"user"},{"name":"question-generation-run"},{"name":"question-set"}]'
+      CENTRIFUGO_HTTP_API_KEY: ${LEMMA_CENTRIFUGO_HTTP_API_KEY}
+      CENTRIFUGO_HTTP_SERVER_PORT: 8000
+      CENTRIFUGO_LOG_LEVEL: ${LEMMA_CENTRIFUGO_LOG_LEVEL:-info}
+    networks:
+      - lemma
+
+  libreoffice-worker:
+    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-libreoffice-worker:${LEMMA_IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      WORKBOOK_WORKER_HOST: 0.0.0.0
+      WORKBOOK_WORKER_PORT: 8080
+      WORKBOOK_WORKER_MAX_UPLOAD_BYTES: ${LEMMA_WORKBOOK_MAX_FILE_BYTES:-20971520}
+      WORKBOOK_WORKER_MAX_RESPONSE_BYTES: ${LEMMA_WORKBOOK_MAX_RESPONSE_BYTES:-10485760}
+      WORKBOOK_WORKER_TIMEOUT_SECONDS: ${LEMMA_WORKBOOK_LIBREOFFICE_WORKER_TIMEOUT_SECONDS:-30}
+    networks:
+      - lemma
+
+  migrate:
+    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-api:${LEMMA_IMAGE_TAG}
+    command: ["node", "/repo/packages/db/dist/migrate.js", "latest"]
+    environment:
+      NODE_ENV: production
+      LEMMA_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - lemma
+    restart: "no"
+
+  api-blue:
+    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-api:${LEMMA_IMAGE_TAG}
+    restart: unless-stopped
+    environment: *api-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      garage-cors:
+        condition: service_completed_successfully
+      keycloak:
+        condition: service_started
+      libreoffice-worker:
+        condition: service_started
+      centrifugo:
+        condition: service_started
+    healthcheck: *api-healthcheck
+    networks:
+      - lemma
+
+  api-green:
+    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-api:${LEMMA_IMAGE_TAG}
+    restart: unless-stopped
+    environment: *api-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      garage-cors:
+        condition: service_completed_successfully
+      keycloak:
+        condition: service_started
+      libreoffice-worker:
+        condition: service_started
+      centrifugo:
+        condition: service_started
+    healthcheck: *api-healthcheck
+    networks:
+      - lemma
+
+  worker:
+    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-worker:${LEMMA_IMAGE_TAG}
+    restart: unless-stopped
+    environment: *worker-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      garage-cors:
+        condition: service_completed_successfully
+      libreoffice-worker:
+        condition: service_started
+      centrifugo:
+        condition: service_started
+    stop_grace_period: 30s
+    networks:
+      - lemma
+
+  web-blue:
+    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-web:${LEMMA_IMAGE_TAG}
+    restart: unless-stopped
+    environment: *web-env
+    depends_on:
+      api-blue:
+        condition: service_healthy
+      centrifugo:
+        condition: service_started
+    healthcheck: *web-healthcheck
+    networks:
+      - lemma
+
+  web-green:
+    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-web:${LEMMA_IMAGE_TAG}
+    restart: unless-stopped
+    environment: *web-env
+    depends_on:
+      api-green:
+        condition: service_healthy
+      centrifugo:
+        condition: service_started
+    healthcheck: *web-healthcheck
+    networks:
+      - lemma
+
+  admin-blue:
+    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-admin:${LEMMA_IMAGE_TAG}
+    restart: unless-stopped
+    environment: *admin-env
+    depends_on:
+      api-blue:
+        condition: service_healthy
+    healthcheck: *admin-healthcheck
+    networks:
+      - lemma
+
+  admin-green:
+    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-admin:${LEMMA_IMAGE_TAG}
+    restart: unless-stopped
+    environment: *admin-env
+    depends_on:
+      api-green:
+        condition: service_healthy
+    healthcheck: *admin-healthcheck
+    networks:
+      - lemma
+
+volumes:
+  caddy-data:
+  caddy-config:
+  postgres-data:
+  postgres-keycloak-data:
+  garage-data:
+  garage-meta:
+
+networks:
+  lemma:
+    driver: bridge

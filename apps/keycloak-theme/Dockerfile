@@ -5,6 +5,7 @@ ENV PATH="$PNPM_HOME:$PATH"
 
 WORKDIR /repo
 
+RUN apk add --no-cache maven
 RUN corepack enable
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json .npmrc ./

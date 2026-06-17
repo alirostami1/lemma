@@ -1,0 +1,23 @@
+{
+	email {$LEMMA_TLS_EMAIL}
+}
+
+{$LEMMA_WEB_DOMAIN} {
+	reverse_proxy web-{$LEMMA_ACTIVE_COLOR}:3000
+}
+
+{$LEMMA_API_DOMAIN} {
+	reverse_proxy api-{$LEMMA_ACTIVE_COLOR}:3000
+}
+
+{$LEMMA_ADMIN_DOMAIN} {
+	reverse_proxy admin-{$LEMMA_ACTIVE_COLOR}:8080
+}
+
+{$LEMMA_AUTH_DOMAIN} {
+	reverse_proxy keycloak:8080
+}
+
+{$LEMMA_REALTIME_DOMAIN} {
+	reverse_proxy centrifugo:8000
+}
