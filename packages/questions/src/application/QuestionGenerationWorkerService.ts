@@ -274,7 +274,7 @@ export class QuestionGenerationWorkerService {
           memberships: materialized.memberships,
         });
         if (!saved) {
-          throw new QuestionGenerationRunNotFoundError();
+          return null;
         }
         await outboxRepository.appendEvents([
           questionGenerationRunSucceededEvent({
@@ -294,6 +294,9 @@ export class QuestionGenerationWorkerService {
         return saved;
       },
     );
+    if (!completed) {
+      return this.skippedTerminalRun(succeeded.id);
+    }
 
     return { status: "processed", questionGenerationRun: completed };
   }

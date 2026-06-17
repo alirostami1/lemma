@@ -10,8 +10,8 @@ export const WORKBOOK_CALCULATE_JOB = "workbook.calculate";
 /**
  * Job idempotency:
  * - outbox-dispatched jobs use the outbox event id as the queue id.
- * - question generation materialization uses the run id as the queue id because
- *   only one materialization job may ever commit a run.
+ * - question generation materialization derives the queue id from the run id
+ *   because only one materialization job may ever commit a run.
  * - handlers must tolerate retries by checking domain state before side effects.
  */
 

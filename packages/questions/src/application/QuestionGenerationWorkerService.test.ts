@@ -166,6 +166,24 @@ describe("QuestionGenerationWorkerService", () => {
     assert.equal(state.outboxEvents.length, eventCount);
   });
 
+  it("skips completion when another worker already committed the run", async () => {
+    const state = createHarness({ completeRunReturnsNull: true });
+    const result = await state.service.materializeQuestionGenerationRun({
+      questionGenerationRunId: runId,
+      workbookSnapshotIds: [snapshotId],
+      lineage,
+    });
+
+    assert.equal(result.status, "skipped");
+    assert.equal(result.reason, "terminal");
+    assert.equal(state.createdQuestions.length, 0);
+    assert.equal(state.memberships.length, 0);
+    assert.deepEqual(
+      state.outboxEvents.map((event) => event.type),
+      ["question_generation.run_materializing.v1"],
+    );
+  });
+
   it("skips missing runs", async () => {
     const state = createHarness({ run: null });
     const result = await state.service.orchestrateQuestionGenerationRun({
@@ -237,6 +255,7 @@ function createHarness(
   input: {
     run?: QuestionGenerationRun | null;
     resolveReferenceError?: Error;
+    completeRunReturnsNull?: boolean;
   } = {},
 ) {
   const events: string[] = [];
@@ -253,6 +272,7 @@ function createHarness(
     events,
     createdQuestions,
     memberships,
+    completeRunReturnsNull: input.completeRunReturnsNull,
   });
   const outboxRepository = createOutboxRepository(outboxEvents, events);
   const service = new QuestionGenerationWorkerService({
@@ -366,6 +386,7 @@ function createQuestionsRepository(input: {
   events: string[];
   createdQuestions: Question[];
   memberships: QuestionSetQuestion[];
+  completeRunReturnsNull?: boolean;
 }): QuestionsRepository {
   const targetSet = createQuestionSet(
     {
@@ -484,6 +505,10 @@ function createQuestionsRepository(input: {
     },
     async completeQuestionGenerationRun(next) {
       input.events.push("complete");
+      if (input.completeRunReturnsNull) {
+        updateRun(next.run);
+        return null;
+      }
       input.createdQuestions.push(...next.questions);
       input.memberships.push(...next.memberships);
       return updateRun(next.run);

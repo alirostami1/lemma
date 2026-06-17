@@ -92,6 +92,17 @@ export class KyselyQuestionGenerationRunRepository {
     questions: readonly Question[];
     memberships: readonly QuestionSetQuestion[];
   }): Promise<QuestionGenerationRun | null> {
+    const row = await this.db
+      .updateTable("questionGenerationRuns")
+      .set(mapQuestionGenerationRunToUpdate(input.run))
+      .where("id", "=", input.run.id)
+      .where("status", "not in", ["cancelled", "failed", "succeeded"])
+      .returningAll()
+      .executeTakeFirst();
+    if (!row) {
+      return null;
+    }
+
     if (input.questions.length > 0) {
       await this.db
         .insertInto("questions")
@@ -115,12 +126,6 @@ export class KyselyQuestionGenerationRunRepository {
         )
         .execute();
     }
-    const row = await this.db
-      .updateTable("questionGenerationRuns")
-      .set(mapQuestionGenerationRunToUpdate(input.run))
-      .where("id", "=", input.run.id)
-      .returningAll()
-      .executeTakeFirst();
-    return row ? mapQuestionGenerationRunRowToDomain(row) : null;
+    return mapQuestionGenerationRunRowToDomain(row);
   }
 }

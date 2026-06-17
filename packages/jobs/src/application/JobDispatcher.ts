@@ -49,7 +49,6 @@ export class JobDispatcher {
   }
 
   async enqueueQuestionGenerationMaterialization(input: {
-    jobId: string;
     questionGenerationRunId: string;
     workbookSnapshotIds: readonly string[];
     lineage: OperationLineage;
@@ -61,7 +60,7 @@ export class JobDispatcher {
       input.lineage,
       () =>
         this.deps.jobQueue.enqueueJob({
-          id: input.jobId,
+          id: input.questionGenerationRunId,
           name: QUESTION_GENERATION_MATERIALIZE_JOB,
           data: questionGenerationMaterializeJobData({
             questionGenerationRunId: input.questionGenerationRunId,
