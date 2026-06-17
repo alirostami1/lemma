@@ -5,6 +5,7 @@ allowBuilds:
   core-js: true
   es5-ext: true
   esbuild: true
+  lefthook: true
   msw: true
   protobufjs: true
   vue-demi: true

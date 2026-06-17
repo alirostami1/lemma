@@ -10,6 +10,7 @@
     "check": "pnpm check:architecture && turbo run check",
     "test": "turbo run test",
     "check-types": "turbo run check-types",
+    "prepare": "lefthook install",
     "check:architecture": "node scripts/check-package-boundaries.mjs && turbo run check:architecture",
     "check:generated": "pnpm generate:openapi && node scripts/check-generated-clean.mjs",
     "generate:openapi": "turbo run generate:openapi generate:api",
@@ -22,6 +23,7 @@
     "infra:down": "podman compose --env-file infra/.env -f infra/compose-dev.yml -f infra/compose-keycloak.yml -f infra/compose-libreoffice-worker.yml -f infra/compose-realtime.yml -f infra/compose-observability.yml -f infra/compose-apps.yml down"
   },
   "devDependencies": {
+    "lefthook": "^2.1.9",
     "turbo": "^2.9.8",
     "typescript": "catalog:"
   },
