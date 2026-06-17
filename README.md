@@ -58,20 +58,24 @@ See [Testing](docs/testing.md), [Operations](docs/operations.md), and
 
 ```mermaid
 flowchart LR
-  Web[apps/web] --> API[apps/api]
-  Admin[apps/admin] --> API
-  API --> Identity["@lemma/identity"]
-  API --> Files["@lemma/files"]
-  API --> Questions["@lemma/questions"]
-  API --> Workbook["@lemma/workbook"]
-  API --> Notifications["@lemma/notifications"]
-  Worker[apps/worker] --> Questions
+  Web[Web app] --> API[API]
+  Admin[Admin app] --> API
+  API --> Identity[Identity package]
+  API --> Files[Files package]
+  API --> Questions[Questions package]
+  API --> Workbook[Workbook package]
+  Worker[Worker] --> Questions
   Worker --> Workbook
-  Worker --> Events["@lemma/events"]
-  Questions --> DB["@lemma/db"]
-  Workbook --> Engine["@lemma/workbook-engine"]
-  Files --> Storage[(Garage or S3)]
+  Worker --> Events[Events package]
   Identity --> Keycloak[(Keycloak)]
+  Identity --> Postgres[(Postgres)]
+  Files --> Storage[(Garage or S3)]
+  Files --> Postgres
+  Questions --> Postgres
+  Workbook --> Postgres
+  Events --> Postgres
+  Workbook --> Engine[Workbook engine]
+  API --> Realtime[Centrifugo]
 ```
 
 More detail:
