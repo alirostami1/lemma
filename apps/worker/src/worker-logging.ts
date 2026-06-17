@@ -1,26 +1,19 @@
-export type WorkerLogFields = Record<
-  string,
-  string | number | boolean | null | undefined
->;
+import {
+  createPinoStructuredLogger,
+  errorLogFields,
+  type LogFields,
+  type StructuredLogger,
+} from "@lemma/observability";
 
-export type WorkerLogger = {
-  info(message: string, fields?: WorkerLogFields): void;
-  error(message: string, fields?: WorkerLogFields): void;
-};
+export type WorkerLogFields = LogFields;
+export type WorkerLogger = Pick<StructuredLogger, "info" | "error">;
 
-export const consoleWorkerLogger: WorkerLogger = {
-  info(message, fields) {
-    console.info(message, compactFields(fields));
-  },
-  error(message, fields) {
-    console.error(message, compactFields(fields));
-  },
-};
+export const workerLogger: WorkerLogger = createPinoStructuredLogger("worker");
 
 export function logWorkerInfo(
   message: string,
   fields?: WorkerLogFields,
-  logger = consoleWorkerLogger,
+  logger = workerLogger,
 ): void {
   logger.info(message, fields);
 }
@@ -29,32 +22,10 @@ export function logWorkerError(
   message: string,
   fields: WorkerLogFields,
   error: unknown,
-  logger = consoleWorkerLogger,
+  logger = workerLogger,
 ): void {
   logger.error(message, {
     ...fields,
-    ...errorFields(error),
+    ...errorLogFields(error),
   });
-}
-
-function errorFields(error: unknown): WorkerLogFields {
-  if (error instanceof Error) {
-    return {
-      "error.name": error.name,
-      "error.message": error.message,
-      "error.stack": error.stack ?? null,
-    };
-  }
-  return {
-    "error.message": String(error),
-  };
-}
-
-function compactFields(fields?: WorkerLogFields): WorkerLogFields {
-  if (!fields) {
-    return {};
-  }
-  return Object.fromEntries(
-    Object.entries(fields).filter(([, value]) => value !== undefined),
-  ) as WorkerLogFields;
 }

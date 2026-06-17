@@ -9,6 +9,14 @@ import {
   trace,
 } from "@opentelemetry/api";
 
+export {
+  compactLogFields,
+  createPinoStructuredLogger,
+  errorLogFields,
+  type LogFields,
+  type StructuredLogger,
+} from "./logging.js";
+
 export type OperationStatus = "ok" | "error";
 
 export type OperationKind = "internal" | "external";

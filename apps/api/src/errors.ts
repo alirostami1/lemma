@@ -1,6 +1,7 @@
 import { DomainError, type HttpErrorResponse } from "@lemma/error";
 import type { ErrorHandler, NotFoundHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { logApiError } from "./logging.js";
 
 export const notFoundHandler: NotFoundHandler = (c) => {
   const body = {
@@ -19,17 +20,12 @@ export const errorHandler: ErrorHandler = (err, c) => {
   }
 
   if (err instanceof DomainError) {
-    console.log(
-      "domain error leaked to api: ",
-      err.name,
-      " (",
-      err.message,
-      ")",
-    );
+    logApiError("domain error leaked to api", c, err, {
+      "error.domain_code": err.domainCode,
+    });
   }
 
-  // TODO replace this with structured logging
-  console.error("unexpected error catched: ", err.name, " (", err.message, ")");
+  logApiError("unexpected api error", c, err);
 
   const body = {
     error: {

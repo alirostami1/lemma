@@ -4,6 +4,7 @@ import type { NodeObservability } from "@lemma/observability/node";
 import { newApp } from "./app.js";
 import { config } from "./config.js";
 import { closeDatabase, db } from "./database.js";
+import { logApiInfo, logApiRuntimeError } from "./logging.js";
 
 export function startApiServer(input: { observability: NodeObservability }) {
   const database: DatabasePort = {
@@ -17,18 +18,20 @@ export function startApiServer(input: { observability: NodeObservability }) {
     port: config.port,
   });
 
-  console.log(`Server listening on http://localhost:${config.port}`);
+  logApiInfo("server listening", {
+    "server.port": config.port,
+  });
 
   function shutdown(signal: NodeJS.Signals) {
     server.close(async (err) => {
       if (err) {
-        console.error(err);
+        logApiRuntimeError("server shutdown failed", err);
         process.exit(1);
       }
 
       await closeDatabase();
       await input.observability.shutdown();
-      console.log(`Server stopped after ${signal}`);
+      logApiInfo("server stopped", { signal });
       process.exit(0);
     });
   }

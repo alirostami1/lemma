@@ -5,7 +5,6 @@ import { createOpsModule } from "@lemma/ops/module";
 import { createQuestionsModule } from "@lemma/questions/module";
 import { createWorkbookModule } from "@lemma/workbook/module";
 import { Hono } from "hono";
-import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { createClock } from "./composition/clock.js";
@@ -21,6 +20,7 @@ import { type Config, config as defaultConfig } from "./config.js";
 import { cors } from "./cors.js";
 import { errorHandler, notFoundHandler } from "./errors.js";
 import { healthRoutes } from "./health.js";
+import { apiRequestLoggerMiddleware } from "./logging.js";
 
 export type NewAppDeps = {
   database: DatabasePort;
@@ -88,7 +88,7 @@ export function newApp({ database, config = defaultConfig }: NewAppDeps) {
   app.use("*", requestIdMiddleware);
   app.use("*", requestSpanMiddleware);
   app.use("*", secureHeaders());
-  app.use("*", logger());
+  app.use("*", apiRequestLoggerMiddleware);
   app.use("*", cors(config.web.origins));
 
   app.notFound(notFoundHandler);

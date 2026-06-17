@@ -8,6 +8,7 @@ import type { RequireIdentity as QuestionsRequireIdentity } from "@lemma/questio
 import type { RequireIdentity as WorkbookRequireIdentity } from "@lemma/workbook/http";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
+import { logApiWarn } from "./logging.js";
 
 type ApiAuthEnv = {
   Variables: {
@@ -58,10 +59,10 @@ export function createRequireIdentity(
       c.set("identity", currentUser);
       return next();
     } catch (error) {
-      console.warn("authentication failed", {
-        path: c.req.path,
-        requestId: c.get("requestId"),
-        reason: getAuthErrorSummary(error),
+      logApiWarn("authentication failed", {
+        "http.path": c.req.path,
+        "http.request_id": c.get("requestId"),
+        "auth.failure_reason": getAuthErrorSummary(error),
       });
 
       return c.json(
