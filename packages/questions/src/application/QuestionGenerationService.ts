@@ -1,5 +1,4 @@
 import type { DomainEventEnvelope } from "@lemma/events/domain";
-import type { CurrentUser } from "@lemma/identity/application";
 import { instrumentService } from "@lemma/observability";
 import {
   assertQuestionGenerationRunCanRetry,
@@ -14,7 +13,6 @@ import {
   questionGenerationRunStatus as toQuestionGenerationRunStatus,
   questionSetId as toQuestionSetId,
   userId as toUserId,
-  workbookId as toWorkbookId,
   workbookQuestionSource,
 } from "../domain/index.js";
 import type {
@@ -29,7 +27,6 @@ import type {
 } from "./dto.js";
 import {
   ForbiddenQuestionActionError,
-  InvalidQuestionBlueprintError,
   QuestionBlueprintNotFoundError,
   QuestionGenerationRunNotFoundError,
   QuestionSetNotFoundError,
@@ -52,7 +49,7 @@ import type {
   QuestionsRepository,
   WorkbookAccessPort,
 } from "./ports.js";
-import { blueprintRequiresWorkbookSource } from "./question-blueprint-analysis.js";
+import { QuestionGenerationSourceResolver } from "./QuestionGenerationSourceResolver.js";
 import {
   questionGenerationRunCancelledEvent,
   questionGenerationRunRequestedEvent,
@@ -108,15 +105,18 @@ export class QuestionGenerationService {
           command.source !== undefined && command.source !== null
             ? workbookQuestionSource(command.source)
             : null;
-        this.assertWorkbookSourceIsAllowed({
+        const sourceResolver = new QuestionGenerationSourceResolver({
+          workbookAccessPort: this.deps.workbookAccessPort,
+        });
+        sourceResolver.assertExplicitSourceIsAllowed({
           version,
           explicitSource,
         });
-        const source = this.resolveGenerationSource({
+        const source = sourceResolver.resolve({
           version,
           explicitSource,
         });
-        await this.assertWorkbookSourceAccess(command.currentUser, source);
+        await sourceResolver.assertAccess(command.currentUser, source);
 
         const targetQuestionSetId = toQuestionSetId(
           command.targetQuestionSetId,
@@ -134,11 +134,7 @@ export class QuestionGenerationService {
           );
         }
 
-        if (blueprintRequiresWorkbookSource(version.document) && !source) {
-          throw new InvalidQuestionBlueprintError(
-            "blueprint requires workbook source",
-          );
-        }
+        sourceResolver.assertRequiredSourcePresent({ version, source });
 
         const at = this.deps.clock.now();
         const run = createQuestionGenerationRun(
@@ -302,51 +298,6 @@ export class QuestionGenerationService {
     }
 
     return { blueprint, version };
-  }
-
-  private resolveGenerationSource(input: {
-    version: QuestionBlueprintVersion;
-    explicitSource: ReturnType<typeof workbookQuestionSource> | null;
-  }) {
-    return input.explicitSource !== null
-      ? input.explicitSource
-      : input.version.workbookId
-        ? workbookQuestionSource({
-            type: "workbook_snapshot",
-            workbookId: input.version.workbookId,
-          })
-        : null;
-  }
-
-  private assertWorkbookSourceIsAllowed(input: {
-    version: QuestionBlueprintVersion;
-    explicitSource: ReturnType<typeof workbookQuestionSource> | null;
-  }): void {
-    if (input.explicitSource === null || input.version.workbookId === null) {
-      return;
-    }
-    if (input.explicitSource.workbookId !== input.version.workbookId) {
-      throw new InvalidQuestionBlueprintError(
-        "explicit workbook source must match blueprint workbook",
-      );
-    }
-  }
-
-  private async assertWorkbookSourceAccess(
-    currentUser: CurrentUser,
-    source: ReturnType<typeof workbookQuestionSource> | null,
-  ): Promise<void> {
-    if (
-      source &&
-      !(await this.deps.workbookAccessPort.canUserAccessWorkbook({
-        currentUser,
-        workbookId: toWorkbookId(source.workbookId),
-      }))
-    ) {
-      throw new ForbiddenQuestionActionError(
-        "You cannot access this workbook.",
-      );
-    }
   }
 
   private async findRunByIdOrThrow(id: string) {

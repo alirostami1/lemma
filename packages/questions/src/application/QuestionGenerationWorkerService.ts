@@ -2,27 +2,18 @@ import type { OperationLineage } from "@lemma/domain";
 import type { DomainEventEnvelope } from "@lemma/events/domain";
 import { instrumentService } from "@lemma/observability";
 import {
-  createQuestion,
-  createQuestionSetQuestion,
   InvalidQuestionStateTransitionError,
   isTerminalRun,
   markQuestionGenerationRunFailed,
   markQuestionGenerationRunMaterializing,
   markQuestionGenerationRunSucceeded,
-  markQuestionGenerationRunWaitingForWorkbookCalculation,
-  type Question,
   type QuestionBlueprintVersion,
   type QuestionGenerationRun,
   type QuestionGenerationRunId,
-  type QuestionProducer,
-  type QuestionSetQuestion,
-  questionProducer,
   questionGenerationRunId as toQuestionGenerationRunId,
-  questionId as toQuestionId,
   workbookSnapshotId as toWorkbookSnapshotId,
   type WorkbookSnapshotId,
 } from "../domain/index.js";
-import { CanonicalQuestionMaterializer } from "./CanonicalQuestionMaterializer.js";
 import type { QuestionGenerationRunResultDto } from "./dto.js";
 import {
   InvalidQuestionBlueprintError,
@@ -39,12 +30,12 @@ import type {
   QuestionValueResolverPort,
   WorkbookCalculationPort,
 } from "./ports.js";
-import { blueprintRequiresWorkbookSource } from "./question-blueprint-analysis.js";
+import { QuestionGenerationMaterializationInputResolver } from "./QuestionGenerationMaterializationInputResolver.js";
+import { QuestionGenerationRunMaterializer } from "./QuestionGenerationRunMaterializer.js";
 import {
   questionGenerationRunFailedEvent,
   questionGenerationRunMaterializingEvent,
   questionGenerationRunSucceededEvent,
-  questionGenerationRunWaitingForWorkbookCalculationEvent,
   questionSetQuestionsAddedEvent,
 } from "./question-generation-events.js";
 
@@ -209,11 +200,18 @@ export class QuestionGenerationWorkerService {
       );
     }
 
-    const resolved = await this.resolveMaterializationInputs(
+    const resolved = await new QuestionGenerationMaterializationInputResolver({
+      workbookCalculationPort: this.deps.workbookCalculationPort,
+      questionGenerationTransaction: this.deps.questionGenerationTransaction,
+      idGenerator: this.deps.idGenerator,
+      clock: this.deps.clock,
+    }).resolve({
       run,
       version,
-      input,
-    );
+      workbookCalculationId: input.workbookCalculationId,
+      workbookSnapshotIds: input.workbookSnapshotIds,
+      lineage: input.lineage,
+    });
     if (resolved.status === "waiting_for_workbook_calculation") {
       return resolved;
     }
@@ -249,11 +247,15 @@ export class QuestionGenerationWorkerService {
       ],
     );
 
-    const materialized = await this.materializeRunFromVersion(
-      materializing,
+    const materialized = await new QuestionGenerationRunMaterializer({
+      clock: this.deps.clock,
+      idGenerator: this.deps.idGenerator,
+      questionValueResolverPort: this.deps.questionValueResolverPort,
+    }).materialize({
+      run: materializing,
       version,
       workbookSnapshotIds,
-    );
+    });
     const beforeCommit = await this.findActiveRun(materializing.id);
     if (!beforeCommit) {
       return this.skippedTerminalRun(materializing.id);
@@ -296,170 +298,6 @@ export class QuestionGenerationWorkerService {
     );
 
     return { status: "processed", questionGenerationRun: completed };
-  }
-
-  private async resolveMaterializationInputs(
-    run: QuestionGenerationRun,
-    version: QuestionBlueprintVersion,
-    input: {
-      workbookCalculationId?: string | null;
-      workbookSnapshotIds?: readonly string[];
-      lineage: OperationLineage;
-    },
-  ): Promise<
-    | {
-        status: "materialization_ready";
-        workbookSnapshotIds: WorkbookSnapshotId[];
-      }
-    | {
-        status: "waiting_for_workbook_calculation";
-        questionGenerationRun: QuestionGenerationRun;
-      }
-  > {
-    const requiresWorkbook = blueprintRequiresWorkbookSource(version.document);
-    if (!requiresWorkbook) {
-      return { status: "materialization_ready", workbookSnapshotIds: [] };
-    }
-    if (!run.source) {
-      throw new WorkbookQuestionSourceError(
-        "generation run has no workbook source",
-      );
-    }
-    if (run.source.workbookSnapshotId) {
-      return {
-        status: "materialization_ready",
-        workbookSnapshotIds: [run.source.workbookSnapshotId],
-      };
-    }
-    if (input.workbookSnapshotIds && input.workbookSnapshotIds.length > 0) {
-      if (
-        input.workbookCalculationId &&
-        run.source.workbookCalculationId &&
-        input.workbookCalculationId !== run.source.workbookCalculationId
-      ) {
-        throw new WorkbookQuestionSourceError(
-          "workbook calculation does not match generation run",
-        );
-      }
-      return {
-        status: "materialization_ready",
-        workbookSnapshotIds:
-          input.workbookSnapshotIds.map(toWorkbookSnapshotId),
-      };
-    }
-
-    if (!run.source.workbookCalculationId) {
-      const requested =
-        await this.deps.workbookCalculationPort.requestCalculation({
-          createdByUserId: run.createdByUserId,
-          workbookId: run.source.workbookId,
-          requestedCount: run.requestedCount,
-          correlationId: run.id,
-          lineage: input.lineage,
-        });
-      const waiting = await this.persistRunWithEvents(
-        markQuestionGenerationRunWaitingForWorkbookCalculation(
-          run,
-          requested.workbookCalculationId,
-          this.deps.clock.now(),
-        ),
-        (persisted, occurredAt) => [
-          questionGenerationRunWaitingForWorkbookCalculationEvent({
-            id: this.deps.idGenerator.eventId(),
-            run: persisted,
-            lineage: input.lineage,
-            occurredAt,
-          }),
-        ],
-      );
-      return {
-        status: "waiting_for_workbook_calculation",
-        questionGenerationRun: waiting,
-      };
-    }
-
-    return {
-      status: "waiting_for_workbook_calculation",
-      questionGenerationRun: run,
-    };
-  }
-
-  private async materializeRunFromVersion(
-    run: QuestionGenerationRun,
-    version: QuestionBlueprintVersion,
-    workbookSnapshotIds: readonly WorkbookSnapshotId[],
-  ): Promise<{
-    questions: Question[];
-    memberships: QuestionSetQuestion[];
-  }> {
-    if (
-      blueprintRequiresWorkbookSource(version.document) &&
-      workbookSnapshotIds.length === 0
-    ) {
-      throw new WorkbookQuestionSourceError(
-        "generation run has no workbook snapshot",
-      );
-    }
-    if (
-      blueprintRequiresWorkbookSource(version.document) &&
-      !run.source?.workbookSnapshotId &&
-      workbookSnapshotIds.length < run.requestedCount
-    ) {
-      throw new WorkbookQuestionSourceError(
-        "workbook calculation produced fewer snapshots than requested",
-      );
-    }
-
-    const materializer = new CanonicalQuestionMaterializer(
-      this.deps.questionValueResolverPort,
-    );
-    const questions: Question[] = [];
-    for (let index = 0; index < run.requestedCount; index += 1) {
-      const workbookSnapshotId =
-        workbookSnapshotIds[index] ?? workbookSnapshotIds[0] ?? null;
-      const questionSource =
-        run.source && workbookSnapshotId
-          ? {
-              ...run.source,
-              workbookSnapshotId,
-            }
-          : run.source;
-      const materialized = await materializer.materialize({
-        document: version.document,
-        workbookSnapshotId,
-      });
-      questions.push(
-        createQuestion(
-          {
-            id: toQuestionId(this.deps.idGenerator.questionId()),
-            ownerUserId: run.ownerUserId,
-            createdByUserId: run.createdByUserId,
-            blueprintId: run.blueprintId,
-            blueprintVersionId: version.id,
-            generationRunId: run.id,
-            body: materialized.body,
-            solution: materialized.solution,
-            sourcePlan: materialized.sourcePlan,
-            producer: this.createGenerationProducer({ run, version }),
-            source: questionSource,
-          },
-          this.deps.clock.now(),
-        ),
-      );
-    }
-    return {
-      questions,
-      memberships: questions.map((question) =>
-        createQuestionSetQuestion(
-          {
-            questionSetId: run.targetQuestionSetId,
-            questionId: question.id,
-            addedByUserId: run.createdByUserId,
-          },
-          this.deps.clock.now(),
-        ),
-      ),
-    };
   }
 
   private async failRun(
@@ -586,21 +424,6 @@ export class QuestionGenerationWorkerService {
       questionGenerationRun,
       reason,
     };
-  }
-
-  private createGenerationProducer(input: {
-    run: QuestionGenerationRun;
-    version: QuestionBlueprintVersion;
-  }): QuestionProducer {
-    return questionProducer({
-      schemaVersion: 1,
-      compiler: "canonical-question-materializer@1",
-      source: {
-        blueprintId: input.run.blueprintId,
-        blueprintVersionId: input.version.id,
-        generationRunId: input.run.id,
-      },
-    });
   }
 
   private async operation<T>(

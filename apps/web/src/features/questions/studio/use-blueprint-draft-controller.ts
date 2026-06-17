@@ -3,12 +3,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuestionBlueprintAuthoringQuery } from "#/domains/questions";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import { createDefaultComposedEditorModel } from "#/domains/questions/authoring";
-import { questionBlueprintDocumentToComposedEditorModel } from "#/domains/questions/canonical-authoring";
 import type { QuestionBlueprintAuthoring } from "#/domains/questions/model";
+import { createLoadedBlueprintDraftSnapshotState } from "./blueprint-draft-snapshots";
 import { createDraftSnapshotKey } from "./studio-controller-helpers";
 import {
   createStudioDraftKey,
-  createStudioDraftSnapshot,
   deleteStudioDraftSnapshot,
   readLatestStudioDraftSnapshot,
   type StudioDraftSnapshot,
@@ -20,14 +19,13 @@ import {
   hasUnsavedChangesFromKeys,
   type StudioLocalDraftStatus,
 } from "./studio-state";
-import { useStudioBlueprintOpenWarning } from "./use-studio-blueprint-open-warning";
 import {
-  type StudioHistoryChangeGroup,
-  type StudioHistorySnapshot,
-  useStudioHistory,
-} from "./use-studio-history";
+  useBlueprintDraftMarkSavedAction,
+  useBlueprintDraftResetAction,
+} from "./use-blueprint-draft-actions";
+import { useBlueprintDraftHistory } from "./use-blueprint-draft-history";
+import { useStudioBlueprintOpenWarning } from "./use-studio-blueprint-open-warning";
 import { useStudioLocalDraftEffects } from "./use-studio-local-draft-effects";
-import { useStudioUndoRedoHotkeys } from "./use-studio-undo-redo-hotkeys";
 
 export type BlueprintDraftController = {
   authoringModel: ComposedEditorModel;
@@ -161,9 +159,6 @@ export function useBlueprintDraftController({
   const confirmedBlueprintOpenIdsRef = useRef(new Set<string>());
   const cancelledBlueprintOpenIdRef = useRef<string | null>(null);
   const hasInitializedWorkbookRef = useRef(initialLocalDraft !== null);
-  const { canRedo, canUndo, recordChange, redo, replaceCurrentSnapshot, undo } =
-    useStudioHistory();
-
   const loadedBlueprintQuery = useQuestionBlueprintAuthoringQuery(
     { questionBlueprintId: initialBlueprintId },
     { enabled: initialBlueprintId.length > 0 },
@@ -186,16 +181,6 @@ export function useBlueprintDraftController({
       selectedWorkbookId,
     ],
   );
-  const currentHistorySnapshot = useMemo(
-    () => ({
-      authoringModel,
-      blueprintDescription,
-      blueprintName,
-      selectedWorkbookId,
-    }),
-    [authoringModel, blueprintDescription, blueprintName, selectedWorkbookId],
-  );
-
   const handleLocalDraftLoadFailed = useCallback(() => {
     setLocalDraftStatus("failed");
     setLocalDraftError("Local draft could not be loaded.");
@@ -222,38 +207,27 @@ export function useBlueprintDraftController({
     selectedWorkbookId,
   });
 
-  const applyHistorySnapshot = useCallback(
-    (snapshot: StudioHistorySnapshot) => {
-      setBlueprintName(snapshot.blueprintName);
-      setBlueprintDescription(snapshot.blueprintDescription);
-      setAuthoringModel(snapshot.authoringModel);
-      setSelectedWorkbookId(snapshot.selectedWorkbookId);
-    },
-    [],
-  );
-  const undoHistory = useCallback(() => {
-    const snapshot = undo(currentHistorySnapshot);
-    if (!snapshot) {
-      return;
-    }
-
-    setHasUserEdited(true);
-    applyHistorySnapshot(snapshot);
-  }, [applyHistorySnapshot, currentHistorySnapshot, undo]);
-  const redoHistory = useCallback(() => {
-    const snapshot = redo(currentHistorySnapshot);
-    if (!snapshot) {
-      return;
-    }
-
-    setHasUserEdited(true);
-    applyHistorySnapshot(snapshot);
-  }, [applyHistorySnapshot, currentHistorySnapshot, redo]);
-  useStudioUndoRedoHotkeys({
+  const {
+    applyHistorySnapshot,
     canRedo,
     canUndo,
-    redo: redoHistory,
-    undo: undoHistory,
+    redoHistory,
+    replaceCurrentSnapshot,
+    setEditableAuthoringModel,
+    setEditableBlueprintDescription,
+    setEditableBlueprintName,
+    setEditableSelectedWorkbookId,
+    undoHistory,
+  } = useBlueprintDraftHistory({
+    authoringModel,
+    blueprintDescription,
+    blueprintName,
+    selectedWorkbookId,
+    setAuthoringModel,
+    setBlueprintDescription,
+    setBlueprintName,
+    setHasUserEdited,
+    setSelectedWorkbookId,
   });
 
   useEffect(() => {
@@ -285,23 +259,25 @@ export function useBlueprintDraftController({
       return;
     }
 
-    let nextAuthoringModel: ComposedEditorModel;
-    try {
-      nextAuthoringModel = questionBlueprintDocumentToComposedEditorModel(
-        loadedBlueprint.document,
-      );
-    } catch {
+    const nextDraftState = createLoadedBlueprintDraftSnapshotState({
+      blueprint: loadedBlueprint,
+      blueprintId: initialBlueprintId,
+      initialWorkbookId,
+    });
+    if (!nextDraftState.ok) {
       setLoadError("Blueprint could not be loaded.");
       return;
     }
+    const {
+      authoringModel: nextAuthoringModel,
+      blueprintVersionId: nextBlueprintVersionId,
+      draftStorageKey: nextDraftStorageKey,
+      remoteSnapshotKey,
+      syncedSnapshot,
+    } = nextDraftState.value;
 
     loadedBlueprintKeyRef.current = initialBlueprintId;
     hasInitializedWorkbookRef.current = true;
-    const nextDraftStorageKey = createStudioDraftKey({
-      loadedBlueprintId: initialBlueprintId,
-      initialWorkbookId,
-    });
-    const nextBlueprintVersionId = loadedBlueprint.currentVersionId ?? null;
     setLoadError(null);
     setBlueprintName(loadedBlueprint.name);
     setBlueprintDescription(loadedBlueprint.description ?? "");
@@ -311,25 +287,8 @@ export function useBlueprintDraftController({
     setLoadedBlueprintId(initialBlueprintId);
     setLoadedBlueprintVersionId(nextBlueprintVersionId);
     setHasUserEdited(false);
-    const remoteSnapshotKey = createDraftSnapshotKey({
-      blueprintId: initialBlueprintId,
-      blueprintName: loadedBlueprint.name.trim(),
-      description: loadedBlueprint.description ?? "",
-      workbookId: loadedBlueprint.workbookId ?? "",
-      authoringModel: nextAuthoringModel,
-    });
     setLastSavedDraftKey(remoteSnapshotKey);
     setLastRemoteSaveSnapshotKey(remoteSnapshotKey);
-    const syncedSnapshot = createStudioDraftSnapshot({
-      draftKey: nextDraftStorageKey,
-      loadedBlueprintId: initialBlueprintId,
-      loadedBlueprintVersionId: nextBlueprintVersionId,
-      selectedWorkbookId: loadedBlueprint.workbookId ?? "",
-      blueprintName: loadedBlueprint.name,
-      blueprintDescription: loadedBlueprint.description ?? "",
-      authoringModel: nextAuthoringModel,
-      lastRemoteSaveSnapshotKey: remoteSnapshotKey,
-    });
     if (writeStudioDraftSnapshot(syncedSnapshot).ok) {
       setLastLocalSavedDraftKey(remoteSnapshotKey);
       setLocalDraftStatus("autosaved");
@@ -431,109 +390,51 @@ export function useBlueprintDraftController({
     setLocalDraftError(null);
   }
 
-  function resetStudioDraft() {
-    const nextAuthoringModel = createDefaultComposedEditorModel();
-    const nextDraftStorageKey = createStudioDraftKey({
-      loadedBlueprintId: null,
-      initialWorkbookId: "",
-    });
-    const nextSnapshot = createStudioDraftSnapshot({
-      draftKey: nextDraftStorageKey,
-      loadedBlueprintId: null,
-      loadedBlueprintVersionId: null,
-      selectedWorkbookId: "",
-      blueprintName: "Question blueprint",
-      blueprintDescription: "",
-      authoringModel: nextAuthoringModel,
-      lastRemoteSaveSnapshotKey: null,
-    });
-    const nextDraftKey = createDraftKeyFromSnapshot(nextSnapshot);
-
-    if (draftStorageKey !== nextDraftStorageKey) {
-      deleteStudioDraftSnapshot(draftStorageKey);
-    }
-
-    setBlueprintName(nextSnapshot.blueprintName);
-    setBlueprintDescription(nextSnapshot.blueprintDescription);
-    setAuthoringModel(nextAuthoringModel);
-    setSelectedWorkbookId("");
-    setLoadedBlueprintId(null);
-    setLoadedBlueprintVersionId(null);
-    setDraftStorageKey(nextDraftStorageKey);
-    loadedBlueprintKeyRef.current = null;
-    hasInitializedWorkbookRef.current = true;
-    checkedRecoveryDraftKeyRef.current = nextDraftStorageKey;
-    setLastSavedDraftKey(null);
-    setLastRemoteSaveSnapshotKey(null);
-    setRecoverySnapshot(null);
-    setBlueprintOpenWarningSnapshot(null);
-    setIsRecoveryResolved(true);
-    setHasUserEdited(true);
-    setLoadError(null);
-    setIsResetConfirmationOpen(false);
-
-    if (writeStudioDraftSnapshot(nextSnapshot).ok) {
-      setLastLocalSavedDraftKey(nextDraftKey);
-      setLocalDraftStatus("autosaved");
-      setLocalDraftError(null);
-    } else {
-      setLastLocalSavedDraftKey(null);
-      setLocalDraftStatus("failed");
-      setLocalDraftError("Local draft could not be reset.");
-    }
-
-    replaceCurrentSnapshot();
-    void navigate({ to: "/studio", search: {} });
-  }
-
-  function recordAndApplyHistorySnapshot(
-    snapshot: StudioHistorySnapshot,
-    groupKey?: StudioHistoryChangeGroup,
-  ) {
-    recordChange(currentHistorySnapshot, snapshot, groupKey);
-    setHasUserEdited(true);
-    applyHistorySnapshot(snapshot);
-  }
-
-  function setEditableAuthoringModel(model: ComposedEditorModel) {
-    recordAndApplyHistorySnapshot(
-      {
-        ...currentHistorySnapshot,
-        authoringModel: model,
-      },
-      "authoring_model",
-    );
-  }
-
-  function setEditableBlueprintDescription(description: string) {
-    recordAndApplyHistorySnapshot(
-      {
-        ...currentHistorySnapshot,
-        blueprintDescription: description,
-      },
-      "blueprint_description",
-    );
-  }
-
-  function setEditableBlueprintName(name: string) {
-    recordAndApplyHistorySnapshot(
-      {
-        ...currentHistorySnapshot,
-        blueprintName: name,
-      },
-      "blueprint_name",
-    );
-  }
-
-  function setEditableSelectedWorkbookId(workbookId: string) {
-    recordAndApplyHistorySnapshot(
-      {
-        ...currentHistorySnapshot,
-        selectedWorkbookId: workbookId,
-      },
-      "selected_workbook",
-    );
-  }
+  const resetStudioDraft = useBlueprintDraftResetAction({
+    checkedRecoveryDraftKeyRef,
+    draftStorageKey,
+    hasInitializedWorkbookRef,
+    loadedBlueprintKeyRef,
+    navigate,
+    replaceCurrentSnapshot,
+    setAuthoringModel,
+    setBlueprintDescription,
+    setBlueprintName,
+    setBlueprintOpenWarningSnapshot,
+    setDraftStorageKey,
+    setHasUserEdited,
+    setIsRecoveryResolved,
+    setIsResetConfirmationOpen,
+    setLastLocalSavedDraftKey,
+    setLastRemoteSaveSnapshotKey,
+    setLastSavedDraftKey,
+    setLoadError,
+    setLoadedBlueprintId,
+    setLoadedBlueprintVersionId,
+    setLocalDraftError,
+    setLocalDraftStatus,
+    setRecoverySnapshot,
+    setSelectedWorkbookId,
+  });
+  const markSaved = useBlueprintDraftMarkSavedAction({
+    authoringModel,
+    draftStorageKey,
+    initialWorkbookId,
+    loadedBlueprintKeyRef,
+    replaceCurrentSnapshot,
+    setBlueprintDescription,
+    setBlueprintName,
+    setDraftStorageKey,
+    setHasUserEdited,
+    setLastLocalSavedDraftKey,
+    setLastRemoteSaveSnapshotKey,
+    setLastSavedDraftKey,
+    setLoadedBlueprintId,
+    setLoadedBlueprintVersionId,
+    setLocalDraftError,
+    setLocalDraftStatus,
+    setSelectedWorkbookId,
+  });
 
   const hasUnsavedChanges = hasUnsavedChangesFromKeys({
     loadedBlueprintId,
@@ -587,59 +488,7 @@ export function useBlueprintDraftController({
     requestReset: () => setIsResetConfirmationOpen(true),
     redo: redoHistory,
     undo: undoHistory,
-    markSaved: ({
-      authoringModel: nextAuthoringModel,
-      blueprintDescription: nextBlueprintDescription,
-      blueprintId,
-      blueprintName: nextBlueprintName,
-      blueprintVersionId,
-      workbookId,
-    }) => {
-      const savedAuthoringModel = nextAuthoringModel ?? authoringModel;
-      const remoteSnapshotKey = createDraftSnapshotKey({
-        blueprintId,
-        blueprintName: nextBlueprintName.trim(),
-        description: nextBlueprintDescription,
-        workbookId,
-        authoringModel: savedAuthoringModel,
-      });
-      const nextDraftKey = createStudioDraftKey({
-        loadedBlueprintId: blueprintId,
-        initialWorkbookId,
-      });
-      setBlueprintName(nextBlueprintName);
-      setBlueprintDescription(nextBlueprintDescription);
-      setSelectedWorkbookId(workbookId);
-      setLoadedBlueprintId(blueprintId);
-      setLoadedBlueprintVersionId(blueprintVersionId ?? null);
-      setDraftStorageKey(nextDraftKey);
-      loadedBlueprintKeyRef.current = blueprintId;
-      setHasUserEdited(false);
-      setLastSavedDraftKey(remoteSnapshotKey);
-      setLastRemoteSaveSnapshotKey(remoteSnapshotKey);
-      if (nextDraftKey !== draftStorageKey) {
-        deleteStudioDraftSnapshot(draftStorageKey);
-      }
-      const syncedSnapshot = createStudioDraftSnapshot({
-        draftKey: nextDraftKey,
-        loadedBlueprintId: blueprintId,
-        loadedBlueprintVersionId: blueprintVersionId ?? null,
-        selectedWorkbookId: workbookId,
-        blueprintName: nextBlueprintName,
-        blueprintDescription: nextBlueprintDescription,
-        authoringModel: savedAuthoringModel,
-        lastRemoteSaveSnapshotKey: remoteSnapshotKey,
-      });
-      if (writeStudioDraftSnapshot(syncedSnapshot).ok) {
-        setLastLocalSavedDraftKey(remoteSnapshotKey);
-        setLocalDraftStatus("autosaved");
-        setLocalDraftError(null);
-      } else {
-        setLocalDraftStatus("failed");
-        setLocalDraftError("Local draft could not be marked as synced.");
-      }
-      replaceCurrentSnapshot();
-    },
+    markSaved,
   };
 }
 
