@@ -8,6 +8,7 @@ import {
   SpanStatusCode,
   trace,
 } from "@opentelemetry/api";
+
 export {
   compactLogFields,
   createConsoleStructuredLogger,
