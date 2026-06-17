@@ -1,7 +1,7 @@
-import type { Kysely } from "kysely";
 import { sql } from "kysely";
+import type { MigrationDb } from "./helpers.js";
 
-export async function up(db: Kysely<Record<string, never>>): Promise<void> {
+export async function up(db: MigrationDb): Promise<void> {
   await sql`create extension if not exists citext`.execute(db);
 
   await sql`
@@ -52,7 +52,7 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
   `.execute(db);
 }
 
-export async function down(db: Kysely<Record<string, never>>): Promise<void> {
+export async function down(db: MigrationDb): Promise<void> {
   await sql`drop trigger if exists users_set_updated_at on users`.execute(db);
   await db.schema.dropTable("users").execute();
   await sql`drop function if exists set_updated_at()`.execute(db);

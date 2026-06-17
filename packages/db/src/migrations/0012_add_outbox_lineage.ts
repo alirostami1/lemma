@@ -1,7 +1,10 @@
-import type { Kysely } from "kysely";
 import { sql } from "kysely";
+import {
+  documentDestructiveChange,
+  type MigrationDb,
+} from "./helpers.js";
 
-export async function up(db: Kysely<Record<string, never>>): Promise<void> {
+export async function up(db: MigrationDb): Promise<void> {
   await db.schema
     .alterTable("outbox_events")
     .addColumn("request_id", "uuid")
@@ -37,7 +40,15 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
     .execute();
 }
 
-export async function down(db: Kysely<Record<string, never>>): Promise<void> {
+export async function down(db: MigrationDb): Promise<void> {
+  documentDestructiveChange({
+    migration: "0012_add_outbox_lineage",
+    operation: "drop outbox lineage columns on rollback",
+    reason: "down migration restores the previous outbox schema",
+    rollbackPlan:
+      "rollback only before application versions that require lineage fields are running",
+  });
+
   await db.schema
     .dropIndex("outbox_events_correlation_id_created_at_index")
     .ifExists()
