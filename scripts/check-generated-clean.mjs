@@ -1,7 +1,10 @@
 import { spawnSync } from "node:child_process";
 
-const generatedOpenApiOutputs = [
+const generatedOutputs = [
   "apps/web/src/api/generated",
+  "apps/web/src/routeTree.gen.ts",
+  "apps/keycloak-theme/src/kc.gen.tsx",
+  "packages/db/src/types.d.ts",
   "packages/files/src/gen",
   "packages/identity/src/gen",
   "packages/ops/src/gen",
@@ -11,7 +14,7 @@ const generatedOpenApiOutputs = [
 
 const result = spawnSync(
   "git",
-  ["status", "--porcelain", "--", ...generatedOpenApiOutputs],
+  ["status", "--porcelain", "--", ...generatedOutputs],
   {
     encoding: "utf8",
   },
@@ -29,8 +32,10 @@ if (result.status !== 0) {
 
 const output = result.stdout.trim();
 if (output.length > 0) {
-  console.error("Generated OpenAPI output is not clean.");
-  console.error("Run `pnpm generate:openapi`, then review and commit the diff.");
+  console.error("Generated output is not clean.");
+  console.error(
+    "Run the owning generator command, then review and commit the diff.",
+  );
   console.error("");
   console.error(output);
   process.exit(1);
