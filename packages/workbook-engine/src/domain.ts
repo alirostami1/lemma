@@ -12,6 +12,11 @@ export type WorkbookEngineConfig = {
   maxCells: number;
   maxFormulas: number;
   maxResponseBytes: number;
+  maxZipEntries?: number;
+  maxZipEntryBytes?: number;
+  maxZipTotalUncompressedBytes?: number;
+  maxZipCompressionRatio?: number;
+  maxXmlPartBytes?: number;
 };
 
 export type ZipEntry = {
@@ -28,6 +33,30 @@ export type Inspection = {
   formulaCount: number;
   forbiddenFeatureFindings: string[];
   libreOfficeVersion: string | null;
+};
+
+export type WorkbookInspection = Omit<Inspection, "libreOfficeVersion">;
+
+export type WorkbookRejectionReason =
+  | "file_too_large"
+  | "invalid_zip"
+  | "zip_entry_count_exceeded"
+  | "zip_entry_too_large"
+  | "zip_expanded_size_exceeded"
+  | "zip_compression_ratio_exceeded"
+  | "zip_duplicate_entry"
+  | "zip_path_traversal"
+  | "zip_unsupported_compression"
+  | "xml_part_too_large"
+  | "not_xlsx"
+  | "too_many_sheets"
+  | "too_many_cells"
+  | "too_many_formulas"
+  | "unsafe_feature";
+
+export type WorkbookInspectionFinding = {
+  code: string;
+  part?: string;
 };
 
 export type WorkbookValues = {

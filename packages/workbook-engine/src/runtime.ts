@@ -86,13 +86,18 @@ export function createWorkbookEngine(
 export function createCachedWorkbookEngine(
   config: WorkbookEngineConfig,
 ): WorkbookEngine {
+  async function readInspectedCachedValues(path: string) {
+    await inspectXlsx(path, config);
+    return readWorkbookSparseValues(path);
+  }
+
   return {
     name: "cached",
     inspect: (path) => inspectXlsx(path, config),
-    readCachedValues: readWorkbookSparseValues,
-    recalculate: readWorkbookSparseValues,
+    readCachedValues: readInspectedCachedValues,
+    recalculate: readInspectedCachedValues,
     async recalculateBatch(path, count) {
-      const values = await readWorkbookSparseValues(path);
+      const values = await readInspectedCachedValues(path);
       return Array.from({ length: count }, () => values);
     },
     async health(): Promise<WorkbookEngineHealth> {
@@ -116,7 +121,10 @@ export function createLibreOfficeUnoEngine(
   return {
     name: "libreoffice",
     inspect: (path) => inspectXlsx(path, config),
-    readCachedValues: readWorkbookSparseValues,
+    async readCachedValues(path) {
+      await inspectXlsx(path, config);
+      return readWorkbookSparseValues(path);
+    },
     async recalculate(path, options) {
       return postWorkbookToLibreOfficeWorker({
         serviceUrl,
