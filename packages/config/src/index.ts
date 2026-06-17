@@ -183,10 +183,7 @@ export function createDatabaseConfig(env: Env = process.env) {
   });
 }
 
-function formatEnvConfigError(
-  appName: string,
-  issues: readonly z.ZodIssue[],
-) {
+function formatEnvConfigError(appName: string, issues: readonly z.ZodIssue[]) {
   const formattedIssues = issues
     .map((issue) => {
       const path = issue.path.length > 0 ? issue.path.join(".") : "env";
