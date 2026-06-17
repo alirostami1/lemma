@@ -17,10 +17,14 @@ services:
       - postgres-data-keycloak:/var/lib/postgresql
     networks:
       - lemma
+
   keycloak:
-    image: quay.io/keycloak/keycloak:26.6.2
+    build:
+      context: ..
+      dockerfile: apps/keycloak-theme/Dockerfile
+    image: localhost/lemma-keycloak:${LEMMA_IMAGE_TAG:-local}
     restart: unless-stopped
-    command: start-dev --import-realm
+    command: ["start", "--optimized", "--import-realm"]
     environment:
       KC_DB: postgres
       KC_DB_URL_HOST: postgres-keycloak
@@ -36,14 +40,15 @@ services:
       - "${KC_HTTP_PORT:-8001}:8080"
     volumes:
       - ./keycloak-realm.json:/opt/keycloak/data/import/lemma-realm.json:ro,Z
-      - ../apps/keycloak-theme/dist_keycloak:/opt/keycloak/providers:ro,Z
     depends_on:
       postgres-keycloak:
         condition: service_healthy
     networks:
       - lemma
+
 volumes:
   postgres-data-keycloak:
+
 networks:
   lemma:
     driver: bridge

@@ -1,0 +1,41 @@
+{
+  "name": "keycloak-theme",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#/*": "./src/*"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "format": "biome format",
+    "lint": "biome lint",
+    "check": "biome check",
+    "dev": "vite dev --port 3004 --clearScreen false",
+    "build": "tsc && vite build",
+    "build-keycloak-theme": "pnpm build && keycloakify build",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "dependencies": {
+    "@lemma/ui": "workspace:*",
+    "@tailwindcss/vite": "^4.1.18",
+    "keycloakify": "^11.15.3",
+    "lucide-react": "catalog:",
+    "radix-ui": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tailwindcss": "catalog:"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "@storybook/react": "^10.3.5",
+    "@storybook/react-vite": "^10.3.5",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "^6.0.1",
+    "storybook": "^10.3.5",
+    "typescript": "catalog:",
+    "vite": "^8.0.0"
+  }
+}
