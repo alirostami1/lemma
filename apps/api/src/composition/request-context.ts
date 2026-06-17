@@ -3,7 +3,7 @@ import { withSpan } from "@lemma/observability/node";
 import { createMiddleware } from "hono/factory";
 import { v7 as uuidv7 } from "uuid";
 
-type RequestContextEnv = {
+export type RequestContextEnv = {
   Variables: {
     requestId: string;
   };
