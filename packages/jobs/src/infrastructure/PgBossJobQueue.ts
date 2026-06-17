@@ -1,5 +1,9 @@
 import type { JsonObject } from "@lemma/domain";
-import { instrumentExternal } from "@lemma/observability";
+import {
+  createConsoleStructuredLogger,
+  errorLogFields,
+  instrumentExternal,
+} from "@lemma/observability";
 import { type ConstructorOptions, type Job, PgBoss } from "pg-boss";
 import type {
   EnqueueJobInput,
@@ -16,6 +20,7 @@ export type PgBossJobQueueConfig = {
 };
 
 const instrumentation = instrumentExternal("jobs", "pg_boss");
+const logger = createConsoleStructuredLogger("jobs.pg_boss");
 
 export class PgBossJobQueue implements JobQueuePort {
   private readonly boss: PgBoss;
@@ -32,7 +37,7 @@ export class PgBossJobQueue implements JobQueuePort {
   async start(): Promise<void> {
     await this.pgBossOperation("start", {}, async () => {
       this.boss.on("error", (error) => {
-        console.error(error);
+        logger.error("pg-boss runtime error", errorLogFields(error));
       });
       await this.boss.start();
     });

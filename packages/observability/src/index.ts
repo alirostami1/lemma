@@ -8,6 +8,13 @@ import {
   SpanStatusCode,
   trace,
 } from "@opentelemetry/api";
+export {
+  compactLogFields,
+  createConsoleStructuredLogger,
+  errorLogFields,
+  type LogFields,
+  type StructuredLogger,
+} from "./logging.js";
 
 export type OperationStatus = "ok" | "error";
 
