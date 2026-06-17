@@ -133,6 +133,12 @@ Use app-level `.env.example` files for direct `pnpm dev` processes:
 - `apps/web/.env.example`
 - `apps/worker/.env.example`
 
+Server-side runtime processes validate environment through `@lemma/config`.
+API, worker, database migration, and database seed commands should use the
+shared schemas/helpers there so missing or invalid values fail at startup with
+actionable variable names. Browser apps use their app-local `env.ts` files with
+the same rule: parse once at the boundary and consume typed config elsewhere.
+
 Deployment concerns live in [deployment.md](deployment.md). Keycloak theme image
 details live in [apps/keycloak-theme/README.md](../apps/keycloak-theme/README.md).
 

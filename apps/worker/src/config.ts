@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import {
   observabilityEnvSchema,
+  parseEnv,
   postgresUrlSchema,
   realtimeEnvSchema,
   s3EnvSchema,
@@ -9,96 +10,98 @@ import {
 } from "@lemma/config";
 import { z } from "zod";
 
-const parsed = sharedEnvSchema
-  .extend(s3EnvSchema.shape)
-  .extend(workbookEnvSchema.shape)
-  .extend(realtimeEnvSchema.shape)
-  .extend(observabilityEnvSchema.shape)
-  .extend({
-    LEMMA_WORKER_DATABASE_URL: postgresUrlSchema,
-    LEMMA_WORKER_ID: z.string().min(1).default(`worker-${randomUUID()}`),
-    LEMMA_WORKER_OUTBOX_BATCH_SIZE: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(25),
-    LEMMA_WORKER_OUTBOX_POLL_INTERVAL_MS: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(1_000),
-    LEMMA_WORKER_OUTBOX_LOCK_TIMEOUT_MS: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(60_000),
-    LEMMA_WORKER_OUTBOX_RETRY_DELAY_MS: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(5_000),
-    LEMMA_WORKER_OUTBOX_MAX_ATTEMPTS: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(10),
-    LEMMA_WORKER_OUTBOX_CLEANUP_INTERVAL_MS: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(60 * 60 * 1_000),
-    LEMMA_WORKER_OUTBOX_CLEANUP_BATCH_SIZE: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(500),
-    LEMMA_WORKER_OUTBOX_PUBLISHED_RETENTION_MS: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(7 * 24 * 60 * 60 * 1_000),
-    LEMMA_WORKER_QUESTION_GENERATION_CONCURRENCY: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(1),
-    LEMMA_WORKER_WORKBOOK_VALIDATION_CONCURRENCY: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(1),
-    LEMMA_WORKER_WORKBOOK_CALCULATION_CONCURRENCY: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(1),
-    LEMMA_WORKER_QUEUE_RETRY_LIMIT: z.coerce
-      .number()
-      .int()
-      .nonnegative()
-      .default(3),
-    LEMMA_WORKER_QUEUE_RETRY_DELAY_SECONDS: z.coerce
-      .number()
-      .int()
-      .nonnegative()
-      .default(30),
-    LEMMA_WORKER_FAILED_QUEUE_RECONCILE_INTERVAL_MS: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(10_000),
-    LEMMA_WORKER_FAILED_QUEUE_RECONCILE_BATCH_SIZE: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(25),
-    LEMMA_WORKER_FAILED_QUEUE_RECONCILE_LOCK_TIMEOUT_MS: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(60_000),
-  })
-  .parse(process.env);
+const parsed = parseEnv(
+  "worker",
+  sharedEnvSchema
+    .extend(s3EnvSchema.shape)
+    .extend(workbookEnvSchema.shape)
+    .extend(realtimeEnvSchema.shape)
+    .extend(observabilityEnvSchema.shape)
+    .extend({
+      LEMMA_WORKER_DATABASE_URL: postgresUrlSchema,
+      LEMMA_WORKER_ID: z.string().min(1).default(`worker-${randomUUID()}`),
+      LEMMA_WORKER_OUTBOX_BATCH_SIZE: z.coerce
+        .number()
+        .int()
+        .positive()
+        .default(25),
+      LEMMA_WORKER_OUTBOX_POLL_INTERVAL_MS: z.coerce
+        .number()
+        .int()
+        .positive()
+        .default(1_000),
+      LEMMA_WORKER_OUTBOX_LOCK_TIMEOUT_MS: z.coerce
+        .number()
+        .int()
+        .positive()
+        .default(60_000),
+      LEMMA_WORKER_OUTBOX_RETRY_DELAY_MS: z.coerce
+        .number()
+        .int()
+        .positive()
+        .default(5_000),
+      LEMMA_WORKER_OUTBOX_MAX_ATTEMPTS: z.coerce
+        .number()
+        .int()
+        .positive()
+        .default(10),
+      LEMMA_WORKER_OUTBOX_CLEANUP_INTERVAL_MS: z.coerce
+        .number()
+        .int()
+        .positive()
+        .default(60 * 60 * 1_000),
+      LEMMA_WORKER_OUTBOX_CLEANUP_BATCH_SIZE: z.coerce
+        .number()
+        .int()
+        .positive()
+        .default(500),
+      LEMMA_WORKER_OUTBOX_PUBLISHED_RETENTION_MS: z.coerce
+        .number()
+        .int()
+        .positive()
+        .default(7 * 24 * 60 * 60 * 1_000),
+      LEMMA_WORKER_QUESTION_GENERATION_CONCURRENCY: z.coerce
+        .number()
+        .int()
+        .positive()
+        .default(1),
+      LEMMA_WORKER_WORKBOOK_VALIDATION_CONCURRENCY: z.coerce
+        .number()
+        .int()
+        .positive()
+        .default(1),
+      LEMMA_WORKER_WORKBOOK_CALCULATION_CONCURRENCY: z.coerce
+        .number()
+        .int()
+        .positive()
+        .default(1),
+      LEMMA_WORKER_QUEUE_RETRY_LIMIT: z.coerce
+        .number()
+        .int()
+        .nonnegative()
+        .default(3),
+      LEMMA_WORKER_QUEUE_RETRY_DELAY_SECONDS: z.coerce
+        .number()
+        .int()
+        .nonnegative()
+        .default(30),
+      LEMMA_WORKER_FAILED_QUEUE_RECONCILE_INTERVAL_MS: z.coerce
+        .number()
+        .int()
+        .positive()
+        .default(10_000),
+      LEMMA_WORKER_FAILED_QUEUE_RECONCILE_BATCH_SIZE: z.coerce
+        .number()
+        .int()
+        .positive()
+        .default(25),
+      LEMMA_WORKER_FAILED_QUEUE_RECONCILE_LOCK_TIMEOUT_MS: z.coerce
+        .number()
+        .int()
+        .positive()
+        .default(60_000),
+    }),
+);
 
 export const config = Object.freeze({
   nodeEnv: parsed.NODE_ENV,

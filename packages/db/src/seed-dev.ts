@@ -1,6 +1,7 @@
+import { createDatabaseConfig } from "@lemma/config";
 import { closeDatabase, createDatabase, sql } from "./index.js";
 
-const databaseUrl = process.env.LEMMA_DATABASE_URL;
+const config = createDatabaseConfig();
 
 const devUsers = [
   {
@@ -19,12 +20,7 @@ const devUsers = [
   },
 ] as const;
 
-if (!databaseUrl) {
-  console.error("LEMMA_DATABASE_URL is required.");
-  process.exit(2);
-}
-
-const { db } = createDatabase(databaseUrl);
+const { db } = createDatabase(config.databaseUrl);
 
 async function seedDevUsers() {
   await db.transaction().execute(async (tx) => {

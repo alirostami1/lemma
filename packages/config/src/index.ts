@@ -1,5 +1,24 @@
 import { z } from "zod";
 
+export class EnvConfigError extends Error {
+  constructor(appName: string, issues: readonly z.ZodIssue[]) {
+    super(formatEnvConfigError(appName, issues));
+    this.name = "EnvConfigError";
+  }
+}
+
+export function parseEnv<TSchema extends z.ZodType>(
+  appName: string,
+  schema: TSchema,
+  env: Env = process.env,
+): z.infer<TSchema> {
+  const result = schema.safeParse(env);
+  if (!result.success) {
+    throw new EnvConfigError(appName, result.error.issues);
+  }
+  return result.data;
+}
+
 export const postgresUrlSchema = z
   .url("LEMMA_DATABASE_URL must be a valid URL")
   .refine(
@@ -111,16 +130,23 @@ export const observabilityEnvSchema = z.object({
     .default(30_000),
 });
 
+export const databaseEnvSchema = sharedEnvSchema.extend({
+  LEMMA_DATABASE_URL: postgresUrlSchema,
+});
+
 export type Env = NodeJS.ProcessEnv;
 
 export function createWorkbookWorkerConfig(env: Env = process.env) {
-  const parsed = sharedEnvSchema
-    .extend(s3EnvSchema.shape)
-    .extend(workbookEnvSchema.shape)
-    .extend({
-      LEMMA_WORKBOOK_WORKER_DATABASE_URL: postgresUrlSchema,
-    })
-    .parse(env);
+  const parsed = parseEnv(
+    "workbook worker",
+    sharedEnvSchema
+      .extend(s3EnvSchema.shape)
+      .extend(workbookEnvSchema.shape)
+      .extend({
+        LEMMA_WORKBOOK_WORKER_DATABASE_URL: postgresUrlSchema,
+      }),
+    env,
+  );
   return Object.freeze({
     nodeEnv: parsed.NODE_ENV,
     databaseUrl: parsed.LEMMA_WORKBOOK_WORKER_DATABASE_URL,
@@ -147,6 +173,28 @@ export function createWorkbookWorkerConfig(env: Env = process.env) {
       maxResponseBytes: parsed.LEMMA_WORKBOOK_MAX_RESPONSE_BYTES,
     },
   });
+}
+
+export function createDatabaseConfig(env: Env = process.env) {
+  const parsed = parseEnv("database", databaseEnvSchema, env);
+  return Object.freeze({
+    nodeEnv: parsed.NODE_ENV,
+    databaseUrl: parsed.LEMMA_DATABASE_URL,
+  });
+}
+
+function formatEnvConfigError(appName: string, issues: readonly z.ZodIssue[]) {
+  const formattedIssues = issues
+    .map((issue) => {
+      const path = issue.path.length > 0 ? issue.path.join(".") : "env";
+      return `- ${path}: ${issue.message}`;
+    })
+    .join("\n");
+  return [
+    `${appName} environment config is invalid.`,
+    "Fix the following variables:",
+    formattedIssues,
+  ].join("\n");
 }
 
 export type S3Config = z.infer<typeof s3EnvSchema>;
