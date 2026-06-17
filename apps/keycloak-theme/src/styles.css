@@ -6,3 +6,13 @@
 body {
   min-width: 320px;
 }
+
+.lemma-keycloak-profile-fields [class*="rounded-lg"] + button {
+  margin-left: -1px;
+}
+
+.lemma-keycloak-profile-fields input[aria-invalid="true"],
+.lemma-keycloak-profile-fields textarea[aria-invalid="true"],
+.lemma-keycloak-profile-fields select[aria-invalid="true"] {
+  border-color: var(--destructive);
+}

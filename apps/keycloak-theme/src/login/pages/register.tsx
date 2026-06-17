@@ -40,7 +40,7 @@ export function RegisterPage(props: RegisterProps) {
       message={hasFormError ? messagesPerField.getFirstError("email") : null}
     >
       <form action={url.registrationAction} className="space-y-4" method="post">
-        <div className="space-y-3">
+        <div className="lemma-keycloak-profile-fields space-y-4">
           <UserProfileFormFields
             kcContext={kcContext}
             i18n={i18n}

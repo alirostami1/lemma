@@ -19,26 +19,9 @@ export function AuthLayout(props: AuthLayoutProps) {
   const { title, description, message, children } = props;
 
   return (
-    <main className="grid min-h-screen bg-background text-foreground lg:grid-cols-[minmax(0,1fr)_420px]">
-      <section className="hidden border-r bg-muted/40 p-10 lg:flex lg:flex-col lg:justify-between">
-        <div className="space-y-3">
-          <div className="text-sm font-medium tracking-wide text-muted-foreground uppercase">
-            Lemma
-          </div>
-          <h1 className="max-w-xl text-4xl font-semibold leading-tight">
-            Question generation workspace
-          </h1>
-          <p className="max-w-lg text-base text-muted-foreground">
-            Sign in to author generators, connect workbooks, and produce
-            reusable question sets.
-          </p>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Secure access powered by Keycloak.
-        </p>
-      </section>
-      <section className="flex min-h-screen items-center justify-center p-4 sm:p-6">
-        <Card className="w-full max-w-[420px] rounded-lg" size="sm">
+    <main className="flex min-h-screen items-center justify-center bg-background p-4 text-foreground sm:p-6">
+      <section className="w-full max-w-[420px]">
+        <Card className="rounded-lg" size="sm">
           <CardHeader>
             <CardTitle className="text-xl">{title}</CardTitle>
             {description ? (
