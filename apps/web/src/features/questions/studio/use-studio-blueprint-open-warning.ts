@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import {
-  hasUnsavedChangesFromKeys,
-  shouldWarnBeforeOpeningBlueprint,
-} from "./studio-state";
-import {
   createStudioDraftSnapshot,
   readLatestStudioDraftSnapshot,
   type StudioDraftSnapshot,
 } from "./studio-draft-store";
+import {
+  hasUnsavedChangesFromKeys,
+  shouldWarnBeforeOpeningBlueprint,
+} from "./studio-state";
 
 type MutableRef<T> = {
   current: T;

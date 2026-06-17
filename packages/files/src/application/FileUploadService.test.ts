@@ -4,10 +4,10 @@ import type { CurrentUser } from "@lemma/identity/application";
 import { createUser } from "@lemma/identity/domain";
 import {
   createFileUploadSession,
-  fileId,
-  fileUploadId,
   type File,
   type FileUpload,
+  fileId,
+  fileUploadId,
   userId,
 } from "../domain/index.js";
 import { FileUploadService } from "./FileUploadService.js";
@@ -44,7 +44,10 @@ describe("FileUploadService", () => {
 
     assert.equal(result.file.id, nextFileId);
     assert.equal(result.file.status, "uploaded");
-    assert.equal(harness.repository.uploads.get(targetUploadId)?.status, "verified");
+    assert.equal(
+      harness.repository.uploads.get(targetUploadId)?.status,
+      "verified",
+    );
   });
 });
 

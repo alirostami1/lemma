@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  type ComposedEditorBlock,
   createDefaultTableEditorModel,
   createRichTextBlock,
   createSeparatorBlock,
   createTableBlock,
   createTextBlock,
-  type ComposedEditorBlock,
 } from "#/domains/questions/authoring";
 import { getComposedBlockLabel } from "./block-labels";
 

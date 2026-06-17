@@ -4,11 +4,11 @@ import {
 } from "./errors.js";
 import type { FileId, UserId, WorkbookId } from "./ids.js";
 import {
+  WORKBOOK_XLSX_CONTENT_TYPE,
   type WorkbookEngineName,
   type WorkbookInspection,
   type WorkbookName,
   type WorkbookStatus,
-  WORKBOOK_XLSX_CONTENT_TYPE,
   workbookName,
 } from "./workbook-values.js";
 
@@ -67,12 +67,13 @@ export function updateWorkbook(
 ): Workbook {
   assertWorkbookCanBeModified(workbook);
   if (patch.status === "deleted") {
-    throw new InvalidWorkbookStateTransitionError("Use deleteWorkbook to delete workbook.");
+    throw new InvalidWorkbookStateTransitionError(
+      "Use deleteWorkbook to delete workbook.",
+    );
   }
   return {
     ...workbook,
-    name:
-      patch.name !== undefined ? workbookName(patch.name) : workbook.name,
+    name: patch.name !== undefined ? workbookName(patch.name) : workbook.name,
     status: patch.status ?? workbook.status,
     updatedAt: at,
   };
@@ -138,13 +139,17 @@ export function deleteWorkbook(workbook: Workbook, at: Date): Workbook {
 
 export function assertWorkbookIsUsable(workbook: Workbook): void {
   if (workbook.status !== "valid") {
-    throw new InvalidWorkbookStateTransitionError("Only valid workbooks can be calculated.");
+    throw new InvalidWorkbookStateTransitionError(
+      "Only valid workbooks can be calculated.",
+    );
   }
 }
 
 function assertWorkbookCanBeModified(workbook: Workbook): void {
   if (workbook.status === "deleted") {
-    throw new InvalidWorkbookStateTransitionError("Deleted workbooks cannot be modified.");
+    throw new InvalidWorkbookStateTransitionError(
+      "Deleted workbooks cannot be modified.",
+    );
   }
 }
 
@@ -154,12 +159,16 @@ export function assertWorkbookFileMetadata(input: {
   byteSize: number;
 }): void {
   if (input.byteSize <= 0) {
-    throw new InvalidWorkbookFileMetadataError("Workbook file must not be empty.");
+    throw new InvalidWorkbookFileMetadataError(
+      "Workbook file must not be empty.",
+    );
   }
   if (
     input.contentType !== WORKBOOK_XLSX_CONTENT_TYPE ||
     !input.originalName.toLowerCase().endsWith(".xlsx")
   ) {
-    throw new InvalidWorkbookFileMetadataError("Workbook file must be a .xlsx file.");
+    throw new InvalidWorkbookFileMetadataError(
+      "Workbook file must be a .xlsx file.",
+    );
   }
 }

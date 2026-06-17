@@ -1,10 +1,10 @@
 import {
   closestCenter,
   DndContext,
-  DragOverlay,
   type DragEndEvent,
-  type DragStartEvent,
   type DraggableAttributes,
+  DragOverlay,
+  type DragStartEvent,
   KeyboardSensor,
   PointerSensor,
   useSensor,

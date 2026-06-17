@@ -9,8 +9,8 @@ import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { createClock } from "./composition/clock.js";
-import { createIdentityAuth } from "./composition/identity-auth.js";
 import { createIdGenerators } from "./composition/id-generators.js";
+import { createIdentityAuth } from "./composition/identity-auth.js";
 import { createRealtimeChannelAccess } from "./composition/realtime-channel-access.js";
 import {
   requestIdMiddleware,
@@ -53,9 +53,7 @@ export function newApp({ database, config = defaultConfig }: NewAppDeps) {
   const workbookModule = createWorkbookModule({
     db: database,
     requireIdentity,
-    fileProvider: createWorkbookFileProvider(
-      filesModule.fileContentReaderPort,
-    ),
+    fileProvider: createWorkbookFileProvider(filesModule.fileContentReaderPort),
     workbookConfig: config.workbook,
     idGenerator: idGenerators.workbook,
     clock,

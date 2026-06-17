@@ -1,15 +1,13 @@
-import { touch, type Timestamped } from "@lemma/domain";
+import { type Timestamped, touch } from "@lemma/domain";
+import { FileUploadExpiredError, InvalidFileStateError } from "./errors.js";
 import {
-  FileUploadExpiredError,
-  InvalidFileStateError,
-} from "./errors.js";
-import {
-  fileUploadId,
-  type FileUploadId,
-  type UserId,
-  userId,
-} from "./ids.js";
-import {
+  type FileBucket,
+  type FileChecksumSha256,
+  type FileContentType,
+  type FileMetadata,
+  type FileObjectKey,
+  type FilePurpose,
+  type FileUploadStatus,
   fileBucket,
   fileByteSize,
   fileChecksumSha256,
@@ -18,17 +16,11 @@ import {
   fileObjectKey,
   filePurpose,
   fileUploadStatus,
-  type FileBucket,
-  type FileChecksumSha256,
-  type FileContentType,
-  type FileMetadata,
-  type FileObjectKey,
-  type FilePurpose,
-  type FileUploadStatus,
-  originalFileName,
   type OriginalFileName,
+  originalFileName,
   uploadExpiresAt,
 } from "./file-values.js";
+import { type FileUploadId, fileUploadId, type UserId, userId } from "./ids.js";
 
 export type FileUpload = Timestamped & {
   id: FileUploadId;

@@ -1,8 +1,12 @@
+import { execFile } from "node:child_process";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { promisify } from "node:util";
 import { writeHonoRoutesSource } from "@lemma/openapi-hono-generator";
 import { defineConfig } from "orval";
 import { openapi } from "./openapi/openapi.js";
+
+const execFileAsync = promisify(execFile);
 
 async function addNodeNextImportExtensions(directory: string) {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -25,6 +29,16 @@ async function addNodeNextImportExtensions(directory: string) {
   }
 }
 
+async function formatGeneratedFiles(directory: string) {
+  await execFileAsync("pnpm", [
+    "exec",
+    "biome",
+    "format",
+    "--write",
+    directory,
+  ]);
+}
+
 export default defineConfig({
   workbook: {
     hooks: {
@@ -42,6 +56,7 @@ export default defineConfig({
           validationHookImport: "@lemma/http",
           zValidatorImport: "@lemma/http",
         });
+        await formatGeneratedFiles("./src/gen");
       },
     },
     input: {

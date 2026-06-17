@@ -1,7 +1,7 @@
 import type { Kysely } from "kysely";
 import { sql } from "kysely";
 
-export async function up(db: Kysely<any>): Promise<void> {
+export async function up(db: Kysely<Record<string, never>>): Promise<void> {
   await db.schema
     .alterTable("outbox_events")
     .addColumn("request_id", "uuid")
@@ -37,7 +37,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .execute();
 }
 
-export async function down(db: Kysely<any>): Promise<void> {
+export async function down(db: Kysely<Record<string, never>>): Promise<void> {
   await db.schema
     .dropIndex("outbox_events_correlation_id_created_at_index")
     .ifExists()

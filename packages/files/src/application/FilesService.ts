@@ -32,6 +32,8 @@ import type {
   ListFilesCommand,
   UpdateFileCommand,
 } from "./commands.js";
+import { FileLifecycleService } from "./FileLifecycleService.js";
+import { FileUploadService } from "./FileUploadService.js";
 import {
   canCreateFileDownloadUrl,
   canDeleteFile,
@@ -46,8 +48,6 @@ import type {
   FilesServiceConfig,
   IdGenerator,
 } from "./ports.js";
-import { FileLifecycleService } from "./FileLifecycleService.js";
-import { FileUploadService } from "./FileUploadService.js";
 
 const instrumentation = instrumentService("files", "service");
 

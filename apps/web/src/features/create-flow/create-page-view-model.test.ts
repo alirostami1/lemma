@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  buildCreatePageViewModel,
   buildBlueprintListItems,
+  buildCreatePageViewModel,
   buildSourceListItems,
 } from "./create-page-view-model";
 
@@ -56,7 +56,9 @@ describe("create page view model", () => {
       blueprints: [],
       sources: [],
     });
-    const blueprintItem = buildBlueprintListItems([blueprint("blueprint-1")])[0];
+    const blueprintItem = buildBlueprintListItems([
+      blueprint("blueprint-1"),
+    ])[0];
     const sourceItem = buildSourceListItems([source("source-1")])[0];
 
     expect(viewModel.savedBlueprints.emptyMessage).toBe(

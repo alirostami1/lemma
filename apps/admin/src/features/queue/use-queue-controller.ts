@@ -1,8 +1,5 @@
 import { useState } from "react";
-import {
-  type OpsQueueStateFilter,
-  useOpsQueueJobsQuery,
-} from "#/domains/ops";
+import { type OpsQueueStateFilter, useOpsQueueJobsQuery } from "#/domains/ops";
 import { getUserFacingApiErrorMessage } from "#/lib/errors/api-error";
 
 export function useQueueController() {

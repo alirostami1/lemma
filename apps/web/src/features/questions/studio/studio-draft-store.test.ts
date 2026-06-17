@@ -48,7 +48,9 @@ describe("studio draft store", () => {
       error: "invalid_snapshot",
     });
     expect(
-      window.localStorage.getItem("lemma:studio-draft:v1:blueprint:blueprint_1"),
+      window.localStorage.getItem(
+        "lemma:studio-draft:v1:blueprint:blueprint_1",
+      ),
     ).toBeNull();
   });
 

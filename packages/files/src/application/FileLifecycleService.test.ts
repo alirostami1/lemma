@@ -3,19 +3,15 @@ import { describe, it } from "node:test";
 import {
   createFileFromUpload,
   createFileUploadSession,
-  fileId,
-  fileUploadId,
   type File,
   type FileUpload,
+  fileId,
+  fileUploadId,
   markFileDeleted,
   userId,
 } from "../domain/index.js";
 import { FileLifecycleService } from "./FileLifecycleService.js";
-import type {
-  Clock,
-  FileStorage,
-  FilesRepository,
-} from "./ports.js";
+import type { Clock, FileStorage, FilesRepository } from "./ports.js";
 
 const at = new Date("2026-06-15T00:00:00.000Z");
 const ownerUserId = userId("019e9315-6a87-715f-9861-8654df072001");
@@ -36,10 +32,7 @@ describe("FileLifecycleService", () => {
     assert.deepEqual(harness.storage.deletedObjects, [
       { bucket: "lemma-files", key: "files/workbook.xlsx" },
     ]);
-    assert.equal(
-      harness.repository.files.get(targetFileId)?.status,
-      "deleted",
-    );
+    assert.equal(harness.repository.files.get(targetFileId)?.status, "deleted");
   });
 
   it("expires initiated upload and deletes uploaded object", async () => {

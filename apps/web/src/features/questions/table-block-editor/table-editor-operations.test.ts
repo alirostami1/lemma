@@ -24,34 +24,34 @@ function createBaseModel(): TableEditorModel {
     showRowNames: true,
     responseFields: [],
     cells: [
-    {
-      id: "cell_1",
-      rowId: "row_1",
-      columnId: "column_1",
-      type: "content",
-      content: [{ type: "text", text: "Alpha" }],
-    },
-    {
-      id: "cell_2",
-      rowId: "row_1",
-      columnId: "column_2",
-      type: "content",
-      content: [{ type: "text", text: "Beta" }],
-    },
-    {
-      id: "cell_3",
-      rowId: "row_2",
-      columnId: "column_1",
-      type: "content",
-      content: [{ type: "text", text: "Gamma" }],
-    },
-    {
-      id: "cell_4",
-      rowId: "row_2",
-      columnId: "column_2",
-      type: "content",
-      content: [{ type: "text", text: "Delta" }],
-    },
+      {
+        id: "cell_1",
+        rowId: "row_1",
+        columnId: "column_1",
+        type: "content",
+        content: [{ type: "text", text: "Alpha" }],
+      },
+      {
+        id: "cell_2",
+        rowId: "row_1",
+        columnId: "column_2",
+        type: "content",
+        content: [{ type: "text", text: "Beta" }],
+      },
+      {
+        id: "cell_3",
+        rowId: "row_2",
+        columnId: "column_1",
+        type: "content",
+        content: [{ type: "text", text: "Gamma" }],
+      },
+      {
+        id: "cell_4",
+        rowId: "row_2",
+        columnId: "column_2",
+        type: "content",
+        content: [{ type: "text", text: "Delta" }],
+      },
     ],
   };
 }
@@ -60,7 +60,12 @@ function createAnswerModel(): TableEditorModel {
   return {
     ...createBaseModel(),
     responseFields: [
-      { id: "answer_1", type: "text", label: "Student answer", required: false },
+      {
+        id: "answer_1",
+        type: "text",
+        label: "Student answer",
+        required: false,
+      },
     ],
     cells: [
       {
@@ -105,9 +110,10 @@ describe("table editor operations", () => {
     const first = makeResponseCell(createBaseModel(), "cell_1");
     const second = makeResponseCell(first, "cell_2");
 
-    expect(
-      second.responseFields.map((field) => field.id),
-    ).toEqual(["answer_1", "answer_2"]);
+    expect(second.responseFields.map((field) => field.id)).toEqual([
+      "answer_1",
+      "answer_2",
+    ]);
     expect(
       second.cells
         .filter((cell) => cell.type === "response")

@@ -1,8 +1,8 @@
 import {
   type ComposedEditorBlock,
   type ComposedEditorModel,
-  extractReferenceIdsFromValueExpression,
   extractInlineReferenceIds,
+  extractReferenceIdsFromValueExpression,
   extractRichReferenceIds,
   extractUsedReferenceIdsFromComposedEditorModel,
   isValidReferenceId,
@@ -87,9 +87,13 @@ function hasAnyAnswer(model: ComposedEditorModel) {
   });
 }
 
-function getReferenceIssues(model: ComposedEditorModel): BlueprintReadinessIssue[] {
+function getReferenceIssues(
+  model: ComposedEditorModel,
+): BlueprintReadinessIssue[] {
   const issues: BlueprintReadinessIssue[] = [];
-  const referenceIds = new Set(model.references.map((reference) => reference.id));
+  const referenceIds = new Set(
+    model.references.map((reference) => reference.id),
+  );
   const seenReferenceIds = new Set<string>();
   const usedReferenceIds = new Set(
     extractUsedReferenceIdsFromComposedEditorModel(model),
@@ -153,7 +157,9 @@ function getBlockIssues(model: ComposedEditorModel): BlueprintReadinessIssue[] {
   const responseFieldIds = new Set(
     model.responseFields.map((field) => field.id),
   );
-  const referenceIds = new Set(model.references.map((reference) => reference.id));
+  const referenceIds = new Set(
+    model.references.map((reference) => reference.id),
+  );
 
   for (const block of model.blocks) {
     if (block.type === "response") {

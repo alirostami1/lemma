@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
 import { cn } from "@lemma/ui/lib/utils";
+import type { ReactNode } from "react";
 
 const variantClasses = {
   launcher: "max-w-5xl gap-6",
@@ -20,11 +20,7 @@ export function PageContainer({
 }: PageContainerProps) {
   return (
     <div
-      className={cn(
-        "mx-auto grid w-full",
-        variantClasses[variant],
-        className,
-      )}
+      className={cn("mx-auto grid w-full", variantClasses[variant], className)}
     >
       {children}
     </div>

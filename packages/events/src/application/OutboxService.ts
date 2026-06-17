@@ -5,7 +5,7 @@ import {
 } from "@lemma/observability";
 import type { DomainEventEnvelope } from "../domain/event-envelope.js";
 import type { EventId, OutboxConsumerName } from "../domain/ids.js";
-import type { OutboxEvent, ProcessedEvent } from "../domain/outbox-event.js";
+import type { OutboxEvent } from "../domain/outbox-event.js";
 import type { Clock, OutboxRepository, ProcessedEventResult } from "./ports.js";
 
 const instrumentation = instrumentService("events", "outbox");

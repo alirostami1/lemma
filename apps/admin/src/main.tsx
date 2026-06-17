@@ -1,7 +1,7 @@
+import { Toaster } from "@lemma/ui/components/sonner";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@lemma/ui/components/sonner";
 import { App } from "./app";
 import { OidcInitializationGate } from "./lib/oidc";
 import { createQueryClient } from "./query-client";

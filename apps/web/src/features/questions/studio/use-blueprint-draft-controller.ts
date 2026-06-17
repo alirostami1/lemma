@@ -1,19 +1,11 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuestionBlueprintAuthoringQuery } from "#/domains/questions";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import { createDefaultComposedEditorModel } from "#/domains/questions/authoring";
-import {
-  questionBlueprintDocumentToComposedEditorModel,
-} from "#/domains/questions/canonical-authoring";
-import { useQuestionBlueprintAuthoringQuery } from "#/domains/questions";
+import { questionBlueprintDocumentToComposedEditorModel } from "#/domains/questions/canonical-authoring";
 import type { QuestionBlueprintAuthoring } from "#/domains/questions/model";
 import { createDraftSnapshotKey } from "./studio-controller-helpers";
-import {
-  createDraftKeyFromSnapshot,
-  getInitialStudioDraftSnapshot,
-  hasUnsavedChangesFromKeys,
-  type StudioLocalDraftStatus,
-} from "./studio-state";
 import {
   createStudioDraftKey,
   createStudioDraftSnapshot,
@@ -22,13 +14,19 @@ import {
   type StudioDraftSnapshot,
   writeStudioDraftSnapshot,
 } from "./studio-draft-store";
+import {
+  createDraftKeyFromSnapshot,
+  getInitialStudioDraftSnapshot,
+  hasUnsavedChangesFromKeys,
+  type StudioLocalDraftStatus,
+} from "./studio-state";
 import { useStudioBlueprintOpenWarning } from "./use-studio-blueprint-open-warning";
-import { useStudioLocalDraftEffects } from "./use-studio-local-draft-effects";
 import {
   type StudioHistoryChangeGroup,
   type StudioHistorySnapshot,
   useStudioHistory,
 } from "./use-studio-history";
+import { useStudioLocalDraftEffects } from "./use-studio-local-draft-effects";
 import { useStudioUndoRedoHotkeys } from "./use-studio-undo-redo-hotkeys";
 
 export type BlueprintDraftController = {
@@ -121,18 +119,20 @@ export function useBlueprintDraftController({
     initialLocalDraft?.blueprintDescription ?? "",
   );
   const [authoringModel, setAuthoringModel] = useState<ComposedEditorModel>(
-    () => initialLocalDraft?.authoringModel ?? createDefaultComposedEditorModel(),
+    () =>
+      initialLocalDraft?.authoringModel ?? createDefaultComposedEditorModel(),
   );
   const [selectedWorkbookId, setSelectedWorkbookId] = useState(
     initialLocalDraft?.selectedWorkbookId ??
       (initialBlueprintId ? "" : initialWorkbookId),
   );
-  const [draftStorageKey, setDraftStorageKey] = useState(() =>
-    initialLocalDraft?.draftKey ??
-    createStudioDraftKey({
-      loadedBlueprintId: initialBlueprintId || null,
-      initialWorkbookId,
-    }),
+  const [draftStorageKey, setDraftStorageKey] = useState(
+    () =>
+      initialLocalDraft?.draftKey ??
+      createStudioDraftKey({
+        loadedBlueprintId: initialBlueprintId || null,
+        initialWorkbookId,
+      }),
   );
   const [lastSavedDraftKey, setLastSavedDraftKey] = useState<string | null>(
     initialLocalDraft?.lastRemoteSaveSnapshotKey ?? null,
@@ -153,20 +153,16 @@ export function useBlueprintDraftController({
   const [isRecoveryResolved, setIsRecoveryResolved] = useState(
     initialBlueprintId.length === 0,
   );
-  const [hasUserEdited, setHasUserEdited] = useState(initialLocalDraft !== null);
+  const [hasUserEdited, setHasUserEdited] = useState(
+    initialLocalDraft !== null,
+  );
   const [loadError, setLoadError] = useState<string | null>(null);
   const loadedBlueprintKeyRef = useRef<string | null>(null);
   const confirmedBlueprintOpenIdsRef = useRef(new Set<string>());
   const cancelledBlueprintOpenIdRef = useRef<string | null>(null);
   const hasInitializedWorkbookRef = useRef(initialLocalDraft !== null);
-  const {
-    canRedo,
-    canUndo,
-    recordChange,
-    redo,
-    replaceCurrentSnapshot,
-    undo,
-  } = useStudioHistory();
+  const { canRedo, canUndo, recordChange, redo, replaceCurrentSnapshot, undo } =
+    useStudioHistory();
 
   const loadedBlueprintQuery = useQuestionBlueprintAuthoringQuery(
     { questionBlueprintId: initialBlueprintId },
@@ -226,12 +222,15 @@ export function useBlueprintDraftController({
     selectedWorkbookId,
   });
 
-  const applyHistorySnapshot = useCallback((snapshot: StudioHistorySnapshot) => {
-    setBlueprintName(snapshot.blueprintName);
-    setBlueprintDescription(snapshot.blueprintDescription);
-    setAuthoringModel(snapshot.authoringModel);
-    setSelectedWorkbookId(snapshot.selectedWorkbookId);
-  }, []);
+  const applyHistorySnapshot = useCallback(
+    (snapshot: StudioHistorySnapshot) => {
+      setBlueprintName(snapshot.blueprintName);
+      setBlueprintDescription(snapshot.blueprintDescription);
+      setAuthoringModel(snapshot.authoringModel);
+      setSelectedWorkbookId(snapshot.selectedWorkbookId);
+    },
+    [],
+  );
   const undoHistory = useCallback(() => {
     const snapshot = undo(currentHistorySnapshot);
     if (!snapshot) {

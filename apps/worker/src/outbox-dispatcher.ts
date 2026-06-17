@@ -1,6 +1,6 @@
 import { childOperationLineage, isUuidV7 } from "@lemma/domain";
 import type { OutboxService } from "@lemma/events/application";
-import { outboxConsumerName, type OutboxEvent } from "@lemma/events/domain";
+import { type OutboxEvent, outboxConsumerName } from "@lemma/events/domain";
 import type { JobDispatcher } from "@lemma/jobs/application";
 import type { NotificationProjector } from "@lemma/notifications/application";
 import { withSpan } from "@lemma/observability/node";

@@ -176,8 +176,7 @@ export function createWorkerRuntime(
     idGenerator: {
       questionSetId: () => toQuestionSetId(uuidv7()),
       questionBlueprintId: () => toQuestionBlueprintId(uuidv7()),
-      questionBlueprintVersionId: () =>
-        toQuestionBlueprintVersionId(uuidv7()),
+      questionBlueprintVersionId: () => toQuestionBlueprintVersionId(uuidv7()),
       questionId: () => toQuestionId(uuidv7()),
       questionGenerationRunId: () => toQuestionGenerationRunId(uuidv7()),
       eventId: () => toEventId(uuidv7()),
@@ -244,8 +243,7 @@ export function createWorkerRuntime(
       const workbookCalculationRegistration =
         await registerWorkbookCalculationWorker({
           jobQueue,
-          workbookCalculationService:
-            workbookModule.workbookCalculationService,
+          workbookCalculationService: workbookModule.workbookCalculationService,
           concurrency: config.queue.workbookCalculationConcurrency,
         });
       unregisterQuestionGenerationWorker =

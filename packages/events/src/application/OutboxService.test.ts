@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  domainEventEnvelope,
   type DomainEventEnvelope,
+  domainEventEnvelope,
 } from "../domain/event-envelope.js";
-import { eventId, outboxConsumerName } from "../domain/ids.js";
 import type { EventId, OutboxConsumerName } from "../domain/ids.js";
+import { eventId, outboxConsumerName } from "../domain/ids.js";
 import type { OutboxEvent } from "../domain/outbox-event.js";
 import { outboxEventFromEnvelope } from "../domain/outbox-event.js";
 import { OutboxService } from "./OutboxService.js";
@@ -48,7 +48,10 @@ describe("OutboxService", () => {
 
     await service.appendEvent(event);
 
-    assert.deepEqual(repository.events.map((item) => item.id), [event.id]);
+    assert.deepEqual(
+      repository.events.map((item) => item.id),
+      [event.id],
+    );
   });
 
   it("records processed events once per consumer", async () => {
@@ -62,7 +65,10 @@ describe("OutboxService", () => {
       consumer: outboxConsumerName("queue-question-generation"),
     };
 
-    assert.equal((await service.recordProcessedEvent(input)).status, "recorded");
+    assert.equal(
+      (await service.recordProcessedEvent(input)).status,
+      "recorded",
+    );
     assert.equal(
       (await service.recordProcessedEvent(input)).status,
       "already_processed",
@@ -144,9 +150,7 @@ class InMemoryOutboxRepository implements OutboxRepository {
     return this.events.find((event) => event.id === id) ?? null;
   }
 
-  async listFailedEvents(
-    input: ListFailedEventsInput,
-  ): Promise<OutboxEvent[]> {
+  async listFailedEvents(input: ListFailedEventsInput): Promise<OutboxEvent[]> {
     return this.events
       .filter(
         (event) =>

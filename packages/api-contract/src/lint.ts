@@ -3,6 +3,9 @@ import { openapi } from "./openapi.js";
 
 const config = await createConfig({
   extends: ["recommended"],
+  rules: {
+    "no-unused-components": "off",
+  },
 });
 
 const problems = await lintFromString({

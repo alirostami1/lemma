@@ -1,8 +1,8 @@
 import type { CurrentUser } from "@lemma/identity/application";
 import { instrumentService } from "@lemma/observability";
-import {
-  type QuestionReferenceSource,
-  type WorkbookSnapshotId,
+import type {
+  QuestionReferenceSource,
+  WorkbookSnapshotId,
 } from "../domain/index.js";
 import { WorkbookQuestionSourceError } from "./errors.js";
 import type {
@@ -12,7 +12,10 @@ import type {
   WorkbookValueSource,
 } from "./ports.js";
 
-const instrumentation = instrumentService("questions", "workbook_value_resolver");
+const instrumentation = instrumentService(
+  "questions",
+  "workbook_value_resolver",
+);
 
 export class WorkbookQuestionValueResolverAdapter
   implements QuestionValueResolverPort
@@ -74,5 +77,7 @@ export function toWorkbookValueSource(
   if (source.type === "literal") {
     return { type: "literal", value: source.value };
   }
-  throw new WorkbookQuestionSourceError("question reference source is not supported");
+  throw new WorkbookQuestionSourceError(
+    "question reference source is not supported",
+  );
 }

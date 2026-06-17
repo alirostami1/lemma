@@ -1,7 +1,7 @@
 import {
+  type ApiErrorPayload,
   BrowserApiError,
   type BrowserApiErrorInput,
-  type ApiErrorPayload,
   toApiErrorPayload,
 } from "@lemma/http/browser";
 

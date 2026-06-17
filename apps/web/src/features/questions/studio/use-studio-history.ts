@@ -53,9 +53,7 @@ export function useStudioHistory() {
         return;
       }
 
-      setPast((current) =>
-        [...current, previous].slice(-MAX_HISTORY_ENTRIES),
-      );
+      setPast((current) => [...current, previous].slice(-MAX_HISTORY_ENTRIES));
     },
     [],
   );
@@ -69,7 +67,9 @@ export function useStudioHistory() {
 
       activeGroupRef.current = null;
       setPast((entries) => entries.slice(0, -1));
-      setFuture((entries) => [current, ...entries].slice(0, MAX_HISTORY_ENTRIES));
+      setFuture((entries) =>
+        [current, ...entries].slice(0, MAX_HISTORY_ENTRIES),
+      );
       return previous;
     },
     [past],

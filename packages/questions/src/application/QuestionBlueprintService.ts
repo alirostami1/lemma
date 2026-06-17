@@ -3,11 +3,11 @@ import {
   createQuestionBlueprintVersion,
   deleteQuestionBlueprint,
   questionBlueprintDescription,
-  questionBlueprintId as toQuestionBlueprintId,
   questionBlueprintName,
+  questionBlueprintVisibility,
+  questionBlueprintId as toQuestionBlueprintId,
   questionBlueprintStatus as toQuestionBlueprintStatus,
   questionBlueprintVersionId as toQuestionBlueprintVersionId,
-  questionBlueprintVisibility,
   userId as toUserId,
   updateQuestionBlueprintMetadata,
 } from "../domain/index.js";
@@ -67,9 +67,11 @@ export class QuestionBlueprintService {
       });
     return {
       questionBlueprints: await Promise.all(
-        blueprints.slice(0, limit).map((blueprint) =>
-          hydrateQuestionBlueprint(this.deps.questionsRepository, blueprint),
-        ),
+        blueprints
+          .slice(0, limit)
+          .map((blueprint) =>
+            hydrateQuestionBlueprint(this.deps.questionsRepository, blueprint),
+          ),
       ),
       nextCursor:
         blueprints.length > limit
@@ -284,9 +286,6 @@ export class QuestionBlueprintService {
   }
 
   private findQuestionBlueprintById(id: string) {
-    return findQuestionBlueprintByIdOrThrow(
-      this.deps.questionsRepository,
-      id,
-    );
+    return findQuestionBlueprintByIdOrThrow(this.deps.questionsRepository, id);
   }
 }

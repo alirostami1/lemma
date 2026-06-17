@@ -1,8 +1,3 @@
-import type {
-  ComposedRichContent,
-  ComposedRichContentNode,
-  ComposedRichListItem,
-} from "./rich-content-types";
 import type { ComposedInlineContent } from "./inline-content";
 import {
   createTextInlineContent,
@@ -10,6 +5,11 @@ import {
   inlineContentToPlainText,
   replaceInlineReferenceId,
 } from "./inline-content";
+import type {
+  ComposedRichContent,
+  ComposedRichContentNode,
+  ComposedRichListItem,
+} from "./rich-content-types";
 
 export function createDefaultRichContent(text = ""): ComposedRichContent {
   return {
@@ -72,11 +72,7 @@ export function replaceRichReferenceId(
     type: "doc",
     content: content.content.map((node) =>
       mapRichNode(node, (inline) =>
-        replaceInlineReferenceId(
-          inline,
-          previousReferenceId,
-          nextReferenceId,
-        ),
+        replaceInlineReferenceId(inline, previousReferenceId, nextReferenceId),
       ),
     ),
   };
@@ -137,7 +133,9 @@ function normalizeRichNode(
   };
 }
 
-function normalizeRichListItem(item: ComposedRichListItem): ComposedRichListItem {
+function normalizeRichListItem(
+  item: ComposedRichListItem,
+): ComposedRichListItem {
   const content = item.content.map(richNodeToListItemChild);
   return {
     type: "list_item",

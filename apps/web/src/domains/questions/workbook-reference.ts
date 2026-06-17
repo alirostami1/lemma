@@ -169,10 +169,9 @@ function splitWorkbookRef(ref: string): {
   return null;
 }
 
-function parseWorkbookRange(range: string): Omit<
-  ParsedWorkbookRef,
-  "sheetName" | "range"
-> | null {
+function parseWorkbookRange(
+  range: string,
+): Omit<ParsedWorkbookRef, "sheetName" | "range"> | null {
   const match = range.match(
     /^\$?([A-Za-z]+)\$?([1-9][0-9]*)(?::\$?([A-Za-z]+)\$?([1-9][0-9]*))?$/u,
   );

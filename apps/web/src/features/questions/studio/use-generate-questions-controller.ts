@@ -7,10 +7,10 @@ import type {
   ActiveRunContext,
   GenerateQuestionsController,
 } from "./generation/generation-controller-types";
+import { useGenerateQuestionsDialogController } from "./generation/use-generate-questions-dialog-controller";
 import { useGenerationCommandController } from "./generation/use-generation-command-controller";
 import { useGenerationRetryController } from "./generation/use-generation-retry-controller";
 import { useGenerationStatusController } from "./generation/use-generation-status-controller";
-import { useGenerateQuestionsDialogController } from "./generation/use-generate-questions-dialog-controller";
 
 type UseGenerateQuestionsControllerInput = {
   getWorkbookName(workbookId: string | null): string | null;
@@ -28,9 +28,9 @@ export function useGenerateQuestionsController({
     null,
   );
   const [lastRun, setLastRun] = useState<QuestionGenerationRun | null>(null);
-  const [retryToastId, setRetryToastId] = useState<
-    ReturnType<typeof notifyQuestionGenerationRetryStarted> | null
-  >(null);
+  const [retryToastId, setRetryToastId] = useState<ReturnType<
+    typeof notifyQuestionGenerationRetryStarted
+  > | null>(null);
 
   async function openQuestionSet(questionSetId: string | null) {
     if (!questionSetId) {

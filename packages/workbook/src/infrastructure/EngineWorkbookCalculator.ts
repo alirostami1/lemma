@@ -10,9 +10,9 @@ import {
   recalculateWorkbookSparseValuesBatch,
 } from "@lemma/workbook-engine/runtime";
 import { WorkbookEngineFailureError } from "../application/errors.js";
-import {
-  type WorkbookCalculator,
-  type WorkbookCalculatorOptions,
+import type {
+  WorkbookCalculator,
+  WorkbookCalculatorOptions,
 } from "../application/ports.js";
 import type { WorkbookInspection } from "../domain/index.js";
 
@@ -25,34 +25,26 @@ export class EngineWorkbookCalculator implements WorkbookCalculator {
     path: string,
     options?: WorkbookCalculatorOptions,
   ): Promise<WorkbookInspection> {
-    return this.engineOperation(
-      "inspect",
-      {},
-      options,
-      () =>
-        this.withWorkbookEngineError(async () => {
-          const engine = createWorkbookEngine(this.config);
-          const engineOptions = workbookEngineOptions(options);
-          const inspection = await engine.inspect(path, engineOptions);
-          const health = await engine.health(engineOptions);
-          return { ...inspection, libreOfficeVersion: health.version };
-        }),
+    return this.engineOperation("inspect", {}, options, () =>
+      this.withWorkbookEngineError(async () => {
+        const engine = createWorkbookEngine(this.config);
+        const engineOptions = workbookEngineOptions(options);
+        const inspection = await engine.inspect(path, engineOptions);
+        const health = await engine.health(engineOptions);
+        return { ...inspection, libreOfficeVersion: health.version };
+      }),
     );
   }
 
   async calculate(path: string, options?: WorkbookCalculatorOptions) {
-    return this.engineOperation(
-      "calculate",
-      {},
-      options,
-      () =>
-        this.withWorkbookEngineError(() =>
-          recalculateWorkbookSparseValues(
-            path,
-            this.config,
-            workbookEngineOptions(options),
-          ),
+    return this.engineOperation("calculate", {}, options, () =>
+      this.withWorkbookEngineError(() =>
+        recalculateWorkbookSparseValues(
+          path,
+          this.config,
+          workbookEngineOptions(options),
         ),
+      ),
     );
   }
 
@@ -78,16 +70,12 @@ export class EngineWorkbookCalculator implements WorkbookCalculator {
   }
 
   async health(options?: WorkbookCalculatorOptions) {
-    return this.engineOperation(
-      "health",
-      {},
-      options,
-      () =>
-        this.withWorkbookEngineError(() =>
-          createWorkbookEngine(this.config).health(
-            workbookEngineOptions(options),
-          ),
+    return this.engineOperation("health", {}, options, () =>
+      this.withWorkbookEngineError(() =>
+        createWorkbookEngine(this.config).health(
+          workbookEngineOptions(options),
         ),
+      ),
     );
   }
 

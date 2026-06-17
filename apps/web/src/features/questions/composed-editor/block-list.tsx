@@ -1,7 +1,7 @@
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import { reorderComposedBlocks } from "#/domains/questions/authoring";
-import type { TableEditorSelection } from "#/features/questions/table-block-editor";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
+import type { TableEditorSelection } from "#/features/questions/table-block-editor";
 import { BlockEditor } from "./block-editor";
 import { getComposedBlockLabel } from "./block-labels";
 import { BlockLibrary } from "./block-library";
@@ -90,7 +90,8 @@ export function BlockList({
         )}
         renderItem={(block, controls) => {
           const selected = block.id === selectedBlockId;
-          const shouldRenderInteractiveBody = selected || block.type === "table";
+          const shouldRenderInteractiveBody =
+            selected || block.type === "table";
           const index = model.blocks.findIndex(
             (candidate) => candidate.id === block.id,
           );

@@ -6,19 +6,19 @@ import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 
 export {
+  type InstrumentedOperation,
+  type InstrumentedOperationOptions,
   instrumentExternal,
   instrumentService,
+  type ObservableGaugeRegistration,
+  type OperationAttributes,
+  type OperationInstrumentationInput,
+  type OperationLineageLike,
   recordExternalOperation,
   recordOperation,
   registerObservableGauge,
   spanAttributesFromLineage,
   withSpan,
-  type InstrumentedOperation,
-  type InstrumentedOperationOptions,
-  type ObservableGaugeRegistration,
-  type OperationAttributes,
-  type OperationInstrumentationInput,
-  type OperationLineageLike,
 } from "../index.js";
 
 export type NodeObservabilityConfig = {

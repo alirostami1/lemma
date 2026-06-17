@@ -1,3 +1,4 @@
+import type { ComposedInlineContent } from "./inline-content";
 import {
   extractInlineReferenceIds,
   plainTextToInlineContent,
@@ -8,13 +9,12 @@ import {
   extractRichReferenceIds,
   replaceRichReferenceId,
 } from "./rich-content";
-import type { ComposedInlineContent } from "./inline-content";
 import type { ComposedRichContent } from "./rich-content-types";
 import type {
+  ReferenceSourceDraft,
   TableBlockPreviewModel,
   TableEditorModel,
   TableGrading,
-  ReferenceSourceDraft,
   ValueExpression,
 } from "./table-model";
 import {

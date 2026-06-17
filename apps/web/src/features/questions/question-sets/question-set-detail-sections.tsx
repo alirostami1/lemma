@@ -45,9 +45,7 @@ export function QuestionSetSummarySection({
   viewModel,
 }: {
   questionSet: QuestionSet | null;
-  state:
-    | { status: "loading" }
-    | { status: "ready" };
+  state: { status: "loading" } | { status: "ready" };
   viewModel: QuestionSetDetailViewModel;
 }) {
   return (

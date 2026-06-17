@@ -21,6 +21,14 @@
       "turbo.json"
     ]
   },
+  "overrides": [
+    {
+      "includes": ["**/src/gen/**/*", "**/src/kc.gen.tsx"],
+      "linter": {
+        "enabled": false
+      }
+    }
+  ],
   "linter": {
     "enabled": true,
     "rules": {

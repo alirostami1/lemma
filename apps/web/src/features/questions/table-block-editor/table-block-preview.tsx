@@ -1,9 +1,9 @@
 import { Input } from "@lemma/ui/components/input";
 import { useMemo } from "react";
 import type {
+  TableAnswerValue,
   TableBlockPreviewModel,
   TableBlockPreviewProps,
-  TableAnswerValue,
   TableResponseField,
 } from "#/domains/questions/authoring";
 import {

@@ -1,8 +1,8 @@
 import type { DatabasePort } from "@lemma/db";
 import { sql } from "@lemma/db";
 import {
-  registerObservableGauge,
   type ObservableGaugeRegistration,
+  registerObservableGauge,
 } from "@lemma/observability/node";
 
 type QueueSnapshot = {
@@ -50,17 +50,21 @@ export class WorkerOperationalMetrics {
     }
 
     this.registrations = [
-      this.gauge("lemma_outbox_pending_count", (snapshot) =>
-        snapshot.outbox.pendingCount,
+      this.gauge(
+        "lemma_outbox_pending_count",
+        (snapshot) => snapshot.outbox.pendingCount,
       ),
-      this.gauge("lemma_outbox_publishing_count", (snapshot) =>
-        snapshot.outbox.publishingCount,
+      this.gauge(
+        "lemma_outbox_publishing_count",
+        (snapshot) => snapshot.outbox.publishingCount,
       ),
-      this.gauge("lemma_outbox_published_count", (snapshot) =>
-        snapshot.outbox.publishedCount,
+      this.gauge(
+        "lemma_outbox_published_count",
+        (snapshot) => snapshot.outbox.publishedCount,
       ),
-      this.gauge("lemma_outbox_failed_count", (snapshot) =>
-        snapshot.outbox.failedCount,
+      this.gauge(
+        "lemma_outbox_failed_count",
+        (snapshot) => snapshot.outbox.failedCount,
       ),
       this.gauge("lemma_outbox_oldest_pending_age_seconds", (snapshot) =>
         ageSeconds(
@@ -71,14 +75,17 @@ export class WorkerOperationalMetrics {
       this.gauge("lemma_queue_available", (snapshot) =>
         snapshot.queue.available ? 1 : 0,
       ),
-      this.gauge("lemma_queue_pending_count", (snapshot) =>
-        snapshot.queue.pendingCount,
+      this.gauge(
+        "lemma_queue_pending_count",
+        (snapshot) => snapshot.queue.pendingCount,
       ),
-      this.gauge("lemma_queue_completed_count", (snapshot) =>
-        snapshot.queue.completedCount,
+      this.gauge(
+        "lemma_queue_completed_count",
+        (snapshot) => snapshot.queue.completedCount,
       ),
-      this.gauge("lemma_queue_failed_count", (snapshot) =>
-        snapshot.queue.failedCount,
+      this.gauge(
+        "lemma_queue_failed_count",
+        (snapshot) => snapshot.queue.failedCount,
       ),
       this.gauge("lemma_queue_oldest_pending_age_seconds", (snapshot) =>
         ageSeconds(
@@ -86,8 +93,9 @@ export class WorkerOperationalMetrics {
           this.deps.clock.now(),
         ),
       ),
-      this.gauge("lemma_question_generation_completed_count", (snapshot) =>
-        snapshot.questionGeneration.completedCount,
+      this.gauge(
+        "lemma_question_generation_completed_count",
+        (snapshot) => snapshot.questionGeneration.completedCount,
       ),
       this.gauge(
         "lemma_question_generation_average_duration_seconds",
@@ -118,10 +126,7 @@ export class WorkerOperationalMetrics {
 
   private loadSnapshot(): Promise<OperationalSnapshot> {
     const nowMs = this.deps.clock.now().getTime();
-    if (
-      this.snapshotCache &&
-      nowMs - this.snapshotCache.loadedAtMs < 1_000
-    ) {
+    if (this.snapshotCache && nowMs - this.snapshotCache.loadedAtMs < 1_000) {
       return this.snapshotCache.promise;
     }
 

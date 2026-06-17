@@ -73,7 +73,9 @@ export function validateWorkbookUploadFile(
 export function isWorkbookContentType(
   contentType: string,
 ): contentType is FileContentType {
-  return WORKBOOK_CONTENT_TYPES.includes(contentType.toLowerCase() as FileContentType);
+  return WORKBOOK_CONTENT_TYPES.includes(
+    contentType.toLowerCase() as FileContentType,
+  );
 }
 
 function invalid(issue: FileValidationIssue): FileValidationResult {

@@ -1,18 +1,18 @@
 import type {
+  WorkbookCalculationDto,
+  WorkbookCalculationsResult,
+  WorkbookResult,
+  WorkbookSnapshotResult,
+  WorkbookSnapshotsResult,
+  WorkbookSnapshotValueResult,
+  WorkbooksResult,
+} from "../application/index.js";
+import type {
   Workbook,
   WorkbookCalculation,
   WorkbookEngineHealth,
   WorkbookSnapshot,
 } from "../domain/index.js";
-import type {
-  WorkbookCalculationDto,
-  WorkbookCalculationsResult,
-  WorkbookResult,
-  WorkbooksResult,
-  WorkbookSnapshotsResult,
-  WorkbookSnapshotResult,
-  WorkbookSnapshotValueResult,
-} from "../application/index.js";
 
 export function presentWorkbook(result: WorkbookResult) {
   return { workbook: presentWorkbookModel(result.workbook) };
@@ -26,32 +26,48 @@ export function presentWorkbooks(result: WorkbooksResult) {
 }
 
 export function presentWorkbookCalculation(result: WorkbookCalculationDto) {
-  return { workbookCalculation: presentWorkbookCalculationModel(result.workbookCalculation) };
+  return {
+    workbookCalculation: presentWorkbookCalculationModel(
+      result.workbookCalculation,
+    ),
+  };
 }
 
-export function presentWorkbookCalculations(result: WorkbookCalculationsResult) {
+export function presentWorkbookCalculations(
+  result: WorkbookCalculationsResult,
+) {
   return {
-    workbookCalculations: result.workbookCalculations.map(presentWorkbookCalculationModel),
+    workbookCalculations: result.workbookCalculations.map(
+      presentWorkbookCalculationModel,
+    ),
     nextCursor: result.nextCursor,
   };
 }
 
 export function presentWorkbookSnapshot(result: WorkbookSnapshotResult) {
-  return { workbookSnapshot: presentWorkbookSnapshotModel(result.workbookSnapshot) };
+  return {
+    workbookSnapshot: presentWorkbookSnapshotModel(result.workbookSnapshot),
+  };
 }
 
 export function presentWorkbookSnapshots(result: WorkbookSnapshotsResult) {
   return {
-    workbookSnapshots: result.workbookSnapshots.map(presentWorkbookSnapshotModel),
+    workbookSnapshots: result.workbookSnapshots.map(
+      presentWorkbookSnapshotModel,
+    ),
     nextCursor: result.nextCursor,
   };
 }
 
-export function presentWorkbookSnapshotValue(result: WorkbookSnapshotValueResult) {
+export function presentWorkbookSnapshotValue(
+  result: WorkbookSnapshotValueResult,
+) {
   return { value: result.value };
 }
 
-export function presentWorkbookEngineHealth(result: { health: WorkbookEngineHealth }) {
+export function presentWorkbookEngineHealth(result: {
+  health: WorkbookEngineHealth;
+}) {
   return { health: result.health };
 }
 

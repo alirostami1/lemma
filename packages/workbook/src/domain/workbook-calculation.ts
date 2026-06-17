@@ -1,8 +1,8 @@
 import { InvalidWorkbookStateTransitionError } from "./errors.js";
 import type { UserId, WorkbookCalculationId, WorkbookId } from "./ids.js";
 import {
-  type WorkbookCalculationStatus,
   requestedCalculationCount,
+  type WorkbookCalculationStatus,
 } from "./workbook-values.js";
 
 const terminalStatuses = ["succeeded", "failed", "cancelled"] as const;
@@ -60,7 +60,9 @@ export function markWorkbookCalculationRunning(
     return calculation;
   }
   if (calculation.status !== "queued") {
-    throw new InvalidWorkbookStateTransitionError("Only queued calculations can run.");
+    throw new InvalidWorkbookStateTransitionError(
+      "Only queued calculations can run.",
+    );
   }
   return {
     ...calculation,
@@ -93,8 +95,13 @@ export function markWorkbookCalculationFailed(
   if (calculation.status === "failed") {
     return calculation;
   }
-  if (calculation.status === "succeeded" || calculation.status === "cancelled") {
-    throw new InvalidWorkbookStateTransitionError("Terminal calculations cannot transition.");
+  if (
+    calculation.status === "succeeded" ||
+    calculation.status === "cancelled"
+  ) {
+    throw new InvalidWorkbookStateTransitionError(
+      "Terminal calculations cannot transition.",
+    );
   }
   return {
     ...calculation,
@@ -113,7 +120,9 @@ export function cancelWorkbookCalculation(
     return calculation;
   }
   if (calculation.status === "succeeded" || calculation.status === "failed") {
-    throw new InvalidWorkbookStateTransitionError("Terminal calculations cannot transition.");
+    throw new InvalidWorkbookStateTransitionError(
+      "Terminal calculations cannot transition.",
+    );
   }
   return {
     ...calculation,
@@ -129,8 +138,12 @@ export function isTerminalWorkbookCalculation(
   return terminalStatuses.includes(calculation.status as never);
 }
 
-function assertCalculationCanTransition(calculation: WorkbookCalculation): void {
+function assertCalculationCanTransition(
+  calculation: WorkbookCalculation,
+): void {
   if (terminalStatuses.includes(calculation.status as never)) {
-    throw new InvalidWorkbookStateTransitionError("Terminal calculations cannot transition.");
+    throw new InvalidWorkbookStateTransitionError(
+      "Terminal calculations cannot transition.",
+    );
   }
 }

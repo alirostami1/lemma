@@ -29,13 +29,13 @@ describe("buildHonoRoutesSource", () => {
     });
 
     expect(source).toContain("app.get(");
-    expect(source).toContain("\"/files/:fileId\"");
+    expect(source).toContain('"/files/:fileId"');
     expect(source).toContain("deps.requireIdentity");
     expect(source).toContain(
-      "zValidator(\"json\", CreateFileBody, validationHook)",
+      'zValidator("json", CreateFileBody, validationHook)',
     );
     expect(source).toContain(
-      "zValidator(\"query\", GetFileQueryParams, validationHook)",
+      'zValidator("query", GetFileQueryParams, validationHook)',
     );
     expect(source).not.toContain("basePath");
     expect(source).toMatchSnapshot();

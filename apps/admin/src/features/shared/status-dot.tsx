@@ -1,8 +1,4 @@
-export function StatusDot({
-  tone,
-}: {
-  tone: "bad" | "good" | "neutral";
-}) {
+export function StatusDot({ tone }: { tone: "bad" | "good" | "neutral" }) {
   return (
     <span
       aria-hidden="true"

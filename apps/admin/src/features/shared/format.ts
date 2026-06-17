@@ -38,7 +38,5 @@ export function getJobRequestId(job: OpsQueueJob): string | null {
 }
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
-  return (
-    typeof value === "object" && value !== null && !Array.isArray(value)
-  );
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

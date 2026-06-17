@@ -18,10 +18,7 @@ vi.mock("./reference-picker-popover", () => ({
   }) => (
     <div>
       {trigger}
-      <button
-        type="button"
-        onClick={() => onSelectReference("reference_1")}
-      >
+      <button type="button" onClick={() => onSelectReference("reference_1")}>
         Mock select reference
       </button>
       <button
@@ -87,14 +84,18 @@ describe("ValueExpressionInput", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "Choose reference" }));
-    await user.click(screen.getByRole("button", { name: "Mock select reference" }));
+    await user.click(
+      screen.getByRole("button", { name: "Mock select reference" }),
+    );
     expect(onChange).toHaveBeenCalledWith({
       type: "reference",
       referenceId: "reference_1",
     });
 
     await user.click(screen.getByRole("button", { name: "Choose reference" }));
-    await user.click(screen.getByRole("button", { name: "Mock create reference" }));
+    await user.click(
+      screen.getByRole("button", { name: "Mock create reference" }),
+    );
 
     expect(onModelChange).toHaveBeenCalledWith(
       expect.objectContaining({

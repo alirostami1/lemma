@@ -1,8 +1,5 @@
 import type { DatabaseExecutor } from "@lemma/db";
-import type {
-  WorkbookCalculation,
-  WorkbookSnapshot,
-} from "../domain/index.js";
+import type { WorkbookCalculation, WorkbookSnapshot } from "../domain/index.js";
 import {
   mapSnapshotRowToDomain,
   mapSnapshotToInsert,

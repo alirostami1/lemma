@@ -33,7 +33,9 @@ export function RolesPanel({
     <Card>
       <CardHeader>
         <CardTitle>Roles</CardTitle>
-        <CardDescription>System role catalogue used by authorization.</CardDescription>
+        <CardDescription>
+          System role catalogue used by authorization.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? <TableSkeleton rows={4} /> : null}

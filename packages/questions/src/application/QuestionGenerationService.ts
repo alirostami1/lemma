@@ -5,6 +5,8 @@ import {
   assertQuestionGenerationRunCanRetry,
   cancelQuestionGenerationRun,
   createQuestionGenerationRun,
+  type QuestionBlueprint,
+  type QuestionBlueprintVersion,
   type QuestionGenerationRun,
   questionBlueprintId as toQuestionBlueprintId,
   questionBlueprintVersionId as toQuestionBlueprintVersionId,
@@ -13,8 +15,6 @@ import {
   questionSetId as toQuestionSetId,
   userId as toUserId,
   workbookId as toWorkbookId,
-  type QuestionBlueprint,
-  type QuestionBlueprintVersion,
   workbookQuestionSource,
 } from "../domain/index.js";
 import type {
@@ -118,7 +118,9 @@ export class QuestionGenerationService {
         });
         await this.assertWorkbookSourceAccess(command.currentUser, source);
 
-        const targetQuestionSetId = toQuestionSetId(command.targetQuestionSetId);
+        const targetQuestionSetId = toQuestionSetId(
+          command.targetQuestionSetId,
+        );
         const targetSet =
           await this.deps.questionsRepository.findQuestionSetById(
             targetQuestionSetId,
@@ -385,9 +387,8 @@ export class QuestionGenerationService {
   ) {
     return this.deps.questionGenerationTransaction.transaction(
       async ({ questionsRepository, outboxRepository }) => {
-        const updated = await questionsRepository.updateQuestionGenerationRun(
-          run,
-        );
+        const updated =
+          await questionsRepository.updateQuestionGenerationRun(run);
         if (!updated) {
           throw new QuestionGenerationRunNotFoundError();
         }

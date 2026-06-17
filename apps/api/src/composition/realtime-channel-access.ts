@@ -3,8 +3,8 @@ import type { NotificationChannelAccessPort } from "@lemma/notifications/applica
 import {
   ForbiddenQuestionActionError,
   QuestionGenerationRunNotFoundError,
-  QuestionSetNotFoundError,
   type QuestionGenerationService,
+  QuestionSetNotFoundError,
   type QuestionSetService,
 } from "@lemma/questions/application";
 import {
@@ -22,7 +22,9 @@ export function createRealtimeChannelAccess(input: {
     async canSubscribe(request) {
       switch (request.accessRequirement.type) {
         case "current_user":
-          return request.accessRequirement.userId === request.currentUser.user.id;
+          return (
+            request.accessRequirement.userId === request.currentUser.user.id
+          );
         case "question_generation_run":
           return canViewQuestionGenerationRunChannel({
             questionGenerationService: input.questionGenerationService,

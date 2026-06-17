@@ -1,14 +1,14 @@
-import type { EditorSelection } from "../editor-selection";
 import {
-  type ComposedReferenceDraft,
   type ComposedEditorModel,
   type ComposedInlineContent,
+  type ComposedReferenceDraft,
   createReferenceDraft,
   isValidReferenceId,
   normalizeReferenceId,
   renameReferenceIdInComposedEditorModel,
   updateComposedBlock,
 } from "#/domains/questions/authoring";
+import type { EditorSelection } from "../editor-selection";
 
 export type RenameReferenceResult =
   | {
@@ -63,7 +63,11 @@ export function renameReferenceInModel({
   previousReferenceId: string;
   nextReferenceId: string;
 }): RenameReferenceResult {
-  const issue = getReferenceIdIssue(model, nextReferenceId, previousReferenceId);
+  const issue = getReferenceIdIssue(
+    model,
+    nextReferenceId,
+    previousReferenceId,
+  );
   if (issue) {
     return {
       status: issue.type === "invalid" ? "invalid_name" : "duplicate_name",
@@ -114,7 +118,9 @@ export function removeUnusedReferenceFromModel({
 }): ComposedEditorModel {
   return {
     ...model,
-    references: model.references.filter((reference) => reference.id !== referenceId),
+    references: model.references.filter(
+      (reference) => reference.id !== referenceId,
+    ),
   };
 }
 

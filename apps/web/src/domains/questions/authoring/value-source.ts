@@ -1,13 +1,10 @@
+import { isWorkbookRangeRef, parseWorkbookRef } from "../workbook-reference";
 import type {
+  ReferenceSourceDraft,
   TableAnswerValue,
   TableResponseField,
-  ReferenceSourceDraft,
   ValueExpression,
 } from "./table-model";
-import {
-  isWorkbookRangeRef,
-  parseWorkbookRef,
-} from "../workbook-reference";
 
 export function coerceAnswerValue(
   raw: string,
@@ -126,8 +123,8 @@ function coerceByResponseFieldType(
         if (
           trimmed.length > 1 &&
           ((trimmed[0] === "{" && trimmed.endsWith("}")) ||
-            (trimmed[0] === "[" && trimmed.endsWith("]"))
-        )) {
+            (trimmed[0] === "[" && trimmed.endsWith("]")))
+        ) {
           return JSON.parse(trimmed) as TableAnswerValue;
         }
       } catch {

@@ -4,7 +4,13 @@ import { createRoot } from "react-dom/client";
 import { KcPage } from "./kc.gen";
 import "./styles.css";
 
-createRoot(document.getElementById("root")!).render(
+const rootElement = document.getElementById("root");
+
+if (rootElement === null) {
+  throw new Error("Missing #root element");
+}
+
+createRoot(rootElement).render(
   <StrictMode>
     {window.kcContext ? (
       <KcPage kcContext={window.kcContext} />

@@ -30,7 +30,10 @@ function gradeQuestionSolution(
 ): GradeResult {
   const solution = question.solution;
   const byField = new Map(
-    answer.responses.map((response) => [response.responseFieldId, response.value]),
+    answer.responses.map((response) => [
+      response.responseFieldId,
+      response.value,
+    ]),
   );
   let needsManualReview = false;
   const details = solution.rules.map((rule) => {
@@ -51,15 +54,24 @@ function gradeQuestionSolution(
   });
   return {
     schemaVersion: 1,
-    totalPoints: details.reduce((total, detail) => total + detail.totalPoints, 0),
-    earnedPoints: details.reduce((total, detail) => total + detail.earnedPoints, 0),
+    totalPoints: details.reduce(
+      (total, detail) => total + detail.totalPoints,
+      0,
+    ),
+    earnedPoints: details.reduce(
+      (total, detail) => total + detail.earnedPoints,
+      0,
+    ),
     status: needsManualReview ? "needs_manual_review" : "graded",
     details,
     graderVersion: "canonical@1",
   };
 }
 
-function gradeRule(rule: QuestionFieldRule, userAnswer: JsonValue): number | null {
+function gradeRule(
+  rule: QuestionFieldRule,
+  userAnswer: JsonValue,
+): number | null {
   if (rule.type === "manual") {
     return null;
   }

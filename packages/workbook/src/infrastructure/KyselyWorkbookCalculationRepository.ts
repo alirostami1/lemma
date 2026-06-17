@@ -1,12 +1,12 @@
 import type { DatabaseExecutor } from "@lemma/db";
 import { sql } from "kysely";
 import {
-  workbookCalculationStatus,
   type UserId,
   type WorkbookCalculation,
   type WorkbookCalculationStatus,
   type WorkbookId,
   type WorkbookSnapshot,
+  workbookCalculationStatus,
 } from "../domain/index.js";
 import {
   mapCalculationRowToDomain,

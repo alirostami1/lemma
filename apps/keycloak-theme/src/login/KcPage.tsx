@@ -1,11 +1,10 @@
-import { Suspense, lazy } from "react";
 import type { ClassKey } from "keycloakify/login";
 import DefaultPage from "keycloakify/login/DefaultPage";
 import Template from "keycloakify/login/Template";
-
-import type { KcContext } from "./KcContext";
+import { lazy, Suspense } from "react";
 import type { I18n } from "./i18n";
 import { useI18n } from "./i18n";
+import type { KcContext } from "./KcContext";
 import { ErrorPage } from "./pages/error";
 import { InfoPage } from "./pages/info";
 import { LoginPage } from "./pages/login";
@@ -52,7 +51,9 @@ export default function KcPage(props: { kcContext: KcContext }) {
           case "login-reset-password.ftl":
             return <ResetPasswordPage {...commonProps} kcContext={kcContext} />;
           case "login-update-password.ftl":
-            return <UpdatePasswordPage {...commonProps} kcContext={kcContext} />;
+            return (
+              <UpdatePasswordPage {...commonProps} kcContext={kcContext} />
+            );
           case "info.ftl":
             return <InfoPage {...commonProps} kcContext={kcContext} />;
           case "error.ftl":

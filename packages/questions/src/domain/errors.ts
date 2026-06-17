@@ -2,9 +2,6 @@ import { DomainError } from "@lemma/error";
 
 export class InvalidQuestionFieldError extends DomainError {
   readonly domainCode = "INVALID_QUESTION_FIELD";
-  constructor(message: string) {
-    super(message);
-  }
 }
 
 export class InvalidQuestionStateTransitionError extends DomainError {
@@ -26,7 +23,10 @@ export class InvalidQuestionBodyError extends DomainError {
 export class InvalidQuestionBlueprintDocumentError extends DomainError {
   readonly domainCode = "INVALID_QUESTION_BLUEPRINT_DOCUMENT";
   readonly details?: unknown;
-  constructor(message = "invalid question blueprint document", details?: unknown) {
+  constructor(
+    message = "invalid question blueprint document",
+    details?: unknown,
+  ) {
     super(message);
     this.details = details;
   }

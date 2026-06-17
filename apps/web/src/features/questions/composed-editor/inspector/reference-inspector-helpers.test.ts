@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import {
-  addReferenceToModel,
   addReferenceAndInsertIntoTextBlock,
+  addReferenceToModel,
   appendReferenceToInlineContent,
-  createUniqueReferenceDraft,
   createReferenceDraftFromSource,
+  createUniqueReferenceDraft,
   getReferenceSyntax,
   insertReferenceIntoSelectedTextBlock,
   removeUnusedReferenceFromModel,
@@ -25,7 +25,9 @@ describe("reference inspector helpers", () => {
     expect(reference.id).toBe("reference_1");
     expect(reference.source).toEqual({ type: "literal", value: "" });
 
-    expect(addReferenceToModel(model, reference).references).toEqual([reference]);
+    expect(addReferenceToModel(model, reference).references).toEqual([
+      reference,
+    ]);
   });
 
   it("formats reference syntax", () => {

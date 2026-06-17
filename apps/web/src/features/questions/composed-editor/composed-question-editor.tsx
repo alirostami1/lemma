@@ -1,8 +1,8 @@
 import { TooltipProvider } from "@lemma/ui/components/tooltip";
 import { useEffect, useState } from "react";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
-import type { TableEditorSelection } from "#/features/questions/table-block-editor";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
+import type { TableEditorSelection } from "#/features/questions/table-block-editor";
 import { BlockList } from "./block-list";
 import {
   deleteComposedBlock,

@@ -8,9 +8,9 @@ import {
   userId,
   type Workbook,
   type WorkbookCalculation,
+  type WorkbookSnapshot,
   workbookCalculationId,
   workbookId,
-  type WorkbookSnapshot,
   workbookSnapshotId,
 } from "../domain/index.js";
 import { ForbiddenWorkbookActionError } from "./errors.js";
@@ -48,12 +48,11 @@ describe("WorkbookSnapshotService", () => {
   it("resolves snapshot values for internal callers without user auth", async () => {
     const harness = createHarness();
 
-    const result = await harness.service.resolveWorkbookSnapshotValueForInternal(
-      {
+    const result =
+      await harness.service.resolveWorkbookSnapshotValueForInternal({
         workbookSnapshotId: targetSnapshotId,
         source: { type: "cell", ref: "Sheet1!A1" },
-      },
-    );
+      });
 
     assert.equal(result.value, "42");
   });
@@ -180,9 +179,7 @@ class FakeWorkbookRepository implements WorkbookRepository {
     throw new Error("Not implemented.");
   }
 
-  async listWorkbookCalculationsByWorkbookId(): Promise<
-    WorkbookCalculation[]
-  > {
+  async listWorkbookCalculationsByWorkbookId(): Promise<WorkbookCalculation[]> {
     throw new Error("Not implemented.");
   }
 

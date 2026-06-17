@@ -1,5 +1,5 @@
-import { Hono } from "hono";
 import type { Context } from "hono";
+import { Hono } from "hono";
 import {
   ForbiddenNotificationChannelError,
   InvalidNotificationChannelError,
@@ -35,11 +35,10 @@ export function notificationsRoutes(deps: NotificationsRoutesDeps) {
       }
 
       try {
-        const result =
-          await deps.realtimeAuthService.createSubscriptionToken({
-            currentUser: c.var.identity,
-            channel: body.channel,
-          });
+        const result = await deps.realtimeAuthService.createSubscriptionToken({
+          currentUser: c.var.identity,
+          channel: body.channel,
+        });
         return c.json(presentToken(result), 200);
       } catch (error) {
         return handleNotificationsError(c, error);

@@ -1,6 +1,6 @@
 import {
-  oidcEnvSchema,
   observabilityEnvSchema,
+  oidcEnvSchema,
   postgresUrlSchema,
   realtimeEnvSchema,
   s3EnvSchema,

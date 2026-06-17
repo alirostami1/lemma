@@ -1,21 +1,21 @@
 import { type Timestamped, touch } from "@lemma/domain";
 import {
-  InvalidQuestionFieldError,
-  InvalidQuestionStateTransitionError,
-} from "./errors.js";
-import {
   assertArray,
   assertNonEmptyString,
   assertPlainRecord,
 } from "./canonical-validation.js";
 import {
+  InvalidQuestionFieldError,
+  InvalidQuestionStateTransitionError,
+} from "./errors.js";
+import {
   type QuestionBlueprintId,
   type QuestionBlueprintVersionId,
+  type QuestionGenerationRunId,
+  type QuestionSetId,
   questionBlueprintId,
   questionBlueprintVersionId,
-  type QuestionGenerationRunId,
   questionGenerationRunId,
-  type QuestionSetId,
   questionSetId,
   type UserId,
   userId,
@@ -249,13 +249,19 @@ export function isTerminalRun(run: QuestionGenerationRun): boolean {
   );
 }
 
-function questionGenerationRunResult(input: unknown): QuestionGenerationRunResult {
+function questionGenerationRunResult(
+  input: unknown,
+): QuestionGenerationRunResult {
   assertPlainRecord(
     input,
     "generation run result must be an object",
     failResult,
   );
-  assertArray(input.questionIds, "generation run result questionIds", failResult);
+  assertArray(
+    input.questionIds,
+    "generation run result questionIds",
+    failResult,
+  );
   const questionIds: string[] = [];
   for (const questionId of input.questionIds) {
     assertNonEmptyString(

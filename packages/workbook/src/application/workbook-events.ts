@@ -1,7 +1,7 @@
 import type { JsonObject, OperationLineage } from "@lemma/domain";
 import {
-  domainEventEnvelope,
   type DomainEventEnvelope,
+  domainEventEnvelope,
 } from "@lemma/events/domain";
 import {
   WORKBOOK_CALCULATION_FAILED_EVENT,

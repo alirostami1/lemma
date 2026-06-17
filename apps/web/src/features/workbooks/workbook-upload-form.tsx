@@ -6,8 +6,8 @@ import {
   FieldLabel,
 } from "@lemma/ui/components/field";
 import { Input } from "@lemma/ui/components/input";
-import { FileSpreadsheet, ArrowLeft, Upload } from "lucide-react";
-import { useEffect, useRef, type ReactNode } from "react";
+import { ArrowLeft, FileSpreadsheet, Upload } from "lucide-react";
+import { type ReactNode, useEffect, useRef } from "react";
 import type { Workbook } from "#/domains/workbooks/model";
 import { useWorkbookUploadController } from "./use-workbook-upload-controller";
 
@@ -57,7 +57,9 @@ export function WorkbookUploadForm({
             name="name"
             placeholder="Source name"
             value={controller.name}
-            onChange={(event) => controller.onNameChange(event.currentTarget.value)}
+            onChange={(event) =>
+              controller.onNameChange(event.currentTarget.value)
+            }
           />
           {controller.viewModel.nameError ? (
             <FieldError>{controller.viewModel.nameError}</FieldError>

@@ -3,9 +3,7 @@ import {
   stripUnusedComposedReferences,
 } from "#/domains/questions/authoring";
 import type { QuestionBlueprintDraft } from "./blueprint";
-import {
-  composedEditorModelToQuestionBlueprintDocument,
-} from "./canonical-authoring";
+import { composedEditorModelToQuestionBlueprintDocument } from "./canonical-authoring";
 
 export type BuildQuestionBlueprintDraftInput = {
   name: string;

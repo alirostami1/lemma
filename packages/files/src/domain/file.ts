@@ -1,10 +1,13 @@
-import { touch, type Timestamped } from "@lemma/domain";
+import { type Timestamped, touch } from "@lemma/domain";
+import { FileNotVisibleError, InvalidFileStateError } from "./errors.js";
 import {
-  FileNotVisibleError,
-  InvalidFileStateError,
-} from "./errors.js";
-import { fileId, type FileId, type UserId, userId } from "./ids.js";
-import {
+  type FileBucket,
+  type FileChecksumSha256,
+  type FileContentType,
+  type FileMetadata,
+  type FileObjectKey,
+  type FilePurpose,
+  type FileStatus,
   fileBucket,
   fileByteSize,
   fileChecksumSha256,
@@ -13,17 +16,11 @@ import {
   fileObjectKey,
   filePurpose,
   fileStatus,
-  type FileBucket,
-  type FileChecksumSha256,
-  type FileContentType,
-  type FileMetadata,
-  type FileObjectKey,
-  type FilePurpose,
-  type FileStatus,
   isVisibleFileStatus,
-  originalFileName,
   type OriginalFileName,
+  originalFileName,
 } from "./file-values.js";
+import { type FileId, fileId, type UserId, userId } from "./ids.js";
 
 export type File = Timestamped & {
   id: FileId;
@@ -142,7 +139,9 @@ export function updateFile(
 
 export function markFileDeleting(file: File, at = new Date()): File {
   if (file.status === "deleted") {
-    throw new InvalidFileStateError("file cannot be deleted from current state");
+    throw new InvalidFileStateError(
+      "file cannot be deleted from current state",
+    );
   }
 
   return {

@@ -1,7 +1,7 @@
 import {
-  RealtimeAuthService,
   type Clock,
   type NotificationChannelAccessPort,
+  RealtimeAuthService,
 } from "./application/index.js";
 import type { RequireIdentity } from "./http/index.js";
 import { notificationsRoutes } from "./http/index.js";

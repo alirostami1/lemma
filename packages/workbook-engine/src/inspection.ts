@@ -1,10 +1,6 @@
 import { readFile } from "node:fs/promises";
+import type { Inspection, WorkbookEngineConfig, ZipEntry } from "./domain.js";
 import { InvalidWorkbookError } from "./domain.js";
-import type {
-  Inspection,
-  WorkbookEngineConfig,
-  ZipEntry,
-} from "./domain.js";
 
 function hasExternalTarget(xml: string) {
   return /TargetMode\s*=\s*["']External["']/i.test(xml);
@@ -146,9 +142,13 @@ export async function inspectXlsx(
       findings.push("encrypted_workbook");
     }
   }
-  const workbookXml = (
-    await readZipEntry(buffer, byName.get("xl/workbook.xml")!)
-  ).toString("utf8");
+  const workbookEntry = byName.get("xl/workbook.xml");
+  if (workbookEntry === undefined) {
+    throw new InvalidWorkbookError("Workbook must be an .xlsx file.");
+  }
+  const workbookXml = (await readZipEntry(buffer, workbookEntry)).toString(
+    "utf8",
+  );
   if (/<workbookProtection(?:\s|>)/i.test(workbookXml)) {
     findings.push("workbook_protection");
   }

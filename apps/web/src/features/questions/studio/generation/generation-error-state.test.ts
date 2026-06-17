@@ -43,7 +43,8 @@ describe("generation error state", () => {
 });
 
 function createRun(
-  overrides: Partial<QuestionGenerationRun> & Pick<QuestionGenerationRun, "status">,
+  overrides: Partial<QuestionGenerationRun> &
+    Pick<QuestionGenerationRun, "status">,
 ): QuestionGenerationRun {
   const { status, ...rest } = overrides;
 

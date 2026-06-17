@@ -18,10 +18,7 @@ import type {
   CreateFileUploadResult,
   FileResult,
 } from "./commands.js";
-import {
-  canCompleteFileUpload,
-  canCreateFileUpload,
-} from "./policies.js";
+import { canCompleteFileUpload, canCreateFileUpload } from "./policies.js";
 import type {
   Clock,
   FileStorage,
@@ -91,9 +88,7 @@ export class FileUploadService {
           expiresInSeconds: this.deps.config.uploadUrlExpiresInSeconds,
           headers: {
             "Content-Type": created.contentType,
-            "x-amz-checksum-sha256": sha256HexToBase64(
-              created.checksumSha256,
-            ),
+            "x-amz-checksum-sha256": sha256HexToBase64(created.checksumSha256),
           },
         },
       };

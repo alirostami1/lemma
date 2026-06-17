@@ -6,9 +6,9 @@ import {
   type ComposedTextEditorBlock,
   updateComposedBlock,
 } from "#/domains/questions/authoring";
+import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import type { TableEditorSelection } from "#/features/questions/table-block-editor";
 import { TableBlockEditor } from "#/features/questions/table-block-editor";
-import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import { RichTextEditor } from "./rich-text-editor";
 import { TextAuthoringContent } from "./shared/text-authoring-content";
 

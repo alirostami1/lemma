@@ -1,3 +1,4 @@
+import { AsyncPanel } from "@lemma/ui/components/async-panel";
 import { Button } from "@lemma/ui/components/button";
 import {
   Card,
@@ -6,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@lemma/ui/components/card";
-import { AsyncPanel } from "@lemma/ui/components/async-panel";
 import { EmptyState } from "@lemma/ui/components/empty-state";
 import { InlineError } from "@lemma/ui/components/inline-error";
 import { PageHeader } from "@lemma/ui/components/page-header";

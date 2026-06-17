@@ -67,10 +67,7 @@ export function QuestionDetailPage({
         }
         actions={
           <Button asChild variant="outline">
-            <Link
-              to="/question-sets/$questionSetId"
-              params={{ questionSetId }}
-            >
+            <Link to="/question-sets/$questionSetId" params={{ questionSetId }}>
               Back to question set
             </Link>
           </Button>

@@ -1,17 +1,20 @@
-export { InlineContentRenderer, type InlineRenderMode } from "./inline-content-renderer";
-export { RichContentPreview } from "./rich-content-preview";
-export { ReferenceChip } from "./reference-chip";
 export {
+  formatReferenceFallback,
   type ReferencePreviewCache,
   type ReferencePreviewStatus,
   type ReferencePreviewValue,
-  formatReferenceFallback,
   resolveInlineReferencePreview,
   resolveReferencePreviewValues,
   resolveValueExpressionPreview,
   type WorkbookPreviewForReferences,
 } from "#/domains/questions/reference-preview";
 export {
-  type TableEditorSelection,
+  InlineContentRenderer,
+  type InlineRenderMode,
+} from "./inline-content-renderer";
+export { ReferenceChip } from "./reference-chip";
+export { RichContentPreview } from "./rich-content-preview";
+export {
   isTableSelectionEqual,
+  type TableEditorSelection,
 } from "./selection-types";

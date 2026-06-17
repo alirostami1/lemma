@@ -1,3 +1,4 @@
+import { PageContainer } from "#/components/patterns";
 import { signIn } from "#/features/auth";
 import {
   AccessDeniedPage,
@@ -9,7 +10,6 @@ import {
   isForbiddenError,
   isUnauthorizedError,
 } from "#/lib/errors/api-error";
-import { PageContainer } from "#/components/patterns";
 import {
   SavedBlueprintChooserDialog,
   SourceChooserDialog,
@@ -64,9 +64,7 @@ export function CreatePage() {
             savedBlueprints={controller.viewModel.savedBlueprints}
             isLoading={controller.isBlueprintsLoading}
             errorMessage={controller.blueprintsErrorMessage}
-            onChoose={() =>
-              controller.savedBlueprintChooser.onOpenChange(true)
-            }
+            onChoose={() => controller.savedBlueprintChooser.onOpenChange(true)}
             onRetry={controller.onRetryBlueprints}
           />
           <SourceBlueprintPanel

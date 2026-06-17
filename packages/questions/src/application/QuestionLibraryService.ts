@@ -24,11 +24,11 @@ import {
 } from "./mappers.js";
 import { canManageQuestion, canViewQuestion } from "./policies.js";
 import type { Clock, QuestionsRepository } from "./ports.js";
+import { QuestionGradingService } from "./QuestionGradingService.js";
 import {
   assertQuestionAuthorized,
   findQuestionByIdOrThrow,
 } from "./question-application-helpers.js";
-import { QuestionGradingService } from "./QuestionGradingService.js";
 
 export class QuestionLibraryService {
   constructor(

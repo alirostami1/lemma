@@ -2,16 +2,21 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { OutboxRepository } from "@lemma/events/application";
 import {
-  eventId as toEventId,
   type DomainEventEnvelope,
   type EventId,
-  type OutboxConsumerName,
   type OutboxEvent,
+  eventId as toEventId,
 } from "@lemma/events/domain";
 import {
   cancelQuestionGenerationRun,
   createQuestionGenerationRun,
   createQuestionSet,
+  type Question,
+  type QuestionBlueprint,
+  type QuestionBlueprintVersion,
+  type QuestionGenerationRun,
+  type QuestionSet,
+  type QuestionSetQuestion,
   questionBlueprintDescription,
   questionBlueprintDocument,
   questionBlueprintId,
@@ -24,19 +29,12 @@ import {
   questionSetId,
   questionSetName,
   userId,
+  type WorkbookCalculationId,
   workbookCalculationId,
   workbookId,
   workbookSnapshotId,
-  type Question,
-  type QuestionBlueprint,
-  type QuestionBlueprintVersion,
-  type QuestionGenerationRun,
-  type QuestionSet,
-  type QuestionSetQuestion,
-  type WorkbookCalculationId,
 } from "../domain/index.js";
 import { createQuestionBlueprintVersion } from "../domain/question-blueprint.js";
-import { QuestionGenerationWorkerService } from "./QuestionGenerationWorkerService.js";
 import { WorkbookQuestionSourceError } from "./errors.js";
 import type {
   IdGenerator,
@@ -45,6 +43,7 @@ import type {
   QuestionValueResolverPort,
   WorkbookCalculationPort,
 } from "./ports.js";
+import { QuestionGenerationWorkerService } from "./QuestionGenerationWorkerService.js";
 
 const at = new Date("2026-01-01T00:00:00.000Z");
 const ownerUserId = userId("019e9315-6a87-715f-9861-8654df070d01");
@@ -61,9 +60,7 @@ const calculationId = workbookCalculationId(
   "019e9315-6a87-715f-9861-8654df070d07",
 );
 const snapshotId = workbookSnapshotId("019e9315-6a87-715f-9861-8654df070d08");
-const generatedQuestionId = questionId(
-  "019e9315-6a87-715f-9861-8654df070d09",
-);
+const generatedQuestionId = questionId("019e9315-6a87-715f-9861-8654df070d09");
 const eventIds = [
   toEventId("019e9315-6a87-715f-9861-8654df070d0a"),
   toEventId("019e9315-6a87-715f-9861-8654df070d0b"),
@@ -213,10 +210,12 @@ describe("QuestionGenerationWorkerService", () => {
   });
 });
 
-function createHarness(input: {
-  run?: QuestionGenerationRun | null;
-  resolveReferenceError?: Error;
-} = {}) {
+function createHarness(
+  input: {
+    run?: QuestionGenerationRun | null;
+    resolveReferenceError?: Error;
+  } = {},
+) {
   const events: string[] = [];
   const outboxEvents: DomainEventEnvelope[] = [];
   const createdQuestions: Question[] = [];
@@ -262,7 +261,11 @@ function createHarness(input: {
       questionBlueprintVersionId: () => versionId,
       questionId: () => generatedQuestionId,
       questionGenerationRunId: () => runId,
-      eventId: () => eventIds[eventIndex++] ?? eventIds.at(-1)!,
+      eventId: () => {
+        const nextEventId = eventIds[eventIndex++] ?? eventIds.at(-1);
+        assert.ok(nextEventId);
+        return nextEventId;
+      },
     } satisfies IdGenerator,
     clock: { now: () => at },
   });

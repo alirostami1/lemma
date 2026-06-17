@@ -2,47 +2,47 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { OutboxRepository } from "@lemma/events/application";
 import {
-  eventId as toEventId,
   type DomainEventEnvelope,
   type EventId,
   type OutboxConsumerName,
   type OutboxEvent,
+  eventId as toEventId,
 } from "@lemma/events/domain";
 import { createCurrentUser } from "@lemma/identity/application";
 import { createUser } from "@lemma/identity/domain";
 import {
   createQuestionBlueprint,
   createQuestionBlueprintVersion,
-  questionBlueprintDocument,
-  questionBlueprintDescription,
-  questionBlueprintId,
-  questionBlueprintName,
-  questionBlueprintVersionId,
-  questionBlueprintVisibility,
-  questionGenerationRunId,
-  questionId,
-  questionSetId,
   createQuestionSet,
   markQuestionGenerationRunFailed,
-  questionSetDescription,
-  questionSetName,
-  workbookId as toWorkbookId,
-  type WorkbookCalculationId,
   type Question,
   type QuestionBlueprint,
   type QuestionBlueprintVersion,
   type QuestionGenerationRun,
   type QuestionSet,
   type QuestionSetQuestion,
+  questionBlueprintDescription,
+  questionBlueprintDocument,
+  questionBlueprintId,
+  questionBlueprintName,
+  questionBlueprintVersionId,
+  questionBlueprintVisibility,
+  questionGenerationRunId,
+  questionId,
+  questionSetDescription,
+  questionSetId,
+  questionSetName,
+  workbookId as toWorkbookId,
+  type WorkbookCalculationId,
 } from "../domain/index.js";
-import { QuestionGenerationService } from "./QuestionGenerationService.js";
 import type {
   Clock,
   IdGenerator,
+  QuestionGenerationTransactionPort,
   QuestionsRepository,
   WorkbookAccessPort,
-  QuestionGenerationTransactionPort,
 } from "./ports.js";
+import { QuestionGenerationService } from "./QuestionGenerationService.js";
 
 const ownerUser = createUser(
   {
@@ -68,9 +68,7 @@ const retryRunId = questionGenerationRunId(
   "019e9315-6a87-715f-9861-8654df070c5c",
 );
 const requestedEventId = toEventId("019e9315-6a87-715f-9861-8654df070c5b");
-const retryRequestedEventId = toEventId(
-  "019e9315-6a87-715f-9861-8654df070c5d",
-);
+const retryRequestedEventId = toEventId("019e9315-6a87-715f-9861-8654df070c5d");
 const questionIds = [
   questionId("019e9315-6a87-715f-9861-8654df070c54"),
   questionId("019e9315-6a87-715f-9861-8654df070c55"),
@@ -108,10 +106,7 @@ describe("QuestionGenerationService workbook orchestration", () => {
       state.outboxEvents[0]?.type,
       "question_generation.run_requested.v1",
     );
-    assert.equal(
-      state.outboxEvents[0]?.payload.questionGenerationRunId,
-      runId,
-    );
+    assert.equal(state.outboxEvents[0]?.payload.questionGenerationRunId, runId);
   });
 
   it("derives the saved workbook source when omitted", async () => {
@@ -285,9 +280,7 @@ describe("QuestionGenerationService workbook orchestration", () => {
   });
 });
 
-function createHarness(input: {
-  targetQuestionSet?: QuestionSet | null;
-} = {}) {
+function createHarness(input: { targetQuestionSet?: QuestionSet | null } = {}) {
   const events: string[] = [];
   const createdQuestions: Question[] = [];
   const memberships: QuestionSetQuestion[] = [];
@@ -355,9 +348,7 @@ function createHarness(input: {
     );
   const blueprintVersion = createQuestionBlueprintVersion(
     {
-      id: questionBlueprintVersionId(
-        "019e9315-6a87-715f-9861-8654df070c5a",
-      ),
+      id: questionBlueprintVersionId("019e9315-6a87-715f-9861-8654df070c5a"),
       questionBlueprintId: baseBlueprint.id,
       versionNumber: 1,
       document,
@@ -398,8 +389,14 @@ function createHarness(input: {
     idGenerator: {
       questionGenerationRunId: () =>
         [runId, retryRunId][runIndex++] ?? retryRunId,
-      questionId: () => questionIds[questionIndex++]!,
-      questionSetId: () => questionSetId("019e9315-6a87-715f-9861-8654df070c58"),
+      questionId: () => {
+        const nextQuestionId =
+          questionIds[questionIndex++] ?? questionIds.at(-1);
+        assert.ok(nextQuestionId);
+        return nextQuestionId;
+      },
+      questionSetId: () =>
+        questionSetId("019e9315-6a87-715f-9861-8654df070c58"),
       questionBlueprintId: () =>
         questionBlueprintId("019e9315-6a87-715f-9861-8654df070c59"),
       questionBlueprintVersionId: () =>
@@ -558,7 +555,9 @@ function createQuestionsRepository(
         runs.find((run) => run.source?.workbookCalculationId === id) ?? null
       );
     },
-    async listQuestionGenerationRunsByOwnerUserId(): Promise<QuestionGenerationRun[]> {
+    async listQuestionGenerationRunsByOwnerUserId(): Promise<
+      QuestionGenerationRun[]
+    > {
       return [];
     },
     async createQuestionGenerationRun(
@@ -592,7 +591,9 @@ function createOutboxRepository(
 ): OutboxRepository {
   const processed = new Set<string>();
   return {
-    async appendEvents(nextEvents: readonly DomainEventEnvelope[]): Promise<void> {
+    async appendEvents(
+      nextEvents: readonly DomainEventEnvelope[],
+    ): Promise<void> {
       events.push("append-events");
       outboxEvents.push(...nextEvents);
     },

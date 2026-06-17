@@ -10,9 +10,6 @@ export const Route = createFileRoute(
 function RouteComponent() {
   const { questionId, questionSetId } = Route.useParams();
   return (
-    <QuestionDetailPage
-      questionId={questionId}
-      questionSetId={questionSetId}
-    />
+    <QuestionDetailPage questionId={questionId} questionSetId={questionSetId} />
   );
 }

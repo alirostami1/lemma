@@ -12,13 +12,13 @@ import {
   userId,
   type Workbook,
   type WorkbookCalculation,
+  type WorkbookSnapshot,
   workbookCalculationId,
   workbookCalculationStatus,
   workbookEngineName,
   workbookId,
   workbookInspection,
   workbookName,
-  type WorkbookSnapshot,
   workbookSnapshotId,
   workbookSparseValues,
   workbookStatus,
@@ -44,9 +44,7 @@ export function mapWorkbookRowToDomain(row: Selectable<Workbooks>): Workbook {
   };
 }
 
-export function mapWorkbookToInsert(
-  workbook: Workbook,
-): Insertable<Workbooks> {
+export function mapWorkbookToInsert(workbook: Workbook): Insertable<Workbooks> {
   return {
     id: workbook.id,
     ownerUserId: workbook.ownerUserId,
@@ -65,9 +63,7 @@ export function mapWorkbookToInsert(
   };
 }
 
-export function mapWorkbookToUpdate(
-  workbook: Workbook,
-): Updateable<Workbooks> {
+export function mapWorkbookToUpdate(workbook: Workbook): Updateable<Workbooks> {
   return {
     id: workbook.id,
     ownerUserId: workbook.ownerUserId,
@@ -153,10 +149,7 @@ export function mapSnapshotRowToDomain(
     id: workbookSnapshotId(row.id),
     workbookId: workbookId(row.workbookId),
     calculationId: workbookCalculationId(row.calculationId),
-    snapshotIndex: assertNonNegativeInteger(
-      row.snapshotIndex,
-      "snapshotIndex",
-    ),
+    snapshotIndex: assertNonNegativeInteger(row.snapshotIndex, "snapshotIndex"),
     values: workbookSparseValues(row.values),
     createdAt: row.createdAt,
   };

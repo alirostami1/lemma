@@ -16,4 +16,3 @@ export function filesRoutes(deps: FilesRoutesDeps) {
     }),
   });
 }
-

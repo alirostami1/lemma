@@ -249,8 +249,9 @@ export function duplicateTableCell({
           ? responseFields.find((field) => field.id === cell.responseFieldId)
               ?.type
           : undefined,
-      required: responseFields.find((field) => field.id === cell.responseFieldId)
-        ?.required,
+      required: responseFields.find(
+        (field) => field.id === cell.responseFieldId,
+      )?.required,
     },
   );
   responseFields.push(responseField);
@@ -301,7 +302,9 @@ function createAnswerCellForPosition({
   };
 }
 
-function modelForDuplicate(responseFields: TableResponseField[]): TableEditorModel {
+function modelForDuplicate(
+  responseFields: TableResponseField[],
+): TableEditorModel {
   return {
     prompt: "",
     columns: [],

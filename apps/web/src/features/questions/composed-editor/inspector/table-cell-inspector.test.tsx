@@ -113,12 +113,14 @@ function renderTableCellInspector(input: {
 }) {
   const tableBlockId = "table_1";
   const handleModelChange = input.onModelChange ?? (() => undefined);
-  const handleEditorModelChange = input.onEditorModelChange ?? (() => undefined);
+  const handleEditorModelChange =
+    input.onEditorModelChange ?? (() => undefined);
 
   function InspectorHarness() {
     const [model, setModel] = useState(input.model);
     const [editorModel, setEditorModel] = useState(
-      input.editorModel ?? createEditorModelWithTable(tableBlockId, input.model),
+      input.editorModel ??
+        createEditorModelWithTable(tableBlockId, input.model),
     );
 
     return (

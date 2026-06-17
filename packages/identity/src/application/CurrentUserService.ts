@@ -22,28 +22,23 @@ export class CurrentUserService {
   ) {}
 
   async fromAccessToken(accessToken: string): Promise<CurrentUser> {
-    return instrumentation.run(
-      "from_access_token",
-      async () => {
-        const verifiedIdentity =
-          await this.deps.identityProvider.verifyAccessToken(accessToken);
+    return instrumentation.run("from_access_token", async () => {
+      const verifiedIdentity =
+        await this.deps.identityProvider.verifyAccessToken(accessToken);
 
-        const user =
-          await this.deps.identityService.getActiveUserFromIdentity(
-            verifiedIdentity,
-          );
+      const user =
+        await this.deps.identityService.getActiveUserFromIdentity(
+          verifiedIdentity,
+        );
 
-        const roles =
-          await this.deps.identityService.listUserRolesForAuthentication(
-            user.id,
-          );
+      const roles =
+        await this.deps.identityService.listUserRolesForAuthentication(user.id);
 
-        return createCurrentUser({
-          user,
-          roles,
-          at: this.deps.clock.now(),
-        });
-      },
-    );
+      return createCurrentUser({
+        user,
+        roles,
+        at: this.deps.clock.now(),
+      });
+    });
   }
 }

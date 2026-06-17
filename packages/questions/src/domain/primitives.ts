@@ -8,7 +8,10 @@ export function assertUuid(value: unknown, fieldName: string): string {
   return assertUuidV7(value, fieldName, failField);
 }
 
-export function assertNonEmptyString(value: unknown, fieldName: string): string {
+export function assertNonEmptyString(
+  value: unknown,
+  fieldName: string,
+): string {
   if (typeof value !== "string") {
     throw new InvalidQuestionFieldError(`${fieldName} must be a string.`);
   }
@@ -43,7 +46,11 @@ export function assertNullableDescription(
   if (value === null) {
     return null;
   }
-  return assertMaxLength(assertNonEmptyString(value, fieldName), maxLength, fieldName);
+  return assertMaxLength(
+    assertNonEmptyString(value, fieldName),
+    maxLength,
+    fieldName,
+  );
 }
 
 function failField(message: string): never {

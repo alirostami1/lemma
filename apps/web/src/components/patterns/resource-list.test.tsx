@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+
 import {
   ResourceList,
   ResourceListItem,
 } from "@lemma/ui/components/resource-list";
-import { describe, expect, it } from "vitest";
-import { afterEach } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 afterEach(() => cleanup());
 

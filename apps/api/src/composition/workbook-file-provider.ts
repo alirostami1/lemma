@@ -34,9 +34,7 @@ export function createWorkbookFileProvider(
   };
 }
 
-function toWorkbookFileMetadata(
-  file: ReadFileMetadata,
-): WorkbookFileMetadata {
+function toWorkbookFileMetadata(file: ReadFileMetadata): WorkbookFileMetadata {
   return {
     fileId: file.fileId,
     originalName: file.originalName,

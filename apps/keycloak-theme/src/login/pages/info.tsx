@@ -1,7 +1,6 @@
 import { Button } from "@lemma/ui/components/button";
-
-import type { LemmaPageProps } from "../KcPage";
 import type { KcContext } from "../KcContext";
+import type { LemmaPageProps } from "../KcPage";
 import { AuthLayout } from "./auth-layout";
 
 type InfoContext = Extract<KcContext, { pageId: "info.ftl" }>;

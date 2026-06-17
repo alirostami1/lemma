@@ -29,7 +29,8 @@ export function useNotificationsController() {
     isFetching: notifications.isFetching || failedEvents.isFetching,
     isMutating: reviewEvent.isPending || replayEvent.isPending,
     errorMessage:
-      getErrorMessage(notifications.error) ?? getErrorMessage(failedEvents.error),
+      getErrorMessage(notifications.error) ??
+      getErrorMessage(failedEvents.error),
     setStatus,
     setReviewState,
     refresh: () => {

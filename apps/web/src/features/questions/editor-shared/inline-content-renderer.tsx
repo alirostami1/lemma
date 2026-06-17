@@ -2,12 +2,12 @@ import type {
   ComposedInlineContent,
   ComposedRenderedInlineContent,
 } from "#/domains/questions/authoring";
-import { ReferenceChip } from "./reference-chip";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import {
   formatReferenceFallback,
   resolveInlineReferencePreview,
 } from "#/domains/questions/reference-preview";
+import { ReferenceChip } from "./reference-chip";
 
 export type InlineRenderMode = "editing" | "preview";
 

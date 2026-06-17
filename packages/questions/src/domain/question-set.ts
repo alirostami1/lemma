@@ -1,13 +1,20 @@
-import { touch, type Timestamped } from "@lemma/domain";
+import { type Timestamped, touch } from "@lemma/domain";
 import { InvalidQuestionStateTransitionError } from "./errors.js";
 import {
   type QuestionId,
-  questionSetId,
   type QuestionSetId,
-  userId,
+  questionSetId,
   type UserId,
+  userId,
 } from "./ids.js";
-import { questionSetDescription, type QuestionSetDescription, questionSetName, type QuestionSetName, questionSetStatus, type QuestionSetStatus } from "./question-values.js";
+import {
+  type QuestionSetDescription,
+  type QuestionSetName,
+  type QuestionSetStatus,
+  questionSetDescription,
+  questionSetName,
+  questionSetStatus,
+} from "./question-values.js";
 
 export type QuestionSet = Timestamped & {
   id: QuestionSetId;
@@ -83,7 +90,8 @@ export function renameQuestionSet(
       patch.description !== undefined
         ? questionSetDescription(patch.description)
         : set.description,
-    status: patch.status !== undefined ? questionSetStatus(patch.status) : set.status,
+    status:
+      patch.status !== undefined ? questionSetStatus(patch.status) : set.status,
   };
 }
 
@@ -98,7 +106,12 @@ export function deleteQuestionSet(set: QuestionSet, at: Date): QuestionSet {
 }
 
 export function createQuestionSetQuestion(
-  input: { questionSetId: QuestionSetId; questionId: QuestionId; addedByUserId: UserId; position?: number | null },
+  input: {
+    questionSetId: QuestionSetId;
+    questionId: QuestionId;
+    addedByUserId: UserId;
+    position?: number | null;
+  },
   at: Date,
 ): QuestionSetQuestion {
   return {
@@ -112,6 +125,8 @@ export function createQuestionSetQuestion(
 
 function assertQuestionSetCanChange(set: QuestionSet): void {
   if (set.status === "deleted") {
-    throw new InvalidQuestionStateTransitionError("deleted question sets cannot be changed");
+    throw new InvalidQuestionStateTransitionError(
+      "deleted question sets cannot be changed",
+    );
   }
 }

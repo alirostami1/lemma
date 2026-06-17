@@ -5,17 +5,17 @@ import { createCurrentUser } from "@lemma/identity/application";
 import { createUser } from "@lemma/identity/domain";
 import {
   createQuestionSet,
-  questionBlueprintId,
-  questionBlueprintVersionId,
-  questionSetDescription,
-  questionSetId,
-  questionSetName,
   type Question,
   type QuestionBlueprint,
   type QuestionBlueprintVersion,
   type QuestionGenerationRun,
   type QuestionSet,
   type QuestionSetQuestion,
+  questionBlueprintId,
+  questionBlueprintVersionId,
+  questionSetDescription,
+  questionSetId,
+  questionSetName,
   userId,
 } from "../domain/index.js";
 import { ForbiddenQuestionActionError } from "./errors.js";
@@ -29,9 +29,7 @@ const otherUserId = userId("019e9315-6a87-715f-9861-8654df074002");
 const targetQuestionSetId = questionSetId(
   "019e9315-6a87-715f-9861-8654df074003",
 );
-const nextQuestionSetId = questionSetId(
-  "019e9315-6a87-715f-9861-8654df074004",
-);
+const nextQuestionSetId = questionSetId("019e9315-6a87-715f-9861-8654df074004");
 const nextBlueprintId = questionBlueprintId(
   "019e9315-6a87-715f-9861-8654df074005",
 );
@@ -181,9 +179,7 @@ class FakeQuestionsRepository implements QuestionsRepository {
     return this.questionBlueprints.get(id) ?? null;
   }
 
-  async findQuestionBlueprintVersionById(
-    id: QuestionBlueprintVersion["id"],
-  ) {
+  async findQuestionBlueprintVersionById(id: QuestionBlueprintVersion["id"]) {
     return this.questionBlueprintVersions.get(id) ?? null;
   }
 

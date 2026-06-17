@@ -1,18 +1,18 @@
 import { type Timestamped, touch } from "@lemma/domain";
+import { assertPlainRecord, assertString } from "./canonical-validation.js";
 import {
   InvalidQuestionFieldError,
   InvalidQuestionStateTransitionError,
 } from "./errors.js";
-import { assertPlainRecord, assertString } from "./canonical-validation.js";
 import {
-  type QuestionGenerationRunId,
-  type QuestionId,
   type QuestionBlueprintId,
   type QuestionBlueprintVersionId,
-  questionGenerationRunId,
-  questionId,
+  type QuestionGenerationRunId,
+  type QuestionId,
   questionBlueprintId,
   questionBlueprintVersionId,
+  questionGenerationRunId,
+  questionId,
   type UserId,
   userId,
   type WorkbookCalculationId,
@@ -34,10 +34,7 @@ import {
   type QuestionSourcePlan,
   questionSourcePlan,
 } from "./question-source.js";
-import {
-  type QuestionStatus,
-  questionStatus,
-} from "./question-values.js";
+import { type QuestionStatus, questionStatus } from "./question-values.js";
 
 export type WorkbookQuestionSource = {
   type: "workbook_snapshot";
@@ -136,9 +133,7 @@ export type CreateWorkbookQuestionSourceInput = {
   workbookId: string;
 };
 
-export function workbookQuestionSource(
-  input: unknown,
-): WorkbookQuestionSource {
+export function workbookQuestionSource(input: unknown): WorkbookQuestionSource {
   const failSource = (message: string): never => {
     throw new InvalidQuestionFieldError(message);
   };
@@ -146,7 +141,11 @@ export function workbookQuestionSource(
   if (input.type !== "workbook_snapshot") {
     throw new InvalidQuestionFieldError("question source type is invalid");
   }
-  const workbookIdValue = requiredString(input.workbookId, "workbookId", failSource);
+  const workbookIdValue = requiredString(
+    input.workbookId,
+    "workbookId",
+    failSource,
+  );
   const workbookVersionIdValue = optionalString(
     input.workbookVersionId,
     "workbookVersionId",

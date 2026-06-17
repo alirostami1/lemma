@@ -1,7 +1,7 @@
 import type { DatabaseExecutor } from "@lemma/db";
 import {
-  CurrentUserService,
   type Clock,
+  CurrentUserService,
   IdentityService,
   type IdGenerator,
 } from "@lemma/identity/application";

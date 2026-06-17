@@ -3,16 +3,16 @@ import type {
   QuestionBlueprintDocument,
   QuestionResponseField,
 } from "#/api/generated/model";
-import type { ComposedEditorModel } from "../composed-model";
-import {
-  extractReferenceIdsFromValueExpression,
-  isValidWorkbookReferenceSource,
-} from "../value-source";
 import {
   extractInlineReferenceIds,
   isValidReferenceId,
 } from "#/domains/questions/authoring/inline-content";
 import { extractRichReferenceIds } from "#/domains/questions/authoring/rich-content";
+import type { ComposedEditorModel } from "../composed-model";
+import {
+  extractReferenceIdsFromValueExpression,
+  isValidWorkbookReferenceSource,
+} from "../value-source";
 
 export function addBlueprintBlock(
   blueprint: QuestionBlueprintDocument,
@@ -167,7 +167,10 @@ export function validateComposedEditorModel(model: ComposedEditorModel) {
   }
 }
 
-function validateReferenceIds(ids: string[], referenceIds: ReadonlySet<string>) {
+function validateReferenceIds(
+  ids: string[],
+  referenceIds: ReadonlySet<string>,
+) {
   for (const referenceId of ids) {
     if (!referenceIds.has(referenceId)) {
       throw new Error(`Unknown reference: ${referenceId}`);

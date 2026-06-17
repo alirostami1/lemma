@@ -1,17 +1,17 @@
 import {
-  operationLineage,
   type JsonObject,
   type OperationLineage,
+  operationLineage,
 } from "@lemma/domain";
 import {
-  aggregateId,
-  aggregateType,
-  eventId,
-  eventType,
   type AggregateId,
   type AggregateType,
+  aggregateId,
+  aggregateType,
   type EventId,
   type EventType,
+  eventId,
+  eventType,
 } from "./ids.js";
 import {
   assertDate,
@@ -56,10 +56,7 @@ export function domainEventEnvelope<TPayload extends JsonObject>(
   return {
     id: eventId(input.id),
     type: eventType(input.type),
-    schemaVersion: assertPositiveInteger(
-      input.schemaVersion,
-      "schemaVersion",
-    ),
+    schemaVersion: assertPositiveInteger(input.schemaVersion, "schemaVersion"),
     aggregate: {
       type: aggregateType(input.aggregate.type),
       id: aggregateId(input.aggregate.id),

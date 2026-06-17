@@ -53,41 +53,38 @@ export class RealtimeAuthService {
     currentUser: CurrentUser;
     channel: string;
   }): Promise<RealtimeTokenResult> {
-    return instrumentation.run(
-      "create_subscription_token",
-      async () => {
-        const channel = parseNotificationChannel(input.channel);
-        if (!channel) {
-          throw new InvalidNotificationChannelError();
-        }
-        const accessRequirement =
-          getNotificationChannelAccessRequirement(channel);
-        if (
-          !(await this.deps.channelAccessPort.canSubscribe({
-            currentUser: input.currentUser,
-            channel,
-            accessRequirement,
-          }))
-        ) {
-          throw new ForbiddenNotificationChannelError();
-        }
+    return instrumentation.run("create_subscription_token", async () => {
+      const channel = parseNotificationChannel(input.channel);
+      if (!channel) {
+        throw new InvalidNotificationChannelError();
+      }
+      const accessRequirement =
+        getNotificationChannelAccessRequirement(channel);
+      if (
+        !(await this.deps.channelAccessPort.canSubscribe({
+          currentUser: input.currentUser,
+          channel,
+          accessRequirement,
+        }))
+      ) {
+        throw new ForbiddenNotificationChannelError();
+      }
 
-        const issuedAt = this.deps.clock.now();
-        const expiresAt = this.expiresAt(issuedAt);
-        const canonicalChannel = buildNotificationChannel(channel);
-        return {
-          token: this.deps.tokenSigner.sign({
-            claims: {
-              sub: input.currentUser.user.id,
-              channel: canonicalChannel,
-              iat: unixSeconds(issuedAt),
-              exp: unixSeconds(expiresAt),
-            },
-          }),
-          expiresAt,
-        };
-      },
-    );
+      const issuedAt = this.deps.clock.now();
+      const expiresAt = this.expiresAt(issuedAt);
+      const canonicalChannel = buildNotificationChannel(channel);
+      return {
+        token: this.deps.tokenSigner.sign({
+          claims: {
+            sub: input.currentUser.user.id,
+            channel: canonicalChannel,
+            iat: unixSeconds(issuedAt),
+            exp: unixSeconds(expiresAt),
+          },
+        }),
+        expiresAt,
+      };
+    });
   }
 
   private expiresAt(issuedAt: Date): Date {

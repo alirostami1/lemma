@@ -9,8 +9,8 @@ import {
   WorkbookCalculationService,
   type WorkbookFileProviderPort,
   type WorkbookInternalSnapshotResolverPort,
-  type WorkbookSnapshotResolverPort,
   WorkbookService,
+  type WorkbookSnapshotResolverPort,
 } from "./application/index.js";
 import { type RequireIdentity, workbookRoutes } from "./http/index.js";
 import {
@@ -62,8 +62,8 @@ export function createWorkbookModule(deps: {
         })
       ).value,
   };
-  const workbookInternalSnapshotResolverPort:
-    WorkbookInternalSnapshotResolverPort = {
+  const workbookInternalSnapshotResolverPort: WorkbookInternalSnapshotResolverPort =
+    {
       resolveValueSource: async (input) =>
         (
           await workbookCalculationService.resolveWorkbookSnapshotValueForInternal(

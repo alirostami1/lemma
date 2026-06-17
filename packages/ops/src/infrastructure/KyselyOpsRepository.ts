@@ -31,9 +31,7 @@ export class KyselyOpsRepository implements OpsRepository {
     return this.dbOperation("get_overview", () => this.overview.getOverview());
   }
 
-  listOutboxEvents(
-    input: ListOutboxEventsInput,
-  ): Promise<OpsOutboxEvent[]> {
+  listOutboxEvents(input: ListOutboxEventsInput): Promise<OpsOutboxEvent[]> {
     return this.dbOperation("list_outbox_events", () =>
       this.outbox.listOutboxEvents(input),
     );

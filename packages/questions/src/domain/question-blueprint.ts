@@ -1,15 +1,22 @@
 import { type Timestamped, touch } from "@lemma/domain";
-import { InvalidQuestionFieldError, InvalidQuestionStateTransitionError } from "./errors.js";
+import {
+  InvalidQuestionFieldError,
+  InvalidQuestionStateTransitionError,
+} from "./errors.js";
 import {
   type QuestionBlueprintId,
-  questionBlueprintId,
   type QuestionBlueprintVersionId,
+  questionBlueprintId,
   questionBlueprintVersionId,
   type UserId,
   userId,
   type WorkbookId,
   workbookId,
 } from "./ids.js";
+import {
+  type QuestionBlueprintDocument,
+  questionBlueprintDocument,
+} from "./question-blueprint-document.js";
 import {
   type QuestionBlueprintDescription,
   type QuestionBlueprintName,
@@ -20,10 +27,6 @@ import {
   questionBlueprintStatus,
   questionBlueprintVisibility,
 } from "./question-values.js";
-import {
-  questionBlueprintDocument,
-  type QuestionBlueprintDocument,
-} from "./question-blueprint-document.js";
 
 export type QuestionBlueprint = Timestamped & {
   id: QuestionBlueprintId;
@@ -181,7 +184,10 @@ export function updateQuestionBlueprintMetadata(
       : blueprint.status;
   return {
     ...touch(blueprint, at),
-    name: patch.name !== undefined ? questionBlueprintName(patch.name) : blueprint.name,
+    name:
+      patch.name !== undefined
+        ? questionBlueprintName(patch.name)
+        : blueprint.name,
     description:
       patch.description !== undefined
         ? questionBlueprintDescription(patch.description)
@@ -191,8 +197,7 @@ export function updateQuestionBlueprintMetadata(
         ? questionBlueprintVisibility(patch.visibility)
         : blueprint.visibility,
     status,
-    archivedAt:
-      status === "archived" ? blueprint.archivedAt ?? at : null,
+    archivedAt: status === "archived" ? (blueprint.archivedAt ?? at) : null,
   };
 }
 

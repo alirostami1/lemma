@@ -195,7 +195,9 @@ describe("studio readiness", () => {
           (block) => block.type === "response",
         ),
       ],
-      references: [{ id: "reference_1", source: { type: "literal", value: "A" } }],
+      references: [
+        { id: "reference_1", source: { type: "literal", value: "A" } },
+      ],
     };
 
     const readiness = getStudioReadiness(model, readyContext);

@@ -4,10 +4,10 @@ import {
   forbiddenResponse,
   keycloakSecurityRequirement,
   keycloakSecurityScheme,
+  notFoundResponse,
   type OpenAPI,
   type Param,
   type Paths,
-  notFoundResponse,
   paramRef,
   responseRef,
   type Schema,
@@ -26,7 +26,10 @@ const opsTag: Tag = {
   description: "Operational outbox and queue review tools.",
 };
 
-const dateTime = { type: "string", format: "date-time" } satisfies OpenApiSchema;
+const dateTime = {
+  type: "string",
+  format: "date-time",
+} satisfies OpenApiSchema;
 const nullableDateTime = {
   type: ["string", "null"],
   format: "date-time",

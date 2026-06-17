@@ -76,5 +76,7 @@ function getRichContentText(nodes: unknown[]): string {
 
 function truncateSummary(value: string): string {
   const normalized = value.replace(/\s+/gu, " ").trim();
-  return normalized.length > 140 ? `${normalized.slice(0, 137)}...` : normalized;
+  return normalized.length > 140
+    ? `${normalized.slice(0, 137)}...`
+    : normalized;
 }

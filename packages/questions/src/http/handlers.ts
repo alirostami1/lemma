@@ -13,14 +13,14 @@ import { handleQuestionsError } from "./errors.js";
 import {
   presentGrade,
   presentQuestion,
+  presentQuestionBlueprint,
+  presentQuestionBlueprintAuthoring,
+  presentQuestionBlueprints,
   presentQuestionGenerationRun,
   presentQuestionGenerationRuns,
   presentQuestionSet,
   presentQuestionSets,
   presentQuestions,
-  presentQuestionBlueprint,
-  presentQuestionBlueprintAuthoring,
-  presentQuestionBlueprints,
 } from "./presenters.js";
 
 export type QuestionsHandlersDeps = {
@@ -98,101 +98,125 @@ export function createQuestionsHandlers(
       });
       return c.body(null, 204);
     }),
-    listQuestionSetQuestions: questionsHandler("listQuestionSetQuestions", async (c) => {
-      const { questionSetId } = c.req.valid("param");
-      const query = c.req.valid("query");
-      return c.json(
-        presentQuestions(
-          await deps.questionSetService.listQuestionSetQuestions({
-            currentUser: c.var.identity,
-            questionSetId,
-            ...query,
-          }),
-        ),
-        200,
-      );
-    }),
-    removeQuestionFromSet: questionsHandler("removeQuestionFromSet", async (c) => {
-      const { questionSetId, questionId } = c.req.valid("param");
-      await deps.questionSetService.removeQuestionFromSet({
-        currentUser: c.var.identity,
-        questionSetId,
-        questionId,
-      });
-      return c.body(null, 204);
-    }),
-    listQuestionBlueprints: questionsHandler("listQuestionBlueprints", async (c) => {
-      const query = c.req.valid("query");
-      return c.json(
-        presentQuestionBlueprints(
-          await deps.questionBlueprintService.listQuestionBlueprints({
-            currentUser: c.var.identity,
-            ...query,
-          }),
-        ),
-        200,
-      );
-    }),
-    createQuestionBlueprint: questionsHandler("createQuestionBlueprint", async (c) => {
-      const body = c.req.valid("json");
-      return c.json(
-        presentQuestionBlueprint(
-          await deps.questionBlueprintService.createQuestionBlueprint({
-            ...body,
-            currentUser: c.var.identity,
-          }),
-        ),
-        201,
-      );
-    }),
-    getQuestionBlueprint: questionsHandler("getQuestionBlueprint", async (c) => {
-      const { questionBlueprintId } = c.req.valid("param");
-      return c.json(
-        presentQuestionBlueprint(
-          await deps.questionBlueprintService.getQuestionBlueprint({
-            currentUser: c.var.identity,
-            questionBlueprintId,
-          }),
-        ),
-        200,
-      );
-    }),
-    getQuestionBlueprintAuthoring: questionsHandler("getQuestionBlueprintAuthoring", async (c) => {
-      const { questionBlueprintId } = c.req.valid("param");
-      return c.json(
-        presentQuestionBlueprintAuthoring(
-          await deps.questionBlueprintService.getQuestionBlueprintAuthoring({
-            currentUser: c.var.identity,
-            questionBlueprintId,
-          }),
-        ),
-        200,
-      );
-    }),
-    updateQuestionBlueprint: questionsHandler("updateQuestionBlueprint", async (c) => {
-      const { questionBlueprintId } = c.req.valid("param");
-      const patch = c.req.valid(
-        "json",
-      ) as UpdateQuestionBlueprintCommand["patch"];
-      return c.json(
-        presentQuestionBlueprint(
-          await deps.questionBlueprintService.updateQuestionBlueprint({
-            currentUser: c.var.identity,
-            questionBlueprintId,
-            patch,
-          }),
-        ),
-        200,
-      );
-    }),
-    deleteQuestionBlueprint: questionsHandler("deleteQuestionBlueprint", async (c) => {
-      const { questionBlueprintId } = c.req.valid("param");
-      await deps.questionBlueprintService.deleteQuestionBlueprint({
-        currentUser: c.var.identity,
-        questionBlueprintId,
-      });
-      return c.body(null, 204);
-    }),
+    listQuestionSetQuestions: questionsHandler(
+      "listQuestionSetQuestions",
+      async (c) => {
+        const { questionSetId } = c.req.valid("param");
+        const query = c.req.valid("query");
+        return c.json(
+          presentQuestions(
+            await deps.questionSetService.listQuestionSetQuestions({
+              currentUser: c.var.identity,
+              questionSetId,
+              ...query,
+            }),
+          ),
+          200,
+        );
+      },
+    ),
+    removeQuestionFromSet: questionsHandler(
+      "removeQuestionFromSet",
+      async (c) => {
+        const { questionSetId, questionId } = c.req.valid("param");
+        await deps.questionSetService.removeQuestionFromSet({
+          currentUser: c.var.identity,
+          questionSetId,
+          questionId,
+        });
+        return c.body(null, 204);
+      },
+    ),
+    listQuestionBlueprints: questionsHandler(
+      "listQuestionBlueprints",
+      async (c) => {
+        const query = c.req.valid("query");
+        return c.json(
+          presentQuestionBlueprints(
+            await deps.questionBlueprintService.listQuestionBlueprints({
+              currentUser: c.var.identity,
+              ...query,
+            }),
+          ),
+          200,
+        );
+      },
+    ),
+    createQuestionBlueprint: questionsHandler(
+      "createQuestionBlueprint",
+      async (c) => {
+        const body = c.req.valid("json");
+        return c.json(
+          presentQuestionBlueprint(
+            await deps.questionBlueprintService.createQuestionBlueprint({
+              ...body,
+              currentUser: c.var.identity,
+            }),
+          ),
+          201,
+        );
+      },
+    ),
+    getQuestionBlueprint: questionsHandler(
+      "getQuestionBlueprint",
+      async (c) => {
+        const { questionBlueprintId } = c.req.valid("param");
+        return c.json(
+          presentQuestionBlueprint(
+            await deps.questionBlueprintService.getQuestionBlueprint({
+              currentUser: c.var.identity,
+              questionBlueprintId,
+            }),
+          ),
+          200,
+        );
+      },
+    ),
+    getQuestionBlueprintAuthoring: questionsHandler(
+      "getQuestionBlueprintAuthoring",
+      async (c) => {
+        const { questionBlueprintId } = c.req.valid("param");
+        return c.json(
+          presentQuestionBlueprintAuthoring(
+            await deps.questionBlueprintService.getQuestionBlueprintAuthoring({
+              currentUser: c.var.identity,
+              questionBlueprintId,
+            }),
+          ),
+          200,
+        );
+      },
+    ),
+    updateQuestionBlueprint: questionsHandler(
+      "updateQuestionBlueprint",
+      async (c) => {
+        const { questionBlueprintId } = c.req.valid("param");
+        const patch = c.req.valid(
+          "json",
+        ) as UpdateQuestionBlueprintCommand["patch"];
+        return c.json(
+          presentQuestionBlueprint(
+            await deps.questionBlueprintService.updateQuestionBlueprint({
+              currentUser: c.var.identity,
+              questionBlueprintId,
+              patch,
+            }),
+          ),
+          200,
+        );
+      },
+    ),
+    deleteQuestionBlueprint: questionsHandler(
+      "deleteQuestionBlueprint",
+      async (c) => {
+        const { questionBlueprintId } = c.req.valid("param");
+        await deps.questionBlueprintService.deleteQuestionBlueprint({
+          currentUser: c.var.identity,
+          questionBlueprintId,
+        });
+        return c.body(null, 204);
+      },
+    ),
     listQuestions: questionsHandler("listQuestions", async (c) => {
       const query = c.req.valid("query");
       return c.json(
@@ -238,67 +262,82 @@ export function createQuestionsHandlers(
         200,
       );
     }),
-    listQuestionGenerationRuns: questionsHandler("listQuestionGenerationRuns", async (c) => {
-      const query = c.req.valid("query");
-      return c.json(
-        presentQuestionGenerationRuns(
-          await deps.questionGenerationService.listQuestionGenerationRuns({
-            currentUser: c.var.identity,
-            ...query,
-          }),
-        ),
-        200,
-      );
-    }),
-    createQuestionGenerationRun: questionsHandler("createQuestionGenerationRun", async (c) => {
-      const body = c.req.valid("json") as Omit<
-        CreateQuestionGenerationRunCommand,
-        "currentUser" | "lineage"
-      >;
-      return c.json(
-        presentQuestionGenerationRun(
-          await deps.questionGenerationService.createQuestionGenerationRun({
-            currentUser: c.var.identity,
-            lineage: rootOperationLineage(c.var.requestId),
-            ...body,
-          }),
-        ),
-        201,
-      );
-    }),
-    getQuestionGenerationRun: questionsHandler("getQuestionGenerationRun", async (c) => {
-      const { questionGenerationRunId } = c.req.valid("param");
-      return c.json(
-        presentQuestionGenerationRun(
-          await deps.questionGenerationService.getQuestionGenerationRun({
-            currentUser: c.var.identity,
-            questionGenerationRunId,
-          }),
-        ),
-        200,
-      );
-    }),
-    cancelQuestionGenerationRun: questionsHandler("cancelQuestionGenerationRun", async (c) => {
-      const { questionGenerationRunId } = c.req.valid("param");
-      await deps.questionGenerationService.cancelQuestionGenerationRun({
-        currentUser: c.var.identity,
-        questionGenerationRunId,
-        lineage: rootOperationLineage(c.var.requestId),
-      });
-      return c.body(null, 204);
-    }),
-    retryQuestionGenerationRun: questionsHandler("retryQuestionGenerationRun", async (c) => {
-      const { questionGenerationRunId } = c.req.valid("param");
-      return c.json(
-        presentQuestionGenerationRun(
-          await deps.questionGenerationService.retryQuestionGenerationRun({
-            currentUser: c.var.identity,
-            questionGenerationRunId,
-            lineage: rootOperationLineage(c.var.requestId),
-          }),
-        ),
-        201,
-      );
-    }),
+    listQuestionGenerationRuns: questionsHandler(
+      "listQuestionGenerationRuns",
+      async (c) => {
+        const query = c.req.valid("query");
+        return c.json(
+          presentQuestionGenerationRuns(
+            await deps.questionGenerationService.listQuestionGenerationRuns({
+              currentUser: c.var.identity,
+              ...query,
+            }),
+          ),
+          200,
+        );
+      },
+    ),
+    createQuestionGenerationRun: questionsHandler(
+      "createQuestionGenerationRun",
+      async (c) => {
+        const body = c.req.valid("json") as Omit<
+          CreateQuestionGenerationRunCommand,
+          "currentUser" | "lineage"
+        >;
+        return c.json(
+          presentQuestionGenerationRun(
+            await deps.questionGenerationService.createQuestionGenerationRun({
+              currentUser: c.var.identity,
+              lineage: rootOperationLineage(c.var.requestId),
+              ...body,
+            }),
+          ),
+          201,
+        );
+      },
+    ),
+    getQuestionGenerationRun: questionsHandler(
+      "getQuestionGenerationRun",
+      async (c) => {
+        const { questionGenerationRunId } = c.req.valid("param");
+        return c.json(
+          presentQuestionGenerationRun(
+            await deps.questionGenerationService.getQuestionGenerationRun({
+              currentUser: c.var.identity,
+              questionGenerationRunId,
+            }),
+          ),
+          200,
+        );
+      },
+    ),
+    cancelQuestionGenerationRun: questionsHandler(
+      "cancelQuestionGenerationRun",
+      async (c) => {
+        const { questionGenerationRunId } = c.req.valid("param");
+        await deps.questionGenerationService.cancelQuestionGenerationRun({
+          currentUser: c.var.identity,
+          questionGenerationRunId,
+          lineage: rootOperationLineage(c.var.requestId),
+        });
+        return c.body(null, 204);
+      },
+    ),
+    retryQuestionGenerationRun: questionsHandler(
+      "retryQuestionGenerationRun",
+      async (c) => {
+        const { questionGenerationRunId } = c.req.valid("param");
+        return c.json(
+          presentQuestionGenerationRun(
+            await deps.questionGenerationService.retryQuestionGenerationRun({
+              currentUser: c.var.identity,
+              questionGenerationRunId,
+              lineage: rootOperationLineage(c.var.requestId),
+            }),
+          ),
+          201,
+        );
+      },
+    ),
   };
 }

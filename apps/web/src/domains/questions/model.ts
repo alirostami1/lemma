@@ -1,8 +1,8 @@
 import type {
-  GradeResult,
-  QuestionAnswer,
   QuestionBlueprintDocument as AuthoringQuestionBlueprintDocument,
+  GradeResult,
   PublicQuestionBlueprintDocument,
+  QuestionAnswer,
   QuestionBody,
 } from "#/api/generated/model";
 
@@ -196,15 +196,14 @@ export interface UpdateQuestionBlueprintInput {
   status?: QuestionBlueprintStatus;
 }
 
-export type CreateQuestionGenerationRunInput =
-  {
-    targetQuestionSetId: string;
-    count: number;
-    blueprintId: string;
-    blueprintVersionId?: string | null;
-    sourceWorkbookId?: string | null;
-    source?: CreateWorkbookQuestionSourceInput | null;
-  };
+export type CreateQuestionGenerationRunInput = {
+  targetQuestionSetId: string;
+  count: number;
+  blueprintId: string;
+  blueprintVersionId?: string | null;
+  sourceWorkbookId?: string | null;
+  source?: CreateWorkbookQuestionSourceInput | null;
+};
 
 export interface CreateWorkbookQuestionSourceInput {
   type: "workbook_snapshot";

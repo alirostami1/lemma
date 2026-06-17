@@ -1,12 +1,12 @@
 import type {
-  CreateQuestionGenerationRunRequest,
   CreateQuestionBlueprintRequest,
+  CreateQuestionGenerationRunRequest,
   UpdateQuestionBlueprintRequest,
 } from "#/api/generated/model";
 import { CreateWorkbookSourceType } from "#/api/generated/model";
 import type {
-  CreateQuestionGenerationRunInput,
   CreateQuestionBlueprintInput,
+  CreateQuestionGenerationRunInput,
   UpdateQuestionBlueprintInput,
 } from "./model";
 
@@ -44,11 +44,11 @@ export function toCreateQuestionGenerationRunRequest(
     source: input.source
       ? input.source
       : input.sourceWorkbookId
-      ? {
-          type: CreateWorkbookSourceType.workbook_snapshot,
-          workbookId: input.sourceWorkbookId,
-        }
-      : null,
+        ? {
+            type: CreateWorkbookSourceType.workbook_snapshot,
+            workbookId: input.sourceWorkbookId,
+          }
+        : null,
     blueprintId: input.blueprintId,
     blueprintVersionId: input.blueprintVersionId,
   };

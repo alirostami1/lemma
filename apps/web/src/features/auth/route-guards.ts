@@ -1,13 +1,10 @@
+import { enforceLogin, getOidc } from "#/lib/oidc";
 import {
   type AccessRequirement,
   canAccess,
   getRolesFromDecodedToken,
 } from "./access";
-import {
-  ForbiddenRouteError,
-  SignInRequiredRouteError,
-} from "./auth-errors";
-import { enforceLogin, getOidc } from "#/lib/oidc";
+import { ForbiddenRouteError, SignInRequiredRouteError } from "./auth-errors";
 
 type LoginLoaderContext = Parameters<typeof enforceLogin>[0];
 

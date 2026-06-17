@@ -1,5 +1,5 @@
 import { withHttpErrorHandler } from "@lemma/http";
-import { type IdentityService } from "../application/index.js";
+import type { IdentityService } from "../application/index.js";
 import {
   displayName as toDisplayName,
   roleId as toRoleId,
@@ -138,18 +138,15 @@ export function createIdentityHandlers(
       return c.json(presentIdentityUser(user), 200);
     }),
 
-    getIdentityUserRoles: identityHandler(
-      "getIdentityUserRoles",
-      async (c) => {
-        const { userId } = c.req.valid("param");
-        const roles = await deps.identityService.listUserRoles({
-          currentUser: c.var.identity,
-          userId: toUserId(userId),
-        });
+    getIdentityUserRoles: identityHandler("getIdentityUserRoles", async (c) => {
+      const { userId } = c.req.valid("param");
+      const roles = await deps.identityService.listUserRoles({
+        currentUser: c.var.identity,
+        userId: toUserId(userId),
+      });
 
-        return c.json(presentUserRoles(roles), 200);
-      },
-    ),
+      return c.json(presentUserRoles(roles), 200);
+    }),
 
     listIdentityRoles: identityHandler("listIdentityRoles", async (c) => {
       const roles = await deps.identityService.listRoles({
@@ -159,41 +156,44 @@ export function createIdentityHandlers(
       return c.json(presentRoles(roles), 200);
     }),
 
-    grantIdentityUserRole: identityHandler("grantIdentityUserRole", async (c) => {
-      const body = c.req.valid("json");
-      const { userId } = c.req.valid("param");
+    grantIdentityUserRole: identityHandler(
+      "grantIdentityUserRole",
+      async (c) => {
+        const body = c.req.valid("json");
+        const { userId } = c.req.valid("param");
 
-      if ("roleId" in body) {
-        await deps.identityService.grantRoleToUser({
-          currentUser: c.var.identity,
-          userId: toUserId(userId),
-          roleId: toRoleId(body.roleId),
-          expiresAt: new Date(body.expiresAt),
-        });
+        if ("roleId" in body) {
+          await deps.identityService.grantRoleToUser({
+            currentUser: c.var.identity,
+            userId: toUserId(userId),
+            roleId: toRoleId(body.roleId),
+            expiresAt: new Date(body.expiresAt),
+          });
 
-        return c.body(null, 204);
-      }
+          return c.body(null, 204);
+        }
 
-      if (body.roleKey) {
-        await deps.identityService.grantRoleKeyToUser({
-          currentUser: c.var.identity,
-          userId: toUserId(userId),
-          roleKey: toRoleKey(body.roleKey),
-          expiresAt: new Date(body.expiresAt),
-        });
+        if (body.roleKey) {
+          await deps.identityService.grantRoleKeyToUser({
+            currentUser: c.var.identity,
+            userId: toUserId(userId),
+            roleKey: toRoleKey(body.roleKey),
+            expiresAt: new Date(body.expiresAt),
+          });
 
-        return c.body(null, 204);
-      }
+          return c.body(null, 204);
+        }
 
-      return c.json(
-        badRequest(
-          c,
-          "ROLE_REQUIRED",
-          "Either roleId or roleKey is required.",
-        ),
-        400,
-      );
-    }),
+        return c.json(
+          badRequest(
+            c,
+            "ROLE_REQUIRED",
+            "Either roleId or roleKey is required.",
+          ),
+          400,
+        );
+      },
+    ),
 
     revokeIdentityUserRole: identityHandler(
       "revokeIdentityUserRole",

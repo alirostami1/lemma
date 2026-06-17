@@ -1,15 +1,15 @@
 "use client";
 
-import type * as React from "react";
-import { useTheme } from "next-themes";
-import { Toaster as Sonner, toast, type ToasterProps } from "sonner";
 import {
   CircleCheckIcon,
   InfoIcon,
-  TriangleAlertIcon,
-  OctagonXIcon,
   Loader2Icon,
+  OctagonXIcon,
+  TriangleAlertIcon,
 } from "lucide-react";
+import { useTheme } from "next-themes";
+import type * as React from "react";
+import { Toaster as Sonner, type ToasterProps, toast } from "sonner";
 import { cn } from "#/lib/utils";
 
 const Toaster = ({
@@ -73,10 +73,7 @@ const Toaster = ({
             "text-sm leading-snug text-muted-foreground",
             toastOptions?.classNames?.description,
           ),
-          icon: cn(
-            "text-muted-foreground",
-            toastOptions?.classNames?.icon,
-          ),
+          icon: cn("text-muted-foreground", toastOptions?.classNames?.icon),
           success: cn(
             "[&_[data-icon]]:text-[var(--chart-2)]",
             toastOptions?.classNames?.success,

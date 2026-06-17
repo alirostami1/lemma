@@ -569,11 +569,7 @@ function op(
   };
 }
 
-function opNoBody(
-  operationId: string,
-  summary: string,
-  status: string,
-){
+function opNoBody(operationId: string, summary: string, status: string) {
   return {
     tags: [tagRef(tag)],
     summary,

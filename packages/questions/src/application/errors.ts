@@ -55,7 +55,10 @@ export class InvalidQuestionBlueprintError extends QuestionsApplicationError {
 
 export class WorkbookQuestionSourceError extends QuestionsApplicationError {
   readonly applicationCode = "WORKBOOK_QUESTION_SOURCE_ERROR";
-  constructor(message = "workbook question source failed", options?: ErrorOptions) {
+  constructor(
+    message = "workbook question source failed",
+    options?: ErrorOptions,
+  ) {
     super(message, options);
   }
 }

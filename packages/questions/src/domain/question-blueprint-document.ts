@@ -6,28 +6,28 @@ import {
   assertSchemaVersion,
   assertString,
   assertUniqueIds,
-  responseFieldIds,
   type PlainObject,
+  responseFieldIds,
 } from "./canonical-validation.js";
 import { InvalidQuestionBlueprintDocumentError } from "./errors.js";
 import {
-  grading,
-  richContent,
+  type BlueprintInlineContent,
   blueprintInlineContent,
+  grading,
   type QuestionGrading,
   type QuestionResponseField,
   type RichContent,
-  type BlueprintInlineContent,
+  richContent,
   validatedResponseFields,
 } from "./question-body.js";
 import {
   assertQuestionReferenceId,
-  questionReferenceSource,
   type QuestionReference,
+  questionReferenceSource,
 } from "./question-reference.js";
 import {
-  questionValueExpression,
   type QuestionValueExpression,
+  questionValueExpression,
 } from "./question-value-expression.js";
 
 export type QuestionBlueprintTextBlock = {
@@ -106,7 +106,11 @@ export type QuestionBlueprintDocument = {
 export function questionBlueprintDocument(
   input: unknown,
 ): QuestionBlueprintDocument {
-  assertPlainRecord(input, "question blueprint document must be an object", fail);
+  assertPlainRecord(
+    input,
+    "question blueprint document must be an object",
+    fail,
+  );
   assertSchemaVersion(input, fail);
   const responseFields = validatedResponseFields(input, fail);
   const references = validatedReferences(input.references, fail);
@@ -120,7 +124,10 @@ export function questionBlueprintDocument(
   return { schemaVersion: 1, blocks, responseFields, references };
 }
 
-function validatedReferences(value: unknown, failWith: (message: string) => never): QuestionReference[] {
+function validatedReferences(
+  value: unknown,
+  failWith: (message: string) => never,
+): QuestionReference[] {
   assertArray(value, "references", failWith);
   assertUniqueIds(value, "references", failWith);
   return value.map((reference) => {
@@ -149,21 +156,39 @@ function validatedBlueprintBlocks(
     assertPlainRecord(block, "block must be an object", failWith);
     assertNonEmptyString(block.id, "block.id", failWith);
     if (block.type === "text") {
-      return { id: block.id, type: "text", content: blueprintInlineContent(block.content, failWith, referenceIds) };
+      return {
+        id: block.id,
+        type: "text",
+        content: blueprintInlineContent(block.content, failWith, referenceIds),
+      };
     }
     if (block.type === "rich_text") {
-      return { id: block.id, type: "rich_text", content: richContent(block.content, failWith) };
+      return {
+        id: block.id,
+        type: "rich_text",
+        content: richContent(block.content, failWith),
+      };
     }
     if (block.type === "response") {
-      return validatedBlueprintResponseBlock(block, responseIds, referenceIds, failWith);
+      return validatedBlueprintResponseBlock(
+        block,
+        responseIds,
+        referenceIds,
+        failWith,
+      );
     }
     if (block.type === "separator") {
       return { id: block.id, type: "separator" };
     }
     if (block.type === "table") {
-      return validatedBlueprintTableBlock(block, responseIds, referenceIds, failWith);
+      return validatedBlueprintTableBlock(
+        block,
+        responseIds,
+        referenceIds,
+        failWith,
+      );
     }
-    failWith("block type is invalid");
+    return failWith("block type is invalid");
   });
 }
 
@@ -186,7 +211,11 @@ function validatedBlueprintResponseBlock(
   };
   addOptionalStrings(out, block, ["label", "placeholder"], failWith);
   if (block.correctValueSource !== undefined) {
-    out.correctValueSource = questionValueExpression(block.correctValueSource, failWith, referenceIds);
+    out.correctValueSource = questionValueExpression(
+      block.correctValueSource,
+      failWith,
+      referenceIds,
+    );
   }
   return out;
 }
@@ -243,11 +272,15 @@ function validatedBlueprintTableBlock(
       };
       addOptionalStrings(out, cell, ["label", "placeholder"], failWith);
       if (cell.correctValueSource !== undefined) {
-        out.correctValueSource = questionValueExpression(cell.correctValueSource, failWith, referenceIds);
+        out.correctValueSource = questionValueExpression(
+          cell.correctValueSource,
+          failWith,
+          referenceIds,
+        );
       }
       return out;
     }
-    failWith("table cell type is invalid");
+    return failWith("table cell type is invalid");
   });
   return {
     id: block.id as string,
@@ -260,7 +293,11 @@ function validatedBlueprintTableBlock(
   };
 }
 
-function tableAxis(value: unknown, label: string, failWith: (message: string) => never) {
+function tableAxis(
+  value: unknown,
+  label: string,
+  failWith: (message: string) => never,
+) {
   assertArray(value, label, failWith);
   assertUniqueIds(value, label, failWith);
   return value.map((item) => {
@@ -284,7 +321,11 @@ function addOptionalStrings<T extends object, K extends string>(
   }
 }
 
-function positiveNumber(value: unknown, field: string, failWith: (message: string) => never): number {
+function positiveNumber(
+  value: unknown,
+  field: string,
+  failWith: (message: string) => never,
+): number {
   if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
     failWith(`${field} must be positive`);
   }

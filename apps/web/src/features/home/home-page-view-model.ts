@@ -1,7 +1,4 @@
-import type {
-  QuestionBlueprint,
-  QuestionSet,
-} from "#/domains/questions/model";
+import type { QuestionBlueprint, QuestionSet } from "#/domains/questions/model";
 
 export type HomeAction = {
   label: string;

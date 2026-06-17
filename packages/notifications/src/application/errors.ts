@@ -14,10 +14,7 @@ export class NotificationsApplicationError extends Error {
 
 export class InvalidNotificationChannelError extends NotificationsApplicationError {
   constructor() {
-    super(
-      "INVALID_NOTIFICATION_CHANNEL",
-      "Notification channel is invalid.",
-    );
+    super("INVALID_NOTIFICATION_CHANNEL", "Notification channel is invalid.");
   }
 }
 

@@ -8,16 +8,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@lemma/ui/components/select";
-import { useMemo, useState, type FormEvent } from "react";
-import type { ComposedReferenceDraft, ComposedEditorModel, ReferenceSourceDraft } from "#/domains/questions/authoring";
+import { type FormEvent, useMemo, useState } from "react";
+import type {
+  ComposedEditorModel,
+  ComposedReferenceDraft,
+  ReferenceSourceDraft,
+} from "#/domains/questions/authoring";
 import {
   coerceLiteralExpressionValue,
   formatAnswerInputValue,
   isReferenceSourceDraftType,
 } from "#/domains/questions/authoring";
 import { WorkbookInputGroup } from "#/features/questions/table-block-editor";
-import { createUniqueReferenceDraft, getReferenceIdIssue } from "./reference-inspector-helpers";
 import { InspectorField } from "./inspector-field";
+import {
+  createUniqueReferenceDraft,
+  getReferenceIdIssue,
+} from "./reference-inspector-helpers";
 
 export type ReferenceCreateFormProps = {
   model: ComposedEditorModel;
@@ -49,8 +56,8 @@ export function ReferenceCreateForm({
     [model],
   );
   const [referenceId, setReferenceId] = useState(initialReferenceId);
-  const [sourceType, setSourceType] = useState<ReferenceSourceDraft["type"]>(() =>
-    getInitialSourceType(allowedSourceTypes, initialSourceType),
+  const [sourceType, setSourceType] = useState<ReferenceSourceDraft["type"]>(
+    () => getInitialSourceType(allowedSourceTypes, initialSourceType),
   );
   const [literalValue, setLiteralValue] = useState("");
   const [workbookRef, setWorkbookRef] = useState("");
@@ -138,7 +145,10 @@ export function ReferenceCreateForm({
                   </SelectItem>
                 ) : null}
                 {isAllowedSourceType(allowedSourceTypes, "workbook_range") ? (
-                  <SelectItem value="workbook_range" disabled={!workbookEnabled}>
+                  <SelectItem
+                    value="workbook_range"
+                    disabled={!workbookEnabled}
+                  >
                     Workbook range
                   </SelectItem>
                 ) : null}
@@ -163,7 +173,9 @@ export function ReferenceCreateForm({
           </InspectorField>
         ) : (
           <InspectorField
-            label={sourceType === "workbook_range" ? "Source range" : "Source cell"}
+            label={
+              sourceType === "workbook_range" ? "Source range" : "Source cell"
+            }
           >
             <WorkbookInputGroup
               id="reference-workbook"
@@ -175,7 +187,9 @@ export function ReferenceCreateForm({
                   sourceType === "workbook_range" ? "range" : "cell",
               }}
               onChange={(event) => setWorkbookRef(event.currentTarget.value)}
-              onWorkbookSelect={(selection) => setWorkbookRef(selection.reference)}
+              onWorkbookSelect={(selection) =>
+                setWorkbookRef(selection.reference)
+              }
             />
           </InspectorField>
         )}

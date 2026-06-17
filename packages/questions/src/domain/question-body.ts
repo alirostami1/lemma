@@ -99,14 +99,13 @@ export type QuestionSeparatorBlock = {
   type: "separator";
 };
 
-export type QuestionTableContentCell =
-  {
-    id: string;
-    rowId: string;
-    columnId: string;
-    type: "content";
-    text: string;
-  };
+export type QuestionTableContentCell = {
+  id: string;
+  rowId: string;
+  columnId: string;
+  type: "content";
+  text: string;
+};
 
 export type QuestionTableResponseCell = {
   id: string;
@@ -308,7 +307,7 @@ function validatedTableBlock(
         ...optionalStringProps(cell, ["label", "placeholder"], failWith),
       };
     }
-    failWith("table cell type is invalid");
+    return failWith("table cell type is invalid");
   });
   return {
     id: block.id as string,
@@ -362,7 +361,7 @@ export function blueprintInlineContent(
           : { fallbackText: part.fallbackText }),
       };
     }
-    failWith("inline content type is invalid");
+    return failWith("inline content type is invalid");
   });
 }
 
@@ -406,7 +405,11 @@ export function renderedInlineContent(
       return { type: "text", text: part.text };
     }
     if (part.type === "value") {
-      assertQuestionReferenceId(part.referenceId, "inline value referenceId", failWith);
+      assertQuestionReferenceId(
+        part.referenceId,
+        "inline value referenceId",
+        failWith,
+      );
       assertString(part.displayValue, "inline value displayValue", failWith);
       return {
         type: "value",
@@ -414,7 +417,7 @@ export function renderedInlineContent(
         displayValue: part.displayValue,
       };
     }
-    failWith("inline content type is invalid");
+    return failWith("inline content type is invalid");
   });
 }
 
@@ -485,7 +488,7 @@ function richListItem(
           content: child.content.map((item) => richListItem(item, failWith)),
         };
       }
-      failWith("list item child type is invalid");
+      return failWith("list item child type is invalid");
     }),
   };
 }

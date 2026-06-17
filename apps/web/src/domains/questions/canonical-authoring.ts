@@ -1,6 +1,6 @@
 export {
-  createDefaultQuestionBlueprintDocument,
   composedEditorModelToQuestionBlueprintDocument,
+  createDefaultQuestionBlueprintDocument,
   questionBlueprintDocumentToComposedEditorModel,
 } from "./authoring/canonical/composed-conversions";
 export {

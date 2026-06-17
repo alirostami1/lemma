@@ -1,9 +1,8 @@
 import { Button } from "@lemma/ui/components/button";
 import { Input } from "@lemma/ui/components/input";
 import { Label } from "@lemma/ui/components/label";
-
-import type { LemmaPageProps } from "../KcPage";
 import type { KcContext } from "../KcContext";
+import type { LemmaPageProps } from "../KcPage";
 import { AuthLayout } from "./auth-layout";
 
 type LoginContext = Extract<KcContext, { pageId: "login.ftl" }>;
@@ -27,7 +26,9 @@ export function LoginPage(props: LemmaPageProps<LoginContext>) {
     <AuthLayout
       title={msg("doLogIn")}
       description={realm.registrationAllowed ? msg("noAccount") : undefined}
-      message={hasLoginError ? messagesPerField.getFirstError("username") : null}
+      message={
+        hasLoginError ? messagesPerField.getFirstError("username") : null
+      }
     >
       {realm.password ? (
         <form action={url.loginAction} className="space-y-4" method="post">

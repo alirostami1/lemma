@@ -3,7 +3,10 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { TableAnswerState, TableBlockPreviewModel } from "#/domains/questions/authoring";
+import type {
+  TableAnswerState,
+  TableBlockPreviewModel,
+} from "#/domains/questions/authoring";
 import { TableBlockPreview } from "./table-block-preview";
 
 describe("TableBlockPreview", () => {
@@ -13,11 +16,7 @@ describe("TableBlockPreview", () => {
     const model = createPreviewModel();
 
     render(
-      <TableBlockPreview
-        model={model}
-        answer={{}}
-        onAnswerChange={() => {}}
-      />,
+      <TableBlockPreview model={model} answer={{}} onAnswerChange={() => {}} />,
     );
 
     const first = screen.getByRole("textbox", {
@@ -101,14 +100,11 @@ describe("TableBlockPreview", () => {
       name: "Payload (Row 2, Column 2)",
     });
     await user.clear(payloadInput);
-    fireEvent.change(
-      payloadInput,
-      {
-        target: {
-          value: '{"a":[1,true]}',
-        },
+    fireEvent.change(payloadInput, {
+      target: {
+        value: '{"a":[1,true]}',
       },
-    );
+    });
 
     expect(onAnswerChange).toHaveBeenCalledWith({
       answer_3: { a: [1, true] },

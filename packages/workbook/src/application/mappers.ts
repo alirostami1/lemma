@@ -13,11 +13,15 @@ export function decodeListCursor(value: string | undefined): Date | undefined {
   return value ? new Date(value) : undefined;
 }
 
-export function encodeSnapshotIndexCursor(value: number | undefined): string | null {
+export function encodeSnapshotIndexCursor(
+  value: number | undefined,
+): string | null {
   return value === undefined ? null : String(value);
 }
 
-export function decodeSnapshotIndexCursor(value: string | undefined): number | undefined {
+export function decodeSnapshotIndexCursor(
+  value: string | undefined,
+): number | undefined {
   if (value === undefined) {
     return undefined;
   }

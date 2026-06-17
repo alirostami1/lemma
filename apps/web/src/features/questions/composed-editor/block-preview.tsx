@@ -1,5 +1,5 @@
-import type { ComposedEditorBlock } from "#/domains/questions/authoring";
 import { createEmptyQuestionAnswer } from "#/domains/questions";
+import type { ComposedEditorBlock } from "#/domains/questions/authoring";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import {
   editorBlockToPresentableQuestion,

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { OpsQueueJob } from "#/domains/ops";
 import {
   daysFromNow,
   formatAge,
@@ -7,7 +8,6 @@ import {
   isRecord,
   shortId,
 } from "./format";
-import type { OpsQueueJob } from "#/domains/ops";
 
 const now = new Date("2026-06-15T12:00:00.000Z");
 

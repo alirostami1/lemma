@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { QuestionGenerationRun } from "#/domains/questions/model";
+import type { StudioDraftSnapshot } from "./studio-draft-store";
 import {
   createDraftKeyFromSnapshot,
   getInitialStudioDraftSnapshot,
   getStudioState,
   shouldWarnBeforeOpeningBlueprint,
 } from "./studio-state";
-import type { StudioDraftSnapshot } from "./studio-draft-store";
 
 describe("studio state", () => {
   it("opens the latest local draft when no blueprint route is requested", () => {
@@ -39,9 +39,8 @@ describe("studio state", () => {
     };
     const otherBlueprint = createSnapshot({
       loadedBlueprintId: "blueprint-2",
-      lastRemoteSaveSnapshotKey: createDraftKeyFromSnapshot(
-        syncedSameBlueprint,
-      ),
+      lastRemoteSaveSnapshotKey:
+        createDraftKeyFromSnapshot(syncedSameBlueprint),
     });
 
     expect(

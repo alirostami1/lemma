@@ -1,5 +1,5 @@
-import { TanStackDevtools } from "@tanstack/react-devtools";
 import { Toaster } from "@lemma/ui/components/sonner";
+import { TanStackDevtools } from "@tanstack/react-devtools";
 import {
   createRootRouteWithContext,
   HeadContent,
@@ -7,9 +7,8 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-
-import { NotFoundPage, RootErrorBoundary } from "#/features/errors";
 import { RealtimeNotificationsProvider } from "#/domains/realtime";
+import { NotFoundPage, RootErrorBoundary } from "#/features/errors";
 import { TanStackQueryDevtools } from "../integrations/tanstack-query/devtools";
 import "#/styles.css";
 

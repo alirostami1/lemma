@@ -1,5 +1,5 @@
 import { zValidator as zv } from "@hono/zod-validator";
-import { type HttpErrorResponse } from "@lemma/error";
+import type { HttpErrorResponse } from "@lemma/error";
 import type { Handler, ValidationTargets } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
 import type { z } from "zod";

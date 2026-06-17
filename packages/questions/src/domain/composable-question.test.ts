@@ -9,20 +9,20 @@ import {
   createQuestion,
   createQuestionBlueprint,
   createQuestionBlueprintVersion,
-  questionBody,
-  questionBlueprintDocument,
+  type QuestionBlueprint,
   questionBlueprintDescription,
+  questionBlueprintDocument,
   questionBlueprintId,
   questionBlueprintName,
   questionBlueprintVersionId,
   questionBlueprintVisibility,
+  questionBody,
   questionGenerationRunId,
   questionId,
   questionProducer,
-  questionSourcePlan,
   questionSolution,
+  questionSourcePlan,
   userId,
-  type QuestionBlueprint,
 } from "./index.js";
 
 const literalReference = {
@@ -293,7 +293,13 @@ describe("composable question canonical model", () => {
         {
           id: "prompt",
           type: "text",
-          content: [{ type: "reference", referenceId: "revenue", fallbackText: "Revenue" }],
+          content: [
+            {
+              type: "reference",
+              referenceId: "revenue",
+              fallbackText: "Revenue",
+            },
+          ],
         },
         responseBlock,
       ],
@@ -329,19 +335,25 @@ describe("composable question canonical model", () => {
       currentVersion: typeof version;
     };
 
-    const publicBlueprint =
-      presentQuestionBlueprint({ questionBlueprint: blueprint }).questionBlueprint;
-    const authoringBlueprint =
-      presentQuestionBlueprintAuthoring({ questionBlueprint: blueprint }).questionBlueprint;
+    const publicBlueprint = presentQuestionBlueprint({
+      questionBlueprint: blueprint,
+    }).questionBlueprint;
+    const authoringBlueprint = presentQuestionBlueprintAuthoring({
+      questionBlueprint: blueprint,
+    }).questionBlueprint;
 
     const publicDocument = publicBlueprint.document;
     const authoringDocument = authoringBlueprint.document;
     assert.ok(publicDocument);
     assert.ok(authoringDocument);
+    const publicSecondBlock = publicDocument.blocks[1];
+    const authoringSecondBlock = authoringDocument.blocks[1];
+    assert.ok(publicSecondBlock);
+    assert.ok(authoringSecondBlock);
     assert.equal("references" in publicDocument, false);
-    assert.equal("correctValueSource" in publicDocument.blocks[1]!, false);
+    assert.equal("correctValueSource" in publicSecondBlock, false);
     assert.equal(authoringDocument.references.length, 1);
-    assert.equal("correctValueSource" in authoringDocument.blocks[1]!, true);
+    assert.equal("correctValueSource" in authoringSecondBlock, true);
   });
 
   it("does not expose private solutions in public question responses", () => {
@@ -350,7 +362,9 @@ describe("composable question canonical model", () => {
         id: questionId("019e9315-6a87-715f-9861-8654df070c4c"),
         ownerUserId: userId("019e9315-6a87-715f-9861-8654df070c4c"),
         createdByUserId: userId("019e9315-6a87-715f-9861-8654df070c4c"),
-        blueprintId: questionBlueprintId("019e9315-6a87-715f-9861-8654df070c4d"),
+        blueprintId: questionBlueprintId(
+          "019e9315-6a87-715f-9861-8654df070c4d",
+        ),
         blueprintVersionId: questionBlueprintVersionId(
           "019e9315-6a87-715f-9861-8654df070c4e",
         ),
@@ -425,7 +439,9 @@ describe("composable question canonical model", () => {
     });
 
     assert.deepEqual(
-      blueprint.blocks[0]?.type === "table" ? blueprint.blocks[0].cells[0] : null,
+      blueprint.blocks[0]?.type === "table"
+        ? blueprint.blocks[0].cells[0]
+        : null,
       {
         id: "cell-1",
         rowId: "r1",

@@ -1,12 +1,12 @@
+import { randomUUID } from "node:crypto";
 import {
-  postgresUrlSchema,
   observabilityEnvSchema,
+  postgresUrlSchema,
   realtimeEnvSchema,
   s3EnvSchema,
   sharedEnvSchema,
   workbookEnvSchema,
 } from "@lemma/config";
-import { randomUUID } from "node:crypto";
 import { z } from "zod";
 
 const parsed = sharedEnvSchema

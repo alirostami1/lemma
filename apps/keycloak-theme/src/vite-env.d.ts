@@ -7,5 +7,3 @@ declare global {
     kcContext?: KcContext;
   }
 }
-
-export {};

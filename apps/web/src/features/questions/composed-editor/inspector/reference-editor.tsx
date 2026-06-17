@@ -11,8 +11,8 @@ import {
 import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import type {
-  ComposedReferenceDraft,
   ComposedEditorModel,
+  ComposedReferenceDraft,
   ReferenceSourceDraft,
 } from "#/domains/questions/authoring";
 import {
@@ -20,14 +20,14 @@ import {
   formatAnswerInputValue,
   isReferenceSourceDraftType,
 } from "#/domains/questions/authoring";
+import type { ReferencePreviewValue } from "#/domains/questions/reference-preview";
 import { WorkbookInputGroup } from "#/features/questions/table-block-editor";
 import type { EditorSelection } from "../editor-selection";
-import type { ReferencePreviewValue } from "#/domains/questions/reference-preview";
+import { InspectorField } from "./inspector-field";
 import {
   removeUnusedReferenceFromModel,
   renameReferenceInModel,
 } from "./reference-inspector-helpers";
-import { InspectorField } from "./inspector-field";
 
 type ReferenceEditorProps = {
   model: ComposedEditorModel;
@@ -127,10 +127,7 @@ function ReferenceEditorFields({
   return (
     <div className="grid gap-4">
       <FieldGroup>
-        <InspectorField
-          label="Reference ID"
-          error={nameError ?? undefined}
-        >
+        <InspectorField label="Reference ID" error={nameError ?? undefined}>
           <Input
             id={`${reference.id}-name`}
             value={draftName}

@@ -2,19 +2,21 @@ import { withSpan } from "@lemma/observability/node";
 import {
   logWorkerError,
   logWorkerInfo,
-  type WorkerLogger,
   type WorkerLogFields,
+  type WorkerLogger,
 } from "./worker-logging.js";
 
 export type PollingLoopAttributes = Record<string, string | number | boolean>;
 
-export type PollingLoopResult = {
-  attributes?: PollingLoopAttributes;
-  log?: {
-    message: string;
-    fields?: WorkerLogFields;
-  };
-} | undefined;
+export type PollingLoopResult =
+  | {
+      attributes?: PollingLoopAttributes;
+      log?: {
+        message: string;
+        fields?: WorkerLogFields;
+      };
+    }
+  | undefined;
 
 export type PollingLoopScheduler = {
   setTimeout(callback: () => void, delayMs: number): unknown;

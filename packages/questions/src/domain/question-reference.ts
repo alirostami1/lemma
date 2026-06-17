@@ -33,7 +33,9 @@ export function assertQuestionReferenceId(
 ): asserts value is string {
   assertNonEmptyString(value, field, fail);
   if (!referenceIdPattern.test(value)) {
-    fail(`${field} must start with a letter and contain only letters, numbers, underscores, or hyphens`);
+    fail(
+      `${field} must start with a letter and contain only letters, numbers, underscores, or hyphens`,
+    );
   }
 }
 
@@ -41,7 +43,11 @@ export function questionReferenceSource(
   input: unknown,
   failWith: (message: string) => never,
 ): QuestionReferenceSource {
-  assertPlainRecord(input, "question reference source must be an object", failWith);
+  assertPlainRecord(
+    input,
+    "question reference source must be an object",
+    failWith,
+  );
   assertSchemaVersion(input, failWith);
   if (input.type === "literal") {
     assertJsonValue(input.value, "value", failWith);

@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   type ComposedEditorModel,
-  createReferenceDraft,
   createDefaultComposedEditorModel,
+  createReferenceDraft,
   createResponseBlock,
   createTextBlock,
+  extractUsedReferenceIdsFromComposedEditorModel,
+  extractWorkbookReferenceRefsFromComposedEditorModel,
   getComposedEditorReferenceUsage,
   getReferenceUsage,
   getUnusedComposedReferences,
-  extractUsedReferenceIdsFromComposedEditorModel,
-  extractWorkbookReferenceRefsFromComposedEditorModel,
   stripUnusedComposedReferences,
   tableEditorModelToStaticPreviewModel,
 } from "#/domains/questions/authoring";
@@ -76,7 +76,10 @@ describe("composed authoring helpers", () => {
           ],
         },
         createResponseBlock("response_1", "answer_1", {
-          correctValueSource: { type: "reference", referenceId: "answer_source" },
+          correctValueSource: {
+            type: "reference",
+            referenceId: "answer_source",
+          },
         }),
       ],
       responseFields: [
@@ -125,7 +128,10 @@ describe("composed authoring helpers", () => {
           id: "response_1",
           type: "response",
           responseFieldId: "answer_1",
-          correctValueSource: { type: "reference", referenceId: "answer_source" },
+          correctValueSource: {
+            type: "reference",
+            referenceId: "answer_source",
+          },
           points: 1,
           grading: { mode: "exact" },
         },
@@ -158,7 +164,10 @@ describe("composed authoring helpers", () => {
                 columnId: "column_1",
                 type: "response",
                 responseFieldId: "table_answer_1",
-                correctValueSource: { type: "reference", referenceId: "table_ref" },
+                correctValueSource: {
+                  type: "reference",
+                  referenceId: "table_ref",
+                },
                 points: 1,
                 grading: { mode: "exact" },
               },
@@ -194,10 +203,7 @@ describe("composed authoring helpers", () => {
 
     expect(getReferenceUsage(model)).toEqual(
       new Map([
-        [
-          "reference_1",
-          [{ type: "text_block", blockId: "text_1" }],
-        ],
+        ["reference_1", [{ type: "text_block", blockId: "text_1" }]],
         [
           "answer_source",
           [
