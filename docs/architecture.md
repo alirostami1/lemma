@@ -1,8 +1,8 @@
 # Architecture
 
-Lemma is organized as a pnpm/Turbo monorepo. Apps compose package modules;
-packages own domain logic, infrastructure adapters, generated HTTP contracts, or
-shared UI.
+Lemma is a web application organized as a pnpm/Turbo workspace. Apps compose
+package modules; packages own domain logic, infrastructure adapters, generated
+HTTP contracts, or shared UI.
 
 ## Package Direction
 

@@ -1,8 +1,8 @@
 # Lemma
 
-Lemma is a TypeScript monorepo for creating reusable question generators from
-workbooks, generating question sets, and managing the operational workflows
-around those jobs.
+Lemma is a web application for creating reusable question generators from
+workbooks, producing question sets, and managing the operational workflows around
+those jobs.
 
 Breaking changes are acceptable when they improve the long-term design.
 
@@ -60,16 +60,16 @@ See [Testing](docs/testing.md), [Operations](docs/operations.md), and
 flowchart LR
   Web[apps/web] --> API[apps/api]
   Admin[apps/admin] --> API
-  API --> Identity[@lemma/identity]
-  API --> Files[@lemma/files]
-  API --> Questions[@lemma/questions]
-  API --> Workbook[@lemma/workbook]
-  API --> Notifications[@lemma/notifications]
+  API --> Identity["@lemma/identity"]
+  API --> Files["@lemma/files"]
+  API --> Questions["@lemma/questions"]
+  API --> Workbook["@lemma/workbook"]
+  API --> Notifications["@lemma/notifications"]
   Worker[apps/worker] --> Questions
   Worker --> Workbook
-  Worker --> Events[@lemma/events]
-  Questions --> DB[@lemma/db]
-  Workbook --> Engine[@lemma/workbook-engine]
+  Worker --> Events["@lemma/events"]
+  Questions --> DB["@lemma/db"]
+  Workbook --> Engine["@lemma/workbook-engine"]
   Files --> Storage[(Garage or S3)]
   Identity --> Keycloak[(Keycloak)]
 ```

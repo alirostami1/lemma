@@ -1,8 +1,8 @@
 # Project Structure
 
-Lemma is a pnpm/Turbo TypeScript monorepo. Apps compose bounded-context
-packages; packages own domain logic, infrastructure adapters, generated HTTP
-contracts, or shared UI.
+Lemma is a web application implemented as a pnpm/Turbo TypeScript workspace.
+Apps compose bounded-context packages; packages own domain logic,
+infrastructure adapters, generated HTTP contracts, or shared UI.
 
 ## Main Directories
 
