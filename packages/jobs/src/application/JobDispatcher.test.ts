@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { JobDispatcher } from "./JobDispatcher.js";
 import {
+  QUESTION_GENERATION_MATERIALIZE_JOB,
   QUESTION_GENERATION_ORCHESTRATE_JOB,
   WORKBOOK_CALCULATE_JOB,
   WORKBOOK_VALIDATE_JOB,
@@ -97,6 +98,36 @@ describe("JobDispatcher", () => {
         name: WORKBOOK_CALCULATE_JOB,
         data: {
           workbookCalculationId: "019e9315-6a87-715f-9861-8654df070c75",
+          lineage,
+        },
+        retryLimit: 3,
+        retryDelaySeconds: 30,
+      },
+    ]);
+  });
+
+  it("uses the generation run id as the deterministic materialization job id", async () => {
+    const jobs: EnqueueJobInput[] = [];
+    const dispatcher = new JobDispatcher({
+      jobQueue: createJobQueue(jobs),
+    });
+
+    const jobId = await dispatcher.enqueueQuestionGenerationMaterialization({
+      questionGenerationRunId: "019e9315-6a87-715f-9861-8654df070c76",
+      workbookSnapshotIds: ["019e9315-6a87-715f-9861-8654df070c77"],
+      lineage,
+      retryLimit: 3,
+      retryDelaySeconds: 30,
+    });
+
+    assert.equal(jobId, "019e9315-6a87-715f-9861-8654df070c76");
+    assert.deepEqual(jobs, [
+      {
+        id: "019e9315-6a87-715f-9861-8654df070c76",
+        name: QUESTION_GENERATION_MATERIALIZE_JOB,
+        data: {
+          questionGenerationRunId: "019e9315-6a87-715f-9861-8654df070c76",
+          workbookSnapshotIds: ["019e9315-6a87-715f-9861-8654df070c77"],
           lineage,
         },
         retryLimit: 3,

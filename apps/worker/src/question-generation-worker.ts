@@ -48,7 +48,6 @@ export async function registerQuestionGenerationWorker(input: {
           return;
         }
         await input.jobDispatcher.enqueueQuestionGenerationMaterialization({
-          jobId: result.questionGenerationRun.id,
           questionGenerationRunId: result.questionGenerationRun.id,
           workbookSnapshotIds: result.workbookSnapshotIds,
           lineage: childOperationLineage(result.lineage, job.id),

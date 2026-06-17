@@ -67,6 +67,7 @@ export class PgBossJobQueue implements JobQueuePort {
           );
         } catch (error) {
           if (isUniqueViolation(error)) {
+            // Deterministic job ids make duplicate enqueue attempts idempotent.
             return input.id;
           }
           throw error;

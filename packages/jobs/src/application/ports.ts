@@ -11,6 +11,10 @@ export type QueueWorkerRegistration = {
 };
 
 export type EnqueueJobInput<TData extends JsonObject = JsonObject> = {
+  /**
+   * Deterministic idempotency key for the job. Queue adapters must treat
+   * duplicate enqueues with the same id as success and return this id.
+   */
   id: string;
   name: string;
   data: TData;

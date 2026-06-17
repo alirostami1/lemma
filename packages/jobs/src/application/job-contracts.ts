@@ -7,6 +7,14 @@ export const QUESTION_GENERATION_MATERIALIZE_JOB =
 export const WORKBOOK_VALIDATE_JOB = "workbook.validate";
 export const WORKBOOK_CALCULATE_JOB = "workbook.calculate";
 
+/**
+ * Job idempotency:
+ * - outbox-dispatched jobs use the outbox event id as the queue id.
+ * - question generation materialization derives the queue id from the run id
+ *   because only one materialization job may ever commit a run.
+ * - handlers must tolerate retries by checking domain state before side effects.
+ */
+
 export type QuestionGenerationMaterializeJobData = JsonObject & {
   questionGenerationRunId: string;
   workbookSnapshotIds: string[];
