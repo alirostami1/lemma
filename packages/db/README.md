@@ -27,3 +27,8 @@ pnpm db:seed:dev
 
 See [Generated Files](../../docs/generated-files.md) for ownership and
 regeneration commands.
+
+## Migrations
+
+See [Migration Conventions](src/migrations/README.md) before adding or changing
+schema migrations.
