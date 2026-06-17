@@ -1,8 +1,5 @@
 import { sql } from "kysely";
-import {
-  documentDestructiveChange,
-  type MigrationDb,
-} from "./helpers.js";
+import { documentDestructiveChange, type MigrationDb } from "./helpers.js";
 
 export async function up(db: MigrationDb): Promise<void> {
   await db.schema
