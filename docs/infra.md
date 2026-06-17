@@ -35,6 +35,7 @@ Files:
 
 - `infra/compose-dev.yml`: Postgres, Garage object storage, and Garage CORS setup.
 - `infra/compose-keycloak.yml`: Keycloak and its isolated Postgres database.
+- `infra/compose-keycloak.prod.yml`: production-style Keycloak stack with the Lemma theme baked into the Keycloak image.
 - `infra/compose-libreoffice-worker.yml`: internal workbook calculation service.
 - `infra/compose-realtime.yml`: Centrifugo websocket and publish API.
 - `infra/compose-observability.yml`: OpenTelemetry Collector, Jaeger, Prometheus, and Grafana.
@@ -140,6 +141,13 @@ For production-like deployments, override:
 - S3 credentials
 - Grafana admin password
 - all `latest` image tags
+
+Keycloak production deployments should use `apps/keycloak-theme/Dockerfile`.
+That image builds `@lemma/ui`, builds the Keycloakify theme JAR, copies it into
+`/opt/keycloak/providers/`, runs `kc.sh build`, and starts Keycloak with
+`start --optimized`. Use the bind mount from `infra/compose-keycloak.yml` only
+for local theme development. Use `infra/compose-keycloak.prod.yml` for a local
+production-style Keycloak stack.
 
 ## Data
 
