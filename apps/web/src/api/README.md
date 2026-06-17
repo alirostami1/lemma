@@ -1,12 +1,14 @@
 # API Boundary
 
-Generated Orval output lives only in `src/api/generated`. Treat generated files as infrastructure, not application API.
+Generated Orval output lives in `src/api/generated`. Treat generated files as
+transport infrastructure, not application models.
 
 The web generator consumes `webOpenapi` from `@lemma/api-contract`, not the full
 API contract. Ops routes and identity administration routes must not be
 generated into this app.
 
-Generated imports are allowed only inside their domain boundary:
+Generated imports are allowed inside the domain boundary that maps transport
+types to app models:
 
 - `src/domains/files/*`
 - `src/domains/workbooks/*`
@@ -14,9 +16,6 @@ Generated imports are allowed only inside their domain boundary:
 
 Routes and features should use domain hooks/models instead of generated hooks/DTOs.
 
-Generated Questions imports are allowed only inside `src/domains/questions/*`.
-Generated Files imports are allowed only inside `src/domains/files/*`.
-Generated Workbooks imports are allowed only inside `src/domains/workbooks/*`.
 Generated Ops output and identity user/role administration are not part of the
 web app surface; admin UI lives in `apps/admin`.
 

@@ -133,21 +133,8 @@ Use app-level `.env.example` files for direct `pnpm dev` processes:
 - `apps/web/.env.example`
 - `apps/worker/.env.example`
 
-For production-like deployments, override:
-
-- database credentials and volumes
-- Keycloak admin credentials and hostname
-- Centrifugo API key and token HMAC secret
-- S3 credentials
-- Grafana admin password
-- all `latest` image tags
-
-Keycloak production deployments should use `apps/keycloak-theme/Dockerfile`.
-That image builds `@lemma/ui`, builds the Keycloakify theme JAR, copies it into
-`/opt/keycloak/providers/`, runs `kc.sh build`, and starts Keycloak with
-`start --optimized`. Use the bind mount from `infra/compose-keycloak.yml` only
-for local theme development. Use `infra/compose-keycloak.prod.yml` for a local
-production-style Keycloak stack.
+Deployment concerns live in [deployment.md](deployment.md). Keycloak theme image
+details live in [apps/keycloak-theme/README.md](../apps/keycloak-theme/README.md).
 
 ## Data
 

@@ -4,6 +4,12 @@ This app builds the Lemma login theme for Keycloak with Keycloakify. It follows
 the Keycloakify shadcn/Tailwind starter approach, but imports shared components
 and design tokens from `@lemma/ui`.
 
+## Uses
+
+- Keycloakify for Keycloak theme generation
+- Vite for preview/build
+- `@lemma/ui` for shared UI primitives
+
 ## Local preview
 
 ```bash
@@ -51,3 +57,8 @@ start --optimized
 
 For Compose, use `infra/compose-keycloak.prod.yml` when you want the production
 image path instead of the local bind-mounted theme JAR path.
+
+## Generated Files
+
+See [Generated Files](../../docs/generated-files.md) for ownership and
+regeneration commands.
