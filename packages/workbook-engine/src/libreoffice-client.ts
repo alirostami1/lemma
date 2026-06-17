@@ -4,7 +4,11 @@ import {
   type WorkbookEngineHealth,
   type WorkbookSparseValues,
 } from "./domain.js";
-import { inferWorkbookSparseSheetSize } from "./values.js";
+import {
+  inferWorkbookSparseSheetSize,
+  normalizeWorkbookSparseValues,
+  type WorkbookValueLimits,
+} from "./values.js";
 
 export async function postWorkbookBatchToLibreOfficeWorker(input: {
   serviceUrl: string;
@@ -12,6 +16,9 @@ export async function postWorkbookBatchToLibreOfficeWorker(input: {
   count: number;
   timeoutMs: number;
   maxResponseBytes: number;
+  maxSheets: number;
+  maxCells: number;
+  maxCachedValueBytes: number;
   requestId?: string | null;
 }) {
   const workbook = await readFile(input.path);
@@ -33,10 +40,8 @@ export async function postWorkbookBatchToLibreOfficeWorker(input: {
   if (!response.ok) {
     throw mapWorkerError(response.status, "batch calculate");
   }
-  return parseWorkerResponse(
-    response,
-    input.maxResponseBytes,
-    parseWorkerBatchValues,
+  return parseWorkerResponse(response, input.maxResponseBytes, (value) =>
+    parseWorkerBatchValues(value, input),
   );
 }
 
@@ -45,6 +50,9 @@ export async function postWorkbookToLibreOfficeWorker(input: {
   path: string;
   timeoutMs: number;
   maxResponseBytes: number;
+  maxSheets: number;
+  maxCells: number;
+  maxCachedValueBytes: number;
   requestId?: string | null;
 }) {
   const workbook = await readFile(input.path);
@@ -64,10 +72,8 @@ export async function postWorkbookToLibreOfficeWorker(input: {
   if (!response.ok) {
     throw mapWorkerError(response.status, "calculate");
   }
-  return parseWorkerResponse(
-    response,
-    input.maxResponseBytes,
-    parseWorkerValues,
+  return parseWorkerResponse(response, input.maxResponseBytes, (value) =>
+    parseWorkerValues(value, input),
   );
 }
 
@@ -121,7 +127,7 @@ function mapWorkerError(
   }
   if (status === 413) {
     return new WorkbookEngineError(
-      "invalid_workbook",
+      "workbook_too_large",
       "LibreOffice worker rejected workbook upload as too large.",
     );
   }
@@ -135,6 +141,12 @@ function mapWorkerError(
     return new WorkbookEngineError(
       "engine_response_too_large",
       "LibreOffice worker response is too large.",
+    );
+  }
+  if (status >= 500) {
+    return new WorkbookEngineError(
+      "calculation_failed",
+      `LibreOffice worker ${operation} failed with ${status}.`,
     );
   }
   return new WorkbookEngineError(
@@ -165,6 +177,9 @@ async function parseWorkerResponse<T>(
   try {
     return parser(JSON.parse(text));
   } catch (error) {
+    if (error instanceof WorkbookEngineError) {
+      throw error;
+    }
     throw new WorkbookEngineError(
       "engine_response_invalid",
       "LibreOffice worker returned invalid workbook values.",
@@ -213,7 +228,10 @@ function parseWorkerHealth(value: unknown) {
   };
 }
 
-function parseWorkerValues(value: unknown): WorkbookSparseValues {
+function parseWorkerValues(
+  value: unknown,
+  limits: WorkbookValueLimits,
+): WorkbookSparseValues {
   if (!value || typeof value !== "object") {
     throw new Error("Workbook values must be an object.");
   }
@@ -222,43 +240,49 @@ function parseWorkerValues(value: unknown): WorkbookSparseValues {
   if (!Array.isArray(sheets)) {
     throw new Error("Workbook values must include sheets.");
   }
-  return {
-    sheets: sheets.map((sheet) => {
-      if (!sheet || typeof sheet !== "object") {
-        throw new Error("Workbook sheet must be an object.");
-      }
-      const item = sheet as Record<string, unknown>;
-      if (
-        typeof item.name !== "string" ||
-        !item.cells ||
-        typeof item.cells !== "object"
-      ) {
-        throw new Error("Workbook sheet is missing name or cells.");
-      }
-      const cells = Object.fromEntries(
-        Object.entries(item.cells as Record<string, unknown>).map(
-          ([key, cell]) => [key, cell == null ? "" : String(cell)],
-        ),
-      );
-      const inferred = inferWorkbookSparseSheetSize(cells);
-      return {
-        name: item.name,
-        cells,
-        rowCount:
-          typeof item.rowCount === "number" && Number.isInteger(item.rowCount)
-            ? Math.max(item.rowCount, inferred.rowCount)
-            : inferred.rowCount,
-        columnCount:
-          typeof item.columnCount === "number" &&
-          Number.isInteger(item.columnCount)
-            ? Math.max(item.columnCount, inferred.columnCount)
-            : inferred.columnCount,
-      };
-    }),
-  };
+  return normalizeWorkbookSparseValues(
+    {
+      sheets: sheets.map((sheet) => {
+        if (!sheet || typeof sheet !== "object") {
+          throw new Error("Workbook sheet must be an object.");
+        }
+        const item = sheet as Record<string, unknown>;
+        if (
+          typeof item.name !== "string" ||
+          !item.cells ||
+          typeof item.cells !== "object"
+        ) {
+          throw new Error("Workbook sheet is missing name or cells.");
+        }
+        const cells = Object.fromEntries(
+          Object.entries(item.cells as Record<string, unknown>).map(
+            ([key, cell]) => [key, cell == null ? "" : String(cell)],
+          ),
+        );
+        const inferred = inferWorkbookSparseSheetSize(cells);
+        return {
+          name: item.name,
+          cells,
+          rowCount:
+            typeof item.rowCount === "number" && Number.isInteger(item.rowCount)
+              ? Math.max(item.rowCount, inferred.rowCount)
+              : inferred.rowCount,
+          columnCount:
+            typeof item.columnCount === "number" &&
+            Number.isInteger(item.columnCount)
+              ? Math.max(item.columnCount, inferred.columnCount)
+              : inferred.columnCount,
+        };
+      }),
+    },
+    limits,
+  );
 }
 
-function parseWorkerBatchValues(value: unknown): WorkbookSparseValues[] {
+function parseWorkerBatchValues(
+  value: unknown,
+  limits: WorkbookValueLimits,
+): WorkbookSparseValues[] {
   if (!value || typeof value !== "object") {
     throw new Error("Workbook batch values must be an object.");
   }
@@ -266,5 +290,5 @@ function parseWorkerBatchValues(value: unknown): WorkbookSparseValues[] {
   if (!Array.isArray(snapshots)) {
     throw new Error("Workbook batch values must include snapshots.");
   }
-  return snapshots.map((snapshot) => parseWorkerValues(snapshot));
+  return snapshots.map((snapshot) => parseWorkerValues(snapshot, limits));
 }

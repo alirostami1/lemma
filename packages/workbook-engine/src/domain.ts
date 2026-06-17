@@ -17,6 +17,7 @@ export type WorkbookEngineConfig = {
   maxZipTotalUncompressedBytes?: number;
   maxZipCompressionRatio?: number;
   maxXmlPartBytes?: number;
+  maxCachedValueBytes?: number;
 };
 
 export type ZipEntry = {
@@ -63,9 +64,19 @@ export type WorkbookValues = {
   sheets: Array<{ name: string; rows: string[][] }>;
 };
 
+export type WorkbookCellType =
+  | "string"
+  | "number"
+  | "boolean"
+  | "date_like"
+  | "error"
+  | "blank"
+  | "formula_cached";
+
 export type WorkbookSparseSheet = {
   name: string;
   cells: Record<string, string>;
+  cellTypes?: Record<string, WorkbookCellType>;
   rowCount: number;
   columnCount: number;
 };
@@ -108,6 +119,10 @@ export type WorkbookEngine = {
 export type WorkbookEngineErrorCode =
   | "invalid_workbook"
   | "unsupported_workbook"
+  | "unsafe_workbook"
+  | "workbook_too_large"
+  | "workbook_parse_failed"
+  | "calculation_failed"
   | "engine_unavailable"
   | "engine_timeout"
   | "engine_response_invalid"

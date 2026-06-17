@@ -18,7 +18,8 @@ Inspection is split into reviewable boundaries:
 - `container/`: bounded ZIP container parsing and entry reads
 - `security/`: forbidden workbook feature policy
 - `inspection`: package-level workbook validation and resource checks
-- `values`: cached value extraction and reference helpers
+- `values`: cached value extraction, normalized sparse values, type metadata,
+  and reference helpers
 - `libreoffice-client`: worker boundary, timeouts, response limits, and typed
   failures
 
@@ -30,6 +31,12 @@ The security policy rejects macros, external workbook links, data connections,
 OLE/ActiveX embeddings, encrypted packages, protected workbook/sheet features,
 and external relationships. Runtime engines inspect before cached value reads
 and before recalculation.
+
+Cached values and LibreOffice responses pass through the same sparse-value
+normalizer. It enforces sheet count, cell count, and cached value byte budgets,
+and records per-cell type metadata where available. LibreOffice worker failures
+are classified as invalid workbook, workbook too large, timeout, response too
+large, calculation failed, unavailable, or invalid response.
 
 ## Used By
 

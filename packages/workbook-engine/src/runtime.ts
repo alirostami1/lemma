@@ -88,7 +88,7 @@ export function createCachedWorkbookEngine(
 ): WorkbookEngine {
   async function readInspectedCachedValues(path: string) {
     await inspectXlsx(path, config);
-    return readWorkbookSparseValues(path);
+    return readWorkbookSparseValues(path, config);
   }
 
   return {
@@ -123,7 +123,7 @@ export function createLibreOfficeUnoEngine(
     inspect: (path) => inspectXlsx(path, config),
     async readCachedValues(path) {
       await inspectXlsx(path, config);
-      return readWorkbookSparseValues(path);
+      return readWorkbookSparseValues(path, config);
     },
     async recalculate(path, options) {
       return postWorkbookToLibreOfficeWorker({
@@ -131,6 +131,10 @@ export function createLibreOfficeUnoEngine(
         path,
         timeoutMs,
         maxResponseBytes,
+        maxSheets: config.maxSheets,
+        maxCells: config.maxCells,
+        maxCachedValueBytes:
+          config.maxCachedValueBytes ?? config.maxResponseBytes,
         requestId: options?.requestId,
       });
     },
@@ -141,6 +145,10 @@ export function createLibreOfficeUnoEngine(
         count,
         timeoutMs,
         maxResponseBytes,
+        maxSheets: config.maxSheets,
+        maxCells: config.maxCells,
+        maxCachedValueBytes:
+          config.maxCachedValueBytes ?? config.maxResponseBytes,
         requestId: options?.requestId,
       });
     },
