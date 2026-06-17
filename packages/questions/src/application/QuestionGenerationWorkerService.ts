@@ -7,7 +7,6 @@ import {
   markQuestionGenerationRunFailed,
   markQuestionGenerationRunMaterializing,
   markQuestionGenerationRunSucceeded,
-  markQuestionGenerationRunWaitingForWorkbookCalculation,
   type QuestionBlueprintVersion,
   type QuestionGenerationRun,
   type QuestionGenerationRunId,
@@ -31,14 +30,13 @@ import type {
   QuestionValueResolverPort,
   WorkbookCalculationPort,
 } from "./ports.js";
-import { blueprintRequiresWorkbookSource } from "./question-blueprint-analysis.js";
 import {
   questionGenerationRunFailedEvent,
   questionGenerationRunMaterializingEvent,
   questionGenerationRunSucceededEvent,
-  questionGenerationRunWaitingForWorkbookCalculationEvent,
   questionSetQuestionsAddedEvent,
 } from "./question-generation-events.js";
+import { QuestionGenerationMaterializationInputResolver } from "./QuestionGenerationMaterializationInputResolver.js";
 import { QuestionGenerationRunMaterializer } from "./QuestionGenerationRunMaterializer.js";
 
 const instrumentation = instrumentService("questions", "generation_worker");
@@ -202,11 +200,18 @@ export class QuestionGenerationWorkerService {
       );
     }
 
-    const resolved = await this.resolveMaterializationInputs(
+    const resolved = await new QuestionGenerationMaterializationInputResolver({
+      workbookCalculationPort: this.deps.workbookCalculationPort,
+      questionGenerationTransaction: this.deps.questionGenerationTransaction,
+      idGenerator: this.deps.idGenerator,
+      clock: this.deps.clock,
+    }).resolve({
       run,
       version,
-      input,
-    );
+      workbookCalculationId: input.workbookCalculationId,
+      workbookSnapshotIds: input.workbookSnapshotIds,
+      lineage: input.lineage,
+    });
     if (resolved.status === "waiting_for_workbook_calculation") {
       return resolved;
     }
@@ -293,92 +298,6 @@ export class QuestionGenerationWorkerService {
     );
 
     return { status: "processed", questionGenerationRun: completed };
-  }
-
-  private async resolveMaterializationInputs(
-    run: QuestionGenerationRun,
-    version: QuestionBlueprintVersion,
-    input: {
-      workbookCalculationId?: string | null;
-      workbookSnapshotIds?: readonly string[];
-      lineage: OperationLineage;
-    },
-  ): Promise<
-    | {
-        status: "materialization_ready";
-        workbookSnapshotIds: WorkbookSnapshotId[];
-      }
-    | {
-        status: "waiting_for_workbook_calculation";
-        questionGenerationRun: QuestionGenerationRun;
-      }
-  > {
-    const requiresWorkbook = blueprintRequiresWorkbookSource(version.document);
-    if (!requiresWorkbook) {
-      return { status: "materialization_ready", workbookSnapshotIds: [] };
-    }
-    if (!run.source) {
-      throw new WorkbookQuestionSourceError(
-        "generation run has no workbook source",
-      );
-    }
-    if (run.source.workbookSnapshotId) {
-      return {
-        status: "materialization_ready",
-        workbookSnapshotIds: [run.source.workbookSnapshotId],
-      };
-    }
-    if (input.workbookSnapshotIds && input.workbookSnapshotIds.length > 0) {
-      if (
-        input.workbookCalculationId &&
-        run.source.workbookCalculationId &&
-        input.workbookCalculationId !== run.source.workbookCalculationId
-      ) {
-        throw new WorkbookQuestionSourceError(
-          "workbook calculation does not match generation run",
-        );
-      }
-      return {
-        status: "materialization_ready",
-        workbookSnapshotIds:
-          input.workbookSnapshotIds.map(toWorkbookSnapshotId),
-      };
-    }
-
-    if (!run.source.workbookCalculationId) {
-      const requested =
-        await this.deps.workbookCalculationPort.requestCalculation({
-          createdByUserId: run.createdByUserId,
-          workbookId: run.source.workbookId,
-          requestedCount: run.requestedCount,
-          correlationId: run.id,
-          lineage: input.lineage,
-        });
-      const waiting = await this.persistRunWithEvents(
-        markQuestionGenerationRunWaitingForWorkbookCalculation(
-          run,
-          requested.workbookCalculationId,
-          this.deps.clock.now(),
-        ),
-        (persisted, occurredAt) => [
-          questionGenerationRunWaitingForWorkbookCalculationEvent({
-            id: this.deps.idGenerator.eventId(),
-            run: persisted,
-            lineage: input.lineage,
-            occurredAt,
-          }),
-        ],
-      );
-      return {
-        status: "waiting_for_workbook_calculation",
-        questionGenerationRun: waiting,
-      };
-    }
-
-    return {
-      status: "waiting_for_workbook_calculation",
-      questionGenerationRun: run,
-    };
   }
 
   private async failRun(
