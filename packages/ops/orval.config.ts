@@ -34,8 +34,9 @@ async function formatGeneratedFiles(directory: string) {
   await execFileAsync("pnpm", [
     "exec",
     "biome",
-    "format",
+    "check",
     "--write",
+    "--linter-enabled=false",
     directory,
   ]);
 }

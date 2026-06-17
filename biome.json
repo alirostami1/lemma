@@ -23,7 +23,11 @@
   },
   "overrides": [
     {
-      "includes": ["**/src/gen/**/*", "**/src/kc.gen.tsx"],
+      "includes": [
+        "**/src/gen/**/*",
+        "**/src/api/generated/**/*",
+        "**/src/kc.gen.tsx"
+      ],
       "linter": {
         "enabled": false
       }
