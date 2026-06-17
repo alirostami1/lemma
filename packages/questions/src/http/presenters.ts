@@ -10,8 +10,24 @@ import type {
   QuestionSetsResult,
   QuestionsResult,
 } from "../application/index.js";
+import type {
+  GradeQuestionResponse,
+  ListQuestionBlueprintsResponse,
+  ListQuestionGenerationRunsResponse,
+  ListQuestionSetsResponse,
+  ListQuestionsResponse,
+  QuestionBlueprintAuthoringResponse,
+  QuestionBlueprint as QuestionBlueprintDto,
+  QuestionBlueprintResponse,
+  QuestionGenerationRun as QuestionGenerationRunDto,
+  QuestionGenerationRunResponse,
+  QuestionResponse,
+  QuestionSetResponse,
+} from "../gen/types/index.js";
 
-export const presentQuestionSet = (result: QuestionSetResult) => ({
+export const presentQuestionSet = (
+  result: QuestionSetResult,
+): QuestionSetResponse => ({
   questionSet: {
     ...result.questionSet,
     createdAt: presentDate(result.questionSet.createdAt),
@@ -19,14 +35,18 @@ export const presentQuestionSet = (result: QuestionSetResult) => ({
   },
 });
 
-export const presentQuestionSets = (result: QuestionSetsResult) => ({
+export const presentQuestionSets = (
+  result: QuestionSetsResult,
+): ListQuestionSetsResponse => ({
   questionSets: result.questionSets.map(
     (questionSet) => presentQuestionSet({ questionSet }).questionSet,
   ),
   nextCursor: result.nextCursor,
 });
 
-export const presentQuestionBlueprint = (result: QuestionBlueprintResult) => {
+export const presentQuestionBlueprint = (
+  result: QuestionBlueprintResult,
+): QuestionBlueprintResponse => {
   const currentVersion = result.questionBlueprint.currentVersion;
   return {
     questionBlueprint: {
@@ -52,7 +72,7 @@ export const presentQuestionBlueprint = (result: QuestionBlueprintResult) => {
 
 export const presentQuestionBlueprintAuthoring = (
   result: QuestionBlueprintResult,
-) => {
+): QuestionBlueprintAuthoringResponse => {
   const currentVersion = result.questionBlueprint.currentVersion;
   return {
     questionBlueprint: {
@@ -76,7 +96,7 @@ export const presentQuestionBlueprintAuthoring = (
 
 export const presentQuestionBlueprints = (
   result: QuestionBlueprintsResult,
-) => ({
+): ListQuestionBlueprintsResponse => ({
   questionBlueprints: result.questionBlueprints.map(
     (questionBlueprint) =>
       presentQuestionBlueprint({ questionBlueprint }).questionBlueprint,
@@ -84,7 +104,7 @@ export const presentQuestionBlueprints = (
   nextCursor: result.nextCursor,
 });
 
-export const presentQuestion = (result: QuestionResult) => {
+export const presentQuestion = (result: QuestionResult): QuestionResponse => {
   const question = result.question;
   return {
     question: {
@@ -104,24 +124,28 @@ export const presentQuestion = (result: QuestionResult) => {
   };
 };
 
-export const presentQuestions = (result: QuestionsResult) => ({
+export const presentQuestions = (
+  result: QuestionsResult,
+): ListQuestionsResponse => ({
   questions: result.questions.map(
     (question) => presentQuestion({ question }).question,
   ),
   nextCursor: result.nextCursor,
 });
 
-export const presentGrade = (result: GradeQuestionResult) => result;
+export const presentGrade = (
+  result: GradeQuestionResult,
+): GradeQuestionResponse => result;
 
 export const presentQuestionGenerationRun = (
   result: QuestionGenerationRunResultDto,
-) => ({
+): QuestionGenerationRunResponse => ({
   questionGenerationRun: presentLearnerQuestionGenerationRun(result),
 });
 
 export const presentQuestionGenerationRuns = (
   result: QuestionGenerationRunsResult,
-) => ({
+): ListQuestionGenerationRunsResponse => ({
   questionGenerationRuns: result.questionGenerationRuns.map(
     (questionGenerationRun) =>
       presentQuestionGenerationRun({ questionGenerationRun })
@@ -134,7 +158,7 @@ function presentLearnerQuestionBlueprintDocument(
   document: NonNullable<
     QuestionBlueprintResult["questionBlueprint"]["currentVersion"]
   >["document"],
-) {
+): QuestionBlueprintDto["document"] {
   return {
     schemaVersion: document.schemaVersion,
     responseFields: document.responseFields,
@@ -208,7 +232,7 @@ function publicInlineContent(
 
 function presentLearnerQuestionGenerationRun(
   result: QuestionGenerationRunResultDto,
-) {
+): QuestionGenerationRunDto {
   const run = result.questionGenerationRun;
   return {
     id: run.id,

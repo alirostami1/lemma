@@ -2,6 +2,7 @@ import { presentDate, presentNullableDate } from "@lemma/http";
 import type {
   WorkbookCalculationDto,
   WorkbookCalculationsResult,
+  WorkbookEngineHealthResult,
   WorkbookResult,
   WorkbookSnapshotResult,
   WorkbookSnapshotsResult,
@@ -11,22 +12,33 @@ import type {
 import type {
   Workbook,
   WorkbookCalculation,
-  WorkbookEngineHealth,
   WorkbookSnapshot,
 } from "../domain/index.js";
+import type {
+  WorkbookCalculationResponse,
+  WorkbookCalculationsResponse,
+  WorkbookEngineHealthResponse,
+  WorkbookResponse,
+  WorkbookSnapshotResponse,
+  WorkbookSnapshotsResponse,
+  WorkbookSnapshotValueResponse,
+  WorkbooksResponse,
+} from "../gen/types/index.js";
 
-export function presentWorkbook(result: WorkbookResult) {
+export function presentWorkbook(result: WorkbookResult): WorkbookResponse {
   return { workbook: presentWorkbookModel(result.workbook) };
 }
 
-export function presentWorkbooks(result: WorkbooksResult) {
+export function presentWorkbooks(result: WorkbooksResult): WorkbooksResponse {
   return {
     workbooks: result.workbooks.map(presentWorkbookModel),
     nextCursor: result.nextCursor,
   };
 }
 
-export function presentWorkbookCalculation(result: WorkbookCalculationDto) {
+export function presentWorkbookCalculation(
+  result: WorkbookCalculationDto,
+): WorkbookCalculationResponse {
   return {
     workbookCalculation: presentWorkbookCalculationModel(
       result.workbookCalculation,
@@ -36,7 +48,7 @@ export function presentWorkbookCalculation(result: WorkbookCalculationDto) {
 
 export function presentWorkbookCalculations(
   result: WorkbookCalculationsResult,
-) {
+): WorkbookCalculationsResponse {
   return {
     workbookCalculations: result.workbookCalculations.map(
       presentWorkbookCalculationModel,
@@ -45,13 +57,17 @@ export function presentWorkbookCalculations(
   };
 }
 
-export function presentWorkbookSnapshot(result: WorkbookSnapshotResult) {
+export function presentWorkbookSnapshot(
+  result: WorkbookSnapshotResult,
+): WorkbookSnapshotResponse {
   return {
     workbookSnapshot: presentWorkbookSnapshotModel(result.workbookSnapshot),
   };
 }
 
-export function presentWorkbookSnapshots(result: WorkbookSnapshotsResult) {
+export function presentWorkbookSnapshots(
+  result: WorkbookSnapshotsResult,
+): WorkbookSnapshotsResponse {
   return {
     workbookSnapshots: result.workbookSnapshots.map(
       presentWorkbookSnapshotModel,
@@ -62,13 +78,13 @@ export function presentWorkbookSnapshots(result: WorkbookSnapshotsResult) {
 
 export function presentWorkbookSnapshotValue(
   result: WorkbookSnapshotValueResult,
-) {
+): WorkbookSnapshotValueResponse {
   return { value: result.value };
 }
 
-export function presentWorkbookEngineHealth(result: {
-  health: WorkbookEngineHealth;
-}) {
+export function presentWorkbookEngineHealth(
+  result: WorkbookEngineHealthResult,
+): WorkbookEngineHealthResponse {
   return { health: result.health };
 }
 

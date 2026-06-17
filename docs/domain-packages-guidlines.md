@@ -96,6 +96,14 @@ Application services should not:
 - HTTP handlers map transport DTOs to application commands and map application
   results back to response DTOs.
 - HTTP error presenters centralize status-code decisions.
+- HTTP presenter functions should return generated response DTO types from
+  `src/gen/types` when a generated type exists.
+- Name public response builders `present<Resource>` or `present<ResourcePlural>`;
+  name private nested DTO mappers `to<Resource>Dto`.
+- Keep domain/application models out of public HTTP responses unless the
+  generated DTO type intentionally matches that shape.
+- Put repeated response wrapper logic in small presenter helpers instead of
+  duplicating ad hoc object shapes in handlers.
 
 ## Testing
 
