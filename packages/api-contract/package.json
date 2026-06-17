@@ -7,7 +7,9 @@
     ".": "./src/openapi.ts"
   },
   "scripts": {
-    "lint": "tsx src/lint.ts"
+    "lint": "tsx src/lint.ts",
+    "check": "biome check && pnpm lint",
+    "format": "biome format"
   },
   "dependencies": {
     "@lemma/files": "workspace:*",
@@ -20,6 +22,7 @@
     "@redocly/openapi-core": "^2.13.0"
   },
   "devDependencies": {
-    "tsx": "catalog:"
+    "tsx": "catalog:",
+    "@biomejs/biome": "catalog:"
   }
 }

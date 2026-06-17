@@ -15,6 +15,9 @@
     "format": {
       "dependsOn": ["^format"]
     },
+    "check": {
+      "dependsOn": ["^check"]
+    },
     "check-types": {
       "dependsOn": ["generate:openapi", "generate:api", "^check-types"]
     },

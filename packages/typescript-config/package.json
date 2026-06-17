@@ -1,5 +1,13 @@
 {
   "name": "@lemma/typescript-config",
   "version": "0.0.0",
-  "private": true
+  "private": true,
+  "scripts": {
+    "check": "biome check",
+    "format": "biome format",
+    "lint": "biome lint"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "catalog:"
+  }
 }

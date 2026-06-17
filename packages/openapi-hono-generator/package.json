@@ -14,7 +14,10 @@
   "scripts": {
     "check-types": "tsc --noEmit",
     "build": "tsc",
-    "test": "vitest run src"
+    "test": "vitest run src",
+    "check": "biome check",
+    "format": "biome format",
+    "lint": "biome lint"
   },
   "dependencies": {
     "openapi-types": "catalog:"
@@ -26,6 +29,7 @@
     "hono": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@biomejs/biome": "catalog:"
   }
 }

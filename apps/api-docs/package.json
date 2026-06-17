@@ -6,13 +6,17 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0 --clearScreen false",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "check": "biome check",
+    "format": "biome format",
+    "lint": "biome lint"
   },
   "dependencies": {
     "@lemma/api-contract": "workspace:*",
     "@scalar/api-reference": "^1.55.3"
   },
   "devDependencies": {
-    "vite": "^7.0.0"
+    "vite": "^7.0.0",
+    "@biomejs/biome": "catalog:"
   }
 }

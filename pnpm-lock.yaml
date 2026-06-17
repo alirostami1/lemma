@@ -281,6 +281,9 @@ importers:
         specifier: ^1.55.3
         version: 1.59.2(tailwindcss@4.3.0)(typescript@6.0.3)(zod@4.4.3)
     devDependencies:
+      '@biomejs/biome':
+        specifier: 'catalog:'
+        version: 2.4.5
       vite:
         specifier: ^7.0.0
         version: 7.3.5(@types/node@24.13.1)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0)
@@ -591,6 +594,9 @@ importers:
         specifier: ^2.13.0
         version: 2.32.0
     devDependencies:
+      '@biomejs/biome':
+        specifier: 'catalog:'
+        version: 2.4.5
       tsx:
         specifier: 'catalog:'
         version: 4.22.4
@@ -601,6 +607,9 @@ importers:
         specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
+      '@biomejs/biome':
+        specifier: 'catalog:'
+        version: 2.4.5
       '@lemma/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -620,6 +629,9 @@ importers:
         specifier: 'catalog:'
         version: 8.21.0
     devDependencies:
+      '@biomejs/biome':
+        specifier: 'catalog:'
+        version: 2.4.5
       '@lemma/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -641,6 +653,9 @@ importers:
 
   packages/domain:
     devDependencies:
+      '@biomejs/biome':
+        specifier: 'catalog:'
+        version: 2.4.5
       '@lemma/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -653,6 +668,9 @@ importers:
 
   packages/error:
     devDependencies:
+      '@biomejs/biome':
+        specifier: 'catalog:'
+        version: 2.4.5
       '@lemma/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -681,6 +699,9 @@ importers:
         specifier: 'catalog:'
         version: 0.28.17
     devDependencies:
+      '@biomejs/biome':
+        specifier: 'catalog:'
+        version: 2.4.5
       '@lemma/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -773,6 +794,9 @@ importers:
         specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
+      '@biomejs/biome':
+        specifier: 'catalog:'
+        version: 2.4.5
       '@lemma/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -850,6 +874,9 @@ importers:
         specifier: 'catalog:'
         version: 12.18.2
     devDependencies:
+      '@biomejs/biome':
+        specifier: 'catalog:'
+        version: 2.4.5
       '@lemma/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -881,6 +908,9 @@ importers:
         specifier: 'catalog:'
         version: 4.12.25
     devDependencies:
+      '@biomejs/biome':
+        specifier: 'catalog:'
+        version: 2.4.5
       '@lemma/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -915,6 +945,9 @@ importers:
         specifier: 'catalog:'
         version: 0.218.0(@opentelemetry/api@1.9.1)
     devDependencies:
+      '@biomejs/biome':
+        specifier: 'catalog:'
+        version: 2.4.5
       '@lemma/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -931,6 +964,9 @@ importers:
         specifier: 'catalog:'
         version: 12.1.3
     devDependencies:
+      '@biomejs/biome':
+        specifier: 'catalog:'
+        version: 2.4.5
       '@lemma/http':
         specifier: workspace:*
         version: link:../http
@@ -1060,7 +1096,11 @@ importers:
         specifier: 'catalog:'
         version: 6.0.3
 
-  packages/typescript-config: {}
+  packages/typescript-config:
+    devDependencies:
+      '@biomejs/biome':
+        specifier: 'catalog:'
+        version: 2.4.5
 
   packages/ui:
     dependencies:
@@ -1208,6 +1248,9 @@ importers:
         specifier: 'catalog:'
         version: 0.18.5
     devDependencies:
+      '@biomejs/biome':
+        specifier: 'catalog:'
+        version: 2.4.5
       '@lemma/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config

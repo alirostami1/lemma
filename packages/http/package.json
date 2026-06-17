@@ -20,7 +20,10 @@
   },
   "scripts": {
     "check-types": "tsc --noEmit",
-    "build": "tsc"
+    "build": "tsc",
+    "check": "biome check",
+    "format": "biome format",
+    "lint": "biome lint"
   },
   "dependencies": {
     "@hono/zod-validator": "catalog:",
@@ -33,6 +36,7 @@
   "devDependencies": {
     "@lemma/typescript-config": "workspace:*",
     "@types/node": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "@biomejs/biome": "catalog:"
   }
 }

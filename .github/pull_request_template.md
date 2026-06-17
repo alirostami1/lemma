@@ -13,7 +13,7 @@
 ## Validation
 
 - [ ] `pnpm check-types`
-- [ ] `pnpm lint`
+- [ ] `pnpm check`
 - [ ] `pnpm test`
 
 ## Risk
