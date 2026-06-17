@@ -1,9 +1,6 @@
 import { PageContainer } from "#/components/patterns";
 import { signIn } from "#/features/auth";
-import {
-  AccessDeniedPage,
-  SignInRequiredPage,
-} from "#/features/errors";
+import { AccessDeniedPage, SignInRequiredPage } from "#/features/errors";
 import {
   HomeEmptyState,
   HomeHeroSection,

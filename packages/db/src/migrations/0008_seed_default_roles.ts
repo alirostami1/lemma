@@ -1,5 +1,14 @@
 import type { Kysely } from "kysely";
 
+type RolesSeedDb = {
+  roles: {
+    key: string;
+    name: string;
+    description: string;
+    is_system: boolean;
+  };
+};
+
 const roles = [
   {
     key: "admin",
@@ -23,7 +32,7 @@ const roles = [
   },
 ] as const;
 
-export async function up(db: Kysely<any>): Promise<void> {
+export async function up(db: Kysely<RolesSeedDb>): Promise<void> {
   await db
     .insertInto("roles")
     .values(roles.map((role) => ({ ...role, is_system: true })))
@@ -31,7 +40,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .execute();
 }
 
-export async function down(db: Kysely<any>): Promise<void> {
+export async function down(db: Kysely<RolesSeedDb>): Promise<void> {
   await db
     .deleteFrom("roles")
     .where(

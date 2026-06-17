@@ -61,7 +61,9 @@ export function GenerationTargetSection({
               {questionSet.name}
             </SelectItem>
           ))}
-          <SelectItem value={CREATE_NEW_VALUE}>Create new question set</SelectItem>
+          <SelectItem value={CREATE_NEW_VALUE}>
+            Create new question set
+          </SelectItem>
         </SelectContent>
       </Select>
       {existingQuestionSetIssue ? (

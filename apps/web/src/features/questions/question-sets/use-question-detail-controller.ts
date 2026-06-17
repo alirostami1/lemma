@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import {
   createEmptyQuestionAnswer,
-  type QuestionGrade,
-  useQuestionQuery,
-  useQuestionSetQuery,
-  useGradeQuestion,
   type Question,
   type QuestionAnswer,
+  type QuestionGrade,
   type QuestionSet,
+  useGradeQuestion,
+  useQuestionQuery,
+  useQuestionSetQuery,
 } from "#/domains/questions";
 import {
   getApiErrorRequestId,
@@ -47,7 +47,9 @@ export function useQuestionDetailController({
   const questionSetQuery = useQuestionSetQuery(questionSetId);
   const gradeMutation = useGradeQuestion();
   const resetGrade = gradeMutation.reset;
-  const [answer, setAnswer] = useState<QuestionAnswer>(createEmptyQuestionAnswer);
+  const [answer, setAnswer] = useState<QuestionAnswer>(
+    createEmptyQuestionAnswer,
+  );
 
   useEffect(() => {
     setAnswer(createEmptyQuestionAnswer());

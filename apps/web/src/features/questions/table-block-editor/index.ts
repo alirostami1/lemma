@@ -10,8 +10,8 @@ export type {
   TableEditorResponseCell,
   TableGrading,
   TableResponseField,
-  ValueExpression,
   TableWorkbookEditorTools,
+  ValueExpression,
 } from "#/domains/questions/authoring";
 export {
   coerceAnswerValue,

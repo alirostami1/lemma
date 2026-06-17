@@ -4,8 +4,8 @@ import userEvent from "@testing-library/user-event";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { QuestionBlueprint } from "#/domains/questions/model";
-import { buildSavedBlueprintsViewModel } from "./saved-blueprints-view-model";
 import { SavedBlueprintsDialog } from "./saved-blueprints-dialog";
+import { buildSavedBlueprintsViewModel } from "./saved-blueprints-view-model";
 
 vi.mock("@tanstack/react-router", () => ({
   Link: ({
@@ -46,9 +46,10 @@ describe("saved blueprints dialog", () => {
     await screen.findByText("Newer blueprint");
     expect(screen.getByText("Older blueprint")).toBeTruthy();
     expect(
-      screen.getByText("Newer blueprint").compareDocumentPosition(
-        screen.getByText("Older blueprint"),
-      ) & Node.DOCUMENT_POSITION_FOLLOWING,
+      screen
+        .getByText("Newer blueprint")
+        .compareDocumentPosition(screen.getByText("Older blueprint")) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(screen.getAllByRole("button", { name: "Generate" })).toHaveLength(2);
 
@@ -57,10 +58,7 @@ describe("saved blueprints dialog", () => {
   });
 });
 
-function createBlueprint(
-  name: string,
-  timestamp: string,
-): QuestionBlueprint {
+function createBlueprint(name: string, timestamp: string): QuestionBlueprint {
   return {
     id: `blueprint-${name.toLowerCase().replace(/\s+/g, "-")}`,
     ownerUserId: "user_1",

@@ -13,11 +13,7 @@ export type DetailSectionProps = {
   children: ReactNode;
 };
 
-function DetailSection({
-  title,
-  description,
-  children,
-}: DetailSectionProps) {
+function DetailSection({ title, description, children }: DetailSectionProps) {
   return (
     <Card>
       <CardHeader>

@@ -1,5 +1,5 @@
-import { createRemoteJWKSet, type JWTPayload, jwtVerify } from "jose";
 import { instrumentExternal } from "@lemma/observability";
+import { createRemoteJWKSet, type JWTPayload, jwtVerify } from "jose";
 import type {
   IdentityProvider,
   VerifiedIdentity,

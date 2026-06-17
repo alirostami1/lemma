@@ -1,6 +1,6 @@
-import { parseOperationLineage, type OperationLineage } from "@lemma/domain";
 import type { DatabasePort } from "@lemma/db";
 import { sql } from "@lemma/db";
+import { type OperationLineage, parseOperationLineage } from "@lemma/domain";
 import {
   QUESTION_GENERATION_MATERIALIZE_JOB,
   QUESTION_GENERATION_ORCHESTRATE_JOB,
@@ -34,9 +34,7 @@ type ReconciliationResult =
   | "run_not_found"
   | "run_terminal";
 type FailedGenerationJobResult = Awaited<
-  ReturnType<
-    QuestionGenerationWorkerService["reconcileFailedGenerationJob"]
-  >
+  ReturnType<QuestionGenerationWorkerService["reconcileFailedGenerationJob"]>
 >;
 
 export type FailedQueueJobReconciliationRepository = {

@@ -1,7 +1,4 @@
-import {
-  ForbiddenRouteError,
-  SignInRequiredRouteError,
-} from "#/features/auth";
+import { ForbiddenRouteError, SignInRequiredRouteError } from "#/features/auth";
 import {
   getApiErrorRequestId,
   isForbiddenError,

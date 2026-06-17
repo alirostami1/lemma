@@ -45,14 +45,21 @@ export function oneOf<const Values extends readonly string[]>(
 
 export function assertJsonValue(value: unknown, fieldName: string): JsonValue {
   if (!isJsonValue(value)) {
-    throw new InvalidWorkbookFieldError(`${fieldName} must be JSON-compatible.`);
+    throw new InvalidWorkbookFieldError(
+      `${fieldName} must be JSON-compatible.`,
+    );
   }
   return value;
 }
 
-export function assertNonNegativeInteger(value: number, fieldName: string): number {
+export function assertNonNegativeInteger(
+  value: number,
+  fieldName: string,
+): number {
   if (!Number.isInteger(value) || value < 0) {
-    throw new InvalidWorkbookFieldError(`${fieldName} must be a non-negative integer.`);
+    throw new InvalidWorkbookFieldError(
+      `${fieldName} must be a non-negative integer.`,
+    );
   }
   return value;
 }

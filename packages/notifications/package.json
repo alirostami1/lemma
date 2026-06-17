@@ -44,7 +44,10 @@
   "scripts": {
     "check-types": "tsc --noEmit",
     "build": "tsc",
-    "test": "pnpm build && node --test dist/**/*.test.js"
+    "test": "pnpm build && node --test dist/**/*.test.js",
+    "check": "biome check",
+    "format": "biome format",
+    "lint": "biome lint"
   },
   "dependencies": {
     "@lemma/domain": "workspace:*",
@@ -57,6 +60,7 @@
   "devDependencies": {
     "@lemma/typescript-config": "workspace:*",
     "@types/node": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "@biomejs/biome": "catalog:"
   }
 }

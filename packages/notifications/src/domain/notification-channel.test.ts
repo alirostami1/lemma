@@ -38,9 +38,7 @@ describe("notification channels", () => {
           type: "workbook_calculation" as const,
           workbookCalculationId,
         },
-        channel: workbookCalculationNotificationChannel(
-          workbookCalculationId,
-        ),
+        channel: workbookCalculationNotificationChannel(workbookCalculationId),
       },
     ];
 

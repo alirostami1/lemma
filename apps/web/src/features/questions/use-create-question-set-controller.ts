@@ -1,8 +1,5 @@
 import { useState } from "react";
-import {
-  type QuestionSet,
-  useCreateQuestionSet,
-} from "#/domains/questions";
+import { type QuestionSet, useCreateQuestionSet } from "#/domains/questions";
 
 export type CreateQuestionSetController = {
   name: string;

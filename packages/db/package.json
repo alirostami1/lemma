@@ -21,7 +21,10 @@
     "migrate:down": "tsx src/migrate.ts down",
     "migrate:up": "tsx src/migrate.ts up",
     "seed:dev": "tsx src/seed-dev.ts",
-    "generate": "kysely-codegen --camel-case --dialect postgres --log-level info --out-file ./src/types.d.ts"
+    "generate": "kysely-codegen --camel-case --dialect postgres --log-level info --out-file ./src/types.d.ts",
+    "check": "biome check",
+    "format": "biome format",
+    "lint": "biome lint"
   },
   "dependencies": {
     "kysely": "catalog:",
@@ -33,6 +36,7 @@
     "@types/pg": "catalog:",
     "kysely-codegen": "^0.20.0",
     "tsx": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "@biomejs/biome": "catalog:"
   }
 }

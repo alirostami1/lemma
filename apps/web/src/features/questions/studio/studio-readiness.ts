@@ -1,7 +1,7 @@
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import {
-  getBlueprintReadinessIssues,
   type BlueprintReadinessIssue,
+  getBlueprintReadinessIssues,
 } from "#/domains/questions/blueprint-readiness";
 
 export type StudioReadinessIssue = {
@@ -28,9 +28,7 @@ export type StudioReadiness = {
   issues: StudioReadinessIssue[];
 };
 
-export type StudioReadinessAction =
-  | "save"
-  | "generate_saved_blueprint";
+export type StudioReadinessAction = "save" | "generate_saved_blueprint";
 
 export function getStudioReadiness(
   model: ComposedEditorModel,
@@ -122,7 +120,8 @@ function mapBlueprintReadinessIssue(
       return {
         id: `reference_source_missing_${issue.target?.referenceId ?? "unknown"}`,
         severity: "error",
-        message: "A workbook-backed reference needs a valid source cell or range.",
+        message:
+          "A workbook-backed reference needs a valid source cell or range.",
         target: issue.target,
       };
     case "missing_text_reference":

@@ -172,9 +172,9 @@ function decodeJwtSubject(token: string): string {
   if (!encodedPayload) {
     throw new Error("Realtime connection token is malformed.");
   }
-  const payload = JSON.parse(
-    atob(toBase64(encodedPayload)),
-  ) as { sub?: unknown };
+  const payload = JSON.parse(atob(toBase64(encodedPayload))) as {
+    sub?: unknown;
+  };
   if (typeof payload.sub !== "string" || payload.sub.length === 0) {
     throw new Error("Realtime connection token is missing subject.");
   }

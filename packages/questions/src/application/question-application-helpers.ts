@@ -1,11 +1,3 @@
-import type { HydratedQuestionBlueprint } from "./dto.js";
-import {
-  ForbiddenQuestionActionError,
-  QuestionBlueprintNotFoundError,
-  QuestionNotFoundError,
-  QuestionSetNotFoundError,
-} from "./errors.js";
-import type { QuestionsRepository } from "./ports.js";
 import {
   type QuestionBlueprint,
   type QuestionSet,
@@ -15,6 +7,14 @@ import {
   questionSetId as toQuestionSetId,
   workbookId as toWorkbookId,
 } from "../domain/index.js";
+import type { HydratedQuestionBlueprint } from "./dto.js";
+import {
+  ForbiddenQuestionActionError,
+  QuestionBlueprintNotFoundError,
+  QuestionNotFoundError,
+  QuestionSetNotFoundError,
+} from "./errors.js";
+import type { QuestionsRepository } from "./ports.js";
 
 export function assertQuestionAuthorized(
   allowed: boolean,
@@ -29,8 +29,9 @@ export async function findQuestionSetByIdOrThrow(
   questionsRepository: QuestionsRepository,
   id: string,
 ) {
-  const questionSet =
-    await questionsRepository.findQuestionSetById(toQuestionSetId(id));
+  const questionSet = await questionsRepository.findQuestionSetById(
+    toQuestionSetId(id),
+  );
   if (!questionSet) {
     throw new QuestionSetNotFoundError();
   }
@@ -41,10 +42,9 @@ export async function findQuestionBlueprintByIdOrThrow(
   questionsRepository: QuestionsRepository,
   id: string,
 ) {
-  const blueprint =
-    await questionsRepository.findQuestionBlueprintById(
-      toQuestionBlueprintId(id),
-    );
+  const blueprint = await questionsRepository.findQuestionBlueprintById(
+    toQuestionBlueprintId(id),
+  );
   if (!blueprint) {
     throw new QuestionBlueprintNotFoundError();
   }

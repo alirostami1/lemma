@@ -99,10 +99,7 @@ export function buildNotificationChannel(
       assertChannelId(target.questionSetId, "questionSetId");
       return `${prefixFor("question_set")}:${target.questionSetId}`;
     case "workbook_calculation": {
-      assertChannelId(
-        target.workbookCalculationId,
-        "workbookCalculationId",
-      );
+      assertChannelId(target.workbookCalculationId, "workbookCalculationId");
       const prefix = prefixFor("workbook_calculation");
       return `${prefix}:${target.workbookCalculationId}`;
     }

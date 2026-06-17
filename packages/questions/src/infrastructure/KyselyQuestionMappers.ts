@@ -1,6 +1,6 @@
 import type {
-  QuestionBlueprintVersions,
   QuestionBlueprints,
+  QuestionBlueprintVersions,
   QuestionGenerationRuns,
   QuestionSets,
   Questions,
@@ -120,9 +120,7 @@ export function mapQuestionRowToDomain(row: Selectable<Questions>): Question {
   });
 }
 
-export function mapQuestionToInsert(
-  question: Question,
-): Insertable<Questions> {
+export function mapQuestionToInsert(question: Question): Insertable<Questions> {
   return {
     id: question.id,
     ownerUserId: question.ownerUserId,
@@ -141,9 +139,7 @@ export function mapQuestionToInsert(
   } as Insertable<Questions>;
 }
 
-export function mapQuestionToUpdate(
-  question: Question,
-): Updateable<Questions> {
+export function mapQuestionToUpdate(question: Question): Updateable<Questions> {
   return {
     body: question.body as JsonObject,
     solution: question.solution as JsonObject,

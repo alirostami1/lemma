@@ -5,8 +5,8 @@ import {
 } from "#/domains/questions";
 import type { QuestionSet } from "#/domains/questions/model";
 import type {
-  GenerateQuestionsDialogProps,
   GenerateQuestionsDialogInput,
+  GenerateQuestionsDialogProps,
   GenerateQuestionsDialogSource,
 } from "./generation-controller-types";
 import { getGenerateCountIssue } from "./generation-error-state";
@@ -36,7 +36,8 @@ export function useGenerateQuestionsDialogController(
   >("existing");
   const [selectedQuestionSetId, setSelectedQuestionSetId] = useState("");
   const [newQuestionSetName, setNewQuestionSetName] = useState("");
-  const [newQuestionSetDescription, setNewQuestionSetDescription] = useState("");
+  const [newQuestionSetDescription, setNewQuestionSetDescription] =
+    useState("");
   const [submitError, setSubmitError] = useState<string | null>(
     input.errorMessage,
   );
@@ -57,7 +58,12 @@ export function useGenerateQuestionsDialogController(
     setNewQuestionSetDescription("");
     setQuestionSetMode(questionSets.length > 0 ? "existing" : "create_new");
     setSelectedQuestionSetId(questionSets[0]?.id ?? "");
-  }, [input.errorMessage, input.open, questionSets, questionSetsQuery.isFetched]);
+  }, [
+    input.errorMessage,
+    input.open,
+    questionSets,
+    questionSetsQuery.isFetched,
+  ]);
 
   useEffect(() => {
     if (input.open) {

@@ -2,9 +2,6 @@ import { DomainError } from "@lemma/error";
 
 export class InvalidDomainValueError extends DomainError {
   readonly domainCode = "INVALID_DOMAIN_VALUE";
-  constructor(message: string) {
-    super(message);
-  }
 }
 
 export class InvalidUserStateError extends DomainError {

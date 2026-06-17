@@ -18,16 +18,13 @@ import type {
   ComposedRichListItem,
 } from "../composed-model";
 import type { ComposedInlineContent } from "../inline-content";
+import { formatInlineBlueprint, parseInlineBlueprint } from "../inline-content";
 import type {
   ReferenceSourceDraft,
   TableAnswerValue,
   TableResponseField,
   ValueExpression,
 } from "../table-model";
-import {
-  formatInlineBlueprint,
-  parseInlineBlueprint,
-} from "../inline-content";
 
 export function pushUniqueResponseField(
   responseFields: QuestionResponseField[],

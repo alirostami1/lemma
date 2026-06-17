@@ -7,6 +7,7 @@
     "dev:env": "node scripts/run-with-env.mjs .env pnpm dev",
     "lint": "pnpm check:architecture && turbo run lint",
     "format": "turbo run format",
+    "check": "pnpm check:architecture && turbo run check",
     "test": "turbo run test",
     "check-types": "turbo run check-types",
     "check:architecture": "node scripts/check-package-boundaries.mjs && turbo run check:architecture",

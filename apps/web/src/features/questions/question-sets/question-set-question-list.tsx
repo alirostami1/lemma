@@ -1,10 +1,10 @@
-import { Skeleton } from "@lemma/ui/components/skeleton";
 import { EmptyState } from "@lemma/ui/components/empty-state";
 import { InlineError } from "@lemma/ui/components/inline-error";
 import {
   ResourceList,
   ResourceListItem,
 } from "@lemma/ui/components/resource-list";
+import { Skeleton } from "@lemma/ui/components/skeleton";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import type { QuestionListItemViewModel } from "./question-list-view-model";

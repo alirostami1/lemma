@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { WorkbookUploadForm } from "./workbook-upload-form";
@@ -40,12 +46,16 @@ describe("WorkbookUploadForm", () => {
     render(<WorkbookUploadForm onCreated={() => {}} />);
 
     await user.type(screen.getByLabelText("Source name"), "Q1 Workbook");
-    expect(screen.getByRole("button", { name: "Create source" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Create source" }),
+    ).toBeDisabled();
 
     const fileInput = document.querySelector(
       'input[type="file"]',
     ) as HTMLInputElement;
-    const invalidFile = new File(["hello"], "notes.txt", { type: "text/plain" });
+    const invalidFile = new File(["hello"], "notes.txt", {
+      type: "text/plain",
+    });
     const fileList = {
       0: invalidFile,
       item: () => invalidFile,

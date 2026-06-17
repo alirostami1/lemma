@@ -6,8 +6,8 @@ import {
   DialogTitle,
 } from "@lemma/ui/components/dialog";
 import { InlineError } from "@lemma/ui/components/inline-error";
-import type { GenerateQuestionsDialogProps } from "./generation-controller-types";
 import { GenerateQuestionsForm } from "./generate-questions-form";
+import type { GenerateQuestionsDialogProps } from "./generation-controller-types";
 import { GenerationSourceSummary } from "./generation-source-summary";
 
 export function GenerateQuestionsDialog({

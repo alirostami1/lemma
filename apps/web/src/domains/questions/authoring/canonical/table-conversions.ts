@@ -1,20 +1,20 @@
 import type {
-  QuestionResponseField,
-  QuestionTableBlock,
   QuestionBlueprintDocument,
   QuestionBlueprintTableBlock,
+  QuestionResponseField,
+  QuestionTableBlock,
 } from "#/api/generated/model";
+import {
+  extractInlineReferenceIds,
+  inlineContentToPlainText,
+  plainTextToInlineContent,
+} from "#/domains/questions/authoring/inline-content";
 import type {
   TableBlockPreviewCell,
   TableBlockPreviewModel,
   TableEditorModel,
 } from "../table-model";
 import { validateTableEditorModelAnswers } from "../table-model";
-import {
-  extractInlineReferenceIds,
-  inlineContentToPlainText,
-  plainTextToInlineContent,
-} from "#/domains/questions/authoring/inline-content";
 import {
   asRecord,
   fromCanonicalTableAnswerFieldId,
@@ -105,7 +105,8 @@ export function tableEditorModelToQuestionBlueprintTableBlock(
         grading: cell.grading,
         ...(cell.label === undefined ? {} : { label: cell.label }),
         ...(cell.placeholder === undefined
-          ? {} : { placeholder: cell.placeholder }),
+          ? {}
+          : { placeholder: cell.placeholder }),
       };
     }),
   };
@@ -162,7 +163,9 @@ export function questionBlueprintTableBlockToTableEditorModel(
     ...field,
     id: fromCanonicalTableAnswerFieldId(block.id, field.id),
   }));
-  const responseFieldIds = new Set(tableResponseFields.map((field) => field.id));
+  const responseFieldIds = new Set(
+    tableResponseFields.map((field) => field.id),
+  );
   const tableResponseFieldIds = new Set<string>();
 
   const cells = block.cells.map((cell) => {
@@ -205,7 +208,9 @@ export function questionBlueprintTableBlockToTableEditorModel(
       points: cell.points,
       grading: cell.grading,
       ...(cell.label === undefined ? {} : { label: cell.label }),
-      ...(cell.placeholder === undefined ? {} : { placeholder: cell.placeholder }),
+      ...(cell.placeholder === undefined
+        ? {}
+        : { placeholder: cell.placeholder }),
     };
   });
 

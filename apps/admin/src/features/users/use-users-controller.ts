@@ -68,7 +68,8 @@ export function useUsersController() {
     rolesLoading: selectedRoles.isLoading,
     grantRolesLoading: grantingUserRoles.isLoading,
     rolesListLoading: roles.isLoading,
-    isFetching: users.isFetching || roles.isFetching || selectedRoles.isFetching,
+    isFetching:
+      users.isFetching || roles.isFetching || selectedRoles.isFetching,
     isMutating,
     isSavingUser: updateUser.isPending,
     isGrantingRole: grantRole.isPending,

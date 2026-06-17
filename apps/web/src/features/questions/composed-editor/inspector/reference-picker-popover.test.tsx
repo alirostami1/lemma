@@ -2,10 +2,10 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactElement } from "react";
-import { WorkbookPickerProvider } from "#/features/questions/table-block-editor";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
+import { WorkbookPickerProvider } from "#/features/questions/table-block-editor";
 import { ReferencePickerPopover } from "./reference-picker-popover";
 
 describe("ReferencePickerPopover", () => {

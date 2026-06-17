@@ -1,5 +1,5 @@
-import { formatAnswerInputValue } from "#/domains/questions/authoring";
 import type { QuestionAnswer } from "#/domains/questions";
+import { formatAnswerInputValue } from "#/domains/questions/authoring";
 
 export function formatQuestionAnswerValue(value: unknown): string {
   if (value === undefined || value === null) {

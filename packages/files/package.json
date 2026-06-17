@@ -42,6 +42,9 @@
   "scripts": {
     "check-types": "tsc --noEmit",
     "build": "tsc",
+    "check": "biome check",
+    "format": "biome format",
+    "lint": "biome lint",
     "generate:openapi": "node ../../scripts/run-openapi-generator.mjs",
     "test": "pnpm build && node --test dist/**/*.test.js"
   },

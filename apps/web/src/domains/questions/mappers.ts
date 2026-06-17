@@ -1,37 +1,37 @@
 import type {
+  ListQuestionBlueprintsResponse,
   ListQuestionGenerationRunsResponse,
   ListQuestionSetsResponse,
   ListQuestionsResponse,
-  ListQuestionBlueprintsResponse,
-  Question as QuestionDto,
-  QuestionGenerationRun as QuestionGenerationRunDto,
-  QuestionGenerationRunResponse,
-  QuestionResponse,
-  QuestionProducer as QuestionProducerDto,
-  QuestionSet as QuestionSetDto,
-  QuestionSetResponse,
   QuestionBlueprintAuthoring as QuestionBlueprintAuthoringDto,
   QuestionBlueprintAuthoringResponse,
   QuestionBlueprint as QuestionBlueprintDto,
   QuestionBlueprintResponse,
+  Question as QuestionDto,
+  QuestionGenerationRun as QuestionGenerationRunDto,
+  QuestionGenerationRunResponse,
+  QuestionProducer as QuestionProducerDto,
+  QuestionResponse,
+  QuestionSet as QuestionSetDto,
+  QuestionSetResponse,
   WorkbookSource as WorkbookSourceDto,
 } from "#/api/generated/model";
 import type {
   Question,
-  QuestionGenerationRun,
-  QuestionGenerationRunResult,
-  QuestionGenerationRunsPage,
-  QuestionProducer,
-  QuestionSet,
-  QuestionSetResult,
-  QuestionSetsPage,
-  QuestionsPage,
-  QuestionResult,
   QuestionBlueprint,
   QuestionBlueprintAuthoring,
   QuestionBlueprintAuthoringResult,
   QuestionBlueprintResult,
   QuestionBlueprintsPage,
+  QuestionGenerationRun,
+  QuestionGenerationRunResult,
+  QuestionGenerationRunsPage,
+  QuestionProducer,
+  QuestionResult,
+  QuestionSet,
+  QuestionSetResult,
+  QuestionSetsPage,
+  QuestionsPage,
   WorkbookQuestionSource,
 } from "./model";
 
@@ -127,21 +127,27 @@ export function mapQuestionSetResponse(
   return { questionSet: mapQuestionSet(response.questionSet) };
 }
 
-export function mapQuestionResponse(response: QuestionResponse): QuestionResult {
+export function mapQuestionResponse(
+  response: QuestionResponse,
+): QuestionResult {
   return { question: mapQuestion(response.question) };
 }
 
 export function mapQuestionBlueprintResponse(
   response: QuestionBlueprintResponse,
 ): QuestionBlueprintResult {
-  return { questionBlueprint: mapQuestionBlueprint(response.questionBlueprint) };
+  return {
+    questionBlueprint: mapQuestionBlueprint(response.questionBlueprint),
+  };
 }
 
 export function mapQuestionBlueprintAuthoringResponse(
   response: QuestionBlueprintAuthoringResponse,
 ): QuestionBlueprintAuthoringResult {
   return {
-    questionBlueprint: mapQuestionBlueprintAuthoring(response.questionBlueprint),
+    questionBlueprint: mapQuestionBlueprintAuthoring(
+      response.questionBlueprint,
+    ),
   };
 }
 
@@ -185,7 +191,6 @@ export function mapQuestionGenerationRunsResponse(
 }
 
 function mapQuestionProducer(dto: QuestionProducerDto): QuestionProducer {
-
   return {
     ...dto,
     source: dto.source ? { ...dto.source } : undefined,

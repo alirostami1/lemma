@@ -266,9 +266,7 @@ function applyMarkdownFormatToLine(
 
 function stripMarkdownPrefix(line: string) {
   const trimmed = line.trim();
-  return trimmed
-    .replace(/^(#{1,6})\s+/, "")
-    .replace(/^([-*]|\d+[.)])\s+/, "");
+  return trimmed.replace(/^(#{1,6})\s+/, "").replace(/^([-*]|\d+[.)])\s+/, "");
 }
 
 function getLineFormat(line: string): MarkdownFormat {

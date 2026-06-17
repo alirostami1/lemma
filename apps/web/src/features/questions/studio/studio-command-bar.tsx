@@ -1,7 +1,7 @@
 import { Badge } from "@lemma/ui/components/badge";
 import { Button } from "@lemma/ui/components/button";
-import { Input } from "@lemma/ui/components/input";
 import { InlineError } from "@lemma/ui/components/inline-error";
+import { Input } from "@lemma/ui/components/input";
 import {
   Tooltip,
   TooltipContent,
@@ -90,10 +90,7 @@ export function StudioCommandBar({
                   onBlueprintNameChange(event.currentTarget.value)
                 }
               />
-              <label
-                className="sr-only"
-                htmlFor="studio-blueprint-description"
-              >
+              <label className="sr-only" htmlFor="studio-blueprint-description">
                 Blueprint description
               </label>
               <Input
@@ -197,9 +194,7 @@ function ToolbarIconButton({
   );
 }
 
-function getSaveStatusView(
-  saveState: StudioCommandBarProps["saveState"],
-): {
+function getSaveStatusView(saveState: StudioCommandBarProps["saveState"]): {
   label: string;
   variant: "default" | "secondary" | "destructive" | "outline";
   Icon: typeof CheckCircle2;

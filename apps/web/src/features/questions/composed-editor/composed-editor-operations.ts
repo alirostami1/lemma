@@ -61,7 +61,9 @@ export function normalizeComposedEditorSelection(
     case "document":
       return selection;
     case "reference":
-      return model.references.some((reference) => reference.id === selection.referenceId)
+      return model.references.some(
+        (reference) => reference.id === selection.referenceId,
+      )
         ? selection
         : { type: "document" };
     case "block": {

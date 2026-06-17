@@ -16,7 +16,8 @@ export type BlueprintSourceRequirement =
 export function getBlueprintSourceRequirement(
   model: ComposedEditorModel,
 ): BlueprintSourceRequirement {
-  const workbookRefs = extractWorkbookReferenceRefsFromComposedEditorModel(model);
+  const workbookRefs =
+    extractWorkbookReferenceRefsFromComposedEditorModel(model);
 
   return workbookRefs.length === 0
     ? { status: "not_required", workbookRefs }

@@ -48,9 +48,7 @@ export function useHomePageController(): HomePageController {
   return {
     viewModel: buildHomePageViewModel({ questionSets, blueprints }),
     pageError:
-      questionSets.length === 0 &&
-      blueprints.length === 0 &&
-      accessError
+      questionSets.length === 0 && blueprints.length === 0 && accessError
         ? isUnauthorizedError(accessError)
           ? {
               kind: "sign_in_required",

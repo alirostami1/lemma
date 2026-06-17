@@ -69,9 +69,7 @@ export function readStudioDraftSnapshot(
   }
 }
 
-export function readLatestStudioDraftSnapshot(): StudioDraftStoreResult<
-  StudioDraftSnapshot | null
-> {
+export function readLatestStudioDraftSnapshot(): StudioDraftStoreResult<StudioDraftSnapshot | null> {
   const storage = getStorage();
   if (!storage) return { ok: false, error: "storage_unavailable" };
 
@@ -217,7 +215,9 @@ function upsertIndexEntry(storage: Storage, snapshot: StudioDraftSnapshot) {
       draftKey: snapshot.draftKey,
       lastLocalSaveTimestamp: snapshot.lastLocalSaveTimestamp,
     },
-    ...readIndex(storage).filter((entry) => entry.draftKey !== snapshot.draftKey),
+    ...readIndex(storage).filter(
+      (entry) => entry.draftKey !== snapshot.draftKey,
+    ),
   ];
   writeIndex(storage, next);
 }

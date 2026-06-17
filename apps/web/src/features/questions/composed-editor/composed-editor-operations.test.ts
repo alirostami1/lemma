@@ -43,7 +43,9 @@ function createBaseModel(blocks: ComposedEditorBlock[]): ComposedEditorModel {
   };
 }
 
-function createModelWithTable(blocks: ComposedEditorBlock[]): ComposedEditorModel {
+function createModelWithTable(
+  blocks: ComposedEditorBlock[],
+): ComposedEditorModel {
   return {
     ...createBaseModel(blocks),
     blocks: [...blocks],
@@ -95,11 +97,11 @@ describe("composed editor operations", () => {
       type: "block",
       blockId: "text_1",
     });
-    expect(
-      selectBlockInComposedEditor(createBaseModel([]), "missing"),
-    ).toEqual({
-      type: "document",
-    });
+    expect(selectBlockInComposedEditor(createBaseModel([]), "missing")).toEqual(
+      {
+        type: "document",
+      },
+    );
   });
 
   it("inserts a text block and selects it", () => {

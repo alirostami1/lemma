@@ -20,7 +20,10 @@
   "scripts": {
     "check-types": "tsc --noEmit",
     "build": "tsc",
-    "test": "vitest run src"
+    "test": "vitest run src",
+    "check": "biome check",
+    "format": "biome format",
+    "lint": "biome lint"
   },
   "dependencies": {
     "xlsx": "catalog:"
@@ -29,6 +32,7 @@
     "@lemma/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "@biomejs/biome": "catalog:"
   }
 }

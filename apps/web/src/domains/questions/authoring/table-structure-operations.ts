@@ -1,14 +1,14 @@
 import {
+  duplicateTableCell,
+  pruneUnusedResponseFields,
+} from "./table-cell-operations";
+import {
   moveTableColumn,
   moveTableRow,
   nextAvailableId,
   type TableAxis,
   type TableEditorModel,
 } from "./table-model";
-import {
-  duplicateTableCell,
-  pruneUnusedResponseFields,
-} from "./table-cell-operations";
 
 export function addTableRow(
   model: TableEditorModel,

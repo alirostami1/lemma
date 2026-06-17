@@ -9,11 +9,7 @@ import type {
   HandleFileDeletionCommand,
   HandleFileUploadExpirationCommand,
 } from "./commands.js";
-import type {
-  Clock,
-  FileStorage,
-  FilesRepository,
-} from "./ports.js";
+import type { Clock, FileStorage, FilesRepository } from "./ports.js";
 
 const instrumentation = instrumentService("files", "lifecycle_service");
 

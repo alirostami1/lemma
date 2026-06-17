@@ -12,7 +12,9 @@ describe("studio undo/redo shortcuts", () => {
 
   it("ignores unsafe shortcut contexts", () => {
     expect(createShortcut({ key: "z" })).toBeNull();
-    expect(createShortcut({ key: "z", metaKey: true, altKey: true })).toBeNull();
+    expect(
+      createShortcut({ key: "z", metaKey: true, altKey: true }),
+    ).toBeNull();
     expect(
       createShortcut({ key: "z", metaKey: true, defaultPrevented: true }),
     ).toBeNull();

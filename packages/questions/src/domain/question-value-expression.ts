@@ -15,7 +15,11 @@ export function questionValueExpression(
   failWith: (message: string) => never,
   referenceIds?: ReadonlySet<string>,
 ): QuestionValueExpression {
-  assertPlainRecord(input, "question value expression must be an object", failWith);
+  assertPlainRecord(
+    input,
+    "question value expression must be an object",
+    failWith,
+  );
   assertSchemaVersion(input, failWith);
   if (input.type === "literal") {
     assertJsonValue(input.value, "value", failWith);

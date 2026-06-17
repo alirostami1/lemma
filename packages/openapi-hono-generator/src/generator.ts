@@ -178,7 +178,10 @@ export function buildHonoRoutesSource(options: BuildHonoRoutesOptions) {
       ? `import {\n${schemaImports.map((name) => `  ${name},`).join("\n")}\n} from "../zod/index.js";`
       : "",
     "",
-    "type ResponseStatus<T extends string> = T extends `${infer Status extends StatusCode}` ? Status : never;",
+    "type ResponseStatus<T extends string> = T extends `" +
+      "$" +
+      "{infer Status extends StatusCode}" +
+      "` ? Status : never;",
     "type HandlerResponse<T extends Record<string, unknown>> = {",
     "  [Status in keyof T & string]: TypedResponse<T[Status], ResponseStatus<Status>>;",
     "}[keyof T & string];",

@@ -42,7 +42,10 @@ export const QUESTION_GENERATION_RUN_STATUS_ACCEPTED_VALUES = [
 export type QuestionName = Brand<string, "QuestionName">;
 export type QuestionDescription = Brand<string, "QuestionDescription">;
 export type QuestionBlueprintName = Brand<string, "QuestionBlueprintName">;
-export type QuestionBlueprintDescription = Brand<string, "QuestionBlueprintDescription">;
+export type QuestionBlueprintDescription = Brand<
+  string,
+  "QuestionBlueprintDescription"
+>;
 export type QuestionSetName = Brand<string, "QuestionSetName">;
 export type QuestionSetDescription = Brand<string, "QuestionSetDescription">;
 export type QuestionStatus = (typeof QUESTION_STATUS_ACCEPTED_VALUES)[number];
@@ -113,7 +116,9 @@ export function questionStatus(value: unknown): QuestionStatus {
   return oneOf(value, QUESTION_STATUS_ACCEPTED_VALUES, "question status");
 }
 
-export function questionBlueprintStatus(value: unknown): QuestionBlueprintStatus {
+export function questionBlueprintStatus(
+  value: unknown,
+): QuestionBlueprintStatus {
   return oneOf(
     value,
     QUESTION_BLUEPRINT_STATUS_ACCEPTED_VALUES,

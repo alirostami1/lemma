@@ -7,11 +7,11 @@ import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import type { EditorSelection } from "../editor-selection";
 import { ReferenceEditor } from "./reference-editor";
-import { ReferencePickerPopover } from "./reference-picker-popover";
 import {
-  getReferenceSourceLabel,
   getReferenceDisplayName,
+  getReferenceSourceLabel,
 } from "./reference-inspector-helpers";
+import { ReferencePickerPopover } from "./reference-picker-popover";
 
 export function ReferencesTab({
   model,
@@ -48,7 +48,9 @@ export function ReferencesTab({
 
     if (
       !selectedReferenceId ||
-      !model.references.some((reference) => reference.id === selectedReferenceId)
+      !model.references.some(
+        (reference) => reference.id === selectedReferenceId,
+      )
     ) {
       setSelectedReferenceId(model.references[0]?.id ?? null);
     }

@@ -7,8 +7,8 @@ import {
 import { InvalidQuestionSourcePlanError } from "./errors.js";
 import {
   assertQuestionReferenceId,
-  questionReferenceSource,
   type QuestionReferenceSource,
+  questionReferenceSource,
 } from "./question-reference.js";
 
 export type QuestionSourceReference = {
@@ -28,15 +28,24 @@ export function questionSourcePlan(input: unknown): QuestionSourcePlan {
   assertArray(input.references, "references", fail);
   assertUniqueIds(input.references, "sourcePlan.references", fail);
   const references = input.references.map((reference) => {
-    assertPlainRecord(reference, "sourcePlan reference must be an object", fail);
+    assertPlainRecord(
+      reference,
+      "sourcePlan reference must be an object",
+      fail,
+    );
     assertQuestionReferenceId(reference.id, "sourcePlan reference id", fail);
-    if (reference.resolved !== undefined && typeof reference.resolved !== "boolean") {
+    if (
+      reference.resolved !== undefined &&
+      typeof reference.resolved !== "boolean"
+    ) {
       fail("sourcePlan reference resolved must be a boolean");
     }
     return {
       id: reference.id,
       source: questionReferenceSource(reference.source, fail),
-      ...(reference.resolved === undefined ? {} : { resolved: reference.resolved }),
+      ...(reference.resolved === undefined
+        ? {}
+        : { resolved: reference.resolved }),
     };
   });
   return { schemaVersion: 1, references };

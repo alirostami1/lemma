@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  FailedQueueJobReconciler,
   type FailedQueueJob,
+  FailedQueueJobReconciler,
   type FailedQueueJobReconciliationRepository,
 } from "./failed-queue-job-reconciler.js";
 
@@ -131,11 +131,7 @@ class InMemoryFailedQueueJobRepository
 
   async completeReconciliation(input: {
     jobId: string;
-    result:
-      | "invalid_payload"
-      | "run_failed"
-      | "run_not_found"
-      | "run_terminal";
+    result: "invalid_payload" | "run_failed" | "run_not_found" | "run_terminal";
     questionGenerationRunId: string | null;
     errorMessage: string | null;
     completedAt: Date;

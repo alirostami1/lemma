@@ -1,20 +1,6 @@
 import type { JsonObject } from "@lemma/domain";
 import { instrumentExternal } from "@lemma/observability";
-import { sql, type Selectable } from "kysely";
-import {
-  type DomainEventEnvelope,
-  eventId,
-  eventType,
-  aggregateId,
-  aggregateType,
-  outboxConsumerName,
-  outboxEventStatus,
-  assertOutboxEventAttempts,
-  assertOutboxEventDate,
-  type EventId,
-  type OutboxConsumerName,
-  type OutboxEvent,
-} from "../domain/index.js";
+import { type Selectable, sql } from "kysely";
 import type {
   ClaimPendingEventsInput,
   DeletePublishedEventsBeforeInput,
@@ -24,6 +10,20 @@ import type {
   OutboxRepository,
   RecordProcessedEventInput,
 } from "../application/index.js";
+import {
+  aggregateId,
+  aggregateType,
+  assertOutboxEventAttempts,
+  assertOutboxEventDate,
+  type DomainEventEnvelope,
+  type EventId,
+  eventId,
+  eventType,
+  type OutboxConsumerName,
+  type OutboxEvent,
+  outboxConsumerName,
+  outboxEventStatus,
+} from "../domain/index.js";
 import type {
   OutboxDatabaseExecutor,
   OutboxEventsTable,
@@ -115,9 +115,7 @@ export class KyselyOutboxRepository implements OutboxRepository {
     });
   }
 
-  async markEventPublished(
-    input: MarkEventPublishedInput,
-  ): Promise<void> {
+  async markEventPublished(input: MarkEventPublishedInput): Promise<void> {
     await this.dbOperation("mark_event_published", () =>
       this.db
         .updateTable("outboxEvents")
@@ -164,9 +162,7 @@ export class KyselyOutboxRepository implements OutboxRepository {
     });
   }
 
-  async listFailedEvents(
-    input: ListFailedEventsInput,
-  ): Promise<OutboxEvent[]> {
+  async listFailedEvents(input: ListFailedEventsInput): Promise<OutboxEvent[]> {
     return this.dbOperation("list_failed_events", async () => {
       if (input.limit <= 0) {
         return [];

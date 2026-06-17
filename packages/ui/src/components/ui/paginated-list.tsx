@@ -23,10 +23,7 @@ function PaginatedList({
     <div className="grid gap-3">
       {children}
       {loadMoreErrorMessage ? (
-        <InlineError
-          message={loadMoreErrorMessage}
-          onRetry={onRetryLoadMore}
-        />
+        <InlineError message={loadMoreErrorMessage} onRetry={onRetryLoadMore} />
       ) : null}
       {hasMore && !loadMoreErrorMessage ? (
         <Button

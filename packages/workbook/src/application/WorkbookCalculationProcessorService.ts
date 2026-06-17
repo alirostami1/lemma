@@ -5,8 +5,8 @@ import {
   createWorkbookSnapshot,
   markWorkbookCalculationFailed,
   markWorkbookCalculationSucceeded,
-  type WorkbookCalculation,
   workbookCalculationId as toWorkbookCalculationId,
+  type WorkbookCalculation,
   type WorkbookSnapshot,
 } from "../domain/index.js";
 import type { ProcessWorkbookCalculationCommand } from "./commands.js";
@@ -19,13 +19,10 @@ import type {
   WorkbookRepository,
   WorkbookTransactionPort,
 } from "./ports.js";
-import { withWorkbookTempFile } from "./workbook-temp-file.js";
 import { workbookCalculationFinishedEvent } from "./workbook-events.js";
+import { withWorkbookTempFile } from "./workbook-temp-file.js";
 
-const instrumentation = instrumentService(
-  "workbook",
-  "calculation_processor",
-);
+const instrumentation = instrumentService("workbook", "calculation_processor");
 
 export class WorkbookCalculationProcessorService {
   constructor(
@@ -50,16 +47,20 @@ export class WorkbookCalculationProcessorService {
   private async processQueuedWorkbookCalculation(
     command: ProcessWorkbookCalculationCommand,
   ): Promise<void> {
-    const running = await this.deps.workbookRepository.claimQueuedWorkbookCalculation(
-      toWorkbookCalculationId(command.workbookCalculationId),
-      this.deps.clock.now(),
-    );
+    const running =
+      await this.deps.workbookRepository.claimQueuedWorkbookCalculation(
+        toWorkbookCalculationId(command.workbookCalculationId),
+        this.deps.clock.now(),
+      );
     if (!running) {
       return;
     }
 
     try {
-      const calculated = await this.calculateSnapshots(running, command.lineage);
+      const calculated = await this.calculateSnapshots(
+        running,
+        command.lineage,
+      );
       await this.succeedRunningCalculation({
         running,
         snapshots: calculated.snapshots,
@@ -163,7 +164,8 @@ export class WorkbookCalculationProcessorService {
     await this.deps.workbookTransaction.transaction(
       async ({ workbookRepository, outboxRepository }) => {
         const updated =
-          (await workbookRepository.updateWorkbookCalculation(failed)) ?? failed;
+          (await workbookRepository.updateWorkbookCalculation(failed)) ??
+          failed;
         await outboxRepository.appendEvents([
           this.finishedCalculationEvent({
             calculation: updated,

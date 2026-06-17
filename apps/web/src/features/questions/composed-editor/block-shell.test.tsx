@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
+
+import type { DraggableAttributes } from "@dnd-kit/core";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { DraggableAttributes } from "@dnd-kit/core";
 import { BlockShell } from "./block-shell";
 import type { SortableRenderControls } from "./sortable-block-list";
 
@@ -62,9 +63,7 @@ describe("BlockShell", () => {
     expect(bottomAction).toBeTruthy();
     expect(bottomAction.className).toContain("opacity-0");
     expect(bottomAction.className).toContain("group-hover:opacity-100");
-    expect(bottomAction.className).toContain(
-      "group-focus-within:opacity-100",
-    );
+    expect(bottomAction.className).toContain("group-focus-within:opacity-100");
     expect(bottomAction.className).toContain("data-[selected=true]");
   });
 

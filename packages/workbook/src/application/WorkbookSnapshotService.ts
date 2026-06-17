@@ -53,11 +53,13 @@ export class WorkbookSnapshotService {
       );
       const limit = normalizeListLimit(command.limit);
       const snapshots =
-        await this.deps.workbookRepository.listWorkbookSnapshotsByCalculationId({
-          calculationId: calculation.id,
-          limit: limit + 1,
-          cursor: decodeSnapshotIndexCursor(command.cursor),
-        });
+        await this.deps.workbookRepository.listWorkbookSnapshotsByCalculationId(
+          {
+            calculationId: calculation.id,
+            limit: limit + 1,
+            cursor: decodeSnapshotIndexCursor(command.cursor),
+          },
+        );
       return {
         workbookSnapshots: snapshots.slice(0, limit),
         nextCursor:
@@ -91,7 +93,8 @@ export class WorkbookSnapshotService {
     command: ResolveWorkbookSnapshotValueCommand,
   ): Promise<WorkbookSnapshotValueResult> {
     return this.operation("resolve_workbook_snapshot_value", async () => {
-      const snapshot = (await this.getWorkbookSnapshot(command)).workbookSnapshot;
+      const snapshot = (await this.getWorkbookSnapshot(command))
+        .workbookSnapshot;
       return {
         value: resolveWorkbookSnapshotValue(
           snapshot,

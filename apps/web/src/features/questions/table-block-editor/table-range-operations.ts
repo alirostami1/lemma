@@ -4,11 +4,11 @@ import type {
   TableEditorContentCell,
   TableEditorModel,
 } from "#/domains/questions/authoring";
-import {
-  getWorkbookCellRefAtOffset as resolveWorkbookCellRefAtOffset,
-  parseWorkbookRef,
-} from "#/domains/questions/workbook-reference";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
+import {
+  parseWorkbookRef,
+  getWorkbookCellRefAtOffset as resolveWorkbookCellRefAtOffset,
+} from "#/domains/questions/workbook-reference";
 
 export type WorkbookRangeMatrix = string[][];
 

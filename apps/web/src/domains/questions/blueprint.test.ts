@@ -7,8 +7,8 @@ import {
   coerceAnswerValue,
   coerceLiteralExpressionValue,
   createDefaultComposedEditorModel,
-  createTableFromWorkbookRangeReference,
   createTableBlock,
+  createTableFromWorkbookRangeReference,
   extractUsedReferenceIdsFromComposedEditorModel,
   extractWorkbookReferenceRefsFromComposedEditorModel,
   nextAvailableResponseFieldId,
@@ -23,9 +23,9 @@ import {
   toCreateQuestionGenerationRunInput,
 } from "./blueprint";
 import {
+  composedEditorModelToQuestionBlueprintDocument,
   questionBlueprintDocumentToComposedEditorModel,
   questionBlueprintDocumentToTableEditorModel,
-  composedEditorModelToQuestionBlueprintDocument,
   questionBodyToTableBlockPreviewModel,
   tableEditorModelToQuestionBlueprintDocument,
   validateComposedEditorModel,
@@ -46,9 +46,7 @@ describe("table answer values", () => {
   it("coerces authored literal response values by response field type", () => {
     expect(
       coerceLiteralExpressionValue("001", { id: "text", type: "text" }),
-    ).toBe(
-      "001",
-    );
+    ).toBe("001");
     expect(
       coerceLiteralExpressionValue("1.0", { id: "number", type: "number" }),
     ).toBe(1);
@@ -264,7 +262,10 @@ describe("composed blueprint conversions", () => {
           responseFieldId: "answer_1",
           label: "Answer",
           placeholder: "Type a number",
-          correctValueSource: { type: "reference", referenceId: "answer_source" },
+          correctValueSource: {
+            type: "reference",
+            referenceId: "answer_source",
+          },
           points: 2,
           grading: { mode: "exact" },
         },
@@ -338,7 +339,10 @@ describe("composed blueprint conversions", () => {
           id: "response_1",
           type: "response",
           responseFieldId: "answer_1",
-          correctValueSource: { type: "reference", referenceId: "answer_source" },
+          correctValueSource: {
+            type: "reference",
+            referenceId: "answer_source",
+          },
           points: 1,
           grading: { mode: "exact" },
         },
@@ -357,7 +361,9 @@ describe("composed blueprint conversions", () => {
       ],
     };
 
-    expect(extractWorkbookReferenceRefsFromComposedEditorModel(model)).toEqual([]);
+    expect(extractWorkbookReferenceRefsFromComposedEditorModel(model)).toEqual(
+      [],
+    );
   });
 
   it("keeps literal references static in canonical conversion", () => {
@@ -397,7 +403,9 @@ describe("composed blueprint conversions", () => {
         { type: "reference", referenceId: "rate" },
       ],
     });
-    expect(extractWorkbookReferenceRefsFromComposedEditorModel(model)).toEqual([]);
+    expect(extractWorkbookReferenceRefsFromComposedEditorModel(model)).toEqual(
+      [],
+    );
   });
 
   it("ignores unused workbook-backed references for workbook source detection", () => {
@@ -420,7 +428,9 @@ describe("composed blueprint conversions", () => {
     };
 
     expect(extractUsedReferenceIdsFromComposedEditorModel(model)).toEqual([]);
-    expect(extractWorkbookReferenceRefsFromComposedEditorModel(model)).toEqual([]);
+    expect(extractWorkbookReferenceRefsFromComposedEditorModel(model)).toEqual(
+      [],
+    );
   });
 
   it("collects workbook refs from workbook-backed references", () => {
@@ -442,7 +452,9 @@ describe("composed blueprint conversions", () => {
       ],
     };
 
-    expect(composedEditorModelToQuestionBlueprintDocument(model).references).toEqual([
+    expect(
+      composedEditorModelToQuestionBlueprintDocument(model).references,
+    ).toEqual([
       {
         id: "revenue",
         source: { schemaVersion: 1, type: "workbook_cell", ref: "'Sheet1'!A1" },
@@ -475,7 +487,9 @@ describe("composed blueprint conversions", () => {
     expect(extractUsedReferenceIdsFromComposedEditorModel(model)).toEqual([
       "literal_ref",
     ]);
-  expect(extractWorkbookReferenceRefsFromComposedEditorModel(model)).toEqual([]);
+    expect(extractWorkbookReferenceRefsFromComposedEditorModel(model)).toEqual(
+      [],
+    );
   });
 
   it("round-trips reference-backed table content and answer values", () => {
@@ -510,7 +524,10 @@ describe("composed blueprint conversions", () => {
               columnId: "column_1",
               type: "response",
               responseFieldId: "answer_1",
-              correctValueSource: { type: "reference", referenceId: "answer_ref" },
+              correctValueSource: {
+                type: "reference",
+                referenceId: "answer_ref",
+              },
               points: 2,
               grading: { mode: "exact" },
             },
@@ -531,7 +548,9 @@ describe("composed blueprint conversions", () => {
     };
 
     const blueprint = composedEditorModelToQuestionBlueprintDocument(model);
-    expect(questionBlueprintDocumentToComposedEditorModel(blueprint)).toEqual(model);
+    expect(questionBlueprintDocumentToComposedEditorModel(blueprint)).toEqual(
+      model,
+    );
   });
 
   it("collects workbook refs from standalone response blocks", () => {
@@ -542,7 +561,10 @@ describe("composed blueprint conversions", () => {
           id: "response_1",
           type: "response",
           responseFieldId: "answer_1",
-          correctValueSource: { type: "reference", referenceId: "answer_source" },
+          correctValueSource: {
+            type: "reference",
+            referenceId: "answer_source",
+          },
           points: 1,
           grading: { mode: "exact" },
         },
@@ -1049,7 +1071,9 @@ describe("composed blueprint conversions", () => {
         ],
       },
     });
-    expect(questionBlueprintDocumentToComposedEditorModel(blueprint)).toEqual(model);
+    expect(questionBlueprintDocumentToComposedEditorModel(blueprint)).toEqual(
+      model,
+    );
   });
 
   it("round-trips rich text references as structured inline content", () => {
@@ -1197,9 +1221,7 @@ describe("table blueprint conversions", () => {
       rowId: "row_1",
       columnId: "column_1",
       type: "content",
-      content: [
-        { type: "text", text: "Alpha" },
-      ],
+      content: [{ type: "text", text: "Alpha" }],
     });
     expect(responseCell).toEqual({
       id: "cell_2",
@@ -1368,9 +1390,9 @@ describe("table blueprint response fields", () => {
     const model = questionBlueprintDocumentToTableEditorModel(blueprint);
 
     expect(model.responseFields).toEqual(blueprint.responseFields);
-    expect(tableEditorModelToQuestionBlueprintDocument(model).responseFields).toEqual(
-      blueprint.responseFields,
-    );
+    expect(
+      tableEditorModelToQuestionBlueprintDocument(model).responseFields,
+    ).toEqual(blueprint.responseFields);
   });
 
   it("preserves response field types when saving table models", () => {
@@ -1402,7 +1424,9 @@ describe("table blueprint response fields", () => {
       ],
     };
 
-    expect(tableEditorModelToQuestionBlueprintDocument(model).responseFields).toEqual([
+    expect(
+      tableEditorModelToQuestionBlueprintDocument(model).responseFields,
+    ).toEqual([
       {
         id: "answer_1",
         type: "number",
@@ -1427,9 +1451,9 @@ describe("table blueprint response fields", () => {
       ],
     } as unknown as QuestionBlueprintDocument;
 
-    expect(() => questionBlueprintDocumentToComposedEditorModel(blueprint)).toThrow(
-      "Unsupported response field type: json",
-    );
+    expect(() =>
+      questionBlueprintDocumentToComposedEditorModel(blueprint),
+    ).toThrow("Unsupported response field type: json");
   });
 
   it("rejects reference-backed content cells in standalone table conversion", () => {
@@ -1589,7 +1613,9 @@ describe("table blueprint composed namespacing", () => {
       "table_1_answer_1",
       "table_2_answer_1",
     ]);
-    const tableBlocks = blueprint.blocks.filter((block) => block.type === "table");
+    const tableBlocks = blueprint.blocks.filter(
+      (block) => block.type === "table",
+    );
     expect(tableBlocks).toHaveLength(2);
     expect(tableBlocks[0]).toMatchObject({
       id: "table_1",
@@ -1650,7 +1676,9 @@ describe("table blueprint composed namespacing", () => {
     };
 
     const blueprint = composedEditorModelToQuestionBlueprintDocument(model);
-    expect(questionBlueprintDocumentToComposedEditorModel(blueprint)).toEqual(model);
+    expect(questionBlueprintDocumentToComposedEditorModel(blueprint)).toEqual(
+      model,
+    );
   });
 });
 

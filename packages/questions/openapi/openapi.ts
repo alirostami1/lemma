@@ -23,11 +23,11 @@ import {
   MAX_GENERATION_RUN_COUNT,
   MAX_QUESTION_DESCRIPTION_LENGTH,
   MAX_QUESTION_NAME_LENGTH,
+  QUESTION_BLUEPRINT_STATUS_ACCEPTED_VALUES,
+  QUESTION_BLUEPRINT_VISIBILITY_ACCEPTED_VALUES,
   QUESTION_GENERATION_RUN_STATUS_ACCEPTED_VALUES,
   QUESTION_SET_STATUS_ACCEPTED_VALUES,
   QUESTION_STATUS_ACCEPTED_VALUES,
-  QUESTION_BLUEPRINT_STATUS_ACCEPTED_VALUES,
-  QUESTION_BLUEPRINT_VISIBILITY_ACCEPTED_VALUES,
 } from "../src/domain/index.ts";
 
 type OpenApiSchema = Schema["schema"];
@@ -48,7 +48,10 @@ const nullableUuid = {
   pattern: UUID_V7_OPENAPI_PATTERN,
   example: "019e8278-6746-768e-b90b-3c6d2fb8267f",
 } satisfies OpenApiSchema;
-const dateTime = { type: "string", format: "date-time" } satisfies OpenApiSchema;
+const dateTime = {
+  type: "string",
+  format: "date-time",
+} satisfies OpenApiSchema;
 const nullableDateTime = {
   type: ["string", "null"],
   format: "date-time",
@@ -326,7 +329,10 @@ const questionBlueprintTextBlockSchema: Schema = {
     properties: {
       id: { type: "string", minLength: 1 },
       type: { type: "string", enum: ["text"] },
-      content: { type: "array", items: schemaRef(blueprintInlineContentSchema) },
+      content: {
+        type: "array",
+        items: schemaRef(blueprintInlineContentSchema),
+      },
     },
   },
 };
@@ -527,7 +533,10 @@ const questionBlueprintTableContentCellSchema: Schema = {
       rowId: { type: "string", minLength: 1 },
       columnId: { type: "string", minLength: 1 },
       type: { type: "string", enum: ["content"] },
-      content: { type: "array", items: schemaRef(blueprintInlineContentSchema) },
+      content: {
+        type: "array",
+        items: schemaRef(blueprintInlineContentSchema),
+      },
     },
   },
 };
@@ -1503,7 +1512,9 @@ const createQuestionGenerationRunRequestSchema: Schema = {
       targetQuestionSetId: uuid,
       blueprintId: uuid,
       blueprintVersionId: nullableUuid,
-      source: { oneOf: [schemaRef(createWorkbookSourceSchema), { type: "null" }] },
+      source: {
+        oneOf: [schemaRef(createWorkbookSourceSchema), { type: "null" }],
+      },
     },
   },
 };
@@ -2200,8 +2211,7 @@ export const paths: Paths = {
     post: {
       tags: [tagRef(questionTag)],
       summary: "Create question generation run",
-      description:
-        "Create a generation run from a saved blueprint version.",
+      description: "Create a generation run from a saved blueprint version.",
       operationId: "createQuestionGenerationRun",
       security: [keycloakSecurityRequirement],
       requestBody: {

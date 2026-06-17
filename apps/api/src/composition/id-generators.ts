@@ -1,11 +1,12 @@
 import { eventId as toEventId } from "@lemma/events/domain";
+import type { IdGenerator as FilesIdGenerator } from "@lemma/files/application";
 import {
   fileId as toFileId,
   fileUploadId as toFileUploadId,
 } from "@lemma/files/domain";
-import type { IdGenerator as FilesIdGenerator } from "@lemma/files/application";
 import type { IdGenerator as IdentityIdGenerator } from "@lemma/identity/application";
 import { userId as toIdentityUserId } from "@lemma/identity/domain";
+import type { IdGenerator as QuestionsIdGenerator } from "@lemma/questions/application";
 import {
   questionBlueprintId as toQuestionBlueprintId,
   questionBlueprintVersionId as toQuestionBlueprintVersionId,
@@ -13,7 +14,6 @@ import {
   questionId as toQuestionId,
   questionSetId as toQuestionSetId,
 } from "@lemma/questions/domain";
-import type { IdGenerator as QuestionsIdGenerator } from "@lemma/questions/application";
 import type { IdGenerator as WorkbookIdGenerator } from "@lemma/workbook/application";
 import {
   workbookCalculationId as toWorkbookCalculationId,
@@ -47,8 +47,7 @@ export function createIdGenerators(): ApiIdGenerators {
     questions: {
       questionSetId: () => toQuestionSetId(uuidv7()),
       questionBlueprintId: () => toQuestionBlueprintId(uuidv7()),
-      questionBlueprintVersionId: () =>
-        toQuestionBlueprintVersionId(uuidv7()),
+      questionBlueprintVersionId: () => toQuestionBlueprintVersionId(uuidv7()),
       questionId: () => toQuestionId(uuidv7()),
       questionGenerationRunId: () => toQuestionGenerationRunId(uuidv7()),
       eventId: () => toEventId(uuidv7()),

@@ -72,9 +72,11 @@ export function App() {
   );
 }
 
-function getAuthenticationUnavailableMessage(error: Error & {
-  isAuthServerLikelyDown?: boolean;
-}) {
+function getAuthenticationUnavailableMessage(
+  error: Error & {
+    isAuthServerLikelyDown?: boolean;
+  },
+) {
   if (error.isAuthServerLikelyDown) {
     return "The identity provider could not be reached. Check Keycloak and retry.";
   }

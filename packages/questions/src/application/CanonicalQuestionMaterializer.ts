@@ -1,20 +1,20 @@
 import type { JsonValue } from "@lemma/domain";
 import type { CurrentUser } from "@lemma/identity/application";
 import { instrumentService } from "@lemma/observability";
-import {
-  type QuestionBody,
-  type QuestionFieldRule,
-  type QuestionSolution,
-  type QuestionSourcePlan,
-  type QuestionBlueprintDocument,
-  type QuestionBlueprintResponseBlock,
-  type QuestionBlueprintTableCell,
-  type QuestionReferenceSource,
-  type QuestionValueExpression,
-  type RenderedInlineContent,
-  type BlueprintInlineContent,
-  type RangeCellOffset,
-  type WorkbookSnapshotId,
+import type {
+  BlueprintInlineContent,
+  QuestionBlueprintDocument,
+  QuestionBlueprintResponseBlock,
+  QuestionBlueprintTableCell,
+  QuestionBody,
+  QuestionFieldRule,
+  QuestionReferenceSource,
+  QuestionSolution,
+  QuestionSourcePlan,
+  QuestionValueExpression,
+  RangeCellOffset,
+  RenderedInlineContent,
+  WorkbookSnapshotId,
 } from "../domain/index.js";
 import {
   InvalidQuestionBlueprintError,
@@ -22,7 +22,10 @@ import {
 } from "./errors.js";
 import type { QuestionValueResolverPort } from "./ports.js";
 
-const instrumentation = instrumentService("questions", "canonical_materializer");
+const instrumentation = instrumentService(
+  "questions",
+  "canonical_materializer",
+);
 
 export class CanonicalQuestionMaterializer {
   constructor(private readonly valueResolver: QuestionValueResolverPort) {}
@@ -64,7 +67,11 @@ export class CanonicalQuestionMaterializer {
     for (const reference of input.document.references) {
       const value = await this.resolveReference(input, reference.source);
       referenceValues.set(reference.id, value);
-      sourceReferences.push({ id: reference.id, source: reference.source, resolved: true });
+      sourceReferences.push({
+        id: reference.id,
+        source: reference.source,
+        resolved: true,
+      });
     }
 
     const blocks = await Promise.all(
@@ -154,7 +161,9 @@ export class CanonicalQuestionMaterializer {
 
   private addRule(
     rules: QuestionFieldRule[],
-    block: QuestionBlueprintResponseBlock | Extract<QuestionBlueprintTableCell, { type: "response" }>,
+    block:
+      | QuestionBlueprintResponseBlock
+      | Extract<QuestionBlueprintTableCell, { type: "response" }>,
     referenceValues: ReadonlyMap<string, JsonValue>,
   ) {
     if (block.grading.mode === "manual") {
@@ -170,7 +179,10 @@ export class CanonicalQuestionMaterializer {
         "non-manual response grading requires correctValueSource",
       );
     }
-    const correctValue = resolveQuestionValue(block.correctValueSource, referenceValues);
+    const correctValue = resolveQuestionValue(
+      block.correctValueSource,
+      referenceValues,
+    );
     rules.push(toRule(block.responseFieldId, correctValue, block));
   }
 }
@@ -178,7 +190,9 @@ export class CanonicalQuestionMaterializer {
 function toRule(
   responseFieldId: string,
   correctValue: JsonValue,
-  block: QuestionBlueprintResponseBlock | Extract<QuestionBlueprintTableCell, { type: "response" }>,
+  block:
+    | QuestionBlueprintResponseBlock
+    | Extract<QuestionBlueprintTableCell, { type: "response" }>,
 ): QuestionFieldRule {
   if (block.grading.mode === "number") {
     const numericCorrectValue = Number(correctValue);

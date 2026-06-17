@@ -2,9 +2,6 @@ import { DomainError } from "@lemma/error";
 
 export class InvalidWorkbookFieldError extends DomainError {
   readonly domainCode = "INVALID_WORKBOOK_FIELD";
-  constructor(message: string) {
-    super(message);
-  }
 }
 
 export class InvalidWorkbookStateTransitionError extends DomainError {

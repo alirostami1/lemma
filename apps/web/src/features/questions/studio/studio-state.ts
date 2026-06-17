@@ -1,13 +1,9 @@
-import type { QuestionGenerationRun } from "#/domains/questions/model";
 import { isQuestionGenerationRunActive } from "#/domains/questions/generation-status";
+import type { QuestionGenerationRun } from "#/domains/questions/model";
 import { createDraftSnapshotKey } from "./studio-controller-helpers";
 import type { StudioDraftSnapshot } from "./studio-draft-store";
 
-export type StudioLocalDraftStatus =
-  | "idle"
-  | "saving"
-  | "autosaved"
-  | "failed";
+export type StudioLocalDraftStatus = "idle" | "saving" | "autosaved" | "failed";
 
 export type StudioSaveState =
   | "saved"
@@ -57,7 +53,9 @@ export function shouldWarnBeforeOpeningBlueprint(input: {
 }) {
   const snapshotKey = createDraftKeyFromSnapshot(input.snapshot);
   const isSynced = input.snapshot.lastRemoteSaveSnapshotKey === snapshotKey;
-  return input.snapshot.loadedBlueprintId !== input.nextBlueprintId || !isSynced;
+  return (
+    input.snapshot.loadedBlueprintId !== input.nextBlueprintId || !isSynced
+  );
 }
 
 export function hasUnsavedChangesFromKeys(input: {
@@ -141,10 +139,7 @@ export function getStudioPhase(input: {
   if (input.isLoadingBlueprint) {
     return "loading_blueprint";
   }
-  if (
-    input.remoteSaveIsSaving ||
-    input.localDraftStatus === "saving"
-  ) {
+  if (input.remoteSaveIsSaving || input.localDraftStatus === "saving") {
     return "saving";
   }
   if (

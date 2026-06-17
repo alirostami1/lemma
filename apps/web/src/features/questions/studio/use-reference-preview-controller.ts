@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import {
-  resolveReferencePreviewValues,
   type ReferencePreviewCache,
+  resolveReferencePreviewValues,
 } from "#/domains/questions/reference-preview";
 import type { WorkbookPreview } from "#/domains/questions/workbook-preview";
 

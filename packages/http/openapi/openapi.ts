@@ -63,6 +63,7 @@ export type OpenAPI = Readonly<OpenAPIV3_1.Document>;
 export type Paths = Readonly<OpenAPIV3_1.PathsObject>;
 
 export type MutableJsonSchema = Record<string, unknown>;
+type ParameterSchema = NonNullable<OpenAPIV3_1.ParameterObject["schema"]>;
 
 export const UUID_V7_OPENAPI_PATTERN =
   "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$";
@@ -84,7 +85,7 @@ export function uuidV7Param(name: string, example?: string): Param {
       name,
       in: "path",
       required: true,
-      schema: uuidV7StringSchemaObject(example) as any,
+      schema: uuidV7StringSchemaObject(example) as ParameterSchema,
     },
   };
 }

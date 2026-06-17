@@ -1,3 +1,4 @@
+import { AsyncPanel } from "@lemma/ui/components/async-panel";
 import { Button } from "@lemma/ui/components/button";
 import {
   Dialog,
@@ -6,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@lemma/ui/components/dialog";
-import { AsyncPanel } from "@lemma/ui/components/async-panel";
 import { EmptyState } from "@lemma/ui/components/empty-state";
 import { InlineError } from "@lemma/ui/components/inline-error";
 import { PaginatedList } from "@lemma/ui/components/paginated-list";

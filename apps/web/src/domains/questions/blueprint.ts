@@ -4,8 +4,8 @@ import type {
 } from "#/api/generated/model";
 import type { TableAnswerState, TableAnswerValue } from "./authoring";
 import type {
-  CreateQuestionGenerationRunInput,
   CreateQuestionBlueprintInput,
+  CreateQuestionGenerationRunInput,
   QuestionBlueprintVisibility,
   UpdateQuestionBlueprintInput,
 } from "./model";
@@ -53,14 +53,13 @@ export function questionAnswerToTableAnswerState(
   );
 }
 
-export type QuestionGenerationDraft =
-  {
-    targetQuestionSetId: string;
-    count: number;
-    blueprintId: string;
-    blueprintVersionId?: string | null;
-    sourceWorkbookId?: string | null;
-  };
+export type QuestionGenerationDraft = {
+  targetQuestionSetId: string;
+  count: number;
+  blueprintId: string;
+  blueprintVersionId?: string | null;
+  sourceWorkbookId?: string | null;
+};
 
 export function toCreateQuestionBlueprintInput(
   draft: QuestionBlueprintDraft,

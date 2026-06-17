@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
+import type { WorkbookSparseValues } from "./domain.js";
 import {
   parseWorkbookRef,
   resolveWorkbookValue,
   sparseValuesToRows,
 } from "./values.js";
-import type { WorkbookSparseValues } from "./domain.js";
 
 describe("workbook engine values", () => {
   it("parses workbook cell refs", () => {

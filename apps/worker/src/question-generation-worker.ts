@@ -1,12 +1,12 @@
 import { childOperationLineage, parseOperationLineage } from "@lemma/domain";
 import {
-  QUESTION_GENERATION_ORCHESTRATE_JOB,
-  QUESTION_GENERATION_MATERIALIZE_JOB,
   type JobDispatcher,
   type JobQueuePort,
-  type QueueWorkerRegistration,
+  QUESTION_GENERATION_MATERIALIZE_JOB,
+  QUESTION_GENERATION_ORCHESTRATE_JOB,
   type QuestionGenerationMaterializeJobData,
   type QuestionGenerationOrchestrateJobData,
+  type QueueWorkerRegistration,
 } from "@lemma/jobs/application";
 import type { QuestionGenerationWorkerService } from "@lemma/questions/application";
 import { registerJobConsumer, workflowJobConsumer } from "./pipeline.js";

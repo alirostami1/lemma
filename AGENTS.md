@@ -24,7 +24,7 @@
 
 - Do not run validation unless explicitly asked.
 - If validation is requested, use:
-  `pnpm check-types && pnpm lint && pnpm test`
+  `pnpm check-types && pnpm check && pnpm test`
 - Prefer focused checks before full validation when debugging a failure.
 - Report exact failing package/file/test if validation fails.
 

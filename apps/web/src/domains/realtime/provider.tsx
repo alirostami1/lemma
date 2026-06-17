@@ -9,13 +9,13 @@ import {
   useState,
 } from "react";
 import { OidcInitializationGate, useOidc } from "#/lib/oidc";
-import { invalidateRealtimeNotification } from "./invalidation";
+import { userNotificationChannel } from "./channels";
 import {
   createRealtimeNotificationClient,
   type RealtimeNotificationClient,
   type RealtimeNotificationHandler,
 } from "./client";
-import { userNotificationChannel } from "./channels";
+import { invalidateRealtimeNotification } from "./invalidation";
 
 type RealtimeNotificationsContextValue = {
   client: RealtimeNotificationClient | null;

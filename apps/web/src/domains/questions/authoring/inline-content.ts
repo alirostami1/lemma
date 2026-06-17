@@ -91,7 +91,9 @@ export function formatInlineReference(
 export function inlineContentToPlainText(content: ComposedInlineContent[]) {
   return content
     .map((item) =>
-      item.type === "text" ? item.text : (item.fallbackText ?? item.referenceId),
+      item.type === "text"
+        ? item.text
+        : (item.fallbackText ?? item.referenceId),
     )
     .join("");
 }

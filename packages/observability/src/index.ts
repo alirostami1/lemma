@@ -40,10 +40,7 @@ export type InstrumentedOperationOptions = {
 };
 
 export type InstrumentedOperation<TOperation extends string = string> = {
-  run<T>(
-    operation: TOperation,
-    fn: (span: Span) => Promise<T>,
-  ): Promise<T>;
+  run<T>(operation: TOperation, fn: (span: Span) => Promise<T>): Promise<T>;
   run<T>(
     operation: TOperation,
     options: InstrumentedOperationOptions,
@@ -171,9 +168,7 @@ function createInstrumentedOperation<TOperation extends string>(
   return {
     run<T>(
       operation: TOperation,
-      optionsOrFn:
-        | InstrumentedOperationOptions
-        | ((span: Span) => Promise<T>),
+      optionsOrFn: InstrumentedOperationOptions | ((span: Span) => Promise<T>),
       maybeFn?: (span: Span) => Promise<T>,
     ): Promise<T> {
       const options =

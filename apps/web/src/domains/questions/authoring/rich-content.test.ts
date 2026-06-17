@@ -114,7 +114,9 @@ describe("rich content helpers", () => {
       ],
     });
     expect(
-      extractRichReferenceIds(replaceRichReferenceId(content, "nested", "next")),
+      extractRichReferenceIds(
+        replaceRichReferenceId(content, "nested", "next"),
+      ),
     ).toEqual(["top", "child", "next"]);
   });
 
@@ -125,7 +127,9 @@ describe("rich content helpers", () => {
     ];
 
     expect(
-      inlineContentFromRichContentIfSimple(richContentFromInlineContent(inline)),
+      inlineContentFromRichContentIfSimple(
+        richContentFromInlineContent(inline),
+      ),
     ).toEqual(inline);
   });
 

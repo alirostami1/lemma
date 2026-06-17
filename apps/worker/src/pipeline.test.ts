@@ -6,9 +6,9 @@ import {
   aggregateType,
   eventId,
   eventType,
-  outboxConsumerName,
-  type OutboxEvent,
   type OutboxConsumerName,
+  type OutboxEvent,
+  outboxConsumerName,
 } from "@lemma/events/domain";
 import {
   type IdempotencyStore,

@@ -33,4 +33,4 @@ body:
     attributes:
       label: Validation
       placeholder: |
-        - `pnpm check-types && pnpm lint && pnpm test`
+        - `pnpm check-types && pnpm check && pnpm test`

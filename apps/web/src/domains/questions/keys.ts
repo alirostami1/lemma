@@ -10,9 +10,8 @@ export const questionKeys = {
   questionSetLists: () => [...questionKeys.questionSets(), "list"] as const,
   questionSetList: (input?: ListQuestionSetsInput) =>
     [...questionKeys.questionSetLists(), input ?? {}] as const,
-  questionSetInfiniteList: (
-    input?: Omit<ListQuestionSetsInput, "cursor">,
-  ) => [...questionKeys.questionSets(), "infinite-list", input ?? {}] as const,
+  questionSetInfiniteList: (input?: Omit<ListQuestionSetsInput, "cursor">) =>
+    [...questionKeys.questionSets(), "infinite-list", input ?? {}] as const,
   questionSetDetails: () => [...questionKeys.questionSets(), "detail"] as const,
   questionSetDetail: (questionSetId: string) =>
     [...questionKeys.questionSetDetails(), questionSetId] as const,
@@ -30,13 +29,18 @@ export const questionKeys = {
   questionDetails: () => [...questionKeys.all, "detail"] as const,
   questionDetail: (questionId: string) =>
     [...questionKeys.questionDetails(), questionId] as const,
-  questionBlueprints: () => [...questionKeys.all, "question-blueprints"] as const,
+  questionBlueprints: () =>
+    [...questionKeys.all, "question-blueprints"] as const,
   questionBlueprintsList: (input?: ListQuestionBlueprintsInput) =>
     [...questionKeys.questionBlueprints(), "list", input ?? {}] as const,
   questionBlueprintsInfiniteList: (
     input?: Omit<ListQuestionBlueprintsInput, "cursor">,
   ) =>
-    [...questionKeys.questionBlueprints(), "infinite-list", input ?? {}] as const,
+    [
+      ...questionKeys.questionBlueprints(),
+      "infinite-list",
+      input ?? {},
+    ] as const,
   questionBlueprintDetails: () =>
     [...questionKeys.questionBlueprints(), "detail"] as const,
   questionBlueprintDetail: (questionBlueprintId: string) =>

@@ -2,9 +2,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  CreateQuestionSetDialogController as CreateQuestionSetDialog,
-} from "./create-question-set-dialog";
+import { CreateQuestionSetDialogController as CreateQuestionSetDialog } from "./create-question-set-dialog";
 
 const mutateAsync = vi.fn();
 

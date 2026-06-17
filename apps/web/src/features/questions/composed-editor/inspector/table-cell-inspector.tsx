@@ -12,6 +12,7 @@ import type {
   TableEditorModel,
   TableResponseField,
 } from "#/domains/questions/authoring";
+import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import {
   getTableCell,
   makeContentCell,
@@ -22,11 +23,6 @@ import {
   updateResponseFieldForCell,
   updateTableCell,
 } from "#/features/questions/table-block-editor";
-import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
-import {
-  updateTableCellValueInComposedModel,
-  updateTableContentCellInlineContentInComposedModel,
-} from "./table-cell-reference-operations";
 import {
   AnswerFieldSettings,
   CorrectAnswerSettings,
@@ -35,6 +31,10 @@ import {
 import { TextAuthoringContent } from "../shared/text-authoring-content";
 import { InspectorField } from "./inspector-field";
 import { InspectorSection } from "./inspector-section";
+import {
+  updateTableCellValueInComposedModel,
+  updateTableContentCellInlineContentInComposedModel,
+} from "./table-cell-reference-operations";
 
 export function TableCellInspector({
   model,

@@ -1,8 +1,8 @@
 import { useEffect, useMemo } from "react";
 import {
+  type QuestionSet,
   useQuestionSetQuery,
   useQuestionSetQuestionsInfiniteQuery,
-  type QuestionSet,
 } from "#/domains/questions";
 import {
   questionSetNotificationChannel,

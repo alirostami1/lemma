@@ -1,7 +1,7 @@
 import type { Kysely } from "kysely";
 import { sql } from "kysely";
 
-export async function up(db: Kysely<any>): Promise<void> {
+export async function up(db: Kysely<Record<string, never>>): Promise<void> {
   await db.schema
     .createTable("workbooks")
     .addColumn("id", "uuid", (c) => c.primaryKey().defaultTo(sql`uuidv7()`))
@@ -250,7 +250,9 @@ export async function up(db: Kysely<any>): Promise<void> {
     .execute();
 
   await db.schema
-    .createIndex("question_blueprint_versions_created_by_user_id_created_at_index")
+    .createIndex(
+      "question_blueprint_versions_created_by_user_id_created_at_index",
+    )
     .on("question_blueprint_versions")
     .columns(["created_by_user_id", "created_at"])
     .execute();
@@ -349,7 +351,7 @@ export async function up(db: Kysely<any>): Promise<void> {
   `.execute(db);
 }
 
-export async function down(db: Kysely<any>): Promise<void> {
+export async function down(db: Kysely<Record<string, never>>): Promise<void> {
   await sql`drop trigger if exists question_blueprints_set_updated_at on question_blueprints`.execute(
     db,
   );

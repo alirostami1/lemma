@@ -1,5 +1,5 @@
-import { RichTextQuestionBlock } from "./blocks/rich-text-question-block";
 import { ResponseQuestionBlock } from "./blocks/response-question-block";
+import { RichTextQuestionBlock } from "./blocks/rich-text-question-block";
 import { TableQuestionBlock } from "./blocks/table-question-block";
 import { TextQuestionBlock } from "./blocks/text-question-block";
 import type {

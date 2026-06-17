@@ -5,7 +5,7 @@ export type KcContextExtension = {
   properties: Record<string, string | undefined>;
 };
 
-export type KcContextExtensionPerPage = {};
+export type KcContextExtensionPerPage = Record<never, never>;
 
 export type KcContext = ExtendKcContext<
   KcContextExtension,

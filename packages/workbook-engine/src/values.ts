@@ -48,7 +48,11 @@ export function sparseValuesToRows(
       for (const [address, value] of Object.entries(sheet.cells)) {
         const decoded = XLSX.utils.decode_cell(address);
         if (decoded.r < sheet.rowCount && decoded.c < sheet.columnCount) {
-          rows[decoded.r]![decoded.c] = value;
+          const targetRow = rows[decoded.r];
+          if (targetRow === undefined) {
+            continue;
+          }
+          targetRow[decoded.c] = value;
         }
       }
       return { name: sheet.name, rows };

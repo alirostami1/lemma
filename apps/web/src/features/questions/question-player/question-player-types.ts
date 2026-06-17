@@ -1,3 +1,4 @@
+import type { QuestionAnswer, QuestionGrade } from "#/domains/questions";
 import type {
   ComposedInlineContent,
   ComposedRenderedInlineContent,
@@ -5,10 +6,6 @@ import type {
   TableBlockPreviewModel,
   TableResponseField,
 } from "#/domains/questions/authoring";
-import type {
-  QuestionAnswer,
-  QuestionGrade,
-} from "#/domains/questions";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 
 export type QuestionPlayerMode =

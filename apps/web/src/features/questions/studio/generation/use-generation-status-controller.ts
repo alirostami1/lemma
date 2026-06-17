@@ -6,6 +6,7 @@ import {
   questionGenerationRunNotificationChannel,
   useRealtimeNotificationChannel,
 } from "#/domains/realtime";
+import type { notifyQuestionGenerationRetryStarted } from "#/features/notifications";
 import {
   notifyQuestionGenerationFailed,
   notifyQuestionGenerationRetryFailed,
@@ -13,7 +14,6 @@ import {
   notifyQuestionGenerationStarted,
   notifyQuestionsGenerated,
 } from "#/features/notifications";
-import type { notifyQuestionGenerationRetryStarted } from "#/features/notifications";
 import type { ActiveRunContext } from "./generation-controller-types";
 
 const REALTIME_FALLBACK_REFETCH_INTERVAL_MS = 10_000;
@@ -52,9 +52,9 @@ export function useGenerationStatusController({
   const notifiedSuccessRunIdsRef = useRef(new Set<string>());
   const notifiedFailureRunIdsRef = useRef(new Set<string>());
   const activeToastRunIdRef = useRef<string | null>(null);
-  const activeToastIdRef = useRef<
-    ReturnType<typeof notifyQuestionGenerationStarted> | null
-  >(null);
+  const activeToastIdRef = useRef<ReturnType<
+    typeof notifyQuestionGenerationStarted
+  > | null>(null);
   const activeRunChannel = activeRunContext
     ? questionGenerationRunNotificationChannel(activeRunContext.runId)
     : null;

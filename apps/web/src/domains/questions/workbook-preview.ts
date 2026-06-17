@@ -41,8 +41,7 @@ function sheetToRows(sheet: XLSX.WorkSheet | undefined) {
       rows[decoded.r] = row;
     }
     const cell = sheet?.[address];
-    row[decoded.c] =
-      cell?.w ?? (cell?.v == null ? "" : String(cell.v));
+    row[decoded.c] = cell?.w ?? (cell?.v == null ? "" : String(cell.v));
   }
   if (sheet?.["!ref"]) {
     const range = XLSX.utils.decode_range(sheet["!ref"]);

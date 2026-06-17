@@ -2,10 +2,10 @@ import { Button } from "@lemma/ui/components/button";
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger,
   PopoverDescription,
   PopoverHeader,
   PopoverTitle,
+  PopoverTrigger,
 } from "@lemma/ui/components/popover";
 import {
   Tabs,
@@ -20,13 +20,13 @@ import type {
   ComposedEditorModel,
   ReferenceSourceDraft,
 } from "#/domains/questions/authoring";
-import {
-  getReferenceSourceLabel,
-  getReferenceDisplayName,
-  addReferenceToModel,
-} from "./reference-inspector-helpers";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import { ReferenceCreateForm } from "./reference-create-form";
+import {
+  addReferenceToModel,
+  getReferenceDisplayName,
+  getReferenceSourceLabel,
+} from "./reference-inspector-helpers";
 
 export type ReferencePickerPopoverProps = {
   model: ComposedEditorModel;
@@ -128,7 +128,7 @@ export function ReferencePickerPopover({
                   No references yet. Create one to use it here.
                 </p>
               ) : (
-              <div className="grid gap-2">
+                <div className="grid gap-2">
                   {visibleReferences.map((reference) => {
                     const selected = selectedReferenceId === reference.id;
                     const preview = referencePreviewCache[reference.id];

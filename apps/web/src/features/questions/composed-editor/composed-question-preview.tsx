@@ -1,5 +1,5 @@
-import type { ComposedPreviewModel } from "#/domains/questions/authoring";
 import { createEmptyQuestionAnswer } from "#/domains/questions";
+import type { ComposedPreviewModel } from "#/domains/questions/authoring";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import {
   composedPreviewToPresentableQuestion,

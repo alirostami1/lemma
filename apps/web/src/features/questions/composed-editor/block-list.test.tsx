@@ -117,7 +117,9 @@ describe("BlockList", () => {
     if (!secondBlock) {
       throw new Error("Expected default composed model to contain blocks.");
     }
-    expect(screen.getByTestId("block-preview").textContent).toBe(secondBlock.type);
+    expect(screen.getByTestId("block-preview").textContent).toBe(
+      secondBlock.type,
+    );
   });
 
   it("renders a bottom insert menu for each block regardless of selection", () => {

@@ -1,9 +1,8 @@
-export { ReferenceChip } from "./reference-chip";
 export {
+  formatReferenceFallback,
   type ReferencePreviewCache,
   type ReferencePreviewStatus,
   type ReferencePreviewValue,
-  formatReferenceFallback,
   resolveReferencePreviewValues,
   resolveValueExpressionPreview,
   type WorkbookPreviewForReferences,
@@ -15,3 +14,4 @@ export {
   InlineContentRenderer,
   type InlineRenderMode,
 } from "./inline-content-renderer";
+export { ReferenceChip } from "./reference-chip";

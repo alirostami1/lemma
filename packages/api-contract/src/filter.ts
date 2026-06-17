@@ -57,7 +57,9 @@ function pruneComponents(document: OpenAPI): OpenAPI {
     }
 
     const retained = Object.fromEntries(
-      Object.entries(source).filter(([name]) => refs.has(refKey(section, name))),
+      Object.entries(source).filter(([name]) =>
+        refs.has(refKey(section, name)),
+      ),
     );
 
     if (Object.keys(retained).length > 0) {

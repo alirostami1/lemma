@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
 import { Badge } from "@lemma/ui/components/badge";
 import { Card, CardHeader, CardTitle } from "@lemma/ui/components/card";
+import type { ReactNode } from "react";
 
 export type PrimaryActionPanelProps = {
   eyebrow?: string;

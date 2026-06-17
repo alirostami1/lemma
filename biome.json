@@ -21,6 +21,18 @@
       "turbo.json"
     ]
   },
+  "overrides": [
+    {
+      "includes": [
+        "**/src/gen/**/*",
+        "**/src/api/generated/**/*",
+        "**/src/kc.gen.tsx"
+      ],
+      "linter": {
+        "enabled": false
+      }
+    }
+  ],
   "linter": {
     "enabled": true,
     "rules": {

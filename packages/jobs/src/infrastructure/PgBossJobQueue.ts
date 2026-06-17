@@ -1,6 +1,6 @@
-import { PgBoss, type ConstructorOptions, type Job } from "pg-boss";
 import type { JsonObject } from "@lemma/domain";
 import { instrumentExternal } from "@lemma/observability";
+import { type ConstructorOptions, type Job, PgBoss } from "pg-boss";
 import type {
   EnqueueJobInput,
   JobQueuePort,

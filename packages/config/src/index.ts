@@ -80,8 +80,7 @@ export const workbookEnvSchema = z
     ) {
       ctx.addIssue({
         code: "custom",
-        message:
-          "engine is libreoffice but libreoffice-service-url is not set",
+        message: "engine is libreoffice but libreoffice-service-url is not set",
         path: ["LEMMA_WORKBOOK_LIBREOFFICE_SERVICE_URL"],
       });
     }

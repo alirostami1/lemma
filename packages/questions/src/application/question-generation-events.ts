@@ -1,7 +1,7 @@
 import type { JsonObject, OperationLineage } from "@lemma/domain";
 import {
-  domainEventEnvelope,
   type DomainEventEnvelope,
+  domainEventEnvelope,
 } from "@lemma/events/domain";
 import {
   QUESTION_GENERATION_RUN_CANCELLED_EVENT,
@@ -30,13 +30,15 @@ export type QuestionGenerationRunRequestedPayload = JsonObject & {
   blueprintVersionId: string;
   targetQuestionSetId: string;
   requestedCount: number;
-  source: (JsonObject & {
-    type: "workbook_snapshot";
-    workbookId: string;
-    workbookVersionId: string | null;
-    workbookCalculationId: string | null;
-    workbookSnapshotId: string | null;
-  }) | null;
+  source:
+    | (JsonObject & {
+        type: "workbook_snapshot";
+        workbookId: string;
+        workbookVersionId: string | null;
+        workbookCalculationId: string | null;
+        workbookSnapshotId: string | null;
+      })
+    | null;
 };
 
 export function questionGenerationRunRequestedEvent(input: {
@@ -237,7 +239,9 @@ function questionGenerationRunStateChangedEvent(input: {
   });
 }
 
-function questionGenerationRunEventEnvelope<TPayload extends JsonObject>(input: {
+function questionGenerationRunEventEnvelope<
+  TPayload extends JsonObject,
+>(input: {
   id: string;
   type: string;
   run: QuestionGenerationRun;

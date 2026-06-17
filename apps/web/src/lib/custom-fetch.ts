@@ -15,9 +15,6 @@ const apiClient = createBrowserApiClient({
   },
 });
 
-export function authedFetch<T>(
-  url: string,
-  options?: RequestInit,
-): Promise<T> {
+export function authedFetch<T>(url: string, options?: RequestInit): Promise<T> {
   return apiClient.request<T>(url, options);
 }

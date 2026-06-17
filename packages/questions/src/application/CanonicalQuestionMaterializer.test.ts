@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { JsonValue } from "@lemma/domain";
 import {
-  questionBlueprintDocument,
   type QuestionReferenceSource,
+  questionBlueprintDocument,
   type WorkbookSnapshotId,
 } from "../domain/index.js";
 import { CanonicalQuestionMaterializer } from "./CanonicalQuestionMaterializer.js";
@@ -66,12 +66,15 @@ describe("CanonicalQuestionMaterializer", () => {
       ],
     });
 
-    const result = await materializer.materialize({ document, workbookSnapshotId });
+    const result = await materializer.materialize({
+      document,
+      workbookSnapshotId,
+    });
 
-    assert.deepEqual(resolvedSources.map((source) => source.type), [
-      "workbook_cell",
-      "workbook_range",
-    ]);
+    assert.deepEqual(
+      resolvedSources.map((source) => source.type),
+      ["workbook_cell", "workbook_range"],
+    );
     assert.deepEqual(result.body.blocks[0], {
       id: "prompt",
       type: "text",

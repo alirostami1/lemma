@@ -6,13 +6,7 @@ import {
   DropdownMenuTrigger,
 } from "@lemma/ui/components/dropdown-menu";
 import { cn } from "@lemma/ui/lib/utils";
-import {
-  ArrowDown,
-  ArrowUp,
-  Copy,
-  MoreHorizontal,
-  Trash2,
-} from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, MoreHorizontal, Trash2 } from "lucide-react";
 
 export function BlockMenu({
   className,

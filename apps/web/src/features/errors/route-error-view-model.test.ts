@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AppApiError } from "#/api/errors";
-import {
-  ForbiddenRouteError,
-  SignInRequiredRouteError,
-} from "#/features/auth";
+import { ForbiddenRouteError, SignInRequiredRouteError } from "#/features/auth";
 import { buildRouteErrorViewModel } from "./route-error-view-model";
 
 function createApiError(status: number) {

@@ -7,6 +7,7 @@ import type {
   ReferenceSourceDraft,
   TableEditorModel,
 } from "#/domains/questions/authoring";
+import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import {
   addTableColumn,
   addTableRow,
@@ -14,7 +15,6 @@ import {
   resetTableLayout,
   updateTableLayout,
 } from "#/features/questions/table-block-editor";
-import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import { InspectorSwitchField } from "./inspector-field";
 import { InspectorSection } from "./inspector-section";
 import { ReferencePickerPopover } from "./reference-picker-popover";
@@ -55,7 +55,7 @@ export function TableInspector({
     [editorModel.references, selectedRangeReferenceId],
   );
   const selectedPreview = selectedRangeReferenceId
-    ? referencePreviewCache[selectedRangeReferenceId] ?? null
+    ? (referencePreviewCache[selectedRangeReferenceId] ?? null)
     : null;
   const selectedPreviewError = getRangePreviewError(selectedPreview);
   const canApplyRange =

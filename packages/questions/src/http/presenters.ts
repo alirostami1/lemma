@@ -1,13 +1,13 @@
 import type {
   GradeQuestionResult,
+  QuestionBlueprintResult,
+  QuestionBlueprintsResult,
   QuestionGenerationRunResultDto,
   QuestionGenerationRunsResult,
   QuestionResult,
-  QuestionsResult,
   QuestionSetResult,
   QuestionSetsResult,
-  QuestionBlueprintResult,
-  QuestionBlueprintsResult,
+  QuestionsResult,
 } from "../application/index.js";
 
 export const presentQuestionSet = (result: QuestionSetResult) => ({
@@ -19,7 +19,9 @@ export const presentQuestionSet = (result: QuestionSetResult) => ({
 });
 
 export const presentQuestionSets = (result: QuestionSetsResult) => ({
-  questionSets: result.questionSets.map((questionSet) => presentQuestionSet({ questionSet }).questionSet),
+  questionSets: result.questionSets.map(
+    (questionSet) => presentQuestionSet({ questionSet }).questionSet,
+  ),
   nextCursor: result.nextCursor,
 });
 
@@ -30,7 +32,9 @@ export const presentQuestionBlueprint = (result: QuestionBlueprintResult) => {
       ...result.questionBlueprint,
       currentVersionId: currentVersion.id,
       currentVersionNumber: currentVersion.versionNumber,
-      document: presentLearnerQuestionBlueprintDocument(currentVersion.document),
+      document: presentLearnerQuestionBlueprintDocument(
+        currentVersion.document,
+      ),
       currentVersion: {
         id: currentVersion.id,
         versionNumber: currentVersion.versionNumber,
@@ -69,8 +73,13 @@ export const presentQuestionBlueprintAuthoring = (
   };
 };
 
-export const presentQuestionBlueprints = (result: QuestionBlueprintsResult) => ({
-  questionBlueprints: result.questionBlueprints.map((questionBlueprint) => presentQuestionBlueprint({ questionBlueprint }).questionBlueprint),
+export const presentQuestionBlueprints = (
+  result: QuestionBlueprintsResult,
+) => ({
+  questionBlueprints: result.questionBlueprints.map(
+    (questionBlueprint) =>
+      presentQuestionBlueprint({ questionBlueprint }).questionBlueprint,
+  ),
   nextCursor: result.nextCursor,
 });
 
@@ -95,18 +104,28 @@ export const presentQuestion = (result: QuestionResult) => {
 };
 
 export const presentQuestions = (result: QuestionsResult) => ({
-  questions: result.questions.map((question) => presentQuestion({ question }).question),
+  questions: result.questions.map(
+    (question) => presentQuestion({ question }).question,
+  ),
   nextCursor: result.nextCursor,
 });
 
 export const presentGrade = (result: GradeQuestionResult) => result;
 
-export const presentQuestionGenerationRun = (result: QuestionGenerationRunResultDto) => ({
+export const presentQuestionGenerationRun = (
+  result: QuestionGenerationRunResultDto,
+) => ({
   questionGenerationRun: presentLearnerQuestionGenerationRun(result),
 });
 
-export const presentQuestionGenerationRuns = (result: QuestionGenerationRunsResult) => ({
-  questionGenerationRuns: result.questionGenerationRuns.map((questionGenerationRun) => presentQuestionGenerationRun({ questionGenerationRun }).questionGenerationRun),
+export const presentQuestionGenerationRuns = (
+  result: QuestionGenerationRunsResult,
+) => ({
+  questionGenerationRuns: result.questionGenerationRuns.map(
+    (questionGenerationRun) =>
+      presentQuestionGenerationRun({ questionGenerationRun })
+        .questionGenerationRun,
+  ),
   nextCursor: result.nextCursor,
 });
 

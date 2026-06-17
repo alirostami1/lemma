@@ -1,9 +1,9 @@
+import {
+  parseWorkbookRef,
+  getWorkbookCellRefAtOffset as resolveWorkbookCellRefAtOffset,
+} from "../workbook-reference";
 import type { ComposedReferenceDraft } from "./composed-model";
 import type { TableEditorContentCell, TableEditorModel } from "./table-model";
-import {
-  getWorkbookCellRefAtOffset as resolveWorkbookCellRefAtOffset,
-  parseWorkbookRef,
-} from "../workbook-reference";
 
 export type WorkbookRangeMatrix = string[][];
 

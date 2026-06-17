@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import { getBlueprintSourceRequirement } from "#/domains/questions/source-requirements";
-import { notifySourceUploaded } from "#/features/notifications";
 import { useWorkbooksQuery } from "#/domains/workbooks/hooks";
 import type { Workbook } from "#/domains/workbooks/model";
 import { isWorkbookUsableAsSource } from "#/domains/workbooks/source-status";
+import { notifySourceUploaded } from "#/features/notifications";
 import {
-  useSelectedWorkbookPreview,
   type SelectedWorkbookPreviewController,
+  useSelectedWorkbookPreview,
 } from "../use-selected-workbook-preview";
 import {
   getStudioSourceViewState,
@@ -56,7 +56,8 @@ export function useSourceController(input: {
   );
   const workbooks = workbooksQuery.data?.workbooks ?? [];
   const selectedWorkbook =
-    workbooks.find((workbook) => workbook.id === input.selectedWorkbookId) ?? null;
+    workbooks.find((workbook) => workbook.id === input.selectedWorkbookId) ??
+    null;
   const workbookPreviewController = useSelectedWorkbookPreview({
     selectedWorkbook: selectedWorkbook
       ? {

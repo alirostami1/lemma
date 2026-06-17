@@ -1,8 +1,7 @@
 import { Button } from "@lemma/ui/components/button";
 import { Field, FieldGroup, FieldLabel } from "@lemma/ui/components/field";
 import { Input } from "@lemma/ui/components/input";
-import type { ReactNode } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, ReactNode } from "react";
 
 export type CreateQuestionSetFormProps = {
   submitLabel?: string;

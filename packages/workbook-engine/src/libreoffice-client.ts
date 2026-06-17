@@ -109,7 +109,10 @@ function workerHeaders(requestId?: string | null): Record<string, string> {
   return headers;
 }
 
-function mapWorkerError(status: number, operation: string): WorkbookEngineError {
+function mapWorkerError(
+  status: number,
+  operation: string,
+): WorkbookEngineError {
   if (status === 400) {
     return new WorkbookEngineError(
       "invalid_workbook",

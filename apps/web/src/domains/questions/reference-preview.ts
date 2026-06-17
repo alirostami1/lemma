@@ -6,8 +6,8 @@ import {
   type ValueExpression,
 } from "./authoring";
 import {
-  type WorkbookPreviewForReferences,
   resolveWorkbookPreviewValue,
+  type WorkbookPreviewForReferences,
 } from "./workbook-reference";
 
 export type ReferencePreviewStatus = "resolved" | "missing_source" | "error";

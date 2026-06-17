@@ -13,10 +13,7 @@ import {
   postWorkbookBatchToLibreOfficeWorker,
   postWorkbookToLibreOfficeWorker,
 } from "./libreoffice-client.js";
-import {
-  readWorkbookSparseValues,
-  sparseValuesToRows,
-} from "./values.js";
+import { readWorkbookSparseValues, sparseValuesToRows } from "./values.js";
 
 export { inspectXlsx } from "./inspection.js";
 export {

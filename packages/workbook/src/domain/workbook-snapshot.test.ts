@@ -1,21 +1,23 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  createWorkbookSnapshot,
-  resolveWorkbookSnapshotValue,
-} from "./workbook-snapshot.js";
-import {
   workbookCalculationId,
   workbookId,
   workbookSnapshotId,
 } from "./ids.js";
+import {
+  createWorkbookSnapshot,
+  resolveWorkbookSnapshotValue,
+} from "./workbook-snapshot.js";
 
 describe("workbook snapshot values", () => {
   const snapshot = createWorkbookSnapshot(
     {
       id: workbookSnapshotId("019e9315-6a87-715f-9861-8654df070c4c"),
       workbookId: workbookId("019e9315-6a87-715f-9861-8654df070c4d"),
-      calculationId: workbookCalculationId("019e9315-6a87-715f-9861-8654df070c4e"),
+      calculationId: workbookCalculationId(
+        "019e9315-6a87-715f-9861-8654df070c4e",
+      ),
       snapshotIndex: 0,
       values: {
         sheets: [

@@ -3,8 +3,8 @@ import type {
   ComposedRichContent,
   ComposedRichContentNode,
 } from "#/domains/questions/authoring";
-import { InlineContentRenderer } from "./inline-content-renderer";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
+import { InlineContentRenderer } from "./inline-content-renderer";
 
 export function RichContentPreview({
   content,
@@ -55,9 +55,7 @@ function RichContentNodePreview({
   const ListTag = node.type === "bullet_list" ? "ul" : "ol";
   const listStyle = node.type === "bullet_list" ? "list-disc" : "list-decimal";
   return (
-    <ListTag
-      className={cn("my-2 space-y-0.5 pl-6 leading-6", listStyle)}
-    >
+    <ListTag className={cn("my-2 space-y-0.5 pl-6 leading-6", listStyle)}>
       {node.items.map((item, itemIndex) => (
         <li key={itemIndex} className="pl-1 marker:text-muted-foreground">
           {item.content.map((child, childIndex) => (

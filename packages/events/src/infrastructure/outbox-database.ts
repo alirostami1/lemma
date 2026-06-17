@@ -1,10 +1,5 @@
 import type { JsonObject } from "@lemma/domain";
-import type {
-  ColumnType,
-  Generated,
-  Kysely,
-  Transaction,
-} from "kysely";
+import type { ColumnType, Generated, Kysely, Transaction } from "kysely";
 
 export type OutboxDatabaseExecutor =
   | Kysely<OutboxDatabase>

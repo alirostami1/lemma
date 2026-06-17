@@ -1,9 +1,8 @@
 import { Button } from "@lemma/ui/components/button";
 import { Input } from "@lemma/ui/components/input";
 import { Label } from "@lemma/ui/components/label";
-
-import type { LemmaPageProps } from "../KcPage";
 import type { KcContext } from "../KcContext";
+import type { LemmaPageProps } from "../KcPage";
 import { AuthLayout } from "./auth-layout";
 
 type ResetPasswordContext = Extract<

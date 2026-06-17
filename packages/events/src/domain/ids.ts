@@ -28,5 +28,8 @@ export function aggregateId(value: unknown): AggregateId {
 }
 
 export function outboxConsumerName(value: unknown): OutboxConsumerName {
-  return assertNonEmptyString(value, "outboxConsumerName") as OutboxConsumerName;
+  return assertNonEmptyString(
+    value,
+    "outboxConsumerName",
+  ) as OutboxConsumerName;
 }

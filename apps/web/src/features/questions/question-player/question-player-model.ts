@@ -1,10 +1,10 @@
+import type { Question } from "#/domains/questions";
 import {
-  tableEditorModelToStaticPreviewModel,
   type ComposedEditorBlock,
   type ComposedPreviewModel,
+  tableEditorModelToStaticPreviewModel,
 } from "#/domains/questions/authoring";
 import { questionBodyToComposedPreviewModel } from "#/domains/questions/authoring/canonical";
-import type { Question } from "#/domains/questions";
 import type {
   PresentableQuestion,
   PresentableQuestionBlock,

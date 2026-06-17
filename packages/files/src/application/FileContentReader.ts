@@ -2,15 +2,15 @@ import { instrumentService } from "@lemma/observability";
 import {
   assertFileCanBeDownloaded,
   type File,
+  type FileId,
   FileNotFoundError,
   ForbiddenFileActionError,
-  type FileId,
 } from "../domain/index.js";
 import { canCreateFileDownloadUrl } from "./policies.js";
 import type {
   FileContentReaderPort,
-  FilesRepository,
   FileStorage,
+  FilesRepository,
 } from "./ports.js";
 
 const instrumentation = instrumentService("files", "content_reader");
@@ -71,7 +71,9 @@ export class FileContentReader implements FileContentReaderPort {
   }
 
   async readFileContentForOwnerUserId(
-    input: Parameters<FileContentReaderPort["readFileContentForOwnerUserId"]>[0],
+    input: Parameters<
+      FileContentReaderPort["readFileContentForOwnerUserId"]
+    >[0],
   ): ReturnType<FileContentReaderPort["readFileContentForOwnerUserId"]> {
     return this.operation("read_file_content_for_owner_user_id", async () => {
       const file = await this.findFileByIdOrThrow(input.fileId);

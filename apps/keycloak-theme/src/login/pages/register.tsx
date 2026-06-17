@@ -1,12 +1,11 @@
 import { Button } from "@lemma/ui/components/button";
-import { useState } from "react";
-import type { ReactElement } from "react";
-import type { UserProfileFormFieldsProps } from "keycloakify/login/UserProfileFormFieldsProps";
 import { getKcClsx } from "keycloakify/login/lib/kcClsx";
+import type { UserProfileFormFieldsProps } from "keycloakify/login/UserProfileFormFieldsProps";
 import type { LazyOrNot } from "keycloakify/tools/LazyOrNot";
-
-import type { LemmaPageProps } from "../KcPage";
+import type { ReactElement } from "react";
+import { useState } from "react";
 import type { KcContext } from "../KcContext";
+import type { LemmaPageProps } from "../KcPage";
 import { AuthLayout } from "./auth-layout";
 
 type RegisterContext = Extract<KcContext, { pageId: "register.ftl" }>;

@@ -20,19 +20,13 @@ import {
   ListOrdered,
   Pilcrow,
 } from "lucide-react";
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
   type ComposedEditorModel,
   type ComposedRichContent,
   getMarkdownFormatAtPosition,
-  markdownToRichContent,
   type MarkdownFormat,
+  markdownToRichContent,
   richContentToMarkdown,
   toggleMarkdownFormat,
 } from "#/domains/questions/authoring";

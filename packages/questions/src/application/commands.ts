@@ -1,8 +1,8 @@
 import type { OperationLineage } from "@lemma/domain";
 import type { CurrentUser } from "@lemma/identity/application";
 import type {
-  QuestionAnswer,
   CreateWorkbookQuestionSourceInput,
+  QuestionAnswer,
 } from "../domain/index.js";
 
 export type ListCommand = {

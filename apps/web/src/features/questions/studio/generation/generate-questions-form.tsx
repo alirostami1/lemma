@@ -1,4 +1,3 @@
-import type { FormEvent } from "react";
 import { Button } from "@lemma/ui/components/button";
 import { DialogClose, DialogFooter } from "@lemma/ui/components/dialog";
 import {
@@ -7,8 +6,9 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@lemma/ui/components/field";
-import { Input } from "@lemma/ui/components/input";
 import { InlineError } from "@lemma/ui/components/inline-error";
+import { Input } from "@lemma/ui/components/input";
+import type { FormEvent } from "react";
 import type { QuestionSet } from "#/domains/questions/model";
 import { GenerationTargetSection } from "./generation-target-section";
 
@@ -85,7 +85,9 @@ export function GenerateQuestionsForm({
             disabled={isSubmitting}
             onChange={(event) => onCountInputChange(event.currentTarget.value)}
           />
-          <FieldDescription>Choose between 1 and 100 questions.</FieldDescription>
+          <FieldDescription>
+            Choose between 1 and 100 questions.
+          </FieldDescription>
           {countIssue ? (
             <p className="text-xs text-destructive">{countIssue}</p>
           ) : null}

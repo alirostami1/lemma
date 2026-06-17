@@ -82,6 +82,7 @@ pnpm dev
 pnpm dev:env
 pnpm test
 pnpm check-types
+pnpm check
 pnpm lint
 pnpm format
 pnpm db:migrate
@@ -91,9 +92,9 @@ pnpm infra:up
 pnpm infra:down
 ```
 
-`pnpm lint` also runs package-boundary and app architecture checks before
-package lint scripts. Use `pnpm check:architecture` when you only need those
-import-boundary checks.
+`pnpm check` runs package-boundary and app architecture checks before package
+Biome checks. `pnpm lint` remains available for lint-only diagnostics. Use
+`pnpm check:architecture` when you only need those import-boundary checks.
 
 The repo uses Node `>=22` and pnpm.
 Infrastructure scripts use `podman compose`.

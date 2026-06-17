@@ -41,9 +41,7 @@ export function SelectedElementInspector({
   }
 
   if (selection.type === "document" || !selectedBlock) {
-    return (
-      <p className="text-sm text-muted-foreground">Select an element.</p>
-    );
+    return <p className="text-sm text-muted-foreground">Select an element.</p>;
   }
 
   return (
@@ -60,15 +58,9 @@ export function SelectedElementInspector({
           onSelectionChange={onSelectionChange}
         />
       ) : null}
-      {selectedBlock.type === "text" ? (
-        <NoExtraElementSettings />
-      ) : null}
-      {selectedBlock.type === "rich_text" ? (
-        <NoExtraElementSettings />
-      ) : null}
-      {selectedBlock.type === "separator" ? (
-        <NoExtraElementSettings />
-      ) : null}
+      {selectedBlock.type === "text" ? <NoExtraElementSettings /> : null}
+      {selectedBlock.type === "rich_text" ? <NoExtraElementSettings /> : null}
+      {selectedBlock.type === "separator" ? <NoExtraElementSettings /> : null}
       {selectedBlock.type === "response" ? (
         <ResponseBlockInspector
           model={model}

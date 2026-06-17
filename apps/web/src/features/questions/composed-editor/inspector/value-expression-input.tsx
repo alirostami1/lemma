@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@lemma/ui/components/select";
+import { useId } from "react";
 import type {
   ComposedEditorModel,
   ValueExpression,
@@ -24,7 +25,6 @@ import {
 import { InspectorField } from "./inspector-field";
 import { getReferenceDisplayName } from "./reference-inspector-helpers";
 import { ReferencePickerPopover } from "./reference-picker-popover";
-import { useId } from "react";
 
 type ValueExpressionInputProps = {
   value: ValueExpression;
@@ -54,8 +54,9 @@ export function ValueExpressionInput({
 }: ValueExpressionInputProps) {
   const reference =
     value.type === "reference"
-      ? (model.references.find((candidate) => candidate.id === value.referenceId) ??
-        null)
+      ? (model.references.find(
+          (candidate) => candidate.id === value.referenceId,
+        ) ?? null)
       : null;
   const preview = resolveValueExpressionPreview({
     value,
@@ -118,10 +119,10 @@ export function ValueExpressionInput({
                 value: coerceLiteralExpressionValue(
                   event.currentTarget.value,
                   literalField,
-              ),
-            })
-          }
-        />
+                ),
+              })
+            }
+          />
         </InspectorField>
       ) : (
         <InspectorField label="Reference">

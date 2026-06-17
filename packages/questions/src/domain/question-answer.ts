@@ -26,7 +26,9 @@ export function questionAnswer(
   assertPlainRecord(input, "question answer must be an object", fail);
   assertSchemaVersion(input, fail);
   assertArray(input.responses, "responses", fail);
-  const allowed = responseFields ? new Set(responseFields.map((field) => field.id)) : null;
+  const allowed = responseFields
+    ? new Set(responseFields.map((field) => field.id))
+    : null;
   const seen = new Set<string>();
   const responses: QuestionAnswer["responses"] = [];
   for (const response of input.responses) {

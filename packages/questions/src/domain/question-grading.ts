@@ -79,15 +79,36 @@ export function questionSolution(
     if (allowed && !allowed.has(rule.responseFieldId)) {
       fail("solution rule references unknown response field");
     }
-    const ruleType = oneOf(rule.type, ["exact", "number", "case_insensitive_text", "manual"] as const, "solution rule type", fail);
+    const ruleType = oneOf(
+      rule.type,
+      ["exact", "number", "case_insensitive_text", "manual"] as const,
+      "solution rule type",
+      fail,
+    );
     assertFinitePositiveNumber(rule.points, "solution rule points", fail);
     if (ruleType === "number") {
-      if (typeof rule.correctValue !== "number" || !Number.isFinite(rule.correctValue)) {
+      if (
+        typeof rule.correctValue !== "number" ||
+        !Number.isFinite(rule.correctValue)
+      ) {
         fail("correctValue must be a finite number");
       }
-      assertPlainRecord(rule.tolerance, "number solution tolerance must be an object", fail);
-      const toleranceType = oneOf(rule.tolerance.type, ["absolute", "relative"] as const, "number solution tolerance type", fail);
-      assertFiniteNonNegativeNumber(rule.tolerance.value, "number solution tolerance", fail);
+      assertPlainRecord(
+        rule.tolerance,
+        "number solution tolerance must be an object",
+        fail,
+      );
+      const toleranceType = oneOf(
+        rule.tolerance.type,
+        ["absolute", "relative"] as const,
+        "number solution tolerance type",
+        fail,
+      );
+      assertFiniteNonNegativeNumber(
+        rule.tolerance.value,
+        "number solution tolerance",
+        fail,
+      );
       rules.push({
         type: "number",
         responseFieldId: rule.responseFieldId,

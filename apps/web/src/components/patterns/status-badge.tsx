@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
 import { Badge } from "@lemma/ui/components/badge";
+import type { ReactNode } from "react";
 
 export type StatusBadgeProps = {
   children: ReactNode;

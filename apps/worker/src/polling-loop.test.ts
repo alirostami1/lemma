@@ -1,9 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import {
-  PollingLoop,
-  type PollingLoopScheduler,
-} from "./polling-loop.js";
+import { PollingLoop, type PollingLoopScheduler } from "./polling-loop.js";
 import type { WorkerLogFields, WorkerLogger } from "./worker-logging.js";
 
 describe("PollingLoop", () => {

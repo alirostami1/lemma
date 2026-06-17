@@ -14,13 +14,13 @@ import {
   type QuestionBlueprintVersion,
   type QuestionGenerationRun,
   type QuestionGenerationRunId,
-  questionGenerationRunId as toQuestionGenerationRunId,
-  questionId as toQuestionId,
-  questionProducer,
   type QuestionProducer,
   type QuestionSetQuestion,
-  type WorkbookSnapshotId,
+  questionProducer,
+  questionGenerationRunId as toQuestionGenerationRunId,
+  questionId as toQuestionId,
   workbookSnapshotId as toWorkbookSnapshotId,
+  type WorkbookSnapshotId,
 } from "../domain/index.js";
 import { CanonicalQuestionMaterializer } from "./CanonicalQuestionMaterializer.js";
 import type { QuestionGenerationRunResultDto } from "./dto.js";
@@ -238,10 +238,7 @@ export class QuestionGenerationWorkerService {
   ): Promise<QuestionGenerationWorkerResult> {
     const version = await this.loadBlueprintVersion(run);
     const materializing = await this.persistRunWithEvents(
-      markQuestionGenerationRunMaterializing(
-        run,
-        this.deps.clock.now(),
-      ),
+      markQuestionGenerationRunMaterializing(run, this.deps.clock.now()),
       (persisted, occurredAt) => [
         questionGenerationRunMaterializingEvent({
           id: this.deps.idGenerator.eventId(),
@@ -346,7 +343,8 @@ export class QuestionGenerationWorkerService {
       }
       return {
         status: "materialization_ready",
-        workbookSnapshotIds: input.workbookSnapshotIds.map(toWorkbookSnapshotId),
+        workbookSnapshotIds:
+          input.workbookSnapshotIds.map(toWorkbookSnapshotId),
       };
     }
 
@@ -501,7 +499,8 @@ export class QuestionGenerationWorkerService {
     const occurredAt = this.deps.clock.now();
     return this.deps.questionGenerationTransaction.transaction(
       async ({ questionsRepository, outboxRepository }) => {
-        const saved = await questionsRepository.updateQuestionGenerationRun(run);
+        const saved =
+          await questionsRepository.updateQuestionGenerationRun(run);
         if (!saved) {
           throw new QuestionGenerationRunNotFoundError();
         }

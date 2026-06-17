@@ -1,17 +1,17 @@
 import type {
-  QuestionReference,
-  QuestionResponseField,
   BlueprintInlineContent,
   QuestionBlueprintBlock,
   QuestionBlueprintDocument,
+  QuestionReference,
+  QuestionResponseField,
 } from "#/api/generated/model";
 import type {
   ComposedEditorModel,
   ComposedResponseField,
 } from "../composed-model";
 import { createDefaultComposedEditorModel } from "../composed-model";
-import { validateTableEditorModelAnswers } from "../table-model";
 import { plainTextToInlineContent } from "../inline-content";
+import { validateTableEditorModelAnswers } from "../table-model";
 import {
   canonicalRichContentToComposed,
   composedRichContentToCanonicalRichContent,
@@ -35,7 +35,7 @@ function blueprintContentToText(content: BlueprintInlineContent[]): string {
     .map((item) =>
       item.type === "text"
         ? item.text
-        : item.fallbackText ?? `{{ .${item.referenceId} }}`,
+        : (item.fallbackText ?? `{{ .${item.referenceId} }}`),
     )
     .join("");
 }
@@ -207,9 +207,9 @@ export function questionBlueprintDocumentToComposedEditorModel(
         block.points === undefined ||
         block.grading === undefined
       ) {
-      throw new Error(
-        "Unsupported question blueprint document for composed editor.",
-      );
+        throw new Error(
+          "Unsupported question blueprint document for composed editor.",
+        );
       }
       const responseField = blueprint.responseFields.find(
         (field) => field.id === block.responseFieldId,

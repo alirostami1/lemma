@@ -19,11 +19,11 @@ import {
 import { FileQuestion, Plus } from "lucide-react";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import type { StudioReadiness } from "../../studio/studio-readiness";
-import type { EditorSelection } from "../editor-selection";
 import {
   type InsertComposedBlockType,
   insertComposedBlock,
 } from "../composed-editor-operations";
+import type { EditorSelection } from "../editor-selection";
 
 export function DocumentInspector({
   model,
@@ -46,7 +46,9 @@ export function DocumentInspector({
             <FileQuestion className="size-4" />
             Document
           </CardTitle>
-          <CardDescription>Add blocks and check question settings.</CardDescription>
+          <CardDescription>
+            Add blocks and check question settings.
+          </CardDescription>
         </div>
       </CardHeader>
       <FieldGroup>

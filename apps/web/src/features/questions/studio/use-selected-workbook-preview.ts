@@ -100,15 +100,11 @@ export function useSelectedWorkbookPreview({
           return;
         }
 
-        const file = new File(
-          [await response.blob()],
-          selectedOriginalName,
-          {
-            type: selectedOriginalName.endsWith(".xlsm")
-              ? "application/vnd.ms-excel.sheet.macroEnabled.12"
-              : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          },
-        );
+        const file = new File([await response.blob()], selectedOriginalName, {
+          type: selectedOriginalName.endsWith(".xlsm")
+            ? "application/vnd.ms-excel.sheet.macroEnabled.12"
+            : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
         const preview = await parseWorkbookPreview(file);
 
         if (!cancelled) {

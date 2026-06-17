@@ -2,9 +2,7 @@ import type { JsonValue } from "@lemma/domain";
 
 export type PlainObject = { [key: string]: unknown };
 
-export function isPlainRecord(
-  value: unknown,
-): value is PlainObject {
+export function isPlainRecord(value: unknown): value is PlainObject {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
@@ -155,9 +153,9 @@ export function assertJsonValue(
     return;
   }
   if (Array.isArray(value)) {
-    value.forEach((item, index) =>
-      assertJsonValue(item, `${field}[${index}]`, fail),
-    );
+    value.forEach((item, index) => {
+      assertJsonValue(item, `${field}[${index}]`, fail);
+    });
     return;
   }
   if (isPlainRecord(value)) {

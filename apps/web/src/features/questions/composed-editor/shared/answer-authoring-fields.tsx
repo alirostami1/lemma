@@ -279,12 +279,6 @@ export function GradingSettings({
   );
 }
 
-function isAnswerFieldType(
-  value: string,
-): value is AnswerFieldLike["type"] {
-  return (
-    value === "text" ||
-    value === "number" ||
-    value === "boolean"
-  );
+function isAnswerFieldType(value: string): value is AnswerFieldLike["type"] {
+  return value === "text" || value === "number" || value === "boolean";
 }

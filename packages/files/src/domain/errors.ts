@@ -2,10 +2,6 @@ import { DomainError } from "@lemma/error";
 
 export class InvalidDomainValueError extends DomainError {
   readonly domainCode = "INVALID_DOMAIN_VALUE";
-
-  constructor(message: string) {
-    super(message);
-  }
 }
 
 export class FileNotFoundError extends DomainError {
@@ -70,7 +66,10 @@ export class FileStorageObjectMismatchError extends DomainError {
   readonly domainCode = "FILE_STORAGE_OBJECT_MISMATCH";
   readonly details?: unknown;
 
-  constructor(message = "uploaded object does not match file", details?: unknown) {
+  constructor(
+    message = "uploaded object does not match file",
+    details?: unknown,
+  ) {
     super(message);
     this.details = details;
   }

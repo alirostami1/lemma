@@ -1,9 +1,12 @@
 import { useMemo, useState } from "react";
 import { computeFileSha256Hex } from "#/domains/files/checksum";
-import { useCompleteFileUpload, useCreateFileUpload } from "#/domains/files/hooks";
 import {
-  validateWorkbookUploadFile,
+  useCompleteFileUpload,
+  useCreateFileUpload,
+} from "#/domains/files/hooks";
+import {
   type FileValidationResult,
+  validateWorkbookUploadFile,
 } from "#/domains/files/upload-validation";
 import { useCreateWorkbook } from "#/domains/workbooks/hooks";
 import type { Workbook } from "#/domains/workbooks/model";
@@ -86,7 +89,11 @@ export function useWorkbookUploadController({
     },
     onFileChange: (file) => {
       const validation = validateWorkbookUploadFile(file);
-      setErrorMessage(validation.status === "invalid" ? validation.issues[0]?.message ?? null : null);
+      setErrorMessage(
+        validation.status === "invalid"
+          ? (validation.issues[0]?.message ?? null)
+          : null,
+      );
       setSelectedFile(validation.status === "valid" ? file : null);
       setStatus("idle");
       if (file && validation.status === "valid" && name.trim().length === 0) {
@@ -100,7 +107,9 @@ export function useWorkbookUploadController({
       setHasSubmitted(true);
       const validation = validateWorkbookUploadFile(selectedFile);
       if (validation.status === "invalid") {
-        setErrorMessage(validation.issues[0]?.message ?? "Select an .xlsx workbook file.");
+        setErrorMessage(
+          validation.issues[0]?.message ?? "Select an .xlsx workbook file.",
+        );
         setStatus("failed");
         return;
       }

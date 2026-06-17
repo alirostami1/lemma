@@ -5,8 +5,8 @@ import {
   type CustomQuestionGraderPort,
   type IdGenerator,
   QuestionBlueprintService,
-  QuestionGradingService,
   QuestionGenerationService,
+  QuestionGradingService,
   QuestionLibraryService,
   QuestionSetService,
   type WorkbookAccessPort,
@@ -49,8 +49,7 @@ export function createQuestionsModule(deps: {
 
   const questionGenerationService = new QuestionGenerationService({
     questionsRepository,
-    workbookAccessPort:
-      deps.workbookAccessPort ?? new DenyWorkbookAccessPort(),
+    workbookAccessPort: deps.workbookAccessPort ?? new DenyWorkbookAccessPort(),
     questionGenerationTransaction: {
       transaction: (fn) =>
         deps.db.transaction((tx) =>

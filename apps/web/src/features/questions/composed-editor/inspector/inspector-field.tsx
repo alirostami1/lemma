@@ -54,7 +54,9 @@ export function InspectorField({
       <FieldLabel htmlFor={controlId}>{label}</FieldLabel>
       <div className="grid gap-2">
         {children}
-        {description ? <FieldDescription>{description}</FieldDescription> : null}
+        {description ? (
+          <FieldDescription>{description}</FieldDescription>
+        ) : null}
         {error ? <FieldError>{error}</FieldError> : null}
       </div>
     </Field>

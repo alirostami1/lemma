@@ -3,12 +3,12 @@ import { describe, it } from "node:test";
 import { rootOperationLineage } from "@lemma/domain";
 import type { OutboxRepository } from "@lemma/events/application";
 import {
-  eventId as toEventId,
   type DomainEventEnvelope,
+  eventId as toEventId,
 } from "@lemma/events/domain";
 import {
-  createWorkbook as createWorkbookDomain,
   createWorkbookCalculation,
+  createWorkbook as createWorkbookDomain,
   fileId,
   markWorkbookValid,
   userId,
@@ -25,11 +25,11 @@ import type {
   WorkbookRepository,
   WorkbookTransactionPort,
 } from "./ports.js";
+import { WorkbookCalculationRequestAdapter } from "./WorkbookCalculationRequestAdapter.js";
 import {
   WORKBOOK_CALCULATION_REQUESTED_EVENT,
   type WorkbookCalculationRequestedPayload,
 } from "./workbook-events.js";
-import { WorkbookCalculationRequestAdapter } from "./WorkbookCalculationRequestAdapter.js";
 
 const at = new Date("2026-06-15T00:00:00.000Z");
 const ownerUserId = userId("019e9315-6a87-715f-9861-8654df070c01");
@@ -256,9 +256,7 @@ class FakeWorkbookRepository implements WorkbookRepository {
     throw new Error("Not implemented.");
   }
 
-  async listWorkbookCalculationsByWorkbookId(): Promise<
-    WorkbookCalculation[]
-  > {
+  async listWorkbookCalculationsByWorkbookId(): Promise<WorkbookCalculation[]> {
     throw new Error("Not implemented.");
   }
 

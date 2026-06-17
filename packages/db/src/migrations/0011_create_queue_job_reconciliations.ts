@@ -1,7 +1,7 @@
 import type { Kysely } from "kysely";
 import { sql } from "kysely";
 
-export async function up(db: Kysely<any>): Promise<void> {
+export async function up(db: Kysely<Record<string, never>>): Promise<void> {
   await db.schema
     .createTable("ops_queue_job_reconciliations")
     .addColumn("job_id", "text", (c) => c.primaryKey())
@@ -63,6 +63,6 @@ export async function up(db: Kysely<any>): Promise<void> {
     .execute();
 }
 
-export async function down(db: Kysely<any>): Promise<void> {
+export async function down(db: Kysely<Record<string, never>>): Promise<void> {
   await db.schema.dropTable("ops_queue_job_reconciliations").execute();
 }
