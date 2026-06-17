@@ -1,6 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createDatabaseConfig } from "@lemma/config";
 import {
   FileMigrationProvider,
   type MigrationResultSet,
@@ -9,19 +10,14 @@ import {
 import { closeDatabase, createDatabase } from "./index.js";
 
 const command = process.argv[2] ?? "latest";
-const databaseUrl = process.env.LEMMA_DATABASE_URL;
+const config = createDatabaseConfig();
 
 if (command !== "down" && command !== "up" && command !== "latest") {
   console.error("command not recognized: ", command);
   process.exit(1);
 }
 
-if (!databaseUrl) {
-  console.error("LEMMA_DATABASE_URL is required.");
-  process.exit(2);
-}
-
-const { db } = createDatabase(databaseUrl);
+const { db } = createDatabase(config.databaseUrl);
 
 async function runMigrations() {
   const currentDir = path.dirname(fileURLToPath(import.meta.url));

@@ -27,6 +27,7 @@
     "lint": "biome lint"
   },
   "dependencies": {
+    "@lemma/config": "workspace:*",
     "kysely": "catalog:",
     "pg": "catalog:"
   },

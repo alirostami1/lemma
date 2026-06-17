@@ -1,6 +1,7 @@
 import {
   observabilityEnvSchema,
   oidcEnvSchema,
+  parseEnv,
   postgresUrlSchema,
   realtimeEnvSchema,
   s3EnvSchema,
@@ -9,22 +10,24 @@ import {
 } from "@lemma/config";
 import { z } from "zod";
 
-const parsed = sharedEnvSchema
-  .extend(oidcEnvSchema.shape)
-  .extend(s3EnvSchema.shape)
-  .extend(workbookEnvSchema.shape)
-  .extend(realtimeEnvSchema.shape)
-  .extend(observabilityEnvSchema.shape)
-  .extend({
-    LEMMA_API_DATABASE_URL: postgresUrlSchema,
-    LEMMA_API_PORT: z.coerce.number().int().positive().default(3001),
-    LEMMA_API_WEB_ORIGINS: z
-      .string()
-      .min(1)
-      .transform((origins) => origins.split(","))
-      .pipe(z.url().array()),
-  })
-  .parse(process.env);
+const parsed = parseEnv(
+  "api",
+  sharedEnvSchema
+    .extend(oidcEnvSchema.shape)
+    .extend(s3EnvSchema.shape)
+    .extend(workbookEnvSchema.shape)
+    .extend(realtimeEnvSchema.shape)
+    .extend(observabilityEnvSchema.shape)
+    .extend({
+      LEMMA_API_DATABASE_URL: postgresUrlSchema,
+      LEMMA_API_PORT: z.coerce.number().int().positive().default(3001),
+      LEMMA_API_WEB_ORIGINS: z
+        .string()
+        .min(1)
+        .transform((origins) => origins.split(","))
+        .pipe(z.url().array()),
+    }),
+);
 
 export const config = Object.freeze({
   nodeEnv: parsed.NODE_ENV,

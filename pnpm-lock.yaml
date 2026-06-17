@@ -622,6 +622,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@lemma/config':
+        specifier: workspace:*
+        version: link:../config
       kysely:
         specifier: 'catalog:'
         version: 0.28.17
