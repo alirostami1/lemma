@@ -1,3 +1,4 @@
+import { presentDate, presentNullableDate } from "@lemma/http";
 import type {
   CreateFileUploadResult,
   DownloadUrlResult,
@@ -8,6 +9,7 @@ import type { File, FileUpload } from "../domain/index.js";
 import type {
   CreateFileDownloadUrlResponse as CreateFileDownloadUrlResponseDto,
   CreateFileUploadResponse as CreateFileUploadResponseDto,
+  FileDownloadUrl as FileDownloadUrlDto,
   File as FileDto,
   FileResponse as FileResponseDto,
   FileUpload as FileUploadDto,
@@ -48,7 +50,9 @@ export function presentCreateFileUpload(
 export function presentDownloadFileUrl(
   result: DownloadUrlResult,
 ): CreateFileDownloadUrlResponseDto {
-  return result;
+  return {
+    download: toFileDownloadUrlDto(result.download),
+  };
 }
 
 function toFileDto(file: File): FileDto {
@@ -62,9 +66,9 @@ function toFileDto(file: File): FileDto {
     checksumSha256: file.checksumSha256,
     status: file.status,
     purpose: file.purpose,
-    deletedAt: file.deletedAt?.toISOString() ?? null,
-    createdAt: file.createdAt.toISOString(),
-    updatedAt: file.updatedAt.toISOString(),
+    deletedAt: presentNullableDate(file.deletedAt),
+    createdAt: presentDate(file.createdAt),
+    updatedAt: presentDate(file.updatedAt),
   };
 }
 
@@ -78,9 +82,19 @@ function toFileUploadDto(upload: FileUpload): FileUploadDto {
     checksumSha256: upload.checksumSha256,
     status: upload.status,
     purpose: upload.purpose,
-    uploadExpiresAt: upload.uploadExpiresAt.toISOString(),
-    completedAt: upload.completedAt?.toISOString() ?? null,
-    createdAt: upload.createdAt.toISOString(),
-    updatedAt: upload.updatedAt.toISOString(),
+    uploadExpiresAt: presentDate(upload.uploadExpiresAt),
+    completedAt: presentNullableDate(upload.completedAt),
+    createdAt: presentDate(upload.createdAt),
+    updatedAt: presentDate(upload.updatedAt),
+  };
+}
+
+function toFileDownloadUrlDto(
+  download: DownloadUrlResult["download"],
+): FileDownloadUrlDto {
+  return {
+    url: download.url,
+    method: download.method,
+    expiresInSeconds: download.expiresInSeconds,
   };
 }

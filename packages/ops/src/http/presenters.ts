@@ -1,3 +1,4 @@
+import { presentDate, presentNullableDate } from "@lemma/http";
 import type {
   OpsOutboxEvent as OpsOutboxEventResult,
   OpsOverview as OpsOverviewResult,
@@ -15,22 +16,28 @@ import type {
 export function presentOpsOverview(
   overview: OpsOverviewResult,
 ): OpsOverviewDto {
+  return toOpsOverviewDto(overview);
+}
+
+function toOpsOverviewDto(overview: OpsOverviewResult): OpsOverviewDto {
   return {
     outbox: {
       pendingCount: overview.outbox.pendingCount,
       publishingCount: overview.outbox.publishingCount,
       publishedCount: overview.outbox.publishedCount,
       failedCount: overview.outbox.failedCount,
-      oldestPendingCreatedAt:
-        overview.outbox.oldestPendingCreatedAt?.toISOString() ?? null,
+      oldestPendingCreatedAt: presentNullableDate(
+        overview.outbox.oldestPendingCreatedAt,
+      ),
     },
     queue: {
       available: overview.queue.available,
       pendingCount: overview.queue.pendingCount,
       completedCount: overview.queue.completedCount,
       failedCount: overview.queue.failedCount,
-      oldestPendingCreatedAt:
-        overview.queue.oldestPendingCreatedAt?.toISOString() ?? null,
+      oldestPendingCreatedAt: presentNullableDate(
+        overview.queue.oldestPendingCreatedAt,
+      ),
     },
   };
 }
@@ -77,20 +84,20 @@ function toOutboxEventDto(event: OpsOutboxEventResult): OpsOutboxEventDto {
     causationId: event.causationId,
     status: event.status,
     attempts: event.attempts,
-    availableAt: event.availableAt.toISOString(),
+    availableAt: presentDate(event.availableAt),
     lockedBy: event.lockedBy,
-    lockedAt: event.lockedAt?.toISOString() ?? null,
-    publishedAt: event.publishedAt?.toISOString() ?? null,
+    lockedAt: presentNullableDate(event.lockedAt),
+    publishedAt: presentNullableDate(event.publishedAt),
     lastError: event.lastError,
-    createdAt: event.createdAt.toISOString(),
-    updatedAt: event.updatedAt.toISOString(),
+    createdAt: presentDate(event.createdAt),
+    updatedAt: presentDate(event.updatedAt),
     latestReview: event.latestReview
       ? {
           action: event.latestReview.action,
           note: event.latestReview.note,
           actorUserId: event.latestReview.actorUserId,
           actorEmail: event.latestReview.actorEmail,
-          createdAt: event.latestReview.createdAt.toISOString(),
+          createdAt: presentDate(event.latestReview.createdAt),
         }
       : null,
   };
@@ -105,8 +112,8 @@ function toQueueJobDto(job: OpsQueueJobResult): OpsQueueJobDto {
     retryLimit: job.retryLimit,
     data: job.data,
     output: job.output,
-    createdOn: job.createdOn?.toISOString() ?? null,
-    startedOn: job.startedOn?.toISOString() ?? null,
-    completedOn: job.completedOn?.toISOString() ?? null,
+    createdOn: presentNullableDate(job.createdOn),
+    startedOn: presentNullableDate(job.startedOn),
+    completedOn: presentNullableDate(job.completedOn),
   };
 }

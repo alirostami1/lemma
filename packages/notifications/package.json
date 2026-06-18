@@ -47,6 +47,7 @@
   "dependencies": {
     "@lemma/domain": "workspace:*",
     "@lemma/events": "workspace:*",
+    "@lemma/http": "workspace:*",
     "@lemma/identity": "workspace:*",
     "@lemma/observability": "workspace:*",
     "@lemma/questions": "workspace:*",

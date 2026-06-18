@@ -6,6 +6,7 @@ import {
   type RealtimeAuthService,
 } from "../application/index.js";
 import type { NotificationsAppEnv, RequireIdentity } from "./env.js";
+import { presentRealtimeToken } from "./presenters.js";
 
 export type NotificationsRoutesDeps = {
   requireIdentity: RequireIdentity;
@@ -19,7 +20,7 @@ export function notificationsRoutes(deps: NotificationsRoutesDeps) {
     const result = deps.realtimeAuthService.createConnectionToken({
       currentUser: c.var.identity,
     });
-    return c.json(presentToken(result), 200);
+    return c.json(presentRealtimeToken(result), 200);
   });
 
   app.post(
@@ -39,7 +40,7 @@ export function notificationsRoutes(deps: NotificationsRoutesDeps) {
           currentUser: c.var.identity,
           channel: body.channel,
         });
-        return c.json(presentToken(result), 200);
+        return c.json(presentRealtimeToken(result), 200);
       } catch (error) {
         return handleNotificationsError(c, error);
       }
@@ -47,13 +48,6 @@ export function notificationsRoutes(deps: NotificationsRoutesDeps) {
   );
 
   return app;
-}
-
-function presentToken(input: { token: string; expiresAt: Date }) {
-  return {
-    token: input.token,
-    expiresAt: input.expiresAt.toISOString(),
-  };
 }
 
 async function readJsonBody(request: Request): Promise<unknown> {

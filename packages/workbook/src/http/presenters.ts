@@ -2,6 +2,7 @@ import { presentDate, presentNullableDate } from "@lemma/http";
 import type {
   WorkbookCalculationDto,
   WorkbookCalculationsResult,
+  WorkbookEngineHealthResult,
   WorkbookResult,
   WorkbookSnapshotResult,
   WorkbookSnapshotsResult,
@@ -11,68 +12,82 @@ import type {
 import type {
   Workbook,
   WorkbookCalculation,
-  WorkbookEngineHealth,
   WorkbookSnapshot,
 } from "../domain/index.js";
+import type {
+  WorkbookCalculationResponse,
+  WorkbookCalculation as WorkbookCalculationResponseDto,
+  WorkbookCalculationsResponse,
+  Workbook as WorkbookDto,
+  WorkbookEngineHealthResponse,
+  WorkbookResponse,
+  WorkbookSnapshot as WorkbookSnapshotDto,
+  WorkbookSnapshotResponse,
+  WorkbookSnapshotsResponse,
+  WorkbookSnapshotValueResponse,
+  WorkbooksResponse,
+} from "../gen/types/index.js";
 
-export function presentWorkbook(result: WorkbookResult) {
-  return { workbook: presentWorkbookModel(result.workbook) };
+export function presentWorkbook(result: WorkbookResult): WorkbookResponse {
+  return { workbook: toWorkbookDto(result.workbook) };
 }
 
-export function presentWorkbooks(result: WorkbooksResult) {
+export function presentWorkbooks(result: WorkbooksResult): WorkbooksResponse {
   return {
-    workbooks: result.workbooks.map(presentWorkbookModel),
+    workbooks: result.workbooks.map(toWorkbookDto),
     nextCursor: result.nextCursor,
   };
 }
 
-export function presentWorkbookCalculation(result: WorkbookCalculationDto) {
+export function presentWorkbookCalculation(
+  result: WorkbookCalculationDto,
+): WorkbookCalculationResponse {
   return {
-    workbookCalculation: presentWorkbookCalculationModel(
-      result.workbookCalculation,
-    ),
+    workbookCalculation: toWorkbookCalculationDto(result.workbookCalculation),
   };
 }
 
 export function presentWorkbookCalculations(
   result: WorkbookCalculationsResult,
-) {
+): WorkbookCalculationsResponse {
   return {
     workbookCalculations: result.workbookCalculations.map(
-      presentWorkbookCalculationModel,
+      toWorkbookCalculationDto,
     ),
     nextCursor: result.nextCursor,
   };
 }
 
-export function presentWorkbookSnapshot(result: WorkbookSnapshotResult) {
+export function presentWorkbookSnapshot(
+  result: WorkbookSnapshotResult,
+): WorkbookSnapshotResponse {
   return {
-    workbookSnapshot: presentWorkbookSnapshotModel(result.workbookSnapshot),
+    workbookSnapshot: toWorkbookSnapshotDto(result.workbookSnapshot),
   };
 }
 
-export function presentWorkbookSnapshots(result: WorkbookSnapshotsResult) {
+export function presentWorkbookSnapshots(
+  result: WorkbookSnapshotsResult,
+): WorkbookSnapshotsResponse {
   return {
-    workbookSnapshots: result.workbookSnapshots.map(
-      presentWorkbookSnapshotModel,
-    ),
+    workbookSnapshots: result.workbookSnapshots.map(toWorkbookSnapshotDto),
     nextCursor: result.nextCursor,
   };
 }
 
 export function presentWorkbookSnapshotValue(
   result: WorkbookSnapshotValueResult,
-) {
+): WorkbookSnapshotValueResponse {
   return { value: result.value };
 }
 
-export function presentWorkbookEngineHealth(result: {
-  health: WorkbookEngineHealth;
-}) {
+export function presentWorkbookEngineHealth(
+  result: WorkbookEngineHealthResult,
+): WorkbookEngineHealthResponse {
   return { health: result.health };
 }
 
-function presentWorkbookModel(workbook: Workbook) {
+function toWorkbookDto(workbook: Workbook): WorkbookDto {
   return {
     ...workbook,
     createdAt: presentDate(workbook.createdAt),
@@ -80,7 +95,9 @@ function presentWorkbookModel(workbook: Workbook) {
   };
 }
 
-function presentWorkbookCalculationModel(calculation: WorkbookCalculation) {
+function toWorkbookCalculationDto(
+  calculation: WorkbookCalculation,
+): WorkbookCalculationResponseDto {
   return {
     ...calculation,
     startedAt: presentNullableDate(calculation.startedAt),
@@ -90,7 +107,9 @@ function presentWorkbookCalculationModel(calculation: WorkbookCalculation) {
   };
 }
 
-function presentWorkbookSnapshotModel(snapshot: WorkbookSnapshot) {
+function toWorkbookSnapshotDto(
+  snapshot: WorkbookSnapshot,
+): WorkbookSnapshotDto {
   return {
     ...snapshot,
     createdAt: presentDate(snapshot.createdAt),
