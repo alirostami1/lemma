@@ -319,24 +319,24 @@ type WorkbookRangeRef = {
 function parseWorkbookRangeRef(ref: unknown): WorkbookRangeRef {
   if (typeof ref !== "string") {
     throw new InvalidWorkbookSnapshotReferenceError(
-      "Range ref must look like Sheet1!A1:B2.",
+      "Range ref must look like Sheet1!A1 or Sheet1!A1:B2.",
     );
   }
 
   const separatorIndex = findSheetSeparatorIndex(ref);
   if (separatorIndex <= 0 || separatorIndex === ref.length - 1) {
     throw new InvalidWorkbookSnapshotReferenceError(
-      "Range ref must look like Sheet1!A1:B2.",
+      "Range ref must look like Sheet1!A1 or Sheet1!A1:B2.",
     );
   }
 
   const sheetName = parseSheetName(ref.slice(0, separatorIndex));
   const rangePart = ref.slice(separatorIndex + 1);
-  const [start, end, extra] = rangePart.split(":");
+  const [start, end = start, extra] = rangePart.split(":");
 
   if (!start || !end || extra !== undefined) {
     throw new InvalidWorkbookSnapshotReferenceError(
-      "Range ref must look like Sheet1!A1:B2.",
+      "Range ref must look like Sheet1!A1 or Sheet1!A1:B2.",
     );
   }
 

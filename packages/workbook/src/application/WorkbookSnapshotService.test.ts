@@ -157,6 +157,30 @@ describe("WorkbookSnapshotService", () => {
     });
   });
 
+  it("accepts quoted single-cell refs for selected ranges", async () => {
+    const harness = createHarness();
+
+    const result = await harness.service.getWorkbookSnapshotRange({
+      currentUser: currentUser(ownerUserId),
+      workbookSnapshotId: targetSnapshotId,
+      ref: "'Sheet1'!A1",
+    });
+
+    assert.deepEqual(result.workbookSnapshotRange, {
+      sheetIndex: 0,
+      sheetName: "Sheet1",
+      startRow: 1,
+      startColumn: 1,
+      rowCount: 1,
+      columnCount: 1,
+      rows: [["42"]],
+      cellTypes: [["number"]],
+      ref: "'Sheet1'!A1:A1",
+      startCellAddress: "A1",
+      endCellAddress: "A1",
+    });
+  });
+
   it("rejects sheet page limits outside the public bounds", async () => {
     const harness = createHarness();
 

@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { WorkbookPickerRequest } from "#/features/questions/table-block-editor";
+import type {
+  WorkbookPickerRequest,
+  WorkbookRangeSelection,
+} from "#/features/questions/table-block-editor";
 import { useSourceController } from "./source/use-source-controller";
 import type {
   StudioController,
@@ -25,6 +28,8 @@ export function useStudioController(
   const initialWorkbookId = input.workbookId ?? "";
   const [workbookPickerRequest, setWorkbookPickerRequest] =
     useState<WorkbookPickerRequest | null>(null);
+  const [workbookSelectionValuesByRef, setWorkbookSelectionValuesByRef] =
+    useState<Record<string, string[][]>>({});
   const [isSavedBlueprintsOpen, setIsSavedBlueprintsOpen] = useState(false);
   const previousSelectedWorkbookIdRef = useRef<string | null>(null);
   const openWorkbookPicker = useCallback((request: WorkbookPickerRequest) => {
@@ -43,6 +48,7 @@ export function useStudioController(
   });
   const referencePreview = useReferencePreviewController({
     model: draft.authoringModel,
+    workbookSelectionValuesByRef,
     workbookPreview: source.workbookPreviewController.workbookPreview,
   });
 
@@ -90,6 +96,7 @@ export function useStudioController(
 
     if (previousSelectedWorkbookIdRef.current !== draft.selectedWorkbookId) {
       save.clearMessages();
+      setWorkbookSelectionValuesByRef({});
       previousSelectedWorkbookIdRef.current = draft.selectedWorkbookId;
     }
   }, [draft.selectedWorkbookId, save.clearMessages]);
@@ -195,7 +202,11 @@ export function useStudioController(
           setWorkbookPickerRequest(null);
         }
       },
-      onSelect: (selection) => {
+      onSelect: (selection: WorkbookRangeSelection) => {
+        setWorkbookSelectionValuesByRef((currentValues) => ({
+          ...currentValues,
+          [selection.reference]: selection.values,
+        }));
         workbookPickerRequest?.onSelect(selection);
         setWorkbookPickerRequest(null);
       },

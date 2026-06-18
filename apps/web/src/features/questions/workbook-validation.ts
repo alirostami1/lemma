@@ -16,6 +16,10 @@ export function buildWorkbookRangeSelection(
   sheetName: string,
   rows: string[][],
   range: SpreadsheetCellRange,
+  options: {
+    columnStartIndex?: number;
+    rowStartIndex?: number;
+  } = {},
 ): WorkbookRangeSelection {
   const values: string[][] = [];
 
@@ -35,8 +39,15 @@ export function buildWorkbookRangeSelection(
     values.push(row);
   }
 
+  const referenceRange = {
+    startRowIndex: range.startRowIndex + (options.rowStartIndex ?? 0),
+    endRowIndex: range.endRowIndex + (options.rowStartIndex ?? 0),
+    startColumnIndex: range.startColumnIndex + (options.columnStartIndex ?? 0),
+    endColumnIndex: range.endColumnIndex + (options.columnStartIndex ?? 0),
+  };
+
   return {
-    reference: formatSpreadsheetRange(sheetName, range),
+    reference: formatSpreadsheetRange(sheetName, referenceRange),
     values,
   };
 }

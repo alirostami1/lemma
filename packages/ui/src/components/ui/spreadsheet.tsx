@@ -215,6 +215,26 @@ export function useSpreadsheetRangeSelection({
     setIsSelecting(false);
   }, []);
 
+  const setSelectionRange = useCallback(
+    (range: SpreadsheetCellRange | null) => {
+      if (!range) {
+        clearSelection();
+        return;
+      }
+
+      setSelectionStart({
+        rowIndex: range.startRowIndex,
+        columnIndex: range.startColumnIndex,
+      });
+      setSelectionEnd({
+        rowIndex: range.endRowIndex,
+        columnIndex: range.endColumnIndex,
+      });
+      setIsSelecting(false);
+    },
+    [clearSelection],
+  );
+
   const updatePointer = useCallback(
     (event: MouseEvent) => {
       if (!enabled || !isSelecting) {
@@ -286,6 +306,7 @@ export function useSpreadsheetRangeSelection({
     selectionEnd,
     selectionRange,
     selectionStart,
+    setSelectionRange,
     viewportProps,
   };
 }
@@ -346,15 +367,19 @@ export function SpreadsheetCellInputGroup({
 export function SpreadsheetGrid({
   className,
   columnCount,
+  columnStartIndex = 0,
   rangeSelection,
   renderCell,
+  rowStartIndex = 0,
   rows,
   viewportClassName,
 }: {
   className?: string;
   columnCount?: number;
+  columnStartIndex?: number;
   rangeSelection?: ReturnType<typeof useSpreadsheetRangeSelection>;
   renderCell?: (value: string, point: SpreadsheetCellPoint) => ReactNode;
+  rowStartIndex?: number;
   rows: string[][];
   viewportClassName?: string;
 }) {
@@ -363,8 +388,10 @@ export function SpreadsheetGrid({
       cellMode="button"
       className={className}
       columnCount={columnCount}
+      columnStartIndex={columnStartIndex}
       rangeSelection={rangeSelection}
       renderCell={({ value, point }) => renderCell?.(value, point) ?? value}
+      rowStartIndex={rowStartIndex}
       rows={rows}
       viewportClassName={viewportClassName}
     />
@@ -422,16 +449,20 @@ function SpreadsheetGridFrame({
   cellMode,
   className,
   columnCount,
+  columnStartIndex = 0,
   rangeSelection,
   renderCell,
+  rowStartIndex = 0,
   rows,
   viewportClassName,
 }: {
   cellMode: "button" | "editable";
   className?: string;
   columnCount?: number;
+  columnStartIndex?: number;
   rangeSelection?: ReturnType<typeof useSpreadsheetRangeSelection>;
   renderCell: (context: SpreadsheetCellRenderContext) => ReactNode;
+  rowStartIndex?: number;
   rows: string[][];
   viewportClassName?: string;
 }) {
@@ -457,16 +488,16 @@ function SpreadsheetGridFrame({
           </div>
           {Array.from({ length: resolvedColumnCount }, (_, index) => (
             <div
-              key={spreadsheetColumnName(index)}
+              key={spreadsheetColumnName(columnStartIndex + index)}
               className="sticky top-0 z-20 border bg-background px-2 py-2 text-xs font-medium text-muted-foreground"
             >
-              {spreadsheetColumnName(index)}
+              {spreadsheetColumnName(columnStartIndex + index)}
             </div>
           ))}
           {rows.map((row, rowIndex) => (
             <Fragment key={rowIndex}>
               <div className="sticky left-0 z-10 border bg-background px-2 py-2 text-xs font-medium text-muted-foreground">
-                {rowIndex + 1}
+                {rowStartIndex + rowIndex + 1}
               </div>
               {Array.from({ length: resolvedColumnCount }, (_, columnIndex) => {
                 const point = { rowIndex, columnIndex };
