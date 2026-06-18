@@ -29,7 +29,7 @@ x-lemma-runtime-env: &lemma-runtime-env
 x-api-env: &api-env
   <<: *lemma-runtime-env
   LEMMA_API_PORT: 3000
-  LEMMA_API_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+  LEMMA_API_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD_URL_ENCODED}@postgres:5432/${POSTGRES_DB}?sslmode=disable
   LEMMA_API_WEB_ORIGINS: ${LEMMA_API_WEB_ORIGINS}
   LEMMA_OIDC_ISSUER_URL: ${LEMMA_OIDC_ISSUER_URL}
   LEMMA_OIDC_JWKS_URL: ${LEMMA_OIDC_JWKS_URL}
@@ -37,7 +37,7 @@ x-api-env: &api-env
 
 x-worker-env: &worker-env
   <<: *lemma-runtime-env
-  LEMMA_WORKER_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+  LEMMA_WORKER_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD_URL_ENCODED}@postgres:5432/${POSTGRES_DB}?sslmode=disable
   LEMMA_WORKER_ID: ${LEMMA_WORKER_ID:-lemma-worker-vps}
   LEMMA_WORKER_OUTBOX_BATCH_SIZE: ${LEMMA_WORKER_OUTBOX_BATCH_SIZE:-25}
   LEMMA_WORKER_OUTBOX_POLL_INTERVAL_MS: ${LEMMA_WORKER_OUTBOX_POLL_INTERVAL_MS:-1000}
@@ -109,9 +109,10 @@ x-admin-healthcheck: &admin-healthcheck
 
 services:
   caddy:
-    image: docker.io/library/caddy:2-alpine
+    image: ghcr.io/caddybuilds/caddy-cloudflare:2.10.2
     restart: unless-stopped
     environment:
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
       LEMMA_ACTIVE_COLOR: ${LEMMA_ACTIVE_COLOR:-blue}
       LEMMA_WEB_DOMAIN: ${LEMMA_WEB_DOMAIN}
       LEMMA_API_DOMAIN: ${LEMMA_API_DOMAIN}
@@ -205,7 +206,7 @@ services:
       - lemma
 
   keycloak:
-    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-keycloak:${LEMMA_IMAGE_TAG}
+    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-keycloak:${LEMMA_SHARED_IMAGE_TAG}
     restart: unless-stopped
     command: ["start", "--optimized", "--import-realm"]
     environment:
@@ -242,7 +243,7 @@ services:
       - lemma
 
   libreoffice-worker:
-    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-libreoffice-worker:${LEMMA_IMAGE_TAG}
+    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-libreoffice-worker:${LEMMA_SHARED_IMAGE_TAG}
     restart: unless-stopped
     environment:
       WORKBOOK_WORKER_HOST: 0.0.0.0
@@ -254,11 +255,11 @@ services:
       - lemma
 
   migrate:
-    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-api:${LEMMA_IMAGE_TAG}
+    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-api:${LEMMA_SHARED_IMAGE_TAG}
     command: ["node", "/repo/packages/db/dist/migrate.js", "latest"]
     environment:
       NODE_ENV: production
-      LEMMA_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      LEMMA_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD_URL_ENCODED}@postgres:5432/${POSTGRES_DB}?sslmode=disable
     depends_on:
       postgres:
         condition: service_healthy
@@ -267,7 +268,7 @@ services:
     restart: "no"
 
   api-blue:
-    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-api:${LEMMA_IMAGE_TAG}
+    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-api:${LEMMA_BLUE_IMAGE_TAG}
     restart: unless-stopped
     environment: *api-env
     depends_on:
@@ -286,7 +287,7 @@ services:
       - lemma
 
   api-green:
-    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-api:${LEMMA_IMAGE_TAG}
+    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-api:${LEMMA_GREEN_IMAGE_TAG}
     restart: unless-stopped
     environment: *api-env
     depends_on:
@@ -305,7 +306,7 @@ services:
       - lemma
 
   worker:
-    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-worker:${LEMMA_IMAGE_TAG}
+    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-worker:${LEMMA_SHARED_IMAGE_TAG}
     restart: unless-stopped
     environment: *worker-env
     depends_on:
@@ -322,7 +323,7 @@ services:
       - lemma
 
   web-blue:
-    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-web:${LEMMA_IMAGE_TAG}
+    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-web:${LEMMA_BLUE_IMAGE_TAG}
     restart: unless-stopped
     environment: *web-env
     depends_on:
@@ -335,7 +336,7 @@ services:
       - lemma
 
   web-green:
-    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-web:${LEMMA_IMAGE_TAG}
+    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-web:${LEMMA_GREEN_IMAGE_TAG}
     restart: unless-stopped
     environment: *web-env
     depends_on:
@@ -348,7 +349,7 @@ services:
       - lemma
 
   admin-blue:
-    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-admin:${LEMMA_IMAGE_TAG}
+    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-admin:${LEMMA_BLUE_IMAGE_TAG}
     restart: unless-stopped
     environment: *admin-env
     depends_on:
@@ -359,7 +360,7 @@ services:
       - lemma
 
   admin-green:
-    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-admin:${LEMMA_IMAGE_TAG}
+    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-admin:${LEMMA_GREEN_IMAGE_TAG}
     restart: unless-stopped
     environment: *admin-env
     depends_on:

@@ -1,5 +1,11 @@
 {
 	email {$LEMMA_TLS_EMAIL}
+	acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+
+	servers {
+		trusted_proxies cloudflare
+		client_ip_headers Cf-Connecting-Ip
+	}
 }
 
 {$LEMMA_WEB_DOMAIN} {

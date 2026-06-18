@@ -14,6 +14,10 @@ permissions:
   contents: read
   packages: write
 
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
 env:
   REGISTRY: ghcr.io
   IMAGE_OWNER: ${{ github.repository_owner }}
@@ -85,7 +89,6 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=accept-new "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}" "mkdir -p /opt/lemma/infra/production /opt/lemma/infra/garage /opt/lemma/scripts/production"
           scp infra/production/compose.yml infra/production/Caddyfile "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}:/opt/lemma/infra/production/"
-          scp infra/garage/garage.toml "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}:/opt/lemma/infra/garage/"
           scp scripts/production/deploy.sh scripts/production/rollback.sh scripts/production/backup.sh "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}:/opt/lemma/scripts/production/"
       - name: Login VPS to GHCR
         env:

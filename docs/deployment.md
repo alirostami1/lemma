@@ -7,6 +7,8 @@ user traffic when possible.
 The current repository deployment target is a single Hetzner VPS. It uses Docker
 Compose for Postgres, Garage S3-compatible object storage, Keycloak,
 Centrifugo, LibreOffice worker, API, worker, web, admin, and Caddy.
+See `docs/vps-deployment-runbook.md` for the operator checklist and first
+deploy procedure.
 
 ## Deployment Flow
 
