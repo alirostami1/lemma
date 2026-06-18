@@ -28,7 +28,6 @@
   },
   "dependencies": {
     "@hono/zod-validator": "catalog:",
-    "@lemma/domain": "workspace:*",
     "@lemma/error": "workspace:*",
     "hono": "catalog:",
     "openapi-types": "catalog:",
