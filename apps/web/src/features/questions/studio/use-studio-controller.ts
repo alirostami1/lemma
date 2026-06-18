@@ -40,6 +40,7 @@ export function useStudioController(
     initialWorkbookId,
   });
   const source = useSourceController({
+    loadWorkbookPickerPreview: workbookPickerRequest !== null,
     model: draft.authoringModel,
     selectedWorkbookId: draft.selectedWorkbookId || null,
     onSelectedWorkbookIdChange: (workbookId) => {
@@ -48,6 +49,7 @@ export function useStudioController(
   });
   const referencePreview = useReferencePreviewController({
     model: draft.authoringModel,
+    workbookSnapshotId: source.workbookPreviewController.workbookSnapshotId,
     workbookSelectionValuesByRef,
     workbookPreview: source.workbookPreviewController.workbookPreview,
   });
@@ -60,13 +62,15 @@ export function useStudioController(
         questionName: draft.blueprintName,
         hasWorkbookSelection,
         hasWorkbookPreview:
-          source.workbookPreviewController.workbookPreview !== null,
+          source.workbookPreviewController.workbookSnapshotId !== null ||
+          source.workbookPreviewController.previewStatus === "ready",
       }),
     [
       draft.authoringModel,
       draft.blueprintName,
       hasWorkbookSelection,
-      source.workbookPreviewController.workbookPreview,
+      source.workbookPreviewController.workbookSnapshotId,
+      source.workbookPreviewController.previewStatus,
     ],
   );
   const save = useSaveBlueprintController({

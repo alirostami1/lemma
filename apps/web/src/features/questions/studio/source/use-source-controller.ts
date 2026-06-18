@@ -51,6 +51,7 @@ const SOURCE_PREPARATION_REFETCH_INTERVAL_MS = 1_000;
 const SOURCE_PREVIEW_REQUESTED_COUNT = 1;
 
 export function useSourceController(input: {
+  loadWorkbookPickerPreview: boolean;
   model: ComposedEditorModel;
   selectedWorkbookId: string | null;
   onSelectedWorkbookIdChange(workbookId: string | null): void;
@@ -92,6 +93,7 @@ export function useSourceController(input: {
   const selectedWorkbook =
     selectedWorkbookQuery.data ?? selectedWorkbookFromList ?? null;
   const workbookPreviewController = useSelectedWorkbookPreview({
+    loadPickerPreview: input.loadWorkbookPickerPreview,
     selectedWorkbook: selectedWorkbook
       ? {
           id: selectedWorkbook.id,

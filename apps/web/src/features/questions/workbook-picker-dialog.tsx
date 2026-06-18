@@ -464,6 +464,10 @@ export function WorkbookPickerDialog({
             <div className="flex flex-1 items-center justify-center p-8 text-sm text-destructive">
               Source preview could not be loaded.
             </div>
+          ) : workbookSheets.length === 0 ? (
+            <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
+              Loading source...
+            </div>
           ) : activeSheet ? (
             <>
               <div className="flex shrink-0 items-center justify-between gap-3 border-b bg-background px-5 py-3">

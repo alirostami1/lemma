@@ -28,8 +28,10 @@ const RETRIABLE_PREVIEW_CALCULATION_ERRORS = new Set([
 ]);
 
 export function useSelectedWorkbookPreview({
+  loadPickerPreview,
   selectedWorkbook,
 }: {
+  loadPickerPreview: boolean;
   selectedWorkbook: {
     id: string;
     originalName: string;
@@ -96,7 +98,7 @@ export function useSelectedWorkbookPreview({
   });
   const sheetsQuery = useWorkbookSnapshotSheetsQuery(
     { workbookSnapshotId: snapshotId, limit: 25 },
-    { enabled: shouldLoadSnapshotDetails },
+    { enabled: shouldLoadSnapshotDetails && loadPickerPreview },
   );
   const firstSheet = sheetsQuery.data?.workbookSnapshotSheets[0] ?? null;
   const firstSheetCellsQuery = useWorkbookSnapshotCellsQuery(
@@ -108,7 +110,10 @@ export function useSelectedWorkbookPreview({
       rowCount: 50,
       columnCount: 20,
     },
-    { enabled: shouldLoadSnapshotDetails && Boolean(firstSheet) },
+    {
+      enabled:
+        shouldLoadSnapshotDetails && loadPickerPreview && Boolean(firstSheet),
+    },
   );
   const workbookPreview = useMemo(() => {
     if (!selectedWorkbook || !sheetsQuery.data || !firstSheetCellsQuery.data) {
@@ -120,18 +125,21 @@ export function useSelectedWorkbookPreview({
       selectedWorkbook.originalName,
     );
   }, [firstSheetCellsQuery.data, selectedWorkbook, sheetsQuery.data]);
-  const isWorkbookPreviewPending =
+  const isSnapshotPreviewPending =
     (shouldLoadPreview && calculationsQuery.isPending) ||
     (shouldLoadSnapshots && snapshotsQuery.isPending) ||
-    (shouldLoadSnapshotDetails && metadataQuery.isPending) ||
-    (shouldLoadSnapshotDetails && sheetsQuery.isPending) ||
-    (Boolean(firstSheet) && firstSheetCellsQuery.isPending);
+    (shouldLoadSnapshotDetails && metadataQuery.isPending);
+  const isPickerPreviewPending =
+    (loadPickerPreview && shouldLoadSnapshotDetails && sheetsQuery.isPending) ||
+    (loadPickerPreview &&
+      Boolean(firstSheet) &&
+      firstSheetCellsQuery.isPending);
   const hasPreviewError =
     calculationsQuery.isError ||
     snapshotsQuery.isError ||
     metadataQuery.isError ||
-    sheetsQuery.isError ||
-    firstSheetCellsQuery.isError;
+    (loadPickerPreview && sheetsQuery.isError) ||
+    (loadPickerPreview && firstSheetCellsQuery.isError);
 
   if (!selectedWorkbook) {
     return idleController;
@@ -152,26 +160,28 @@ export function useSelectedWorkbookPreview({
     };
   }
 
-  if (isWorkbookPreviewPending || isCalculationPending) {
+  if (isSnapshotPreviewPending || isCalculationPending) {
     return {
       ...loadingController,
       needsWorkbookPreviewCalculation,
     };
   }
 
-  if (
-    !calculationId ||
-    !snapshotId ||
-    !metadataQuery.data ||
-    !sheetsQuery.data
-  ) {
+  if (!calculationId || !snapshotId || !metadataQuery.data) {
     return loadingController;
+  }
+
+  if (isPickerPreviewPending || (loadPickerPreview && !sheetsQuery.data)) {
+    return {
+      ...loadingController,
+      workbookSnapshotId: snapshotId,
+    };
   }
 
   return {
     workbookPreview,
     workbookSnapshotId: snapshotId,
-    workbookSheets: sheetsQuery.data.workbookSnapshotSheets,
+    workbookSheets: sheetsQuery.data?.workbookSnapshotSheets ?? [],
     workbookPreviewError: null,
     isWorkbookPreviewPending: false,
     needsWorkbookPreviewCalculation: false,

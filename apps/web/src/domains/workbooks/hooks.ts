@@ -3,6 +3,7 @@ import {
   type UseQueryOptions,
   useInfiniteQuery,
   useMutation,
+  useQueries,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
@@ -178,6 +179,28 @@ export function useWorkbookSnapshotRangeQuery(
     queryFn: () => getWorkbookSnapshotRange(input),
     enabled: Boolean(workbookSnapshotId),
     ...options,
+  });
+}
+
+export function useWorkbookSnapshotRangesQuery(
+  inputs: GetWorkbookSnapshotRangeInput[],
+  options?: { enabled?: boolean },
+) {
+  return useQueries({
+    queries: inputs.map((input) => {
+      const { workbookSnapshotId, ...params } = input;
+
+      return {
+        queryKey: workbookKeys.snapshotRange(workbookSnapshotId, params),
+        queryFn: () => getWorkbookSnapshotRange(input),
+        enabled:
+          options?.enabled !== false &&
+          Boolean(workbookSnapshotId) &&
+          Boolean(input.ref),
+        retry: false,
+        staleTime: Number.POSITIVE_INFINITY,
+      };
+    }),
   });
 }
 
