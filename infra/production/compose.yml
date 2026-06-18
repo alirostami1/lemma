@@ -251,6 +251,12 @@ services:
       WORKBOOK_WORKER_MAX_UPLOAD_BYTES: ${LEMMA_WORKBOOK_MAX_FILE_BYTES:-20971520}
       WORKBOOK_WORKER_MAX_RESPONSE_BYTES: ${LEMMA_WORKBOOK_MAX_RESPONSE_BYTES:-10485760}
       WORKBOOK_WORKER_TIMEOUT_SECONDS: ${LEMMA_WORKBOOK_LIBREOFFICE_WORKER_TIMEOUT_SECONDS:-30}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/v1/health >/dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
     networks:
       - lemma
 
@@ -279,7 +285,7 @@ services:
       keycloak:
         condition: service_started
       libreoffice-worker:
-        condition: service_started
+        condition: service_healthy
       centrifugo:
         condition: service_started
     healthcheck: *api-healthcheck
@@ -298,7 +304,7 @@ services:
       keycloak:
         condition: service_started
       libreoffice-worker:
-        condition: service_started
+        condition: service_healthy
       centrifugo:
         condition: service_started
     healthcheck: *api-healthcheck
@@ -315,7 +321,7 @@ services:
       garage-cors:
         condition: service_completed_successfully
       libreoffice-worker:
-        condition: service_started
+        condition: service_healthy
       centrifugo:
         condition: service_started
     stop_grace_period: 30s

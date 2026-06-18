@@ -53,6 +53,23 @@ require_env() {
   printf '%s' "$value"
 }
 
+require_hex_env() {
+  key="$1"
+  expected_length="$2"
+  value="$(require_env "$key")"
+  if [ "${#value}" -ne "$expected_length" ]; then
+    echo "$key must be $expected_length hex characters in $ENV_FILE" >&2
+    exit 1
+  fi
+  case "$value" in
+    *[!0123456789abcdefABCDEF]*)
+      echo "$key must contain only hex characters in $ENV_FILE" >&2
+      exit 1
+      ;;
+  esac
+  printf '%s' "$value"
+}
+
 set_env() {
   key="$1"
   value="$2"
@@ -113,7 +130,7 @@ set_env LEMMA_IMAGE_TAG "$requested_tag"
 set_env LEMMA_SHARED_IMAGE_TAG "$requested_tag"
 
 require_env CLOUDFLARE_API_TOKEN >/dev/null
-GARAGE_RPC_SECRET="$(require_env GARAGE_RPC_SECRET)"
+GARAGE_RPC_SECRET="$(require_hex_env GARAGE_RPC_SECRET 64)"
 GARAGE_ADMIN_TOKEN="$(require_env GARAGE_ADMIN_TOKEN)"
 GARAGE_METRICS_TOKEN="$(require_env GARAGE_METRICS_TOKEN)"
 
