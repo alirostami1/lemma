@@ -59,11 +59,11 @@ COPY --from=deps /repo/node_modules /repo/node_modules
 COPY --from=deps /repo/apps/web/node_modules /repo/apps/web/node_modules
 COPY --from=deps /repo/package.json /repo/package.json
 COPY --from=deps /repo/pnpm-workspace.yaml /repo/pnpm-workspace.yaml
-COPY --from=build /repo/apps/web/.output ./.output
+COPY --from=build /repo/apps/web/dist ./dist
 COPY --from=build /repo/apps/web/package.json ./package.json
 
 USER node
 
 EXPOSE 3000
 
-CMD ["node", ".output/server/index.mjs"]
+CMD ["node", "dist/server/server.js"]
