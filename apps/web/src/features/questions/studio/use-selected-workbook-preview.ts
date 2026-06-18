@@ -4,7 +4,7 @@ import {
   useWorkbookCalculationsQuery,
   useWorkbookSnapshotCellsQuery,
   useWorkbookSnapshotMetadataQuery,
-  useWorkbookSnapshotSheetsQuery,
+  useWorkbookSnapshotSheetsInfiniteQuery,
   useWorkbookSnapshotsQuery,
 } from "#/domains/workbooks/hooks";
 import type {
@@ -19,6 +19,9 @@ export type SelectedWorkbookPreviewController = {
   workbookPreviewError: string | null;
   isWorkbookPreviewPending: boolean;
   needsWorkbookPreviewCalculation: boolean;
+  hasMoreWorkbookSheets: boolean;
+  isLoadingMoreWorkbookSheets: boolean;
+  loadMoreWorkbookSheets(): void;
   previewStatus: "idle" | "loading" | "ready" | "error";
 };
 
@@ -96,11 +99,17 @@ export function useSelectedWorkbookPreview({
   const metadataQuery = useWorkbookSnapshotMetadataQuery(snapshotId, {
     enabled: shouldLoadSnapshotDetails,
   });
-  const sheetsQuery = useWorkbookSnapshotSheetsQuery(
+  const sheetsQuery = useWorkbookSnapshotSheetsInfiniteQuery(
     { workbookSnapshotId: snapshotId, limit: 25 },
     { enabled: shouldLoadSnapshotDetails && loadPickerPreview },
   );
-  const firstSheet = sheetsQuery.data?.workbookSnapshotSheets[0] ?? null;
+  const workbookSheets = useMemo(
+    () =>
+      sheetsQuery.data?.pages.flatMap((page) => page.workbookSnapshotSheets) ??
+      [],
+    [sheetsQuery.data],
+  );
+  const firstSheet = workbookSheets[0] ?? null;
   const firstSheetCellsQuery = useWorkbookSnapshotCellsQuery(
     {
       workbookSnapshotId: snapshotId,
@@ -116,15 +125,23 @@ export function useSelectedWorkbookPreview({
     },
   );
   const workbookPreview = useMemo(() => {
-    if (!selectedWorkbook || !sheetsQuery.data || !firstSheetCellsQuery.data) {
+    if (!selectedWorkbook || !firstSheetCellsQuery.data) {
       return null;
     }
     return mapSnapshotCellsToWorkbookPreview(
       firstSheetCellsQuery.data,
-      sheetsQuery.data.workbookSnapshotSheets,
+      workbookSheets,
       selectedWorkbook.originalName,
     );
-  }, [firstSheetCellsQuery.data, selectedWorkbook, sheetsQuery.data]);
+  }, [firstSheetCellsQuery.data, selectedWorkbook, workbookSheets]);
+  const loadMoreWorkbookSheets = () => {
+    void sheetsQuery.fetchNextPage();
+  };
+  const workbookSheetPagination = {
+    hasMoreWorkbookSheets: Boolean(sheetsQuery.hasNextPage),
+    isLoadingMoreWorkbookSheets: sheetsQuery.isFetchingNextPage,
+    loadMoreWorkbookSheets,
+  };
   const isSnapshotPreviewPending =
     (shouldLoadPreview && calculationsQuery.isPending) ||
     (shouldLoadSnapshots && snapshotsQuery.isPending) ||
@@ -175,19 +192,24 @@ export function useSelectedWorkbookPreview({
     return {
       ...loadingController,
       workbookSnapshotId: snapshotId,
+      workbookSheets,
+      ...workbookSheetPagination,
     };
   }
 
   return {
     workbookPreview,
     workbookSnapshotId: snapshotId,
-    workbookSheets: sheetsQuery.data?.workbookSnapshotSheets ?? [],
+    workbookSheets,
     workbookPreviewError: null,
     isWorkbookPreviewPending: false,
     needsWorkbookPreviewCalculation: false,
+    ...workbookSheetPagination,
     previewStatus: "ready",
   };
 }
+
+const noop = () => {};
 
 const idleController: SelectedWorkbookPreviewController = {
   workbookPreview: null,
@@ -196,6 +218,9 @@ const idleController: SelectedWorkbookPreviewController = {
   workbookPreviewError: null,
   isWorkbookPreviewPending: false,
   needsWorkbookPreviewCalculation: false,
+  hasMoreWorkbookSheets: false,
+  isLoadingMoreWorkbookSheets: false,
+  loadMoreWorkbookSheets: noop,
   previewStatus: "idle",
 };
 
@@ -206,6 +231,9 @@ const loadingController: SelectedWorkbookPreviewController = {
   workbookPreviewError: null,
   isWorkbookPreviewPending: true,
   needsWorkbookPreviewCalculation: false,
+  hasMoreWorkbookSheets: false,
+  isLoadingMoreWorkbookSheets: false,
+  loadMoreWorkbookSheets: noop,
   previewStatus: "loading",
 };
 
@@ -217,6 +245,9 @@ function errorController(message: string): SelectedWorkbookPreviewController {
     workbookPreviewError: message,
     isWorkbookPreviewPending: false,
     needsWorkbookPreviewCalculation: false,
+    hasMoreWorkbookSheets: false,
+    isLoadingMoreWorkbookSheets: false,
+    loadMoreWorkbookSheets: noop,
     previewStatus: "error",
   };
 }

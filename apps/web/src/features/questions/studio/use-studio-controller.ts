@@ -195,6 +195,10 @@ export function useStudioController(
     workbookPicker: {
       workbookSnapshotId: source.workbookPreviewController.workbookSnapshotId,
       workbookSheets: source.workbookPreviewController.workbookSheets,
+      hasMoreWorkbookSheets:
+        source.workbookPreviewController.hasMoreWorkbookSheets,
+      isLoadingMoreWorkbookSheets:
+        source.workbookPreviewController.isLoadingMoreWorkbookSheets,
       fileName:
         source.selectedWorkbook?.originalName ??
         (draft.selectedWorkbookId ? "Selected source could not be found." : ""),
@@ -206,6 +210,8 @@ export function useStudioController(
           setWorkbookPickerRequest(null);
         }
       },
+      onLoadMoreWorkbookSheets:
+        source.workbookPreviewController.loadMoreWorkbookSheets,
       onSelect: (selection: WorkbookRangeSelection) => {
         setWorkbookSelectionValuesByRef((currentValues) => ({
           ...currentValues,

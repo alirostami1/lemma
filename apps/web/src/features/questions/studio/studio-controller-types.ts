@@ -93,11 +93,14 @@ export type StudioController = {
   workbookPicker: {
     workbookSnapshotId: string | null;
     workbookSheets: WorkbookPickerSheet[];
+    hasMoreWorkbookSheets: boolean;
+    isLoadingMoreWorkbookSheets: boolean;
     fileName: string;
     open: boolean;
     request: WorkbookPickerRequest | null;
     openWorkbookPicker: WorkbookPickerController["openWorkbookPicker"];
     onOpenChange(open: boolean): void;
+    onLoadMoreWorkbookSheets(): void;
     onSelect(selection: WorkbookRangeSelection): void;
   };
   readiness: StudioReadiness;

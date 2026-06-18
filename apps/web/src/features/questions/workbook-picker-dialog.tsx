@@ -68,9 +68,12 @@ const DEFAULT_WORKBOOK_PICKER_CELL_WINDOW = {
 type WorkbookPickerDialogProps = {
   workbookSnapshotId?: string | null;
   workbookSheets?: WorkbookPickerSheet[];
+  hasMoreSheets?: boolean;
+  isLoadingMoreSheets?: boolean;
   fileName: string;
   open: boolean;
   onOpenChange(open: boolean): void;
+  onLoadMoreSheets?(): void;
   selectionRequirement: WorkbookSelectionRequirement;
   onSelectRange(selection: WorkbookRangeSelection): void;
 };
@@ -78,9 +81,12 @@ type WorkbookPickerDialogProps = {
 export function WorkbookPickerDialog({
   workbookSnapshotId,
   workbookSheets = [],
+  hasMoreSheets = false,
+  isLoadingMoreSheets = false,
   fileName,
   open,
   onOpenChange,
+  onLoadMoreSheets,
   selectionRequirement,
   onSelectRange,
 }: WorkbookPickerDialogProps) {
@@ -575,11 +581,30 @@ export function WorkbookPickerDialog({
                 rows={rows}
               />
 
-              <SpreadsheetSheetTabs
-                activeSheetName={activeSheetName}
-                onActiveSheetNameChange={handleActiveSheetNameChange}
-                sheets={sheets}
-              />
+              <div className="flex shrink-0 items-center border-t bg-background">
+                <SpreadsheetSheetTabs
+                  activeSheetName={activeSheetName}
+                  className="min-w-0 flex-1 border-t-0"
+                  onActiveSheetNameChange={handleActiveSheetNameChange}
+                  sheets={sheets}
+                />
+                {hasMoreSheets ? (
+                  <div className="shrink-0 border-l px-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={isLoadingMoreSheets}
+                      onClick={onLoadMoreSheets}
+                    >
+                      {isLoadingMoreSheets ? (
+                        <Spinner className="size-3" />
+                      ) : null}
+                      More sheets
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
               <WorkbookSelectionSummary
                 isSelectingRange={isSelectingRange}
                 selectedRangeErrorMessage={selectedRangeErrorMessage}

@@ -154,6 +154,25 @@ export function useWorkbookSnapshotSheetsQuery(
   });
 }
 
+export function useWorkbookSnapshotSheetsInfiniteQuery(
+  input: Omit<ListWorkbookSnapshotSheetsInput, "cursor">,
+  options?: { enabled?: boolean },
+) {
+  const { workbookSnapshotId, ...params } = input;
+  const { enabled = true, ...queryOptions } = options ?? {};
+
+  return useInfiniteQuery({
+    queryKey: workbookKeys.snapshotSheetsInfinite(workbookSnapshotId, params),
+    queryFn: ({ pageParam }) =>
+      listWorkbookSnapshotSheets({ ...input, cursor: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
+    enabled: enabled && Boolean(workbookSnapshotId),
+    staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
+    ...queryOptions,
+  });
+}
+
 export function useWorkbookSnapshotCellsQuery(
   input: GetWorkbookSnapshotCellsInput,
   options?: Omit<

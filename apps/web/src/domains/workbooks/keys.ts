@@ -71,6 +71,18 @@ export const workbookKeys = {
       "sheets",
       input ?? {},
     ] as const,
+  snapshotSheetsInfinite: (
+    workbookSnapshotId: string,
+    input?: Omit<SnapshotSheetsKeyInput, "cursor">,
+  ) =>
+    [
+      ...workbookKeys.all,
+      "snapshot",
+      workbookSnapshotId,
+      "sheets",
+      "infinite",
+      input ?? {},
+    ] as const,
   snapshotCells: (workbookSnapshotId: string, input: SnapshotCellsKeyInput) =>
     [
       ...workbookKeys.all,
