@@ -42,6 +42,7 @@ WORKDIR /repo/apps/worker
 
 COPY --from=deps /repo/node_modules /repo/node_modules
 COPY --from=deps /repo/apps/worker/node_modules /repo/apps/worker/node_modules
+COPY --from=deps /repo/packages /repo/packages
 COPY --from=deps /repo/package.json /repo/package.json
 COPY --from=deps /repo/pnpm-workspace.yaml /repo/pnpm-workspace.yaml
 COPY --from=build /repo/packages/config/dist /repo/packages/config/dist
