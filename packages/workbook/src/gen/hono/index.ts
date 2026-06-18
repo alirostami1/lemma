@@ -18,7 +18,12 @@ import type {
   WorkbookCalculationsResponse,
   WorkbookEngineHealthResponse,
   WorkbookResponse,
+  WorkbookSnapshotCellsResponse,
+  WorkbookSnapshotMetadataResponse,
+  WorkbookSnapshotRangeBatchResponse,
+  WorkbookSnapshotRangeResponse,
   WorkbookSnapshotResponse,
+  WorkbookSnapshotSheetsResponse,
   WorkbookSnapshotsResponse,
   WorkbookSnapshotValueResponse,
   WorkbooksResponse,
@@ -31,9 +36,18 @@ import {
   DeleteWorkbookParams,
   GetWorkbookCalculationParams,
   GetWorkbookParams,
+  GetWorkbookSnapshotCellsParams,
+  GetWorkbookSnapshotCellsQueryParams,
+  GetWorkbookSnapshotMetadataParams,
   GetWorkbookSnapshotParams,
+  GetWorkbookSnapshotRangeBatchBody,
+  GetWorkbookSnapshotRangeBatchParams,
+  GetWorkbookSnapshotRangeParams,
+  GetWorkbookSnapshotRangeQueryParams,
   ListWorkbookCalculationsParams,
   ListWorkbookCalculationsQueryParams,
+  ListWorkbookSnapshotSheetsParams,
+  ListWorkbookSnapshotSheetsQueryParams,
   ListWorkbookSnapshotsParams,
   ListWorkbookSnapshotsQueryParams,
   ListWorkbooksQueryParams,
@@ -171,6 +185,51 @@ type GetWorkbookSnapshotResponses = {
   "409": ErrorResponse;
   "502": ErrorResponse;
 };
+type GetWorkbookSnapshotMetadataResponses = {
+  "200": WorkbookSnapshotMetadataResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
+type ListWorkbookSnapshotSheetsResponses = {
+  "200": WorkbookSnapshotSheetsResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
+type GetWorkbookSnapshotCellsResponses = {
+  "200": WorkbookSnapshotCellsResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
+type GetWorkbookSnapshotRangeResponses = {
+  "200": WorkbookSnapshotRangeResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
+type GetWorkbookSnapshotRangeBatchResponses = {
+  "200": WorkbookSnapshotRangeBatchResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
 type ResolveWorkbookSnapshotValueResponses = {
   "200": WorkbookSnapshotValueResponse;
   "400": ErrorResponse;
@@ -288,6 +347,56 @@ export type WorkbookHandlerMap = {
     { out: { param: z.infer<typeof GetWorkbookSnapshotParams> } },
     TypedHandlerResponse<GetWorkbookSnapshotResponses>
   >;
+  getWorkbookSnapshotMetadata: Handler<
+    WorkbookAppEnv,
+    "/workbook-snapshots/:workbookSnapshotId/metadata",
+    { out: { param: z.infer<typeof GetWorkbookSnapshotMetadataParams> } },
+    TypedHandlerResponse<GetWorkbookSnapshotMetadataResponses>
+  >;
+  listWorkbookSnapshotSheets: Handler<
+    WorkbookAppEnv,
+    "/workbook-snapshots/:workbookSnapshotId/sheets",
+    {
+      out: {
+        param: z.infer<typeof ListWorkbookSnapshotSheetsParams>;
+        query: z.infer<typeof ListWorkbookSnapshotSheetsQueryParams>;
+      };
+    },
+    TypedHandlerResponse<ListWorkbookSnapshotSheetsResponses>
+  >;
+  getWorkbookSnapshotCells: Handler<
+    WorkbookAppEnv,
+    "/workbook-snapshots/:workbookSnapshotId/sheets/:sheetIndex/cells",
+    {
+      out: {
+        param: z.infer<typeof GetWorkbookSnapshotCellsParams>;
+        query: z.infer<typeof GetWorkbookSnapshotCellsQueryParams>;
+      };
+    },
+    TypedHandlerResponse<GetWorkbookSnapshotCellsResponses>
+  >;
+  getWorkbookSnapshotRange: Handler<
+    WorkbookAppEnv,
+    "/workbook-snapshots/:workbookSnapshotId/range",
+    {
+      out: {
+        param: z.infer<typeof GetWorkbookSnapshotRangeParams>;
+        query: z.infer<typeof GetWorkbookSnapshotRangeQueryParams>;
+      };
+    },
+    TypedHandlerResponse<GetWorkbookSnapshotRangeResponses>
+  >;
+  getWorkbookSnapshotRangeBatch: Handler<
+    WorkbookAppEnv,
+    "/workbook-snapshots/:workbookSnapshotId/ranges",
+    {
+      out: {
+        param: z.infer<typeof GetWorkbookSnapshotRangeBatchParams>;
+        json: z.infer<typeof GetWorkbookSnapshotRangeBatchBody>;
+      };
+    },
+    TypedHandlerResponse<GetWorkbookSnapshotRangeBatchResponses>
+  >;
   resolveWorkbookSnapshotValue: Handler<
     WorkbookAppEnv,
     "/workbook-snapshots/:workbookSnapshotId/values",
@@ -404,6 +513,45 @@ export function createWorkbookRoutes(deps: {
     deps.requireIdentity,
     zValidator("param", GetWorkbookSnapshotParams, validationHook),
     deps.handlers.getWorkbookSnapshot,
+  );
+
+  app.get(
+    "/workbook-snapshots/:workbookSnapshotId/metadata",
+    deps.requireIdentity,
+    zValidator("param", GetWorkbookSnapshotMetadataParams, validationHook),
+    deps.handlers.getWorkbookSnapshotMetadata,
+  );
+
+  app.get(
+    "/workbook-snapshots/:workbookSnapshotId/sheets",
+    deps.requireIdentity,
+    zValidator("param", ListWorkbookSnapshotSheetsParams, validationHook),
+    zValidator("query", ListWorkbookSnapshotSheetsQueryParams, validationHook),
+    deps.handlers.listWorkbookSnapshotSheets,
+  );
+
+  app.get(
+    "/workbook-snapshots/:workbookSnapshotId/sheets/:sheetIndex/cells",
+    deps.requireIdentity,
+    zValidator("param", GetWorkbookSnapshotCellsParams, validationHook),
+    zValidator("query", GetWorkbookSnapshotCellsQueryParams, validationHook),
+    deps.handlers.getWorkbookSnapshotCells,
+  );
+
+  app.get(
+    "/workbook-snapshots/:workbookSnapshotId/range",
+    deps.requireIdentity,
+    zValidator("param", GetWorkbookSnapshotRangeParams, validationHook),
+    zValidator("query", GetWorkbookSnapshotRangeQueryParams, validationHook),
+    deps.handlers.getWorkbookSnapshotRange,
+  );
+
+  app.post(
+    "/workbook-snapshots/:workbookSnapshotId/ranges",
+    deps.requireIdentity,
+    zValidator("param", GetWorkbookSnapshotRangeBatchParams, validationHook),
+    zValidator("json", GetWorkbookSnapshotRangeBatchBody, validationHook),
+    deps.handlers.getWorkbookSnapshotRangeBatch,
   );
 
   app.get(

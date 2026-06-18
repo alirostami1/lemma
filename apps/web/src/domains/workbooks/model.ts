@@ -57,24 +57,70 @@ export interface WorkbookCalculation {
   updatedAt: Date;
 }
 
-export interface WorkbookSparseValues {
-  sheets: WorkbookSparseValuesSheet[];
-}
-
-export interface WorkbookSparseValuesSheet {
-  name: string;
-  cells: Record<string, string>;
-  rowCount: number;
-  columnCount: number;
-}
+export type WorkbookCellType =
+  | "string"
+  | "number"
+  | "boolean"
+  | "date_like"
+  | "error"
+  | "blank"
+  | "formula_cached";
 
 export interface WorkbookSnapshot {
   id: string;
   workbookId: string;
   calculationId: string;
   snapshotIndex: number;
-  values: WorkbookSparseValues;
   createdAt: Date;
+}
+
+export interface WorkbookSnapshotMetadata {
+  status: "ready";
+  sheetCount: number;
+  cellCount: number;
+}
+
+export interface WorkbookSnapshotSheet {
+  sheetIndex: number;
+  name: string;
+  rowCount: number;
+  columnCount: number;
+  nonEmptyCellCount: number;
+}
+
+export interface WorkbookSnapshotCells {
+  sheetIndex: number;
+  sheetName: string;
+  startRow: number;
+  startColumn: number;
+  rowCount: number;
+  columnCount: number;
+  rows: string[][];
+  cellTypes: WorkbookCellType[][];
+}
+
+export interface WorkbookSnapshotRange extends WorkbookSnapshotCells {
+  ref: string;
+  startCellAddress: string;
+  endCellAddress: string;
+}
+
+export type WorkbookSnapshotRangeBatchItem =
+  | {
+      ref: string;
+      status: "ok";
+      range: WorkbookSnapshotRange;
+      errorMessage: null;
+    }
+  | {
+      ref: string;
+      status: "error";
+      range: null;
+      errorMessage: string;
+    };
+
+export interface WorkbookSnapshotRangeBatch {
+  ranges: WorkbookSnapshotRangeBatchItem[];
 }
 
 export interface ListWorkbooksInput {
@@ -121,6 +167,31 @@ export interface ListWorkbookSnapshotsInput {
   cursor?: string;
 }
 
+export interface ListWorkbookSnapshotSheetsInput {
+  workbookSnapshotId: string;
+  limit?: number;
+  cursor?: string;
+}
+
+export interface GetWorkbookSnapshotCellsInput {
+  workbookSnapshotId: string;
+  sheetIndex: number;
+  startRow: number;
+  startColumn: number;
+  rowCount: number;
+  columnCount: number;
+}
+
+export interface GetWorkbookSnapshotRangeInput {
+  workbookSnapshotId: string;
+  ref: string;
+}
+
+export interface GetWorkbookSnapshotRangeBatchInput {
+  workbookSnapshotId: string;
+  refs: string[];
+}
+
 export interface WorkbooksPage {
   workbooks: Workbook[];
   nextCursor: string | null;
@@ -133,5 +204,10 @@ export interface WorkbookCalculationsPage {
 
 export interface WorkbookSnapshotsPage {
   workbookSnapshots: WorkbookSnapshot[];
+  nextCursor: string | null;
+}
+
+export interface WorkbookSnapshotSheetsPage {
+  workbookSnapshotSheets: WorkbookSnapshotSheet[];
   nextCursor: string | null;
 }

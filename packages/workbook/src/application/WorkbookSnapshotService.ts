@@ -1,17 +1,32 @@
 import { instrumentService } from "@lemma/observability";
 import {
+  createWorkbookSnapshotCells,
+  createWorkbookSnapshotMetadata,
+  createWorkbookSnapshotRange,
+  createWorkbookSnapshotRangeBatch,
+  listWorkbookSnapshotSheets,
   resolveWorkbookSnapshotValue,
   workbookCalculationId as toWorkbookCalculationId,
   workbookSnapshotId as toWorkbookSnapshotId,
   type ValueSource,
 } from "../domain/index.js";
 import type {
+  ListWorkbookSnapshotSheetsCommand,
   ListWorkbookSnapshotsCommand,
   ResolveWorkbookSnapshotValueCommand,
   WorkbookSnapshotByIdCommand,
+  WorkbookSnapshotCellsCommand,
+  WorkbookSnapshotMetadataCommand,
+  WorkbookSnapshotRangeBatchCommand,
+  WorkbookSnapshotRangeCommand,
 } from "./commands.js";
 import type {
+  WorkbookSnapshotCellsResult,
+  WorkbookSnapshotMetadataResult,
+  WorkbookSnapshotRangeBatchResult,
+  WorkbookSnapshotRangeResult,
   WorkbookSnapshotResult,
+  WorkbookSnapshotSheetsResult,
   WorkbookSnapshotsResult,
   WorkbookSnapshotValueResult,
 } from "./dto.js";
@@ -86,6 +101,77 @@ export class WorkbookSnapshotService {
         "You cannot view this workbook snapshot.",
       );
       return { workbookSnapshot: snapshot };
+    });
+  }
+
+  async getWorkbookSnapshotMetadata(
+    command: WorkbookSnapshotMetadataCommand,
+  ): Promise<WorkbookSnapshotMetadataResult> {
+    return this.operation("get_workbook_snapshot_metadata", async () => {
+      const snapshot = (await this.getWorkbookSnapshot(command))
+        .workbookSnapshot;
+      return {
+        workbookSnapshotMetadata: createWorkbookSnapshotMetadata(snapshot),
+      };
+    });
+  }
+
+  async listWorkbookSnapshotSheets(
+    command: ListWorkbookSnapshotSheetsCommand,
+  ): Promise<WorkbookSnapshotSheetsResult> {
+    return this.operation("list_workbook_snapshot_sheets", async () => {
+      const snapshot = (await this.getWorkbookSnapshot(command))
+        .workbookSnapshot;
+      return listWorkbookSnapshotSheets(snapshot, {
+        limit: command.limit,
+        cursor: command.cursor,
+      });
+    });
+  }
+
+  async getWorkbookSnapshotCells(
+    command: WorkbookSnapshotCellsCommand,
+  ): Promise<WorkbookSnapshotCellsResult> {
+    return this.operation("get_workbook_snapshot_cells", async () => {
+      const snapshot = (await this.getWorkbookSnapshot(command))
+        .workbookSnapshot;
+      return {
+        workbookSnapshotCells: createWorkbookSnapshotCells(snapshot, {
+          sheetIndex: command.sheetIndex,
+          startRow: command.startRow,
+          startColumn: command.startColumn,
+          rowCount: command.rowCount,
+          columnCount: command.columnCount,
+        }),
+      };
+    });
+  }
+
+  async getWorkbookSnapshotRange(
+    command: WorkbookSnapshotRangeCommand,
+  ): Promise<WorkbookSnapshotRangeResult> {
+    return this.operation("get_workbook_snapshot_range", async () => {
+      const snapshot = (await this.getWorkbookSnapshot(command))
+        .workbookSnapshot;
+      return {
+        workbookSnapshotRange: createWorkbookSnapshotRange(snapshot, {
+          ref: command.ref,
+        }),
+      };
+    });
+  }
+
+  async getWorkbookSnapshotRangeBatch(
+    command: WorkbookSnapshotRangeBatchCommand,
+  ): Promise<WorkbookSnapshotRangeBatchResult> {
+    return this.operation("get_workbook_snapshot_range_batch", async () => {
+      const snapshot = (await this.getWorkbookSnapshot(command))
+        .workbookSnapshot;
+      return {
+        workbookSnapshotRangeBatch: createWorkbookSnapshotRangeBatch(snapshot, {
+          refs: command.refs,
+        }),
+      };
     });
   }
 

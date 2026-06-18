@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { WorkbookPickerRequest } from "#/features/questions/table-block-editor";
+import type {
+  WorkbookPickerRequest,
+  WorkbookRangeSelection,
+} from "#/features/questions/table-block-editor";
 import { useSourceController } from "./source/use-source-controller";
 import type {
   StudioController,
@@ -25,6 +28,8 @@ export function useStudioController(
   const initialWorkbookId = input.workbookId ?? "";
   const [workbookPickerRequest, setWorkbookPickerRequest] =
     useState<WorkbookPickerRequest | null>(null);
+  const [workbookSelectionValuesByRef, setWorkbookSelectionValuesByRef] =
+    useState<Record<string, string[][]>>({});
   const [isSavedBlueprintsOpen, setIsSavedBlueprintsOpen] = useState(false);
   const previousSelectedWorkbookIdRef = useRef<string | null>(null);
   const openWorkbookPicker = useCallback((request: WorkbookPickerRequest) => {
@@ -35,6 +40,7 @@ export function useStudioController(
     initialWorkbookId,
   });
   const source = useSourceController({
+    loadWorkbookPickerPreview: workbookPickerRequest !== null,
     model: draft.authoringModel,
     selectedWorkbookId: draft.selectedWorkbookId || null,
     onSelectedWorkbookIdChange: (workbookId) => {
@@ -43,6 +49,8 @@ export function useStudioController(
   });
   const referencePreview = useReferencePreviewController({
     model: draft.authoringModel,
+    workbookSnapshotId: source.workbookPreviewController.workbookSnapshotId,
+    workbookSelectionValuesByRef,
     workbookPreview: source.workbookPreviewController.workbookPreview,
   });
 
@@ -54,13 +62,15 @@ export function useStudioController(
         questionName: draft.blueprintName,
         hasWorkbookSelection,
         hasWorkbookPreview:
-          source.workbookPreviewController.workbookPreview !== null,
+          source.workbookPreviewController.workbookSnapshotId !== null ||
+          source.workbookPreviewController.previewStatus === "ready",
       }),
     [
       draft.authoringModel,
       draft.blueprintName,
       hasWorkbookSelection,
-      source.workbookPreviewController.workbookPreview,
+      source.workbookPreviewController.workbookSnapshotId,
+      source.workbookPreviewController.previewStatus,
     ],
   );
   const save = useSaveBlueprintController({
@@ -90,6 +100,7 @@ export function useStudioController(
 
     if (previousSelectedWorkbookIdRef.current !== draft.selectedWorkbookId) {
       save.clearMessages();
+      setWorkbookSelectionValuesByRef({});
       previousSelectedWorkbookIdRef.current = draft.selectedWorkbookId;
     }
   }, [draft.selectedWorkbookId, save.clearMessages]);
@@ -182,9 +193,13 @@ export function useStudioController(
     saveDialog: save.saveDialog,
     generateDialog: generation.generateDialog,
     workbookPicker: {
-      file: source.workbookPreviewController.workbookFile,
+      workbookSnapshotId: source.workbookPreviewController.workbookSnapshotId,
+      workbookSheets: source.workbookPreviewController.workbookSheets,
+      hasMoreWorkbookSheets:
+        source.workbookPreviewController.hasMoreWorkbookSheets,
+      isLoadingMoreWorkbookSheets:
+        source.workbookPreviewController.isLoadingMoreWorkbookSheets,
       fileName:
-        source.workbookPreviewController.workbookFile?.name ??
         source.selectedWorkbook?.originalName ??
         (draft.selectedWorkbookId ? "Selected source could not be found." : ""),
       open: workbookPickerRequest !== null,
@@ -195,7 +210,13 @@ export function useStudioController(
           setWorkbookPickerRequest(null);
         }
       },
-      onSelect: (selection) => {
+      onLoadMoreWorkbookSheets:
+        source.workbookPreviewController.loadMoreWorkbookSheets,
+      onSelect: (selection: WorkbookRangeSelection) => {
+        setWorkbookSelectionValuesByRef((currentValues) => ({
+          ...currentValues,
+          [selection.reference]: selection.values,
+        }));
         workbookPickerRequest?.onSelect(selection);
         setWorkbookPickerRequest(null);
       },

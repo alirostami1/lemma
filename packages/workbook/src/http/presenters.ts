@@ -4,7 +4,12 @@ import type {
   WorkbookCalculationsResult,
   WorkbookEngineHealthResult,
   WorkbookResult,
+  WorkbookSnapshotCellsResult,
+  WorkbookSnapshotMetadataResult,
+  WorkbookSnapshotRangeBatchResult,
+  WorkbookSnapshotRangeResult,
   WorkbookSnapshotResult,
+  WorkbookSnapshotSheetsResult,
   WorkbookSnapshotsResult,
   WorkbookSnapshotValueResult,
   WorkbooksResult,
@@ -21,8 +26,13 @@ import type {
   Workbook as WorkbookDto,
   WorkbookEngineHealthResponse,
   WorkbookResponse,
+  WorkbookSnapshotCellsResponse,
   WorkbookSnapshot as WorkbookSnapshotDto,
+  WorkbookSnapshotMetadataResponse,
+  WorkbookSnapshotRangeBatchResponse,
+  WorkbookSnapshotRangeResponse,
   WorkbookSnapshotResponse,
+  WorkbookSnapshotSheetsResponse,
   WorkbookSnapshotsResponse,
   WorkbookSnapshotValueResponse,
   WorkbooksResponse,
@@ -64,6 +74,36 @@ export function presentWorkbookSnapshot(
   return {
     workbookSnapshot: toWorkbookSnapshotDto(result.workbookSnapshot),
   };
+}
+
+export function presentWorkbookSnapshotMetadata(
+  result: WorkbookSnapshotMetadataResult,
+): WorkbookSnapshotMetadataResponse {
+  return { workbookSnapshotMetadata: result.workbookSnapshotMetadata };
+}
+
+export function presentWorkbookSnapshotSheets(
+  result: WorkbookSnapshotSheetsResult,
+): WorkbookSnapshotSheetsResponse {
+  return result;
+}
+
+export function presentWorkbookSnapshotCells(
+  result: WorkbookSnapshotCellsResult,
+): WorkbookSnapshotCellsResponse {
+  return { workbookSnapshotCells: result.workbookSnapshotCells };
+}
+
+export function presentWorkbookSnapshotRange(
+  result: WorkbookSnapshotRangeResult,
+): WorkbookSnapshotRangeResponse {
+  return { workbookSnapshotRange: result.workbookSnapshotRange };
+}
+
+export function presentWorkbookSnapshotRangeBatch(
+  result: WorkbookSnapshotRangeBatchResult,
+): WorkbookSnapshotRangeBatchResponse {
+  return { workbookSnapshotRangeBatch: result.workbookSnapshotRangeBatch };
 }
 
 export function presentWorkbookSnapshots(
@@ -111,7 +151,10 @@ function toWorkbookSnapshotDto(
   snapshot: WorkbookSnapshot,
 ): WorkbookSnapshotDto {
   return {
-    ...snapshot,
+    id: snapshot.id,
+    workbookId: snapshot.workbookId,
+    calculationId: snapshot.calculationId,
+    snapshotIndex: snapshot.snapshotIndex,
     createdAt: presentDate(snapshot.createdAt),
   };
 }

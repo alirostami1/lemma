@@ -86,10 +86,16 @@ export function StudioPage(input: StudioRouteSearch = {}) {
           onCreated={studio.source.uploadDialog.onCreated}
         />
         <WorkbookPickerDialog
-          file={studio.workbookPicker.file}
+          workbookSnapshotId={studio.workbookPicker.workbookSnapshotId}
+          workbookSheets={studio.workbookPicker.workbookSheets}
+          hasMoreSheets={studio.workbookPicker.hasMoreWorkbookSheets}
+          isLoadingMoreSheets={
+            studio.workbookPicker.isLoadingMoreWorkbookSheets
+          }
           fileName={studio.workbookPicker.fileName}
           open={studio.workbookPicker.open}
           onOpenChange={studio.workbookPicker.onOpenChange}
+          onLoadMoreSheets={studio.workbookPicker.onLoadMoreWorkbookSheets}
           selectionRequirement={
             studio.workbookPicker.request?.selectionRequirement ?? {}
           }

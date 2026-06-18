@@ -35,6 +35,25 @@ export function parseWorkbookRef(ref: string): ParsedWorkbookRef | null {
   };
 }
 
+export function normalizeWorkbookRef(ref: string): string | null {
+  const parsedRef = parseWorkbookRef(ref);
+  if (!parsedRef) {
+    return null;
+  }
+
+  const startCell = `${columnIndexToLabel(parsedRef.startColumnIndex)}${
+    parsedRef.startRowIndex + 1
+  }`;
+  const endCell = `${columnIndexToLabel(parsedRef.endColumnIndex)}${
+    parsedRef.endRowIndex + 1
+  }`;
+
+  return `${formatWorkbookSheetName(
+    parsedRef.sheetName,
+    true,
+  )}!${startCell}:${endCell}`;
+}
+
 export function resolveWorkbookValue(
   preview: WorkbookPreviewForReferences | null,
   ref: string,

@@ -6,6 +6,7 @@ import type {
   WorkbookPickerRequest,
   WorkbookRangeSelection,
 } from "#/features/questions/table-block-editor";
+import type { WorkbookPickerSheet } from "#/features/questions/use-workbook-picker-cells";
 import type { GenerateQuestionsDialogProps } from "./generation/generation-controller-types";
 import type {
   SaveBlueprintDialogInput,
@@ -90,12 +91,16 @@ export type StudioController = {
   };
   generateDialog: GenerateQuestionsDialogProps;
   workbookPicker: {
-    file: File | null;
+    workbookSnapshotId: string | null;
+    workbookSheets: WorkbookPickerSheet[];
+    hasMoreWorkbookSheets: boolean;
+    isLoadingMoreWorkbookSheets: boolean;
     fileName: string;
     open: boolean;
     request: WorkbookPickerRequest | null;
     openWorkbookPicker: WorkbookPickerController["openWorkbookPicker"];
     onOpenChange(open: boolean): void;
+    onLoadMoreWorkbookSheets(): void;
     onSelect(selection: WorkbookRangeSelection): void;
   };
   readiness: StudioReadiness;

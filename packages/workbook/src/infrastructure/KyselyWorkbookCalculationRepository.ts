@@ -150,10 +150,6 @@ export class KyselyWorkbookCalculationRepository {
       };
     };
 
-    if ("transaction" in this.db) {
-      return this.db.transaction().execute(complete);
-    }
-
     return complete(this.db);
   }
 }

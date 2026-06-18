@@ -4,8 +4,13 @@ import {
   deleteWorkbook as deleteWorkbookGenerated,
   getWorkbookCalculation as getWorkbookCalculationGenerated,
   getWorkbook as getWorkbookGenerated,
+  getWorkbookSnapshotCells as getWorkbookSnapshotCellsGenerated,
   getWorkbookSnapshot as getWorkbookSnapshotGenerated,
+  getWorkbookSnapshotMetadata as getWorkbookSnapshotMetadataGenerated,
+  getWorkbookSnapshotRangeBatch as getWorkbookSnapshotRangeBatchGenerated,
+  getWorkbookSnapshotRange as getWorkbookSnapshotRangeGenerated,
   listWorkbookCalculations as listWorkbookCalculationsGenerated,
+  listWorkbookSnapshotSheets as listWorkbookSnapshotSheetsGenerated,
   listWorkbookSnapshots as listWorkbookSnapshotsGenerated,
   listWorkbooks as listWorkbooksGenerated,
   updateWorkbook as updateWorkbookGenerated,
@@ -15,7 +20,12 @@ import {
   mapWorkbookCalculationResponse,
   mapWorkbookCalculationsResponse,
   mapWorkbookResponse,
+  mapWorkbookSnapshotCellsResponse,
+  mapWorkbookSnapshotMetadataResponse,
+  mapWorkbookSnapshotRangeBatchResponse,
+  mapWorkbookSnapshotRangeResponse,
   mapWorkbookSnapshotResponse,
+  mapWorkbookSnapshotSheetsResponse,
   mapWorkbookSnapshotsResponse,
   mapWorkbooksResponse,
 } from "./mappers";
@@ -23,7 +33,11 @@ import type {
   CreateWorkbookCalculationInput,
   CreateWorkbookInput,
   DeleteWorkbookInput,
+  GetWorkbookSnapshotCellsInput,
+  GetWorkbookSnapshotRangeBatchInput,
+  GetWorkbookSnapshotRangeInput,
   ListWorkbookCalculationsInput,
+  ListWorkbookSnapshotSheetsInput,
   ListWorkbookSnapshotsInput,
   ListWorkbooksInput,
   UpdateWorkbookInput,
@@ -32,6 +46,11 @@ import type {
   WorkbookCalculation,
   WorkbookCalculationsPage,
   WorkbookSnapshot,
+  WorkbookSnapshotCells,
+  WorkbookSnapshotMetadata,
+  WorkbookSnapshotRange,
+  WorkbookSnapshotRangeBatch,
+  WorkbookSnapshotSheetsPage,
   WorkbookSnapshotsPage,
   WorkbooksPage,
 } from "./model";
@@ -111,5 +130,54 @@ export async function getWorkbookSnapshot(
 ): Promise<WorkbookSnapshot> {
   return mapWorkbookSnapshotResponse(
     await getWorkbookSnapshotGenerated(workbookSnapshotId),
+  );
+}
+
+export async function getWorkbookSnapshotMetadata(
+  workbookSnapshotId: string,
+): Promise<WorkbookSnapshotMetadata> {
+  return mapWorkbookSnapshotMetadataResponse(
+    await getWorkbookSnapshotMetadataGenerated(workbookSnapshotId),
+  );
+}
+
+export async function listWorkbookSnapshotSheets({
+  workbookSnapshotId,
+  ...input
+}: ListWorkbookSnapshotSheetsInput): Promise<WorkbookSnapshotSheetsPage> {
+  return mapWorkbookSnapshotSheetsResponse(
+    await listWorkbookSnapshotSheetsGenerated(workbookSnapshotId, input),
+  );
+}
+
+export async function getWorkbookSnapshotCells({
+  workbookSnapshotId,
+  sheetIndex,
+  ...input
+}: GetWorkbookSnapshotCellsInput): Promise<WorkbookSnapshotCells> {
+  return mapWorkbookSnapshotCellsResponse(
+    await getWorkbookSnapshotCellsGenerated(
+      workbookSnapshotId,
+      String(sheetIndex),
+      input,
+    ),
+  );
+}
+
+export async function getWorkbookSnapshotRange({
+  workbookSnapshotId,
+  ...input
+}: GetWorkbookSnapshotRangeInput): Promise<WorkbookSnapshotRange> {
+  return mapWorkbookSnapshotRangeResponse(
+    await getWorkbookSnapshotRangeGenerated(workbookSnapshotId, input),
+  );
+}
+
+export async function getWorkbookSnapshotRangeBatch({
+  workbookSnapshotId,
+  refs,
+}: GetWorkbookSnapshotRangeBatchInput): Promise<WorkbookSnapshotRangeBatch> {
+  return mapWorkbookSnapshotRangeBatchResponse(
+    await getWorkbookSnapshotRangeBatchGenerated(workbookSnapshotId, { refs }),
   );
 }

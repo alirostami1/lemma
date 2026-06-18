@@ -11,6 +11,18 @@ and calculation orchestration.
 - HTTP handlers and generated Hono route helpers
 - OpenAPI fragment
 
+## Snapshot Values
+
+Workbook values are backend-owned. The worker stores sanitized sparse snapshot
+values after inspection/calculation, and Studio reads bounded preview windows
+through workbook APIs. Normal source selection does not download or parse the
+original workbook in the browser.
+
+Public snapshot responses do not expose the full sparse value payload. Callers
+use metadata for snapshot status, paginated sheet lists for sheet details, cells
+for bounded displayed sheet windows, range for bounded selections, and value
+resolution for single references.
+
 ## Used By
 
 - API app

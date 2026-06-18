@@ -5,6 +5,7 @@ import { createUser } from "@lemma/identity/domain";
 import {
   createWorkbookCalculation,
   createWorkbookSnapshot,
+  InvalidWorkbookSnapshotReferenceError,
   userId,
   type Workbook,
   type WorkbookCalculation,
@@ -57,6 +58,201 @@ describe("WorkbookSnapshotService", () => {
     assert.equal(result.value, "42");
   });
 
+  it("lists snapshot sheets for the owner", async () => {
+    const harness = createHarness();
+
+    const result = await harness.service.listWorkbookSnapshotSheets({
+      currentUser: currentUser(ownerUserId),
+      workbookSnapshotId: targetSnapshotId,
+      limit: 1,
+    });
+
+    assert.deepEqual(result, {
+      workbookSnapshotSheets: [
+        {
+          sheetIndex: 0,
+          name: "Sheet1",
+          rowCount: 2,
+          columnCount: 2,
+          nonEmptyCellCount: 2,
+        },
+      ],
+      nextCursor: null,
+    });
+  });
+
+  it("returns snapshot metadata for the owner", async () => {
+    const harness = createHarness();
+
+    const result = await harness.service.getWorkbookSnapshotMetadata({
+      currentUser: currentUser(ownerUserId),
+      workbookSnapshotId: targetSnapshotId,
+    });
+
+    assert.deepEqual(result.workbookSnapshotMetadata, {
+      status: "ready",
+      sheetCount: 1,
+      cellCount: 2,
+    });
+  });
+
+  it("returns displayed sheet cells with type metadata", async () => {
+    const harness = createHarness();
+
+    const result = await harness.service.getWorkbookSnapshotCells({
+      currentUser: currentUser(ownerUserId),
+      workbookSnapshotId: targetSnapshotId,
+      sheetIndex: 0,
+      startRow: 1,
+      startColumn: 1,
+      rowCount: 2,
+      columnCount: 2,
+    });
+
+    assert.deepEqual(result.workbookSnapshotCells, {
+      sheetIndex: 0,
+      sheetName: "Sheet1",
+      startRow: 1,
+      startColumn: 1,
+      rowCount: 2,
+      columnCount: 2,
+      rows: [
+        ["42", ""],
+        ["", "84"],
+      ],
+      cellTypes: [
+        ["number", "blank"],
+        ["blank", "number"],
+      ],
+    });
+  });
+
+  it("returns selected ranges with normalized references", async () => {
+    const harness = createHarness();
+
+    const result = await harness.service.getWorkbookSnapshotRange({
+      currentUser: currentUser(ownerUserId),
+      workbookSnapshotId: targetSnapshotId,
+      ref: "Sheet1!A1:B2",
+    });
+
+    assert.deepEqual(result.workbookSnapshotRange, {
+      sheetIndex: 0,
+      sheetName: "Sheet1",
+      startRow: 1,
+      startColumn: 1,
+      rowCount: 2,
+      columnCount: 2,
+      rows: [
+        ["42", ""],
+        ["", "84"],
+      ],
+      cellTypes: [
+        ["number", "blank"],
+        ["blank", "number"],
+      ],
+      ref: "'Sheet1'!A1:B2",
+      startCellAddress: "A1",
+      endCellAddress: "B2",
+    });
+  });
+
+  it("accepts quoted single-cell refs for selected ranges", async () => {
+    const harness = createHarness();
+
+    const result = await harness.service.getWorkbookSnapshotRange({
+      currentUser: currentUser(ownerUserId),
+      workbookSnapshotId: targetSnapshotId,
+      ref: "'Sheet1'!A1",
+    });
+
+    assert.deepEqual(result.workbookSnapshotRange, {
+      sheetIndex: 0,
+      sheetName: "Sheet1",
+      startRow: 1,
+      startColumn: 1,
+      rowCount: 1,
+      columnCount: 1,
+      rows: [["42"]],
+      cellTypes: [["number"]],
+      ref: "'Sheet1'!A1:A1",
+      startCellAddress: "A1",
+      endCellAddress: "A1",
+    });
+  });
+
+  it("rejects sheet page limits outside the public bounds", async () => {
+    const harness = createHarness();
+
+    await assert.rejects(
+      () =>
+        harness.service.listWorkbookSnapshotSheets({
+          currentUser: currentUser(ownerUserId),
+          workbookSnapshotId: targetSnapshotId,
+          limit: 0,
+        }),
+      InvalidWorkbookSnapshotReferenceError,
+    );
+  });
+
+  it("rejects snapshot ranges outside public bounds", async () => {
+    const harness = createHarness();
+
+    await assert.rejects(
+      () =>
+        harness.service.getWorkbookSnapshotCells({
+          currentUser: currentUser(ownerUserId),
+          workbookSnapshotId: targetSnapshotId,
+          sheetIndex: 0,
+          startRow: 1,
+          startColumn: 1,
+          rowCount: 1,
+          columnCount: 51,
+        }),
+      InvalidWorkbookSnapshotReferenceError,
+    );
+  });
+
+  it("rejects cell windows above the total cell cap", async () => {
+    const harness = createHarness();
+
+    await assert.rejects(
+      () =>
+        harness.service.getWorkbookSnapshotCells({
+          currentUser: currentUser(ownerUserId),
+          workbookSnapshotId: targetSnapshotId,
+          sheetIndex: 0,
+          startRow: 1,
+          startColumn: 1,
+          rowCount: 100,
+          columnCount: 50,
+        }),
+      InvalidWorkbookSnapshotReferenceError,
+    );
+  });
+
+  it("rejects cell windows above the value byte cap", async () => {
+    const harness = createHarness({
+      cells: { A1: "x".repeat(256_001) },
+      rowCount: 1,
+      columnCount: 1,
+    });
+
+    await assert.rejects(
+      () =>
+        harness.service.getWorkbookSnapshotCells({
+          currentUser: currentUser(ownerUserId),
+          workbookSnapshotId: targetSnapshotId,
+          sheetIndex: 0,
+          startRow: 1,
+          startColumn: 1,
+          rowCount: 1,
+          columnCount: 1,
+        }),
+      InvalidWorkbookSnapshotReferenceError,
+    );
+  });
+
   it("denies snapshots for other users", async () => {
     const harness = createHarness();
 
@@ -71,10 +267,16 @@ describe("WorkbookSnapshotService", () => {
   });
 });
 
-function createHarness() {
+function createHarness(
+  snapshotInput: {
+    cells?: Record<string, string>;
+    rowCount?: number;
+    columnCount?: number;
+  } = {},
+) {
   const repository = new FakeWorkbookRepository();
   repository.calculations.set(targetCalculationId, createCalculation());
-  repository.snapshots.set(targetSnapshotId, createSnapshot());
+  repository.snapshots.set(targetSnapshotId, createSnapshot(snapshotInput));
   return {
     repository,
     service: new WorkbookSnapshotService({ workbookRepository: repository }),
@@ -94,7 +296,14 @@ function createCalculation(): WorkbookCalculation {
   );
 }
 
-function createSnapshot(): WorkbookSnapshot {
+function createSnapshot(
+  input: {
+    cells?: Record<string, string>;
+    rowCount?: number;
+    columnCount?: number;
+  } = {},
+): WorkbookSnapshot {
+  const cells = input.cells ?? { A1: "42", B2: "84" };
   return createWorkbookSnapshot(
     {
       id: targetSnapshotId,
@@ -105,9 +314,10 @@ function createSnapshot(): WorkbookSnapshot {
         sheets: [
           {
             name: "Sheet1",
-            cells: { A1: "42" },
-            rowCount: 1,
-            columnCount: 1,
+            cells,
+            cellTypes: { A1: "number", B2: "number" },
+            rowCount: input.rowCount ?? 2,
+            columnCount: input.columnCount ?? 2,
           },
         ],
       },

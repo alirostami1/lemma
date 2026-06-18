@@ -28,7 +28,11 @@ import type {
   CreateWorkbookCalculationRequest,
   CreateWorkbookRequest,
   ForbiddenResponse,
+  GetWorkbookSnapshotCellsParams,
+  GetWorkbookSnapshotRangeBatchRequest,
+  GetWorkbookSnapshotRangeParams,
   ListWorkbookCalculationsParams,
+  ListWorkbookSnapshotSheetsParams,
   ListWorkbookSnapshotsParams,
   ListWorkbooksParams,
   NotFoundResponse,
@@ -40,7 +44,12 @@ import type {
   WorkbookCalculationsResponse,
   WorkbookEngineHealthResponse,
   WorkbookResponse,
+  WorkbookSnapshotCellsResponse,
+  WorkbookSnapshotMetadataResponse,
+  WorkbookSnapshotRangeBatchResponse,
+  WorkbookSnapshotRangeResponse,
   WorkbookSnapshotResponse,
+  WorkbookSnapshotSheetsResponse,
   WorkbookSnapshotsResponse,
   WorkbookSnapshotValueResponse,
   WorkbooksResponse,
@@ -2257,6 +2266,1232 @@ export const useGetGetWorkbookSnapshotQueryData = () => {
     );
 };
 
+export const getGetWorkbookSnapshotMetadataUrl = (
+  workbookSnapshotId: string,
+) => {
+  return `/api/v1/workbook-snapshots/${workbookSnapshotId}/metadata`;
+};
+
+/**
+ * @summary Get workbook snapshot metadata
+ */
+export const getWorkbookSnapshotMetadata = async (
+  workbookSnapshotId: string,
+  options?: RequestInit,
+): Promise<WorkbookSnapshotMetadataResponse> => {
+  return authedFetch<WorkbookSnapshotMetadataResponse>(
+    getGetWorkbookSnapshotMetadataUrl(workbookSnapshotId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetWorkbookSnapshotMetadataQueryKey = (
+  workbookSnapshotId: string,
+) => {
+  return [`/api/v1/workbook-snapshots/${workbookSnapshotId}/metadata`] as const;
+};
+
+export const getGetWorkbookSnapshotMetadataQueryOptions = <
+  TData = Awaited<ReturnType<typeof getWorkbookSnapshotMetadata>>,
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+>(
+  workbookSnapshotId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWorkbookSnapshotMetadata>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetWorkbookSnapshotMetadataQueryKey(workbookSnapshotId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getWorkbookSnapshotMetadata>>
+  > = ({ signal }) =>
+    getWorkbookSnapshotMetadata(workbookSnapshotId, {
+      signal,
+      ...requestOptions,
+    });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: workbookSnapshotId !== null && workbookSnapshotId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getWorkbookSnapshotMetadata>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetWorkbookSnapshotMetadataQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getWorkbookSnapshotMetadata>>
+>;
+export type GetWorkbookSnapshotMetadataQueryError =
+  | BadRequestResponse
+  | UnauthorizedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | ConflictResponse
+  | UpstreamWorkbookEngineResponseResponse;
+
+export function useGetWorkbookSnapshotMetadata<
+  TData = Awaited<ReturnType<typeof getWorkbookSnapshotMetadata>>,
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+>(
+  workbookSnapshotId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWorkbookSnapshotMetadata>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWorkbookSnapshotMetadata>>,
+          TError,
+          Awaited<ReturnType<typeof getWorkbookSnapshotMetadata>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetWorkbookSnapshotMetadata<
+  TData = Awaited<ReturnType<typeof getWorkbookSnapshotMetadata>>,
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+>(
+  workbookSnapshotId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWorkbookSnapshotMetadata>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWorkbookSnapshotMetadata>>,
+          TError,
+          Awaited<ReturnType<typeof getWorkbookSnapshotMetadata>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetWorkbookSnapshotMetadata<
+  TData = Awaited<ReturnType<typeof getWorkbookSnapshotMetadata>>,
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+>(
+  workbookSnapshotId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWorkbookSnapshotMetadata>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get workbook snapshot metadata
+ */
+
+export function useGetWorkbookSnapshotMetadata<
+  TData = Awaited<ReturnType<typeof getWorkbookSnapshotMetadata>>,
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+>(
+  workbookSnapshotId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWorkbookSnapshotMetadata>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetWorkbookSnapshotMetadataQueryOptions(
+    workbookSnapshotId,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get workbook snapshot metadata
+ */
+export const invalidateGetWorkbookSnapshotMetadata = async (
+  queryClient: QueryClient,
+  workbookSnapshotId: string,
+  options?: InvalidateOptions,
+): Promise<QueryClient> => {
+  await queryClient.invalidateQueries(
+    { queryKey: getGetWorkbookSnapshotMetadataQueryKey(workbookSnapshotId) },
+    options,
+  );
+
+  return queryClient;
+};
+
+/**
+ * @summary Get workbook snapshot metadata
+ */
+export const useGetGetWorkbookSnapshotMetadataQueryData = () => {
+  const queryClient = useQueryClient();
+  return (workbookSnapshotId: string) =>
+    queryClient.getQueryData<
+      Awaited<ReturnType<typeof getWorkbookSnapshotMetadata>>
+    >(getGetWorkbookSnapshotMetadataQueryKey(workbookSnapshotId));
+};
+
+export const getListWorkbookSnapshotSheetsUrl = (
+  workbookSnapshotId: string,
+  params?: ListWorkbookSnapshotSheetsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/workbook-snapshots/${workbookSnapshotId}/sheets?${stringifiedParams}`
+    : `/api/v1/workbook-snapshots/${workbookSnapshotId}/sheets`;
+};
+
+/**
+ * @summary List workbook snapshot sheets
+ */
+export const listWorkbookSnapshotSheets = async (
+  workbookSnapshotId: string,
+  params?: ListWorkbookSnapshotSheetsParams,
+  options?: RequestInit,
+): Promise<WorkbookSnapshotSheetsResponse> => {
+  return authedFetch<WorkbookSnapshotSheetsResponse>(
+    getListWorkbookSnapshotSheetsUrl(workbookSnapshotId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListWorkbookSnapshotSheetsQueryKey = (
+  workbookSnapshotId: string,
+  params?: ListWorkbookSnapshotSheetsParams,
+) => {
+  return [
+    `/api/v1/workbook-snapshots/${workbookSnapshotId}/sheets`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListWorkbookSnapshotSheetsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listWorkbookSnapshotSheets>>,
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+>(
+  workbookSnapshotId: string,
+  params?: ListWorkbookSnapshotSheetsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listWorkbookSnapshotSheets>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getListWorkbookSnapshotSheetsQueryKey(workbookSnapshotId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listWorkbookSnapshotSheets>>
+  > = ({ signal }) =>
+    listWorkbookSnapshotSheets(workbookSnapshotId, params, {
+      signal,
+      ...requestOptions,
+    });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: workbookSnapshotId !== null && workbookSnapshotId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listWorkbookSnapshotSheets>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListWorkbookSnapshotSheetsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listWorkbookSnapshotSheets>>
+>;
+export type ListWorkbookSnapshotSheetsQueryError =
+  | BadRequestResponse
+  | UnauthorizedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | ConflictResponse
+  | UpstreamWorkbookEngineResponseResponse;
+
+export function useListWorkbookSnapshotSheets<
+  TData = Awaited<ReturnType<typeof listWorkbookSnapshotSheets>>,
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+>(
+  workbookSnapshotId: string,
+  params: undefined | ListWorkbookSnapshotSheetsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listWorkbookSnapshotSheets>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listWorkbookSnapshotSheets>>,
+          TError,
+          Awaited<ReturnType<typeof listWorkbookSnapshotSheets>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListWorkbookSnapshotSheets<
+  TData = Awaited<ReturnType<typeof listWorkbookSnapshotSheets>>,
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+>(
+  workbookSnapshotId: string,
+  params?: ListWorkbookSnapshotSheetsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listWorkbookSnapshotSheets>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listWorkbookSnapshotSheets>>,
+          TError,
+          Awaited<ReturnType<typeof listWorkbookSnapshotSheets>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListWorkbookSnapshotSheets<
+  TData = Awaited<ReturnType<typeof listWorkbookSnapshotSheets>>,
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+>(
+  workbookSnapshotId: string,
+  params?: ListWorkbookSnapshotSheetsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listWorkbookSnapshotSheets>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary List workbook snapshot sheets
+ */
+
+export function useListWorkbookSnapshotSheets<
+  TData = Awaited<ReturnType<typeof listWorkbookSnapshotSheets>>,
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+>(
+  workbookSnapshotId: string,
+  params?: ListWorkbookSnapshotSheetsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listWorkbookSnapshotSheets>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListWorkbookSnapshotSheetsQueryOptions(
+    workbookSnapshotId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List workbook snapshot sheets
+ */
+export const invalidateListWorkbookSnapshotSheets = async (
+  queryClient: QueryClient,
+  workbookSnapshotId: string,
+  params?: ListWorkbookSnapshotSheetsParams,
+  options?: InvalidateOptions,
+): Promise<QueryClient> => {
+  await queryClient.invalidateQueries(
+    {
+      queryKey: getListWorkbookSnapshotSheetsQueryKey(
+        workbookSnapshotId,
+        params,
+      ),
+    },
+    options,
+  );
+
+  return queryClient;
+};
+
+/**
+ * @summary List workbook snapshot sheets
+ */
+export const useGetListWorkbookSnapshotSheetsQueryData = () => {
+  const queryClient = useQueryClient();
+  return (
+    workbookSnapshotId: string,
+    params?: ListWorkbookSnapshotSheetsParams,
+  ) =>
+    queryClient.getQueryData<
+      Awaited<ReturnType<typeof listWorkbookSnapshotSheets>>
+    >(getListWorkbookSnapshotSheetsQueryKey(workbookSnapshotId, params));
+};
+
+export const getGetWorkbookSnapshotCellsUrl = (
+  workbookSnapshotId: string,
+  sheetIndex: string,
+  params: GetWorkbookSnapshotCellsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/workbook-snapshots/${workbookSnapshotId}/sheets/${sheetIndex}/cells?${stringifiedParams}`
+    : `/api/v1/workbook-snapshots/${workbookSnapshotId}/sheets/${sheetIndex}/cells`;
+};
+
+/**
+ * @summary Get workbook snapshot cells
+ */
+export const getWorkbookSnapshotCells = async (
+  workbookSnapshotId: string,
+  sheetIndex: string,
+  params: GetWorkbookSnapshotCellsParams,
+  options?: RequestInit,
+): Promise<WorkbookSnapshotCellsResponse> => {
+  return authedFetch<WorkbookSnapshotCellsResponse>(
+    getGetWorkbookSnapshotCellsUrl(workbookSnapshotId, sheetIndex, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetWorkbookSnapshotCellsQueryKey = (
+  workbookSnapshotId: string,
+  sheetIndex: string,
+  params?: GetWorkbookSnapshotCellsParams,
+) => {
+  return [
+    `/api/v1/workbook-snapshots/${workbookSnapshotId}/sheets/${sheetIndex}/cells`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetWorkbookSnapshotCellsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getWorkbookSnapshotCells>>,
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+>(
+  workbookSnapshotId: string,
+  sheetIndex: string,
+  params: GetWorkbookSnapshotCellsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWorkbookSnapshotCells>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetWorkbookSnapshotCellsQueryKey(workbookSnapshotId, sheetIndex, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getWorkbookSnapshotCells>>
+  > = ({ signal }) =>
+    getWorkbookSnapshotCells(workbookSnapshotId, sheetIndex, params, {
+      signal,
+      ...requestOptions,
+    });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled:
+      workbookSnapshotId !== null &&
+      workbookSnapshotId !== undefined &&
+      sheetIndex !== null &&
+      sheetIndex !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getWorkbookSnapshotCells>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetWorkbookSnapshotCellsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getWorkbookSnapshotCells>>
+>;
+export type GetWorkbookSnapshotCellsQueryError =
+  | BadRequestResponse
+  | UnauthorizedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | ConflictResponse
+  | UpstreamWorkbookEngineResponseResponse;
+
+export function useGetWorkbookSnapshotCells<
+  TData = Awaited<ReturnType<typeof getWorkbookSnapshotCells>>,
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+>(
+  workbookSnapshotId: string,
+  sheetIndex: string,
+  params: GetWorkbookSnapshotCellsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWorkbookSnapshotCells>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWorkbookSnapshotCells>>,
+          TError,
+          Awaited<ReturnType<typeof getWorkbookSnapshotCells>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetWorkbookSnapshotCells<
+  TData = Awaited<ReturnType<typeof getWorkbookSnapshotCells>>,
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+>(
+  workbookSnapshotId: string,
+  sheetIndex: string,
+  params: GetWorkbookSnapshotCellsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWorkbookSnapshotCells>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWorkbookSnapshotCells>>,
+          TError,
+          Awaited<ReturnType<typeof getWorkbookSnapshotCells>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetWorkbookSnapshotCells<
+  TData = Awaited<ReturnType<typeof getWorkbookSnapshotCells>>,
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+>(
+  workbookSnapshotId: string,
+  sheetIndex: string,
+  params: GetWorkbookSnapshotCellsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWorkbookSnapshotCells>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get workbook snapshot cells
+ */
+
+export function useGetWorkbookSnapshotCells<
+  TData = Awaited<ReturnType<typeof getWorkbookSnapshotCells>>,
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+>(
+  workbookSnapshotId: string,
+  sheetIndex: string,
+  params: GetWorkbookSnapshotCellsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWorkbookSnapshotCells>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetWorkbookSnapshotCellsQueryOptions(
+    workbookSnapshotId,
+    sheetIndex,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get workbook snapshot cells
+ */
+export const invalidateGetWorkbookSnapshotCells = async (
+  queryClient: QueryClient,
+  workbookSnapshotId: string,
+  sheetIndex: string,
+  params: GetWorkbookSnapshotCellsParams,
+  options?: InvalidateOptions,
+): Promise<QueryClient> => {
+  await queryClient.invalidateQueries(
+    {
+      queryKey: getGetWorkbookSnapshotCellsQueryKey(
+        workbookSnapshotId,
+        sheetIndex,
+        params,
+      ),
+    },
+    options,
+  );
+
+  return queryClient;
+};
+
+/**
+ * @summary Get workbook snapshot cells
+ */
+export const useGetGetWorkbookSnapshotCellsQueryData = () => {
+  const queryClient = useQueryClient();
+  return (
+    workbookSnapshotId: string,
+    sheetIndex: string,
+    params: GetWorkbookSnapshotCellsParams,
+  ) =>
+    queryClient.getQueryData<
+      Awaited<ReturnType<typeof getWorkbookSnapshotCells>>
+    >(
+      getGetWorkbookSnapshotCellsQueryKey(
+        workbookSnapshotId,
+        sheetIndex,
+        params,
+      ),
+    );
+};
+
+export const getGetWorkbookSnapshotRangeUrl = (
+  workbookSnapshotId: string,
+  params: GetWorkbookSnapshotRangeParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/workbook-snapshots/${workbookSnapshotId}/range?${stringifiedParams}`
+    : `/api/v1/workbook-snapshots/${workbookSnapshotId}/range`;
+};
+
+/**
+ * @summary Get workbook snapshot range
+ */
+export const getWorkbookSnapshotRange = async (
+  workbookSnapshotId: string,
+  params: GetWorkbookSnapshotRangeParams,
+  options?: RequestInit,
+): Promise<WorkbookSnapshotRangeResponse> => {
+  return authedFetch<WorkbookSnapshotRangeResponse>(
+    getGetWorkbookSnapshotRangeUrl(workbookSnapshotId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetWorkbookSnapshotRangeQueryKey = (
+  workbookSnapshotId: string,
+  params?: GetWorkbookSnapshotRangeParams,
+) => {
+  return [
+    `/api/v1/workbook-snapshots/${workbookSnapshotId}/range`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetWorkbookSnapshotRangeQueryOptions = <
+  TData = Awaited<ReturnType<typeof getWorkbookSnapshotRange>>,
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+>(
+  workbookSnapshotId: string,
+  params: GetWorkbookSnapshotRangeParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWorkbookSnapshotRange>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetWorkbookSnapshotRangeQueryKey(workbookSnapshotId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getWorkbookSnapshotRange>>
+  > = ({ signal }) =>
+    getWorkbookSnapshotRange(workbookSnapshotId, params, {
+      signal,
+      ...requestOptions,
+    });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: workbookSnapshotId !== null && workbookSnapshotId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getWorkbookSnapshotRange>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetWorkbookSnapshotRangeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getWorkbookSnapshotRange>>
+>;
+export type GetWorkbookSnapshotRangeQueryError =
+  | BadRequestResponse
+  | UnauthorizedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | ConflictResponse
+  | UpstreamWorkbookEngineResponseResponse;
+
+export function useGetWorkbookSnapshotRange<
+  TData = Awaited<ReturnType<typeof getWorkbookSnapshotRange>>,
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+>(
+  workbookSnapshotId: string,
+  params: GetWorkbookSnapshotRangeParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWorkbookSnapshotRange>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWorkbookSnapshotRange>>,
+          TError,
+          Awaited<ReturnType<typeof getWorkbookSnapshotRange>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetWorkbookSnapshotRange<
+  TData = Awaited<ReturnType<typeof getWorkbookSnapshotRange>>,
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+>(
+  workbookSnapshotId: string,
+  params: GetWorkbookSnapshotRangeParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWorkbookSnapshotRange>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWorkbookSnapshotRange>>,
+          TError,
+          Awaited<ReturnType<typeof getWorkbookSnapshotRange>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetWorkbookSnapshotRange<
+  TData = Awaited<ReturnType<typeof getWorkbookSnapshotRange>>,
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+>(
+  workbookSnapshotId: string,
+  params: GetWorkbookSnapshotRangeParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWorkbookSnapshotRange>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get workbook snapshot range
+ */
+
+export function useGetWorkbookSnapshotRange<
+  TData = Awaited<ReturnType<typeof getWorkbookSnapshotRange>>,
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+>(
+  workbookSnapshotId: string,
+  params: GetWorkbookSnapshotRangeParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWorkbookSnapshotRange>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetWorkbookSnapshotRangeQueryOptions(
+    workbookSnapshotId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get workbook snapshot range
+ */
+export const invalidateGetWorkbookSnapshotRange = async (
+  queryClient: QueryClient,
+  workbookSnapshotId: string,
+  params: GetWorkbookSnapshotRangeParams,
+  options?: InvalidateOptions,
+): Promise<QueryClient> => {
+  await queryClient.invalidateQueries(
+    {
+      queryKey: getGetWorkbookSnapshotRangeQueryKey(workbookSnapshotId, params),
+    },
+    options,
+  );
+
+  return queryClient;
+};
+
+/**
+ * @summary Get workbook snapshot range
+ */
+export const useGetGetWorkbookSnapshotRangeQueryData = () => {
+  const queryClient = useQueryClient();
+  return (workbookSnapshotId: string, params: GetWorkbookSnapshotRangeParams) =>
+    queryClient.getQueryData<
+      Awaited<ReturnType<typeof getWorkbookSnapshotRange>>
+    >(getGetWorkbookSnapshotRangeQueryKey(workbookSnapshotId, params));
+};
+
+export const getGetWorkbookSnapshotRangeBatchUrl = (
+  workbookSnapshotId: string,
+) => {
+  return `/api/v1/workbook-snapshots/${workbookSnapshotId}/ranges`;
+};
+
+/**
+ * @summary Get workbook snapshot ranges
+ */
+export const getWorkbookSnapshotRangeBatch = async (
+  workbookSnapshotId: string,
+  getWorkbookSnapshotRangeBatchRequest: GetWorkbookSnapshotRangeBatchRequest,
+  options?: RequestInit,
+): Promise<WorkbookSnapshotRangeBatchResponse> => {
+  return authedFetch<WorkbookSnapshotRangeBatchResponse>(
+    getGetWorkbookSnapshotRangeBatchUrl(workbookSnapshotId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(getWorkbookSnapshotRangeBatchRequest),
+    },
+  );
+};
+
+export const getGetWorkbookSnapshotRangeBatchMutationOptions = <
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof getWorkbookSnapshotRangeBatch>>,
+    TError,
+    { workbookSnapshotId: string; data: GetWorkbookSnapshotRangeBatchRequest },
+    TContext
+  >;
+  request?: SecondParameter<typeof authedFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof getWorkbookSnapshotRangeBatch>>,
+  TError,
+  { workbookSnapshotId: string; data: GetWorkbookSnapshotRangeBatchRequest },
+  TContext
+> => {
+  const mutationKey = ["getWorkbookSnapshotRangeBatch"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof getWorkbookSnapshotRangeBatch>>,
+    { workbookSnapshotId: string; data: GetWorkbookSnapshotRangeBatchRequest }
+  > = (props) => {
+    const { workbookSnapshotId, data } = props ?? {};
+
+    return getWorkbookSnapshotRangeBatch(
+      workbookSnapshotId,
+      data,
+      requestOptions,
+    );
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GetWorkbookSnapshotRangeBatchMutationResult = NonNullable<
+  Awaited<ReturnType<typeof getWorkbookSnapshotRangeBatch>>
+>;
+export type GetWorkbookSnapshotRangeBatchMutationBody =
+  GetWorkbookSnapshotRangeBatchRequest;
+export type GetWorkbookSnapshotRangeBatchMutationError =
+  | BadRequestResponse
+  | UnauthorizedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | ConflictResponse
+  | UpstreamWorkbookEngineResponseResponse;
+
+/**
+ * @summary Get workbook snapshot ranges
+ */
+export const useGetWorkbookSnapshotRangeBatch = <
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof getWorkbookSnapshotRangeBatch>>,
+      TError,
+      {
+        workbookSnapshotId: string;
+        data: GetWorkbookSnapshotRangeBatchRequest;
+      },
+      TContext
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof getWorkbookSnapshotRangeBatch>>,
+  TError,
+  { workbookSnapshotId: string; data: GetWorkbookSnapshotRangeBatchRequest },
+  TContext
+> => {
+  return useMutation(
+    getGetWorkbookSnapshotRangeBatchMutationOptions(options),
+    queryClient,
+  );
+};
 export const getResolveWorkbookSnapshotValueUrl = (
   workbookSnapshotId: string,
   params: ResolveWorkbookSnapshotValueParams,

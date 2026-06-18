@@ -1,141 +1,268 @@
-import { useEffect, useRef, useState } from "react";
-import { useCreateFileDownloadUrl } from "#/domains/files/hooks";
+import { useMemo } from "react";
+import type { WorkbookPreview } from "#/domains/questions/workbook-preview";
 import {
-  parseWorkbookPreview,
-  type WorkbookPreview,
-} from "#/domains/questions/workbook-preview";
+  useWorkbookCalculationsQuery,
+  useWorkbookSnapshotCellsQuery,
+  useWorkbookSnapshotMetadataQuery,
+  useWorkbookSnapshotSheetsInfiniteQuery,
+  useWorkbookSnapshotsQuery,
+} from "#/domains/workbooks/hooks";
+import type {
+  WorkbookSnapshotCells,
+  WorkbookSnapshotSheet,
+} from "#/domains/workbooks/model";
 
 export type SelectedWorkbookPreviewController = {
-  workbookFile: File | null;
   workbookPreview: WorkbookPreview | null;
+  workbookSnapshotId: string | null;
+  workbookSheets: WorkbookSnapshotSheet[];
   workbookPreviewError: string | null;
   isWorkbookPreviewPending: boolean;
+  needsWorkbookPreviewCalculation: boolean;
+  hasMoreWorkbookSheets: boolean;
+  isLoadingMoreWorkbookSheets: boolean;
+  loadMoreWorkbookSheets(): void;
   previewStatus: "idle" | "loading" | "ready" | "error";
 };
 
+const SOURCE_PREVIEW_REFETCH_INTERVAL_MS = 1_000;
+const RETRIABLE_PREVIEW_CALCULATION_ERRORS = new Set([
+  "values must be JSON-compatible.",
+]);
+
 export function useSelectedWorkbookPreview({
+  loadPickerPreview,
   selectedWorkbook,
 }: {
+  loadPickerPreview: boolean;
   selectedWorkbook: {
-    fileId: string;
+    id: string;
     originalName: string;
     status: string;
   } | null;
 }): SelectedWorkbookPreviewController {
-  const {
-    mutateAsync: createDownloadUrl,
-    isPending: isWorkbookPreviewPending,
-  } = useCreateFileDownloadUrl();
-  const createDownloadUrlRef = useRef(createDownloadUrl);
-  const loadedFileKeyRef = useRef<string | null>(null);
-  const [workbookFile, setWorkbookFile] = useState<File | null>(null);
-  const [workbookPreview, setWorkbookPreview] =
-    useState<WorkbookPreview | null>(null);
-  const [workbookPreviewError, setWorkbookPreviewError] = useState<
-    string | null
-  >(null);
-  const [previewStatus, setPreviewStatus] =
-    useState<SelectedWorkbookPreviewController["previewStatus"]>("idle");
-
-  useEffect(() => {
-    createDownloadUrlRef.current = createDownloadUrl;
-  }, [createDownloadUrl]);
-
-  const selectedFileId = selectedWorkbook?.fileId ?? "";
-  const selectedOriginalName = selectedWorkbook?.originalName ?? "";
-  const selectedStatus = selectedWorkbook?.status ?? "";
-  const selectedFileKey = selectedFileId
-    ? `${selectedFileId}:${selectedOriginalName}:${selectedStatus}`
-    : "";
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadWorkbookFile() {
-      if (!selectedFileId) {
-        loadedFileKeyRef.current = null;
-        setWorkbookFile(null);
-        setWorkbookPreview(null);
-        setWorkbookPreviewError(null);
-        setPreviewStatus("idle");
-        return;
-      }
-
-      if (loadedFileKeyRef.current === selectedFileKey) {
-        return;
-      }
-
-      loadedFileKeyRef.current = selectedFileKey;
-      setWorkbookFile(null);
-      setWorkbookPreview(null);
-      setWorkbookPreviewError(null);
-      setPreviewStatus("loading");
-
-      if (selectedStatus !== "valid") {
-        setWorkbookPreviewError("Source is not ready.");
-        setPreviewStatus("error");
-        return;
-      }
-
-      try {
-        const download = await createDownloadUrlRef.current({
-          fileId: selectedFileId,
-        });
-
-        if (cancelled) {
-          return;
-        }
-
-        const response = await fetch(download.url, {
-          method: download.method,
-        });
-
-        if (cancelled) {
-          return;
-        }
-
-        if (!response.ok) {
-          setWorkbookPreviewError("Source file download failed.");
-          setPreviewStatus("error");
-          return;
-        }
-
-        const file = new File([await response.blob()], selectedOriginalName, {
-          type: selectedOriginalName.endsWith(".xlsm")
-            ? "application/vnd.ms-excel.sheet.macroEnabled.12"
-            : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        });
-        const preview = await parseWorkbookPreview(file);
-
-        if (!cancelled) {
-          setWorkbookFile(file);
-          setWorkbookPreview(preview);
-          setWorkbookPreviewError(null);
-          setPreviewStatus("ready");
-        }
-      } catch {
-        if (!cancelled) {
-          loadedFileKeyRef.current = null;
-          setWorkbookFile(null);
-          setWorkbookPreview(null);
-          setWorkbookPreviewError("Source preview could not be loaded.");
-          setPreviewStatus("error");
-        }
-      }
+  const shouldLoadPreview = Boolean(
+    selectedWorkbook?.id && selectedWorkbook.status === "valid",
+  );
+  const calculationsQuery = useWorkbookCalculationsQuery(
+    {
+      workbookId: selectedWorkbook?.id ?? "",
+      limit: 1,
+    },
+    {
+      enabled: shouldLoadPreview,
+      refetchInterval: (query) => {
+        const calculation = query.state.data?.workbookCalculations[0];
+        return !calculation ||
+          calculation.status === "queued" ||
+          calculation.status === "running"
+          ? SOURCE_PREVIEW_REFETCH_INTERVAL_MS
+          : false;
+      },
+    },
+  );
+  const calculation = calculationsQuery.data?.workbookCalculations[0] ?? null;
+  const calculationId =
+    calculation?.status === "succeeded" ? calculation.id : "";
+  const isCalculationPending =
+    !calculation ||
+    calculation.status === "queued" ||
+    calculation.status === "running";
+  const didCalculationFail =
+    calculation?.status === "failed" || calculation?.status === "cancelled";
+  const isRetriableCalculationFailure =
+    calculation?.status === "failed" &&
+    calculation.errorMessage !== null &&
+    RETRIABLE_PREVIEW_CALCULATION_ERRORS.has(calculation.errorMessage);
+  const needsWorkbookPreviewCalculation = Boolean(
+    shouldLoadPreview &&
+      calculationsQuery.isSuccess &&
+      (!calculation || isRetriableCalculationFailure),
+  );
+  const shouldLoadSnapshots = shouldLoadPreview && Boolean(calculationId);
+  const snapshotsQuery = useWorkbookSnapshotsQuery(
+    {
+      workbookCalculationId: calculationId,
+      limit: 1,
+    },
+    {
+      enabled: shouldLoadSnapshots,
+      refetchInterval: (query) => {
+        return query.state.data?.workbookSnapshots[0]
+          ? false
+          : SOURCE_PREVIEW_REFETCH_INTERVAL_MS;
+      },
+    },
+  );
+  const snapshotId = snapshotsQuery.data?.workbookSnapshots[0]?.id ?? "";
+  const shouldLoadSnapshotDetails = shouldLoadSnapshots && Boolean(snapshotId);
+  const metadataQuery = useWorkbookSnapshotMetadataQuery(snapshotId, {
+    enabled: shouldLoadSnapshotDetails,
+  });
+  const sheetsQuery = useWorkbookSnapshotSheetsInfiniteQuery(
+    { workbookSnapshotId: snapshotId, limit: 25 },
+    { enabled: shouldLoadSnapshotDetails && loadPickerPreview },
+  );
+  const workbookSheets = useMemo(
+    () =>
+      sheetsQuery.data?.pages.flatMap((page) => page.workbookSnapshotSheets) ??
+      [],
+    [sheetsQuery.data],
+  );
+  const firstSheet = workbookSheets[0] ?? null;
+  const firstSheetCellsQuery = useWorkbookSnapshotCellsQuery(
+    {
+      workbookSnapshotId: snapshotId,
+      sheetIndex: firstSheet?.sheetIndex ?? 0,
+      startRow: 1,
+      startColumn: 1,
+      rowCount: 50,
+      columnCount: 20,
+    },
+    {
+      enabled:
+        shouldLoadSnapshotDetails && loadPickerPreview && Boolean(firstSheet),
+    },
+  );
+  const workbookPreview = useMemo(() => {
+    if (!selectedWorkbook || !firstSheetCellsQuery.data) {
+      return null;
     }
+    return mapSnapshotCellsToWorkbookPreview(
+      firstSheetCellsQuery.data,
+      workbookSheets,
+      selectedWorkbook.originalName,
+    );
+  }, [firstSheetCellsQuery.data, selectedWorkbook, workbookSheets]);
+  const loadMoreWorkbookSheets = () => {
+    void sheetsQuery.fetchNextPage();
+  };
+  const workbookSheetPagination = {
+    hasMoreWorkbookSheets: Boolean(sheetsQuery.hasNextPage),
+    isLoadingMoreWorkbookSheets: sheetsQuery.isFetchingNextPage,
+    loadMoreWorkbookSheets,
+  };
+  const isSnapshotPreviewPending =
+    (shouldLoadPreview && calculationsQuery.isPending) ||
+    (shouldLoadSnapshots && snapshotsQuery.isPending) ||
+    (shouldLoadSnapshotDetails && metadataQuery.isPending);
+  const isPickerPreviewPending =
+    (loadPickerPreview && shouldLoadSnapshotDetails && sheetsQuery.isPending) ||
+    (loadPickerPreview &&
+      Boolean(firstSheet) &&
+      firstSheetCellsQuery.isPending);
+  const hasPreviewError =
+    calculationsQuery.isError ||
+    snapshotsQuery.isError ||
+    metadataQuery.isError ||
+    (loadPickerPreview && sheetsQuery.isError) ||
+    (loadPickerPreview && firstSheetCellsQuery.isError);
 
-    void loadWorkbookFile();
+  if (!selectedWorkbook) {
+    return idleController;
+  }
 
-    return () => {
-      cancelled = true;
+  if (selectedWorkbook.status !== "valid") {
+    return errorController("Source is not ready.");
+  }
+
+  if (hasPreviewError) {
+    return errorController("Source preview could not be loaded.");
+  }
+
+  if (didCalculationFail) {
+    return {
+      ...errorController("Source preview could not be generated."),
+      needsWorkbookPreviewCalculation,
     };
-  }, [selectedFileId, selectedFileKey, selectedOriginalName, selectedStatus]);
+  }
+
+  if (isSnapshotPreviewPending || isCalculationPending) {
+    return {
+      ...loadingController,
+      needsWorkbookPreviewCalculation,
+    };
+  }
+
+  if (!calculationId || !snapshotId || !metadataQuery.data) {
+    return loadingController;
+  }
+
+  if (isPickerPreviewPending || (loadPickerPreview && !sheetsQuery.data)) {
+    return {
+      ...loadingController,
+      workbookSnapshotId: snapshotId,
+      workbookSheets,
+      ...workbookSheetPagination,
+    };
+  }
 
   return {
-    workbookFile,
     workbookPreview,
-    workbookPreviewError,
-    isWorkbookPreviewPending,
-    previewStatus,
+    workbookSnapshotId: snapshotId,
+    workbookSheets,
+    workbookPreviewError: null,
+    isWorkbookPreviewPending: false,
+    needsWorkbookPreviewCalculation: false,
+    ...workbookSheetPagination,
+    previewStatus: "ready",
+  };
+}
+
+const noop = () => {};
+
+const idleController: SelectedWorkbookPreviewController = {
+  workbookPreview: null,
+  workbookSnapshotId: null,
+  workbookSheets: [],
+  workbookPreviewError: null,
+  isWorkbookPreviewPending: false,
+  needsWorkbookPreviewCalculation: false,
+  hasMoreWorkbookSheets: false,
+  isLoadingMoreWorkbookSheets: false,
+  loadMoreWorkbookSheets: noop,
+  previewStatus: "idle",
+};
+
+const loadingController: SelectedWorkbookPreviewController = {
+  workbookPreview: null,
+  workbookSnapshotId: null,
+  workbookSheets: [],
+  workbookPreviewError: null,
+  isWorkbookPreviewPending: true,
+  needsWorkbookPreviewCalculation: false,
+  hasMoreWorkbookSheets: false,
+  isLoadingMoreWorkbookSheets: false,
+  loadMoreWorkbookSheets: noop,
+  previewStatus: "loading",
+};
+
+function errorController(message: string): SelectedWorkbookPreviewController {
+  return {
+    workbookPreview: null,
+    workbookSnapshotId: null,
+    workbookSheets: [],
+    workbookPreviewError: message,
+    isWorkbookPreviewPending: false,
+    needsWorkbookPreviewCalculation: false,
+    hasMoreWorkbookSheets: false,
+    isLoadingMoreWorkbookSheets: false,
+    loadMoreWorkbookSheets: noop,
+    previewStatus: "error",
+  };
+}
+
+function mapSnapshotCellsToWorkbookPreview(
+  cells: WorkbookSnapshotCells,
+  sheets: WorkbookSnapshotSheet[],
+  fileName: string,
+): WorkbookPreview {
+  return {
+    fileName,
+    sheets: sheets.map((sheet) => ({
+      name: sheet.name,
+      rows: sheet.sheetIndex === cells.sheetIndex ? cells.rows : [],
+      columnCount: sheet.columnCount,
+    })),
   };
 }

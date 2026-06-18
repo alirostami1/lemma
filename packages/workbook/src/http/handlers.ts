@@ -12,6 +12,11 @@ import {
   presentWorkbookCalculations,
   presentWorkbookEngineHealth,
   presentWorkbookSnapshot,
+  presentWorkbookSnapshotCells,
+  presentWorkbookSnapshotMetadata,
+  presentWorkbookSnapshotRange,
+  presentWorkbookSnapshotRangeBatch,
+  presentWorkbookSnapshotSheets,
   presentWorkbookSnapshots,
   presentWorkbookSnapshotValue,
   presentWorkbooks,
@@ -27,6 +32,15 @@ function workbookHandler<TKey extends keyof WorkbookHandlerMap>(
   handler: WorkbookHandlerMap[TKey],
 ): WorkbookHandlerMap[TKey] {
   return withHttpErrorHandler(handler, handleWorkbookError);
+}
+
+const IMMUTABLE_WORKBOOK_SNAPSHOT_CACHE_CONTROL =
+  "private, max-age=31536000, immutable";
+
+function setImmutableWorkbookSnapshotCacheHeaders(c: {
+  header(name: string, value: string): void;
+}) {
+  c.header("Cache-Control", IMMUTABLE_WORKBOOK_SNAPSHOT_CACHE_CONTROL);
 }
 
 export function createWorkbookHandlers(
@@ -201,31 +215,108 @@ export function createWorkbookHandlers(
     ),
     getWorkbookSnapshot: workbookHandler("getWorkbookSnapshot", async (c) => {
       const { workbookSnapshotId } = c.req.valid("param");
-      return c.json(
-        presentWorkbookSnapshot(
-          await deps.workbookCalculationService.getWorkbookSnapshot({
+      const response = presentWorkbookSnapshot(
+        await deps.workbookCalculationService.getWorkbookSnapshot({
+          currentUser: c.var.identity,
+          workbookSnapshotId,
+        }),
+      );
+      setImmutableWorkbookSnapshotCacheHeaders(c);
+      return c.json(response, 200);
+    }),
+    getWorkbookSnapshotMetadata: workbookHandler(
+      "getWorkbookSnapshotMetadata",
+      async (c) => {
+        const { workbookSnapshotId } = c.req.valid("param");
+        const response = presentWorkbookSnapshotMetadata(
+          await deps.workbookCalculationService.getWorkbookSnapshotMetadata({
             currentUser: c.var.identity,
             workbookSnapshotId,
           }),
-        ),
-        200,
-      );
-    }),
+        );
+        setImmutableWorkbookSnapshotCacheHeaders(c);
+        return c.json(response, 200);
+      },
+    ),
+    listWorkbookSnapshotSheets: workbookHandler(
+      "listWorkbookSnapshotSheets",
+      async (c) => {
+        const { workbookSnapshotId } = c.req.valid("param");
+        const query = c.req.valid("query");
+        const response = presentWorkbookSnapshotSheets(
+          await deps.workbookCalculationService.listWorkbookSnapshotSheets({
+            currentUser: c.var.identity,
+            workbookSnapshotId,
+            ...query,
+          }),
+        );
+        setImmutableWorkbookSnapshotCacheHeaders(c);
+        return c.json(response, 200);
+      },
+    ),
+    getWorkbookSnapshotCells: workbookHandler(
+      "getWorkbookSnapshotCells",
+      async (c) => {
+        const { workbookSnapshotId, sheetIndex } = c.req.valid("param");
+        const query = c.req.valid("query");
+        const response = presentWorkbookSnapshotCells(
+          await deps.workbookCalculationService.getWorkbookSnapshotCells({
+            currentUser: c.var.identity,
+            workbookSnapshotId,
+            sheetIndex: Number(sheetIndex),
+            ...query,
+          }),
+        );
+        setImmutableWorkbookSnapshotCacheHeaders(c);
+        return c.json(response, 200);
+      },
+    ),
+    getWorkbookSnapshotRange: workbookHandler(
+      "getWorkbookSnapshotRange",
+      async (c) => {
+        const { workbookSnapshotId } = c.req.valid("param");
+        const query = c.req.valid("query");
+        const response = presentWorkbookSnapshotRange(
+          await deps.workbookCalculationService.getWorkbookSnapshotRange({
+            currentUser: c.var.identity,
+            workbookSnapshotId,
+            ...query,
+          }),
+        );
+        setImmutableWorkbookSnapshotCacheHeaders(c);
+        return c.json(response, 200);
+      },
+    ),
+    getWorkbookSnapshotRangeBatch: workbookHandler(
+      "getWorkbookSnapshotRangeBatch",
+      async (c) => {
+        const { workbookSnapshotId } = c.req.valid("param");
+        const body = c.req.valid("json");
+        const response = presentWorkbookSnapshotRangeBatch(
+          await deps.workbookCalculationService.getWorkbookSnapshotRangeBatch({
+            currentUser: c.var.identity,
+            workbookSnapshotId,
+            ...body,
+          }),
+        );
+        setImmutableWorkbookSnapshotCacheHeaders(c);
+        return c.json(response, 200);
+      },
+    ),
     resolveWorkbookSnapshotValue: workbookHandler(
       "resolveWorkbookSnapshotValue",
       async (c) => {
         const { workbookSnapshotId } = c.req.valid("param");
         const { ref } = c.req.valid("query");
-        return c.json(
-          presentWorkbookSnapshotValue(
-            await deps.workbookCalculationService.resolveWorkbookSnapshotValue({
-              currentUser: c.var.identity,
-              workbookSnapshotId,
-              source: { type: "cell", ref },
-            }),
-          ),
-          200,
+        const response = presentWorkbookSnapshotValue(
+          await deps.workbookCalculationService.resolveWorkbookSnapshotValue({
+            currentUser: c.var.identity,
+            workbookSnapshotId,
+            source: { type: "cell", ref },
+          }),
         );
+        setImmutableWorkbookSnapshotCacheHeaders(c);
+        return c.json(response, 200);
       },
     ),
     getWorkbookEngineHealth: workbookHandler(

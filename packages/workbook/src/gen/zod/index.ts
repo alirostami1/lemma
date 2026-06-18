@@ -1387,10 +1387,6 @@ export const listWorkbookSnapshots200ResponseWorkbookSnapshotsItemCalculationIdR
   );
 export const listWorkbookSnapshots200ResponseWorkbookSnapshotsItemSnapshotIndexMin = 0;
 
-export const listWorkbookSnapshots200ResponseWorkbookSnapshotsItemValuesSheetsItemRowCountMin = 0;
-
-export const listWorkbookSnapshots200ResponseWorkbookSnapshotsItemValuesSheetsItemColumnCountMin = 0;
-
 export const ListWorkbookSnapshots200Response = zod.strictObject({
   workbookSnapshots: zod.array(
     zod.strictObject({
@@ -1412,24 +1408,6 @@ export const ListWorkbookSnapshots200Response = zod.strictObject({
         .min(
           listWorkbookSnapshots200ResponseWorkbookSnapshotsItemSnapshotIndexMin,
         ),
-      values: zod.strictObject({
-        sheets: zod.array(
-          zod.strictObject({
-            name: zod.string().min(1),
-            cells: zod.record(zod.string(), zod.string()),
-            rowCount: zod
-              .number()
-              .min(
-                listWorkbookSnapshots200ResponseWorkbookSnapshotsItemValuesSheetsItemRowCountMin,
-              ),
-            columnCount: zod
-              .number()
-              .min(
-                listWorkbookSnapshots200ResponseWorkbookSnapshotsItemValuesSheetsItemColumnCountMin,
-              ),
-          }),
-        ),
-      }),
       createdAt: zod.iso.datetime({ offset: true }),
     }),
   ),
@@ -1517,10 +1495,6 @@ export const getWorkbookSnapshot200ResponseWorkbookSnapshotCalculationIdRegExp =
   );
 export const getWorkbookSnapshot200ResponseWorkbookSnapshotSnapshotIndexMin = 0;
 
-export const getWorkbookSnapshot200ResponseWorkbookSnapshotValuesSheetsItemRowCountMin = 0;
-
-export const getWorkbookSnapshot200ResponseWorkbookSnapshotValuesSheetsItemColumnCountMin = 0;
-
 export const GetWorkbookSnapshot200Response = zod.strictObject({
   workbookSnapshot: zod.strictObject({
     id: zod
@@ -1535,24 +1509,6 @@ export const GetWorkbookSnapshot200Response = zod.strictObject({
     snapshotIndex: zod
       .number()
       .min(getWorkbookSnapshot200ResponseWorkbookSnapshotSnapshotIndexMin),
-    values: zod.strictObject({
-      sheets: zod.array(
-        zod.strictObject({
-          name: zod.string().min(1),
-          cells: zod.record(zod.string(), zod.string()),
-          rowCount: zod
-            .number()
-            .min(
-              getWorkbookSnapshot200ResponseWorkbookSnapshotValuesSheetsItemRowCountMin,
-            ),
-          columnCount: zod
-            .number()
-            .min(
-              getWorkbookSnapshot200ResponseWorkbookSnapshotValuesSheetsItemColumnCountMin,
-            ),
-        }),
-      ),
-    }),
     createdAt: zod.iso.datetime({ offset: true }),
   }),
 });
@@ -1603,6 +1559,671 @@ export const GetWorkbookSnapshot409Response = zod.strictObject({
 });
 
 export const GetWorkbookSnapshot502Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+/**
+ * @summary Get workbook snapshot metadata
+ */
+export const getWorkbookSnapshotMetadataPathWorkbookSnapshotIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+
+export const GetWorkbookSnapshotMetadataParams = zod.strictObject({
+  workbookSnapshotId: zod
+    .string()
+    .regex(getWorkbookSnapshotMetadataPathWorkbookSnapshotIdRegExp),
+});
+
+export const getWorkbookSnapshotMetadata200ResponseWorkbookSnapshotMetadataSheetCountMin = 0;
+
+export const getWorkbookSnapshotMetadata200ResponseWorkbookSnapshotMetadataCellCountMin = 0;
+
+export const GetWorkbookSnapshotMetadata200Response = zod.strictObject({
+  workbookSnapshotMetadata: zod.strictObject({
+    status: zod.enum(["ready"]),
+    sheetCount: zod
+      .number()
+      .min(
+        getWorkbookSnapshotMetadata200ResponseWorkbookSnapshotMetadataSheetCountMin,
+      ),
+    cellCount: zod
+      .number()
+      .min(
+        getWorkbookSnapshotMetadata200ResponseWorkbookSnapshotMetadataCellCountMin,
+      ),
+  }),
+});
+
+export const GetWorkbookSnapshotMetadata400Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotMetadata401Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotMetadata403Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotMetadata404Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotMetadata409Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotMetadata502Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+/**
+ * @summary List workbook snapshot sheets
+ */
+export const listWorkbookSnapshotSheetsPathWorkbookSnapshotIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+
+export const ListWorkbookSnapshotSheetsParams = zod.strictObject({
+  workbookSnapshotId: zod
+    .string()
+    .regex(listWorkbookSnapshotSheetsPathWorkbookSnapshotIdRegExp),
+});
+
+export const listWorkbookSnapshotSheetsQueryLimitMax = 100;
+
+export const ListWorkbookSnapshotSheetsQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(listWorkbookSnapshotSheetsQueryLimitMax)
+    .optional(),
+  cursor: zod.string().optional(),
+});
+
+export const listWorkbookSnapshotSheets200ResponseWorkbookSnapshotSheetsItemSheetIndexMin = 0;
+
+export const listWorkbookSnapshotSheets200ResponseWorkbookSnapshotSheetsItemRowCountMin = 0;
+
+export const listWorkbookSnapshotSheets200ResponseWorkbookSnapshotSheetsItemColumnCountMin = 0;
+
+export const listWorkbookSnapshotSheets200ResponseWorkbookSnapshotSheetsItemNonEmptyCellCountMin = 0;
+
+export const ListWorkbookSnapshotSheets200Response = zod.strictObject({
+  workbookSnapshotSheets: zod.array(
+    zod.strictObject({
+      sheetIndex: zod
+        .number()
+        .min(
+          listWorkbookSnapshotSheets200ResponseWorkbookSnapshotSheetsItemSheetIndexMin,
+        ),
+      name: zod.string().min(1),
+      rowCount: zod
+        .number()
+        .min(
+          listWorkbookSnapshotSheets200ResponseWorkbookSnapshotSheetsItemRowCountMin,
+        ),
+      columnCount: zod
+        .number()
+        .min(
+          listWorkbookSnapshotSheets200ResponseWorkbookSnapshotSheetsItemColumnCountMin,
+        ),
+      nonEmptyCellCount: zod
+        .number()
+        .min(
+          listWorkbookSnapshotSheets200ResponseWorkbookSnapshotSheetsItemNonEmptyCellCountMin,
+        ),
+    }),
+  ),
+  nextCursor: zod.string().nullable(),
+});
+
+export const ListWorkbookSnapshotSheets400Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const ListWorkbookSnapshotSheets401Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const ListWorkbookSnapshotSheets403Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const ListWorkbookSnapshotSheets404Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const ListWorkbookSnapshotSheets409Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const ListWorkbookSnapshotSheets502Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+/**
+ * @summary Get workbook snapshot cells
+ */
+export const getWorkbookSnapshotCellsPathWorkbookSnapshotIdRegExp = new RegExp(
+  "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+);
+export const getWorkbookSnapshotCellsPathSheetIndexRegExp = new RegExp(
+  "^[0-9]+$",
+);
+
+export const GetWorkbookSnapshotCellsParams = zod.strictObject({
+  workbookSnapshotId: zod
+    .string()
+    .regex(getWorkbookSnapshotCellsPathWorkbookSnapshotIdRegExp),
+  sheetIndex: zod.string().regex(getWorkbookSnapshotCellsPathSheetIndexRegExp),
+});
+
+export const getWorkbookSnapshotCellsQueryRowCountMax = 200;
+
+export const getWorkbookSnapshotCellsQueryColumnCountMax = 50;
+
+export const GetWorkbookSnapshotCellsQueryParams = zod.object({
+  startRow: zod.coerce.number().min(1),
+  startColumn: zod.coerce.number().min(1),
+  rowCount: zod.coerce
+    .number()
+    .min(1)
+    .max(getWorkbookSnapshotCellsQueryRowCountMax),
+  columnCount: zod.coerce
+    .number()
+    .min(1)
+    .max(getWorkbookSnapshotCellsQueryColumnCountMax),
+});
+
+export const getWorkbookSnapshotCells200ResponseWorkbookSnapshotCellsSheetIndexMin = 0;
+
+export const getWorkbookSnapshotCells200ResponseWorkbookSnapshotCellsRowCountMin = 0;
+
+export const getWorkbookSnapshotCells200ResponseWorkbookSnapshotCellsColumnCountMin = 0;
+
+export const getWorkbookSnapshotCells200ResponseWorkbookSnapshotCellsRowsItemMax = 50;
+
+export const getWorkbookSnapshotCells200ResponseWorkbookSnapshotCellsRowsMax = 200;
+
+export const getWorkbookSnapshotCells200ResponseWorkbookSnapshotCellsCellTypesItemMax = 50;
+
+export const getWorkbookSnapshotCells200ResponseWorkbookSnapshotCellsCellTypesMax = 200;
+
+export const GetWorkbookSnapshotCells200Response = zod.strictObject({
+  workbookSnapshotCells: zod.strictObject({
+    sheetIndex: zod
+      .number()
+      .min(
+        getWorkbookSnapshotCells200ResponseWorkbookSnapshotCellsSheetIndexMin,
+      ),
+    sheetName: zod.string().min(1),
+    startRow: zod.number().min(1),
+    startColumn: zod.number().min(1),
+    rowCount: zod
+      .number()
+      .min(getWorkbookSnapshotCells200ResponseWorkbookSnapshotCellsRowCountMin),
+    columnCount: zod
+      .number()
+      .min(
+        getWorkbookSnapshotCells200ResponseWorkbookSnapshotCellsColumnCountMin,
+      ),
+    rows: zod
+      .array(
+        zod
+          .array(zod.string())
+          .max(
+            getWorkbookSnapshotCells200ResponseWorkbookSnapshotCellsRowsItemMax,
+          ),
+      )
+      .max(getWorkbookSnapshotCells200ResponseWorkbookSnapshotCellsRowsMax),
+    cellTypes: zod
+      .array(
+        zod
+          .array(
+            zod.enum([
+              "string",
+              "number",
+              "boolean",
+              "date_like",
+              "error",
+              "blank",
+              "formula_cached",
+            ]),
+          )
+          .max(
+            getWorkbookSnapshotCells200ResponseWorkbookSnapshotCellsCellTypesItemMax,
+          ),
+      )
+      .max(
+        getWorkbookSnapshotCells200ResponseWorkbookSnapshotCellsCellTypesMax,
+      ),
+  }),
+});
+
+export const GetWorkbookSnapshotCells400Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotCells401Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotCells403Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotCells404Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotCells409Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotCells502Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+/**
+ * @summary Get workbook snapshot range
+ */
+export const getWorkbookSnapshotRangePathWorkbookSnapshotIdRegExp = new RegExp(
+  "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+);
+
+export const GetWorkbookSnapshotRangeParams = zod.strictObject({
+  workbookSnapshotId: zod
+    .string()
+    .regex(getWorkbookSnapshotRangePathWorkbookSnapshotIdRegExp),
+});
+
+export const GetWorkbookSnapshotRangeQueryParams = zod.object({
+  ref: zod.string().min(1),
+});
+
+export const getWorkbookSnapshotRange200ResponseWorkbookSnapshotRangeOneSheetIndexMin = 0;
+
+export const getWorkbookSnapshotRange200ResponseWorkbookSnapshotRangeOneRowCountMin = 0;
+
+export const getWorkbookSnapshotRange200ResponseWorkbookSnapshotRangeOneColumnCountMin = 0;
+
+export const getWorkbookSnapshotRange200ResponseWorkbookSnapshotRangeOneRowsItemMax = 50;
+
+export const getWorkbookSnapshotRange200ResponseWorkbookSnapshotRangeOneRowsMax = 200;
+
+export const getWorkbookSnapshotRange200ResponseWorkbookSnapshotRangeOneCellTypesItemMax = 50;
+
+export const getWorkbookSnapshotRange200ResponseWorkbookSnapshotRangeOneCellTypesMax = 200;
+
+export const GetWorkbookSnapshotRange200Response = zod.strictObject({
+  workbookSnapshotRange: zod.strictObject({
+    sheetIndex: zod
+      .number()
+      .min(
+        getWorkbookSnapshotRange200ResponseWorkbookSnapshotRangeOneSheetIndexMin,
+      ),
+    sheetName: zod.string().min(1),
+    startRow: zod.number().min(1),
+    startColumn: zod.number().min(1),
+    rowCount: zod
+      .number()
+      .min(
+        getWorkbookSnapshotRange200ResponseWorkbookSnapshotRangeOneRowCountMin,
+      ),
+    columnCount: zod
+      .number()
+      .min(
+        getWorkbookSnapshotRange200ResponseWorkbookSnapshotRangeOneColumnCountMin,
+      ),
+    rows: zod
+      .array(
+        zod
+          .array(zod.string())
+          .max(
+            getWorkbookSnapshotRange200ResponseWorkbookSnapshotRangeOneRowsItemMax,
+          ),
+      )
+      .max(getWorkbookSnapshotRange200ResponseWorkbookSnapshotRangeOneRowsMax),
+    cellTypes: zod
+      .array(
+        zod
+          .array(
+            zod.enum([
+              "string",
+              "number",
+              "boolean",
+              "date_like",
+              "error",
+              "blank",
+              "formula_cached",
+            ]),
+          )
+          .max(
+            getWorkbookSnapshotRange200ResponseWorkbookSnapshotRangeOneCellTypesItemMax,
+          ),
+      )
+      .max(
+        getWorkbookSnapshotRange200ResponseWorkbookSnapshotRangeOneCellTypesMax,
+      ),
+    ref: zod.string().min(1),
+    startCellAddress: zod.string().min(1),
+    endCellAddress: zod.string().min(1),
+  }),
+});
+
+export const GetWorkbookSnapshotRange400Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotRange401Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotRange403Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotRange404Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotRange409Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotRange502Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+/**
+ * @summary Get workbook snapshot ranges
+ */
+export const getWorkbookSnapshotRangeBatchPathWorkbookSnapshotIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+
+export const GetWorkbookSnapshotRangeBatchParams = zod.strictObject({
+  workbookSnapshotId: zod
+    .string()
+    .regex(getWorkbookSnapshotRangeBatchPathWorkbookSnapshotIdRegExp),
+});
+
+export const getWorkbookSnapshotRangeBatchBodyRefsMax = 50;
+
+export const GetWorkbookSnapshotRangeBatchBody = zod.strictObject({
+  refs: zod
+    .array(zod.string().min(1))
+    .min(1)
+    .max(getWorkbookSnapshotRangeBatchBodyRefsMax),
+});
+
+export const getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneSheetIndexMin = 0;
+
+export const getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneRowCountMin = 0;
+
+export const getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneColumnCountMin = 0;
+
+export const getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneRowsItemMax = 50;
+
+export const getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneRowsMax = 200;
+
+export const getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneCellTypesItemMax = 50;
+
+export const getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneCellTypesMax = 200;
+
+export const getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesMax = 50;
+
+export const GetWorkbookSnapshotRangeBatch200Response = zod.strictObject({
+  workbookSnapshotRangeBatch: zod.strictObject({
+    ranges: zod
+      .array(
+        zod.strictObject({
+          ref: zod.string().min(1),
+          status: zod.enum(["ok", "error"]),
+          range: zod.union([
+            zod.strictObject({
+              sheetIndex: zod
+                .number()
+                .min(
+                  getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneSheetIndexMin,
+                ),
+              sheetName: zod.string().min(1),
+              startRow: zod.number().min(1),
+              startColumn: zod.number().min(1),
+              rowCount: zod
+                .number()
+                .min(
+                  getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneRowCountMin,
+                ),
+              columnCount: zod
+                .number()
+                .min(
+                  getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneColumnCountMin,
+                ),
+              rows: zod
+                .array(
+                  zod
+                    .array(zod.string())
+                    .max(
+                      getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneRowsItemMax,
+                    ),
+                )
+                .max(
+                  getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneRowsMax,
+                ),
+              cellTypes: zod
+                .array(
+                  zod
+                    .array(
+                      zod.enum([
+                        "string",
+                        "number",
+                        "boolean",
+                        "date_like",
+                        "error",
+                        "blank",
+                        "formula_cached",
+                      ]),
+                    )
+                    .max(
+                      getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneCellTypesItemMax,
+                    ),
+                )
+                .max(
+                  getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneCellTypesMax,
+                ),
+              ref: zod.string().min(1),
+              startCellAddress: zod.string().min(1),
+              endCellAddress: zod.string().min(1),
+            }),
+            zod.null(),
+          ]),
+          errorMessage: zod.string().nullable(),
+        }),
+      )
+      .max(
+        getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesMax,
+      ),
+  }),
+});
+
+export const GetWorkbookSnapshotRangeBatch400Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotRangeBatch401Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotRangeBatch403Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotRangeBatch404Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotRangeBatch409Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotRangeBatch502Response = zod.strictObject({
   error: zod.strictObject({
     code: zod.string(),
     message: zod.string(),

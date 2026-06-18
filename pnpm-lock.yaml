@@ -450,9 +450,6 @@ importers:
       tw-animate-css:
         specifier: 'catalog:'
         version: 1.4.0
-      xlsx:
-        specifier: 'catalog:'
-        version: 0.18.5
       zod:
         specifier: 'catalog:'
         version: 4.4.3

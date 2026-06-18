@@ -3,6 +3,7 @@ import {
   type UseQueryOptions,
   useInfiniteQuery,
   useMutation,
+  useQueries,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
@@ -11,7 +12,12 @@ import {
   createWorkbookCalculation,
   deleteWorkbook,
   getWorkbook,
+  getWorkbookSnapshotCells,
+  getWorkbookSnapshotMetadata,
+  getWorkbookSnapshotRange,
+  getWorkbookSnapshotRangeBatch,
   listWorkbookCalculations,
+  listWorkbookSnapshotSheets,
   listWorkbookSnapshots,
   listWorkbooks,
   updateWorkbook,
@@ -22,7 +28,11 @@ import type {
   CreateWorkbookCalculationInput,
   CreateWorkbookInput,
   DeleteWorkbookInput,
+  GetWorkbookSnapshotCellsInput,
+  GetWorkbookSnapshotRangeBatchInput,
+  GetWorkbookSnapshotRangeInput,
   ListWorkbookCalculationsInput,
+  ListWorkbookSnapshotSheetsInput,
   ListWorkbookSnapshotsInput,
   ListWorkbooksInput,
   UpdateWorkbookInput,
@@ -30,9 +40,17 @@ import type {
   Workbook,
   WorkbookCalculation,
   WorkbookCalculationsPage,
+  WorkbookSnapshotCells,
+  WorkbookSnapshotMetadata,
+  WorkbookSnapshotRange,
+  WorkbookSnapshotRangeBatch,
+  WorkbookSnapshotSheetsPage,
   WorkbookSnapshotsPage,
   WorkbooksPage,
 } from "./model";
+
+const IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS = Number.POSITIVE_INFINITY;
+export const WORKBOOK_SNAPSHOT_RANGE_BATCH_REF_LIMIT = 50;
 
 export function useWorkbooksQuery(
   input?: ListWorkbooksInput,
@@ -101,6 +119,143 @@ export function useWorkbookSnapshotsQuery(
     queryFn: () => listWorkbookSnapshots(input),
     enabled: Boolean(workbookCalculationId),
     ...options,
+  });
+}
+
+export function useWorkbookSnapshotMetadataQuery(
+  workbookSnapshotId: string,
+  options?: Omit<
+    UseQueryOptions<WorkbookSnapshotMetadata>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  return useQuery({
+    queryKey: workbookKeys.snapshotMetadata(workbookSnapshotId),
+    queryFn: () => getWorkbookSnapshotMetadata(workbookSnapshotId),
+    enabled: Boolean(workbookSnapshotId),
+    staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
+    ...options,
+  });
+}
+
+export function useWorkbookSnapshotSheetsQuery(
+  input: ListWorkbookSnapshotSheetsInput,
+  options?: Omit<
+    UseQueryOptions<WorkbookSnapshotSheetsPage>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  const { workbookSnapshotId, ...params } = input;
+
+  return useQuery({
+    queryKey: workbookKeys.snapshotSheets(workbookSnapshotId, params),
+    queryFn: () => listWorkbookSnapshotSheets(input),
+    enabled: Boolean(workbookSnapshotId),
+    staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
+    ...options,
+  });
+}
+
+export function useWorkbookSnapshotSheetsInfiniteQuery(
+  input: Omit<ListWorkbookSnapshotSheetsInput, "cursor">,
+  options?: { enabled?: boolean },
+) {
+  const { workbookSnapshotId, ...params } = input;
+  const { enabled = true, ...queryOptions } = options ?? {};
+
+  return useInfiniteQuery({
+    queryKey: workbookKeys.snapshotSheetsInfinite(workbookSnapshotId, params),
+    queryFn: ({ pageParam }) =>
+      listWorkbookSnapshotSheets({ ...input, cursor: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
+    enabled: enabled && Boolean(workbookSnapshotId),
+    staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
+    ...queryOptions,
+  });
+}
+
+export function useWorkbookSnapshotCellsQuery(
+  input: GetWorkbookSnapshotCellsInput,
+  options?: Omit<
+    UseQueryOptions<WorkbookSnapshotCells>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  const { workbookSnapshotId, ...params } = input;
+
+  return useQuery({
+    queryKey: workbookKeys.snapshotCells(workbookSnapshotId, params),
+    queryFn: () => getWorkbookSnapshotCells(input),
+    enabled: Boolean(workbookSnapshotId),
+    staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
+    ...options,
+  });
+}
+
+export function useWorkbookSnapshotRangeQuery(
+  input: GetWorkbookSnapshotRangeInput,
+  options?: Omit<
+    UseQueryOptions<WorkbookSnapshotRange>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  const { workbookSnapshotId, ...params } = input;
+
+  return useQuery({
+    queryKey: workbookKeys.snapshotRange(workbookSnapshotId, params),
+    queryFn: () => getWorkbookSnapshotRange(input),
+    enabled: Boolean(workbookSnapshotId),
+    staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
+    ...options,
+  });
+}
+
+export function useWorkbookSnapshotRangeBatchQuery(
+  input: GetWorkbookSnapshotRangeBatchInput,
+  options?: Omit<
+    UseQueryOptions<WorkbookSnapshotRangeBatch>,
+    "queryKey" | "queryFn" | "enabled"
+  > & { enabled?: boolean },
+) {
+  const { workbookSnapshotId, ...params } = input;
+  const { enabled = true, ...queryOptions } = options ?? {};
+
+  return useQuery({
+    queryKey: workbookKeys.snapshotRangeBatch(workbookSnapshotId, params),
+    queryFn: () => getWorkbookSnapshotRangeBatch(input),
+    enabled: enabled && Boolean(workbookSnapshotId) && input.refs.length > 0,
+    retry: false,
+    staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
+    ...queryOptions,
+  });
+}
+
+export function useWorkbookSnapshotRangeBatchQueries(
+  inputs: GetWorkbookSnapshotRangeBatchInput[],
+  options?: { enabled?: boolean },
+): WorkbookSnapshotRangeBatch {
+  const { enabled = true } = options ?? {};
+
+  return useQueries({
+    queries: inputs.map((input) => {
+      const { workbookSnapshotId, ...params } = input;
+
+      return {
+        queryKey: workbookKeys.snapshotRangeBatch(workbookSnapshotId, params),
+        queryFn: () => getWorkbookSnapshotRangeBatch(input),
+        enabled:
+          enabled && Boolean(workbookSnapshotId) && input.refs.length > 0,
+        retry: false,
+        staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
+      };
+    }),
+    combine: (results): WorkbookSnapshotRangeBatch => ({
+      ranges: results.flatMap(
+        (result) =>
+          (result.data as WorkbookSnapshotRangeBatch | undefined)?.ranges ?? [],
+      ),
+    }),
   });
 }
 

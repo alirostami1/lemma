@@ -6,6 +6,7 @@ import {
   type ValueExpression,
 } from "./authoring";
 import {
+  normalizeWorkbookRef,
   resolveWorkbookPreviewValue,
   type WorkbookPreviewForReferences,
 } from "./workbook-reference";
@@ -27,15 +28,18 @@ export type LiteralPreviewValue = {
 };
 
 export type ReferencePreviewCache = Record<string, ReferencePreviewValue>;
+export type WorkbookSelectionValuesByRef = Record<string, string[][]>;
 
 export type { WorkbookPreviewForReferences };
 
 export function resolveReferencePreviewValues({
   model,
+  workbookSelectionValuesByRef = {},
   workbookPreview,
   now = Date.now(),
 }: {
   model: ComposedEditorModel;
+  workbookSelectionValuesByRef?: WorkbookSelectionValuesByRef;
   workbookPreview: WorkbookPreviewForReferences | null;
   now?: number;
 }): ReferencePreviewCache {
@@ -45,6 +49,7 @@ export function resolveReferencePreviewValues({
     cache[reference.id] = resolveReferenceSourcePreview({
       referenceId: reference.id,
       source: reference.source,
+      workbookSelectionValuesByRef,
       workbookPreview,
       now,
     });
@@ -149,11 +154,13 @@ export function resolveValueExpressionPreview({
 function resolveReferenceSourcePreview({
   referenceId,
   source,
+  workbookSelectionValuesByRef,
   workbookPreview,
   now,
 }: {
   referenceId: string;
   source: ReferenceSourceDraft;
+  workbookSelectionValuesByRef: WorkbookSelectionValuesByRef;
   workbookPreview: WorkbookPreviewForReferences | null;
   now: number;
 }): ReferencePreviewValue {
@@ -167,6 +174,28 @@ function resolveReferenceSourcePreview({
     };
   }
   if (source.type === "workbook_cell" || source.type === "workbook_range") {
+    const normalizedRef = normalizeWorkbookRef(source.ref);
+    const selectedValues =
+      workbookSelectionValuesByRef[source.ref] ??
+      (normalizedRef ? workbookSelectionValuesByRef[normalizedRef] : undefined);
+    if (selectedValues) {
+      const rawValue =
+        source.type === "workbook_cell"
+          ? (selectedValues[0]?.[0] ?? "")
+          : selectedValues;
+
+      return {
+        referenceId,
+        status: "resolved",
+        displayValue:
+          source.type === "workbook_range"
+            ? formatRangePreview(rawValue)
+            : formatUnknownPreviewValue(rawValue),
+        rawValue,
+        updatedAt: now,
+      };
+    }
+
     if (!workbookPreview) {
       return {
         referenceId,

@@ -4,6 +4,11 @@ import type {
   WorkbookCalculation,
   WorkbookEngineHealth,
   WorkbookSnapshot,
+  WorkbookSnapshotCells,
+  WorkbookSnapshotMetadata,
+  WorkbookSnapshotRange,
+  WorkbookSnapshotRangeBatch,
+  WorkbookSnapshotSheetsPage,
 } from "../domain/index.js";
 
 export type WorkbooksResult = {
@@ -23,5 +28,18 @@ export type WorkbookSnapshotsResult = {
   nextCursor: string | null;
 };
 export type WorkbookSnapshotResult = { workbookSnapshot: WorkbookSnapshot };
+export type WorkbookSnapshotMetadataResult = {
+  workbookSnapshotMetadata: WorkbookSnapshotMetadata;
+};
+export type WorkbookSnapshotSheetsResult = WorkbookSnapshotSheetsPage;
+export type WorkbookSnapshotCellsResult = {
+  workbookSnapshotCells: WorkbookSnapshotCells;
+};
+export type WorkbookSnapshotRangeResult = {
+  workbookSnapshotRange: WorkbookSnapshotRange;
+};
+export type WorkbookSnapshotRangeBatchResult = {
+  workbookSnapshotRangeBatch: WorkbookSnapshotRangeBatch;
+};
 export type WorkbookSnapshotValueResult = { value: JsonValue };
 export type WorkbookEngineHealthResult = { health: WorkbookEngineHealth };

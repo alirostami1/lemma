@@ -10,18 +10,28 @@ import {
 import type {
   CreateWorkbookCalculationCommand,
   ListWorkbookCalculationsCommand,
+  ListWorkbookSnapshotSheetsCommand,
   ListWorkbookSnapshotsCommand,
   ProcessWorkbookCalculationCommand,
   ResolveWorkbookSnapshotValueCommand,
   RetryWorkbookCalculationCommand,
   WorkbookCalculationByIdCommand,
   WorkbookSnapshotByIdCommand,
+  WorkbookSnapshotCellsCommand,
+  WorkbookSnapshotMetadataCommand,
+  WorkbookSnapshotRangeBatchCommand,
+  WorkbookSnapshotRangeCommand,
 } from "./commands.js";
 import type {
   WorkbookCalculationDto,
   WorkbookCalculationsResult,
   WorkbookEngineHealthResult,
+  WorkbookSnapshotCellsResult,
+  WorkbookSnapshotMetadataResult,
+  WorkbookSnapshotRangeBatchResult,
+  WorkbookSnapshotRangeResult,
   WorkbookSnapshotResult,
+  WorkbookSnapshotSheetsResult,
   WorkbookSnapshotsResult,
   WorkbookSnapshotValueResult,
 } from "./dto.js";
@@ -202,6 +212,36 @@ export class WorkbookCalculationService {
     command: WorkbookSnapshotByIdCommand,
   ): Promise<WorkbookSnapshotResult> {
     return this.snapshotService.getWorkbookSnapshot(command);
+  }
+
+  async getWorkbookSnapshotMetadata(
+    command: WorkbookSnapshotMetadataCommand,
+  ): Promise<WorkbookSnapshotMetadataResult> {
+    return this.snapshotService.getWorkbookSnapshotMetadata(command);
+  }
+
+  async listWorkbookSnapshotSheets(
+    command: ListWorkbookSnapshotSheetsCommand,
+  ): Promise<WorkbookSnapshotSheetsResult> {
+    return this.snapshotService.listWorkbookSnapshotSheets(command);
+  }
+
+  async getWorkbookSnapshotCells(
+    command: WorkbookSnapshotCellsCommand,
+  ): Promise<WorkbookSnapshotCellsResult> {
+    return this.snapshotService.getWorkbookSnapshotCells(command);
+  }
+
+  async getWorkbookSnapshotRange(
+    command: WorkbookSnapshotRangeCommand,
+  ): Promise<WorkbookSnapshotRangeResult> {
+    return this.snapshotService.getWorkbookSnapshotRange(command);
+  }
+
+  async getWorkbookSnapshotRangeBatch(
+    command: WorkbookSnapshotRangeBatchCommand,
+  ): Promise<WorkbookSnapshotRangeBatchResult> {
+    return this.snapshotService.getWorkbookSnapshotRangeBatch(command);
   }
 
   async resolveWorkbookSnapshotValue(
