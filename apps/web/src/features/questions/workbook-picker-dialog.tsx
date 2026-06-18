@@ -29,6 +29,8 @@ import {
   validateWorkbookRangeSelection,
 } from "./workbook-validation";
 
+const WORKBOOK_PICKER_ROW_COUNT = 50;
+
 type WorkbookPickerDialogProps = {
   workbookSnapshotId?: string | null;
   workbookSheets?: WorkbookPickerSheet[];
@@ -98,7 +100,19 @@ export function WorkbookPickerDialog({
   }, [rangeSelection.clearSelection, workbookSelectionResetKey]);
 
   const columnCount = Math.max(activeSheet?.columnCount ?? 0, 1);
-  const rows = activeSheet?.rows ?? [];
+  const placeholderRows = useMemo(
+    () =>
+      Array.from({ length: WORKBOOK_PICKER_ROW_COUNT }, () =>
+        Array.from({ length: columnCount }, () => ""),
+      ),
+    [columnCount],
+  );
+  const isActiveSheetLoading =
+    activeSheet !== null && cellsQuery.isPending && !cellsQuery.data;
+  const rows =
+    activeSheet && activeSheet.rows.length > 0
+      ? activeSheet.rows
+      : placeholderRows;
   const selectionRange = rangeSelection.selectionRange;
   const selectionLabel =
     activeSheet && selectionRange
@@ -108,12 +122,17 @@ export function WorkbookPickerDialog({
     activeSheet && selectionRange
       ? buildWorkbookRangeSelection(activeSheet.name, rows, selectionRange)
       : null;
-  const selectionValidation = selectedRange
-    ? validateWorkbookRangeSelection(selectedRange, selectionRequirement)
-    : {
+  const selectionValidation = isActiveSheetLoading
+    ? {
         ok: false,
-        message: "Select a source range first.",
-      };
+        message: "Loading source cells.",
+      }
+    : selectedRange
+      ? validateWorkbookRangeSelection(selectedRange, selectionRequirement)
+      : {
+          ok: false,
+          message: "Select a source range first.",
+        };
   const selectionRequirementLabel =
     describeWorkbookSelectionRequirement(selectionRequirement);
 
@@ -138,10 +157,6 @@ export function WorkbookPickerDialog({
           ) : !hasSource ? (
             <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
               {fileName ? "Loading source..." : "No source selected."}
-            </div>
-          ) : cellsQuery.isPending ? (
-            <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
-              Loading source...
             </div>
           ) : cellsQuery.isError ? (
             <div className="flex flex-1 items-center justify-center p-8 text-sm text-destructive">
