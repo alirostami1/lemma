@@ -27,13 +27,15 @@
     "lint": "biome lint"
   },
   "dependencies": {
-    "xlsx": "catalog:"
+    "xlsx": "catalog:",
+    "yauzl": "^3.4.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "catalog:",
     "@lemma/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
-    "@biomejs/biome": "catalog:"
+    "yazl": "^3.3.1"
   }
 }

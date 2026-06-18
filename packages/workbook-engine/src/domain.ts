@@ -12,6 +12,13 @@ export type WorkbookEngineConfig = {
   maxCells: number;
   maxFormulas: number;
   maxResponseBytes: number;
+  maxZipEntries?: number;
+  maxZipEntryBytes?: number;
+  maxZipTotalUncompressedBytes?: number;
+  maxZipCompressionRatio?: number;
+  maxXmlPartBytes?: number;
+  maxCachedValueBytes?: number;
+  maxRelationshipParts?: number;
 };
 
 export type ZipEntry = {
@@ -30,13 +37,48 @@ export type Inspection = {
   libreOfficeVersion: string | null;
 };
 
+export type WorkbookInspection = Omit<Inspection, "libreOfficeVersion">;
+
+export type WorkbookRejectionReason =
+  | "file_too_large"
+  | "invalid_zip"
+  | "zip_entry_count_exceeded"
+  | "zip_entry_too_large"
+  | "zip_expanded_size_exceeded"
+  | "zip_compression_ratio_exceeded"
+  | "zip_duplicate_entry"
+  | "zip_path_traversal"
+  | "zip_unsupported_compression"
+  | "xml_part_too_large"
+  | "relationship_part_count_exceeded"
+  | "not_xlsx"
+  | "too_many_sheets"
+  | "too_many_cells"
+  | "too_many_formulas"
+  | "unsafe_feature";
+
+export type WorkbookInspectionFinding = {
+  code: string;
+  part?: string;
+};
+
 export type WorkbookValues = {
   sheets: Array<{ name: string; rows: string[][] }>;
 };
 
+export type WorkbookCellType =
+  | "string"
+  | "number"
+  | "boolean"
+  | "date_like"
+  | "error"
+  | "blank"
+  | "formula_cached";
+
 export type WorkbookSparseSheet = {
   name: string;
   cells: Record<string, string>;
+  cellTypes?: Record<string, WorkbookCellType>;
   rowCount: number;
   columnCount: number;
 };
@@ -60,8 +102,11 @@ export type WorkbookEngine = {
   inspect(
     path: string,
     options?: WorkbookEngineOperationOptions,
-  ): Promise<Omit<Inspection, "libreOfficeVersion">>;
-  readCachedValues(path: string): Promise<WorkbookSparseValues>;
+  ): Promise<WorkbookInspection>;
+  readCachedValues(
+    path: string,
+    options?: WorkbookEngineOperationOptions,
+  ): Promise<WorkbookSparseValues>;
   recalculate(
     path: string,
     options?: WorkbookEngineOperationOptions,
@@ -79,6 +124,10 @@ export type WorkbookEngine = {
 export type WorkbookEngineErrorCode =
   | "invalid_workbook"
   | "unsupported_workbook"
+  | "unsafe_workbook"
+  | "workbook_too_large"
+  | "workbook_parse_failed"
+  | "calculation_failed"
   | "engine_unavailable"
   | "engine_timeout"
   | "engine_response_invalid"

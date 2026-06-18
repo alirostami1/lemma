@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { WorkbookSparseValues } from "./domain.js";
+import { WorkbookEngineError } from "./domain.js";
 import {
+  normalizeWorkbookSparseValues,
   parseWorkbookRef,
   resolveWorkbookValue,
   sparseValuesToRows,
@@ -53,5 +55,26 @@ describe("workbook engine values", () => {
         },
       ],
     });
+  });
+
+  it("rejects normalized sparse values beyond configured limits", () => {
+    expect(() =>
+      normalizeWorkbookSparseValues(
+        {
+          sheets: [
+            {
+              name: "Sheet1",
+              cells: {
+                A1: "alpha",
+                A2: "beta",
+              },
+              rowCount: 2,
+              columnCount: 1,
+            },
+          ],
+        },
+        { maxSheets: 1, maxCells: 1, maxCachedValueBytes: 100 },
+      ),
+    ).toThrow(WorkbookEngineError);
   });
 });

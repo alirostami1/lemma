@@ -4,8 +4,8 @@ import {
   WorkbookEngineError,
   type WorkbookEngineHealth,
   type WorkbookEngineOperationOptions,
+  type WorkbookInspection,
   type WorkbookSparseValues,
-  type WorkbookValues,
 } from "./domain.js";
 import { inspectXlsx } from "./inspection.js";
 import {
@@ -13,30 +13,25 @@ import {
   postWorkbookBatchToLibreOfficeWorker,
   postWorkbookToLibreOfficeWorker,
 } from "./libreoffice-client.js";
-import { readWorkbookSparseValues, sparseValuesToRows } from "./values.js";
+import { readWorkbookSparseValues } from "./values.js";
 
-export { inspectXlsx } from "./inspection.js";
-export {
-  parseWorkbookRef,
-  parseWorkbookSparseValues,
-  parseWorkbookValues,
-  readWorkbookSparseValues,
-  readWorkbookValues,
-  resolveWorkbookValue,
-  sparseValuesToRows,
-} from "./values.js";
-
-export async function recalculateWorkbookValues(
+export async function inspectWorkbook(
   path: string,
   config: WorkbookEngineConfig,
   options?: WorkbookEngineOperationOptions,
-): Promise<WorkbookValues> {
-  return sparseValuesToRows(
-    await recalculateWorkbookSparseValues(path, config, options),
-  );
+): Promise<WorkbookInspection> {
+  return createWorkbookEngine(config).inspect(path, options);
 }
 
-export async function recalculateWorkbookSparseValues(
+export async function readCachedWorkbookValues(
+  path: string,
+  config: WorkbookEngineConfig,
+  options?: WorkbookEngineOperationOptions,
+): Promise<WorkbookSparseValues> {
+  return createWorkbookEngine(config).readCachedValues(path, options);
+}
+
+export async function recalculateWorkbook(
   path: string,
   config: WorkbookEngineConfig,
   options?: WorkbookEngineOperationOptions,
@@ -46,7 +41,7 @@ export async function recalculateWorkbookSparseValues(
   return engine.recalculate(path, options);
 }
 
-export async function recalculateWorkbookSparseValuesBatch(
+export async function recalculateWorkbookBatch(
   path: string,
   count: number,
   config: WorkbookEngineConfig,
@@ -67,6 +62,13 @@ export async function recalculateWorkbookSparseValuesBatch(
   return values;
 }
 
+export async function getWorkbookEngineHealth(
+  config: WorkbookEngineConfig,
+  options?: WorkbookEngineOperationOptions,
+): Promise<WorkbookEngineHealth> {
+  return createWorkbookEngine(config).health(options);
+}
+
 export function createWorkbookEngine(
   config: WorkbookEngineConfig,
 ): WorkbookEngine {
@@ -83,16 +85,21 @@ export function createWorkbookEngine(
   );
 }
 
-export function createCachedWorkbookEngine(
+function createCachedWorkbookEngine(
   config: WorkbookEngineConfig,
 ): WorkbookEngine {
+  async function readInspectedCachedValues(path: string) {
+    await inspectXlsx(path, config);
+    return readWorkbookSparseValues(path, config);
+  }
+
   return {
     name: "cached",
     inspect: (path) => inspectXlsx(path, config),
-    readCachedValues: readWorkbookSparseValues,
-    recalculate: readWorkbookSparseValues,
+    readCachedValues: readInspectedCachedValues,
+    recalculate: readInspectedCachedValues,
     async recalculateBatch(path, count) {
-      const values = await readWorkbookSparseValues(path);
+      const values = await readInspectedCachedValues(path);
       return Array.from({ length: count }, () => values);
     },
     async health(): Promise<WorkbookEngineHealth> {
@@ -101,7 +108,7 @@ export function createCachedWorkbookEngine(
   };
 }
 
-export function createLibreOfficeUnoEngine(
+function createLibreOfficeUnoEngine(
   config: WorkbookEngineConfig,
 ): WorkbookEngine {
   const serviceUrl = config.libreOfficeServiceUrl;
@@ -116,13 +123,20 @@ export function createLibreOfficeUnoEngine(
   return {
     name: "libreoffice",
     inspect: (path) => inspectXlsx(path, config),
-    readCachedValues: readWorkbookSparseValues,
+    async readCachedValues(path) {
+      await inspectXlsx(path, config);
+      return readWorkbookSparseValues(path, config);
+    },
     async recalculate(path, options) {
       return postWorkbookToLibreOfficeWorker({
         serviceUrl,
         path,
         timeoutMs,
         maxResponseBytes,
+        maxSheets: config.maxSheets,
+        maxCells: config.maxCells,
+        maxCachedValueBytes:
+          config.maxCachedValueBytes ?? config.maxResponseBytes,
         requestId: options?.requestId,
       });
     },
@@ -133,6 +147,10 @@ export function createLibreOfficeUnoEngine(
         count,
         timeoutMs,
         maxResponseBytes,
+        maxSheets: config.maxSheets,
+        maxCells: config.maxCells,
+        maxCachedValueBytes:
+          config.maxCachedValueBytes ?? config.maxResponseBytes,
         requestId: options?.requestId,
       });
     },

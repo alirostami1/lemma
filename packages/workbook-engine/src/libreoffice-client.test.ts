@@ -26,6 +26,9 @@ describe("LibreOffice worker client", () => {
         path,
         timeoutMs: 1000,
         maxResponseBytes: 1024,
+        maxSheets: 10,
+        maxCells: 100,
+        maxCachedValueBytes: 1024,
         requestId,
       });
     } finally {
@@ -35,4 +38,68 @@ describe("LibreOffice worker client", () => {
     const init = fetch.mock.calls[0]?.[1];
     expect(new Headers(init?.headers).get("x-request-id")).toBe(requestId);
   });
+
+  it("rejects worker values that exceed configured cell limits", async () => {
+    const state = await workbookRequestState(
+      JSON.stringify({
+        sheets: [
+          {
+            name: "Sheet1",
+            cells: { A1: "1", A2: "2" },
+          },
+        ],
+      }),
+    );
+
+    await expect(
+      postWorkbookToLibreOfficeWorker({
+        ...state.input,
+        maxCells: 1,
+      }),
+    ).rejects.toMatchObject({
+      code: "workbook_too_large",
+    });
+
+    await state.cleanup();
+  });
+
+  it("classifies worker server errors as calculation failures", async () => {
+    const state = await workbookRequestState("failed", { status: 500 });
+
+    await expect(postWorkbookToLibreOfficeWorker(state.input)).rejects.toEqual(
+      expect.objectContaining({
+        code: "calculation_failed",
+      }),
+    );
+
+    await state.cleanup();
+  });
 });
+
+async function workbookRequestState(
+  body: string,
+  responseInit?: ResponseInit,
+): Promise<{
+  input: Parameters<typeof postWorkbookToLibreOfficeWorker>[0];
+  cleanup(): Promise<void>;
+}> {
+  const dir = await mkdtemp(join(tmpdir(), "lemma-workbook-engine-"));
+  const path = join(dir, "workbook.xlsx");
+  await writeFile(path, new Uint8Array([1, 2, 3]));
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response(body, responseInit)),
+  );
+  return {
+    input: {
+      serviceUrl: "http://localhost:8080",
+      path,
+      timeoutMs: 1000,
+      maxResponseBytes: 1024,
+      maxSheets: 10,
+      maxCells: 100,
+      maxCachedValueBytes: 1024,
+    },
+    cleanup: () => rm(dir, { recursive: true, force: true }),
+  };
+}
