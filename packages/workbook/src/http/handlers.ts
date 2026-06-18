@@ -34,6 +34,15 @@ function workbookHandler<TKey extends keyof WorkbookHandlerMap>(
   return withHttpErrorHandler(handler, handleWorkbookError);
 }
 
+const IMMUTABLE_WORKBOOK_SNAPSHOT_CACHE_CONTROL =
+  "private, max-age=31536000, immutable";
+
+function setImmutableWorkbookSnapshotCacheHeaders(c: {
+  header(name: string, value: string): void;
+}) {
+  c.header("Cache-Control", IMMUTABLE_WORKBOOK_SNAPSHOT_CACHE_CONTROL);
+}
+
 export function createWorkbookHandlers(
   deps: WorkbookHandlersDeps,
 ): WorkbookHandlerMap {
@@ -206,6 +215,7 @@ export function createWorkbookHandlers(
     ),
     getWorkbookSnapshot: workbookHandler("getWorkbookSnapshot", async (c) => {
       const { workbookSnapshotId } = c.req.valid("param");
+      setImmutableWorkbookSnapshotCacheHeaders(c);
       return c.json(
         presentWorkbookSnapshot(
           await deps.workbookCalculationService.getWorkbookSnapshot({
@@ -220,6 +230,7 @@ export function createWorkbookHandlers(
       "getWorkbookSnapshotMetadata",
       async (c) => {
         const { workbookSnapshotId } = c.req.valid("param");
+        setImmutableWorkbookSnapshotCacheHeaders(c);
         return c.json(
           presentWorkbookSnapshotMetadata(
             await deps.workbookCalculationService.getWorkbookSnapshotMetadata({
@@ -236,6 +247,7 @@ export function createWorkbookHandlers(
       async (c) => {
         const { workbookSnapshotId } = c.req.valid("param");
         const query = c.req.valid("query");
+        setImmutableWorkbookSnapshotCacheHeaders(c);
         return c.json(
           presentWorkbookSnapshotSheets(
             await deps.workbookCalculationService.listWorkbookSnapshotSheets({
@@ -253,6 +265,7 @@ export function createWorkbookHandlers(
       async (c) => {
         const { workbookSnapshotId, sheetIndex } = c.req.valid("param");
         const query = c.req.valid("query");
+        setImmutableWorkbookSnapshotCacheHeaders(c);
         return c.json(
           presentWorkbookSnapshotCells(
             await deps.workbookCalculationService.getWorkbookSnapshotCells({
@@ -271,6 +284,7 @@ export function createWorkbookHandlers(
       async (c) => {
         const { workbookSnapshotId } = c.req.valid("param");
         const query = c.req.valid("query");
+        setImmutableWorkbookSnapshotCacheHeaders(c);
         return c.json(
           presentWorkbookSnapshotRange(
             await deps.workbookCalculationService.getWorkbookSnapshotRange({
@@ -288,6 +302,7 @@ export function createWorkbookHandlers(
       async (c) => {
         const { workbookSnapshotId } = c.req.valid("param");
         const body = c.req.valid("json");
+        setImmutableWorkbookSnapshotCacheHeaders(c);
         return c.json(
           presentWorkbookSnapshotRangeBatch(
             await deps.workbookCalculationService.getWorkbookSnapshotRangeBatch(
@@ -307,6 +322,7 @@ export function createWorkbookHandlers(
       async (c) => {
         const { workbookSnapshotId } = c.req.valid("param");
         const { ref } = c.req.valid("query");
+        setImmutableWorkbookSnapshotCacheHeaders(c);
         return c.json(
           presentWorkbookSnapshotValue(
             await deps.workbookCalculationService.resolveWorkbookSnapshotValue({
