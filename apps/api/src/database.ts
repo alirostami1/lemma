@@ -1,5 +1,5 @@
 import { closeDatabase as close, createDatabase } from "@lemma/db";
-import { config } from "#/config.js";
+import { config } from "./config.js";
 
 export const { db, pool } = createDatabase(config.databaseUrl);
 
