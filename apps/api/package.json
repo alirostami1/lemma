@@ -9,14 +9,6 @@
       "default": "./dist/app.js"
     }
   },
-  "imports": {
-    "#/*": {
-      "types": "./dist/*.d.ts",
-      "development": "./src/*.ts",
-      "import": "./dist/*.js",
-      "default": "./dist/*.js"
-    }
-  },
   "scripts": {
     "check-types": "tsc --noEmit",
     "format": "biome format",
