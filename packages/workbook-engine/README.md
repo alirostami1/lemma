@@ -5,9 +5,19 @@ user-uploaded spreadsheets.
 
 ## Main Surface
 
-- workbook inspection
-- cached spreadsheet value extraction after inspection
-- LibreOffice client/runtime integration
+The package exports a small capability-level runtime API from
+`@lemma/workbook-engine/runtime`:
+
+- `createWorkbookEngine`
+- `inspectWorkbook`
+- `readCachedWorkbookValues`
+- `recalculateWorkbook`
+- `recalculateWorkbookBatch`
+- `getWorkbookEngineHealth`
+
+Parser helpers, ZIP/XML helpers, security policy internals, and concrete engine
+constructors are implementation details. Keep callers behind the runtime
+capabilities unless a new public capability is deliberately added.
 
 ## Security Model
 

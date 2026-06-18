@@ -102,8 +102,11 @@ export type WorkbookEngine = {
   inspect(
     path: string,
     options?: WorkbookEngineOperationOptions,
-  ): Promise<Omit<Inspection, "libreOfficeVersion">>;
-  readCachedValues(path: string): Promise<WorkbookSparseValues>;
+  ): Promise<WorkbookInspection>;
+  readCachedValues(
+    path: string,
+    options?: WorkbookEngineOperationOptions,
+  ): Promise<WorkbookSparseValues>;
   recalculate(
     path: string,
     options?: WorkbookEngineOperationOptions,
