@@ -7,7 +7,7 @@ const require = createRequire(import.meta.url);
 const yauzl = require("yauzl") as YauzlModule;
 
 type YauzlModule = {
-  openBuffer(
+  fromBuffer(
     buffer: Buffer,
     options: {
       autoClose?: boolean;
@@ -83,7 +83,7 @@ export async function openXlsxZipContainer(
 
 function openZipBuffer(buffer: Buffer): Promise<YauzlZipFile> {
   return new Promise((resolve, reject) => {
-    yauzl.openBuffer(
+    yauzl.fromBuffer(
       buffer,
       {
         autoClose: false,
