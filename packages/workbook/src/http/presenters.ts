@@ -1,3 +1,4 @@
+import { presentDate, presentNullableDate } from "@lemma/http";
 import type {
   WorkbookCalculationDto,
   WorkbookCalculationsResult,
@@ -74,24 +75,24 @@ export function presentWorkbookEngineHealth(result: {
 function presentWorkbookModel(workbook: Workbook) {
   return {
     ...workbook,
-    createdAt: workbook.createdAt.toISOString(),
-    updatedAt: workbook.updatedAt.toISOString(),
+    createdAt: presentDate(workbook.createdAt),
+    updatedAt: presentDate(workbook.updatedAt),
   };
 }
 
 function presentWorkbookCalculationModel(calculation: WorkbookCalculation) {
   return {
     ...calculation,
-    startedAt: calculation.startedAt?.toISOString() ?? null,
-    finishedAt: calculation.finishedAt?.toISOString() ?? null,
-    createdAt: calculation.createdAt.toISOString(),
-    updatedAt: calculation.updatedAt.toISOString(),
+    startedAt: presentNullableDate(calculation.startedAt),
+    finishedAt: presentNullableDate(calculation.finishedAt),
+    createdAt: presentDate(calculation.createdAt),
+    updatedAt: presentDate(calculation.updatedAt),
   };
 }
 
 function presentWorkbookSnapshotModel(snapshot: WorkbookSnapshot) {
   return {
     ...snapshot,
-    createdAt: snapshot.createdAt.toISOString(),
+    createdAt: presentDate(snapshot.createdAt),
   };
 }

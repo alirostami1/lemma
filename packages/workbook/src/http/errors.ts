@@ -3,6 +3,7 @@ import {
   DomainError,
   type ErrorMapper,
 } from "@lemma/error";
+import { jsonHttpError } from "@lemma/http";
 import {
   type ForbiddenWorkbookActionError,
   WorkbookApplicationError,
@@ -91,31 +92,29 @@ export function handleWorkbookError(
 ): Response {
   if (isWorkbookDomainError(error)) {
     const httpError = workbookDomainHttpError(error, c.get("requestId"));
-    return c.json(httpError.body, httpError.status);
+    return jsonHttpError(c, httpError.body.error, httpError.status);
   }
   if (isWorkbookApplicationError(error)) {
     const mapped = applicationErrorMapper[error.applicationCode];
-    return c.json(
+    return jsonHttpError(
+      c,
       {
-        error: {
-          code: mapped.code,
-          message: error.message,
-          requestId: c.get("requestId"),
-          details: error.details,
-        },
+        code: mapped.code,
+        message: error.message,
+        requestId: c.get("requestId"),
+        details: error.details,
       },
       mapped.status,
     );
   }
   if (error instanceof DomainError) {
-    return c.json(
+    return jsonHttpError(
+      c,
       {
-        error: {
-          code: "BAD_REQUEST",
-          message: error.message,
-          requestId: c.get("requestId"),
-          details: error.details,
-        },
+        code: "BAD_REQUEST",
+        message: error.message,
+        requestId: c.get("requestId"),
+        details: error.details,
       },
       400,
     );

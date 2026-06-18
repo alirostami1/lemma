@@ -1,7 +1,8 @@
 import { zValidator as zv } from "@hono/zod-validator";
-import type { HttpErrorResponse } from "@lemma/error";
+import type { HttpErrorCode, HttpErrorResponse } from "@lemma/error";
 import type { Handler, ValidationTargets } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { z } from "zod";
 
 export type AppEnv = {
@@ -9,6 +10,13 @@ export type AppEnv = {
 };
 
 type ValidationHook = Parameters<typeof zv>[2];
+
+export type HttpErrorResponseInput<C extends HttpErrorCode = HttpErrorCode> = {
+  code: C;
+  message: string;
+  requestId?: string;
+  details?: unknown;
+};
 
 export const zValidator = <
   T extends z.ZodSchema,
@@ -36,6 +44,37 @@ export const validationHook: ValidationHook = (result, c) => {
     );
   }
 };
+
+export function createHttpErrorResponse<C extends HttpErrorCode>(
+  input: HttpErrorResponseInput<C>,
+): HttpErrorResponse<C> {
+  return {
+    error: {
+      code: input.code,
+      message: input.message,
+      requestId: input.requestId,
+      details: input.details,
+    },
+  };
+}
+
+export function jsonHttpError<C extends HttpErrorCode>(
+  c: Parameters<Handler>[0],
+  input: HttpErrorResponseInput<C>,
+  status: ContentfulStatusCode,
+): Response {
+  return c.json(createHttpErrorResponse(input), status);
+}
+
+export function presentDate(value: Date): string {
+  return value.toISOString();
+}
+
+export function presentNullableDate(
+  value: Date | null | undefined,
+): string | null {
+  return value?.toISOString() ?? null;
+}
 
 export function withHttpErrorHandler<THandler extends Handler>(
   handler: THandler,
