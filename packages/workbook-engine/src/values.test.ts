@@ -95,4 +95,43 @@ describe("workbook engine values", () => {
 
     expect(normalized.sheets[0]).not.toHaveProperty("cellTypes");
   });
+
+  it("keeps only non-empty cells in normalized sparse values", () => {
+    const normalized = normalizeWorkbookSparseValues(
+      {
+        sheets: [
+          {
+            name: "Sheet1",
+            cells: {
+              A1: "alpha",
+              B2: "",
+              C3: "charlie",
+            },
+            cellTypes: {
+              A1: "string",
+              B2: "blank",
+              C3: "string",
+            },
+            rowCount: 50,
+            columnCount: 20,
+          },
+        ],
+      },
+      { maxSheets: 1, maxCells: 2, maxCachedValueBytes: 100 },
+    );
+
+    expect(normalized.sheets[0]).toEqual({
+      name: "Sheet1",
+      cells: {
+        A1: "alpha",
+        C3: "charlie",
+      },
+      cellTypes: {
+        A1: "string",
+        C3: "string",
+      },
+      rowCount: 3,
+      columnCount: 3,
+    });
+  });
 });

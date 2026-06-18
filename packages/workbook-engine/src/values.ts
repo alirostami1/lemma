@@ -162,8 +162,11 @@ export function normalizeWorkbookSparseValues(
   let valueBytes = 0;
   return {
     sheets: workbook.sheets.map((sheet) => {
+      const normalizedEntries = Object.entries(sheet.cells).filter(
+        ([, value]) => value.length > 0,
+      );
       const cells = Object.fromEntries(
-        Object.entries(sheet.cells).map(([address, value]) => {
+        normalizedEntries.map(([address, value]) => {
           cellCount += 1;
           valueBytes += Buffer.byteLength(value, "utf8");
           if (cellCount > limits.maxCells) {
@@ -182,17 +185,31 @@ export function normalizeWorkbookSparseValues(
         }),
       );
       const inferred = inferWorkbookSparseSheetSize(cells);
+      const cellTypes = sheet.cellTypes
+        ? filterCellTypesForSavedCells(sheet.cellTypes, cells)
+        : undefined;
       const normalizedSheet = {
         name: sheet.name,
         cells,
-        rowCount: Math.max(sheet.rowCount, inferred.rowCount),
-        columnCount: Math.max(sheet.columnCount, inferred.columnCount),
+        rowCount: inferred.rowCount,
+        columnCount: inferred.columnCount,
       };
-      return sheet.cellTypes
-        ? { ...normalizedSheet, cellTypes: sheet.cellTypes }
-        : normalizedSheet;
+      return cellTypes ? { ...normalizedSheet, cellTypes } : normalizedSheet;
     }),
   };
+}
+
+function filterCellTypesForSavedCells(
+  cellTypes: Record<string, WorkbookCellType>,
+  cells: Record<string, string>,
+): Record<string, WorkbookCellType> | undefined {
+  const filtered = Object.fromEntries(
+    Object.entries(cellTypes).filter(
+      ([address, cellType]) =>
+        Object.hasOwn(cells, address) && cellType !== "blank",
+    ),
+  );
+  return Object.keys(filtered).length > 0 ? filtered : undefined;
 }
 
 export function workbookValueLimits(
@@ -215,15 +232,16 @@ function sheetToSparseValues(
   const cellTypes: Record<string, WorkbookCellType> = {};
   let rowCount = 0;
   let columnCount = 0;
-  if (sheet?.["!ref"]) {
-    const range = XLSX.utils.decode_range(sheet["!ref"]);
-    rowCount = range.e.r + 1;
-    columnCount = range.e.c + 1;
-  }
   let valueBytes = 0;
   let cellCount = 0;
   for (const address of Object.keys(sheet ?? {})) {
     if (address.startsWith("!")) {
+      continue;
+    }
+    const decoded = XLSX.utils.decode_cell(address);
+    const cell = sheet?.[address];
+    const value = cell?.w ?? (cell?.v == null ? "" : String(cell.v));
+    if (value.length === 0) {
       continue;
     }
     cellCount += 1;
@@ -233,9 +251,6 @@ function sheetToSparseValues(
         "Workbook values include too many cells.",
       );
     }
-    const decoded = XLSX.utils.decode_cell(address);
-    const cell = sheet?.[address];
-    const value = cell?.w ?? (cell?.v == null ? "" : String(cell.v));
     valueBytes += Buffer.byteLength(value, "utf8");
     if (valueBytes > limits.maxCachedValueBytes) {
       throw new WorkbookEngineError(
