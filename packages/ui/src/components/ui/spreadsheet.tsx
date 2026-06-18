@@ -63,17 +63,14 @@ export function useSpreadsheetSheet(
     sheets.find((sheet) => sheet.name === activeSheetName) ?? sheets[0] ?? null;
 
   useEffect(() => {
-    if (!activeSheet) {
-      if (activeSheetName) {
-        setActiveSheetName("");
-      }
+    if (!activeSheetName) {
       return;
     }
 
     if (!sheets.some((sheet) => sheet.name === activeSheetName)) {
-      setActiveSheetName(activeSheet.name);
+      setActiveSheetName(sheets[0]?.name ?? "");
     }
-  }, [activeSheet, activeSheetName, sheets]);
+  }, [activeSheetName, sheets]);
 
   return {
     activeSheet,

@@ -46,6 +46,8 @@ import type {
   WorkbooksPage,
 } from "./model";
 
+const IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS = Number.POSITIVE_INFINITY;
+
 export function useWorkbooksQuery(
   input?: ListWorkbooksInput,
   options?: Omit<UseQueryOptions<WorkbooksPage>, "queryKey" | "queryFn">,
@@ -127,6 +129,7 @@ export function useWorkbookSnapshotMetadataQuery(
     queryKey: workbookKeys.snapshotMetadata(workbookSnapshotId),
     queryFn: () => getWorkbookSnapshotMetadata(workbookSnapshotId),
     enabled: Boolean(workbookSnapshotId),
+    staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
     ...options,
   });
 }
@@ -144,6 +147,7 @@ export function useWorkbookSnapshotSheetsQuery(
     queryKey: workbookKeys.snapshotSheets(workbookSnapshotId, params),
     queryFn: () => listWorkbookSnapshotSheets(input),
     enabled: Boolean(workbookSnapshotId),
+    staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
     ...options,
   });
 }
@@ -161,6 +165,7 @@ export function useWorkbookSnapshotCellsQuery(
     queryKey: workbookKeys.snapshotCells(workbookSnapshotId, params),
     queryFn: () => getWorkbookSnapshotCells(input),
     enabled: Boolean(workbookSnapshotId),
+    staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
     ...options,
   });
 }
@@ -178,6 +183,7 @@ export function useWorkbookSnapshotRangeQuery(
     queryKey: workbookKeys.snapshotRange(workbookSnapshotId, params),
     queryFn: () => getWorkbookSnapshotRange(input),
     enabled: Boolean(workbookSnapshotId),
+    staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
     ...options,
   });
 }
@@ -198,7 +204,7 @@ export function useWorkbookSnapshotRangesQuery(
           Boolean(workbookSnapshotId) &&
           Boolean(input.ref),
         retry: false,
-        staleTime: Number.POSITIVE_INFINITY,
+        staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
       };
     }),
   });
