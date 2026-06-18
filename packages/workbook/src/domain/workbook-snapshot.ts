@@ -22,6 +22,9 @@ export const MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_ROWS = 200;
 export const MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_COLUMNS = 50;
 export const MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_CELLS = 2_000;
 export const MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_VALUE_BYTES = 256_000;
+export const MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_REFS = 50;
+export const MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_CELLS = 5_000;
+export const MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_VALUE_BYTES = 512_000;
 
 export type WorkbookSnapshot = {
   id: WorkbookSnapshotId;
@@ -66,6 +69,24 @@ export type WorkbookSnapshotRange = WorkbookSnapshotCells & {
   ref: string;
   startCellAddress: string;
   endCellAddress: string;
+};
+
+export type WorkbookSnapshotRangeBatchItem =
+  | {
+      ref: string;
+      status: "ok";
+      range: WorkbookSnapshotRange;
+      errorMessage: null;
+    }
+  | {
+      ref: string;
+      status: "error";
+      range: null;
+      errorMessage: string;
+    };
+
+export type WorkbookSnapshotRangeBatch = {
+  ranges: WorkbookSnapshotRangeBatchItem[];
 };
 
 export function createWorkbookSnapshot(
@@ -196,6 +217,72 @@ export function createWorkbookSnapshotRange(
     startCellAddress: `${columnNumberToName(startColumn)}${startRow}`,
     endCellAddress: `${columnNumberToName(endColumn)}${endRow}`,
   };
+}
+
+export function createWorkbookSnapshotRangeBatch(
+  snapshot: WorkbookSnapshot,
+  input: {
+    refs: string[];
+  },
+): WorkbookSnapshotRangeBatch {
+  if (
+    !Array.isArray(input.refs) ||
+    input.refs.length < 1 ||
+    input.refs.length > MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_REFS
+  ) {
+    throw new InvalidWorkbookSnapshotReferenceError(
+      `refs must contain 1 to ${MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_REFS} items.`,
+    );
+  }
+
+  const ranges: WorkbookSnapshotRangeBatchItem[] = [];
+  let totalCells = 0;
+  let totalValueBytes = 0;
+
+  for (const ref of input.refs) {
+    try {
+      const range = createWorkbookSnapshotRange(snapshot, { ref });
+      const nextTotalCells = totalCells + range.rowCount * range.columnCount;
+      const nextTotalValueBytes =
+        totalValueBytes + workbookSnapshotRangeValueBytes(range);
+
+      if (nextTotalCells > MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_CELLS) {
+        ranges.push({
+          ref,
+          status: "error",
+          range: null,
+          errorMessage: `Batch ranges must return at most ${MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_CELLS} cells.`,
+        });
+        continue;
+      }
+
+      if (nextTotalValueBytes > MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_VALUE_BYTES) {
+        ranges.push({
+          ref,
+          status: "error",
+          range: null,
+          errorMessage: `Batch range values must be at most ${MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_VALUE_BYTES} bytes.`,
+        });
+        continue;
+      }
+
+      totalCells = nextTotalCells;
+      totalValueBytes = nextTotalValueBytes;
+      ranges.push({ ref, status: "ok", range, errorMessage: null });
+    } catch (error) {
+      ranges.push({
+        ref,
+        status: "error",
+        range: null,
+        errorMessage:
+          error instanceof InvalidWorkbookSnapshotReferenceError
+            ? error.message
+            : "Range could not be loaded.",
+      });
+    }
+  }
+
+  return { ranges };
 }
 
 export function resolveWorkbookSnapshotValue(
@@ -458,6 +545,18 @@ function createWorkbookSnapshotCellsForWindow(input: {
     rows,
     cellTypes,
   };
+}
+
+function workbookSnapshotRangeValueBytes(range: WorkbookSnapshotRange): number {
+  return range.rows.reduce(
+    (total, row) =>
+      total +
+      row.reduce(
+        (rowTotal, value) => rowTotal + Buffer.byteLength(value, "utf8"),
+        0,
+      ),
+    0,
+  );
 }
 
 function enforceCellWindowBounds(rowCount: number, columnCount: number): void {

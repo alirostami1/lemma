@@ -1,5 +1,6 @@
 import type {
   GetWorkbookSnapshotCellsInput,
+  GetWorkbookSnapshotRangeBatchInput,
   GetWorkbookSnapshotRangeInput,
   ListWorkbookCalculationsInput,
   ListWorkbookSnapshotSheetsInput,
@@ -25,6 +26,10 @@ type SnapshotCellsKeyInput = Omit<
 >;
 type SnapshotRangeKeyInput = Omit<
   GetWorkbookSnapshotRangeInput,
+  "workbookSnapshotId"
+>;
+type SnapshotRangeBatchKeyInput = Omit<
+  GetWorkbookSnapshotRangeBatchInput,
   "workbookSnapshotId"
 >;
 
@@ -80,6 +85,17 @@ export const workbookKeys = {
       "snapshot",
       workbookSnapshotId,
       "range",
+      input ?? {},
+    ] as const,
+  snapshotRangeBatch: (
+    workbookSnapshotId: string,
+    input?: SnapshotRangeBatchKeyInput,
+  ) =>
+    [
+      ...workbookKeys.all,
+      "snapshot",
+      workbookSnapshotId,
+      "ranges",
       input ?? {},
     ] as const,
 };

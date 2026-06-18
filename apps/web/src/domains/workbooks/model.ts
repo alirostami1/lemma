@@ -105,6 +105,24 @@ export interface WorkbookSnapshotRange extends WorkbookSnapshotCells {
   endCellAddress: string;
 }
 
+export type WorkbookSnapshotRangeBatchItem =
+  | {
+      ref: string;
+      status: "ok";
+      range: WorkbookSnapshotRange;
+      errorMessage: null;
+    }
+  | {
+      ref: string;
+      status: "error";
+      range: null;
+      errorMessage: string;
+    };
+
+export interface WorkbookSnapshotRangeBatch {
+  ranges: WorkbookSnapshotRangeBatchItem[];
+}
+
 export interface ListWorkbooksInput {
   limit?: number;
   cursor?: string;
@@ -167,6 +185,11 @@ export interface GetWorkbookSnapshotCellsInput {
 export interface GetWorkbookSnapshotRangeInput {
   workbookSnapshotId: string;
   ref: string;
+}
+
+export interface GetWorkbookSnapshotRangeBatchInput {
+  workbookSnapshotId: string;
+  refs: string[];
 }
 
 export interface WorkbooksPage {

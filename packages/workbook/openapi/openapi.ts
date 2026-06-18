@@ -25,6 +25,7 @@ import {
   MAX_WORKBOOK_NAME_LENGTH,
   MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_COLUMNS,
   MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_ROWS,
+  MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_REFS,
   MAX_WORKBOOK_SNAPSHOT_SHEET_PAGE_SIZE,
   WORKBOOK_CALCULATION_STATUS_ACCEPTED_VALUES,
   WORKBOOK_CELL_TYPE_ACCEPTED_VALUES,
@@ -307,6 +308,37 @@ const snapshotRangeSchema: Schema = {
   },
 };
 
+const snapshotRangeBatchItemSchema: Schema = {
+  name: "WorkbookSnapshotRangeBatchItem",
+  schema: {
+    type: "object",
+    required: ["ref", "status", "range", "errorMessage"],
+    properties: {
+      ref: { type: "string", minLength: 1 },
+      status: { type: "string", enum: ["ok", "error"] },
+      range: {
+        anyOf: [schemaRef(snapshotRangeSchema), { type: "null" }],
+      },
+      errorMessage: { type: ["string", "null"] },
+    },
+  },
+};
+
+const snapshotRangeBatchSchema: Schema = {
+  name: "WorkbookSnapshotRangeBatch",
+  schema: {
+    type: "object",
+    required: ["ranges"],
+    properties: {
+      ranges: {
+        type: "array",
+        maxItems: MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_REFS,
+        items: schemaRef(snapshotRangeBatchItemSchema),
+      },
+    },
+  },
+};
+
 const healthSchema: Schema = {
   name: "WorkbookEngineHealth",
   schema: {
@@ -354,6 +386,22 @@ const createCalculationRequestSchema = named(
     },
   },
 );
+const getSnapshotRangeBatchRequestSchema = named(
+  "GetWorkbookSnapshotRangeBatchRequest",
+  {
+    type: "object",
+    additionalProperties: false,
+    required: ["refs"],
+    properties: {
+      refs: {
+        type: "array",
+        minItems: 1,
+        maxItems: MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_REFS,
+        items: { type: "string", minLength: 1 },
+      },
+    },
+  },
+);
 const workbookResponseSchema = named(
   "WorkbookResponse",
   objectWith("workbook", schemaRef(workbookSchema)),
@@ -390,6 +438,10 @@ const snapshotRangeResponseSchema = named(
   "WorkbookSnapshotRangeResponse",
   objectWith("workbookSnapshotRange", schemaRef(snapshotRangeSchema)),
 );
+const snapshotRangeBatchResponseSchema = named(
+  "WorkbookSnapshotRangeBatchResponse",
+  objectWith("workbookSnapshotRangeBatch", schemaRef(snapshotRangeBatchSchema)),
+);
 const snapshotsResponseSchema = named(
   "WorkbookSnapshotsResponse",
   listWith("workbookSnapshots", schemaRef(snapshotSchema)),
@@ -417,11 +469,14 @@ const schemas = [
   snapshotSheetSchema,
   snapshotCellsSchema,
   snapshotRangeSchema,
+  snapshotRangeBatchItemSchema,
+  snapshotRangeBatchSchema,
   inspectionSchema,
   healthSchema,
   createWorkbookRequestSchema,
   updateWorkbookRequestSchema,
   createCalculationRequestSchema,
+  getSnapshotRangeBatchRequestSchema,
   workbookResponseSchema,
   workbooksResponseSchema,
   calculationResponseSchema,
@@ -431,6 +486,7 @@ const schemas = [
   snapshotSheetsResponseSchema,
   snapshotCellsResponseSchema,
   snapshotRangeResponseSchema,
+  snapshotRangeBatchResponseSchema,
   snapshotsResponseSchema,
   valueResponseSchema,
   healthResponseSchema,
@@ -644,6 +700,16 @@ const paths: Paths = {
           schema: { type: "string", minLength: 1 },
         },
       ],
+    ),
+  },
+  "/workbook-snapshots/{workbookSnapshotId}/ranges": {
+    parameters: [paramRef(snapshotIdParam)],
+    post: op(
+      "getWorkbookSnapshotRangeBatch",
+      "Get workbook snapshot ranges",
+      "200",
+      snapshotRangeBatchResponseSchema,
+      getSnapshotRangeBatchRequestSchema,
     ),
   },
   "/workbook-snapshots/{workbookSnapshotId}/values": {

@@ -29,6 +29,7 @@ import type {
   CreateWorkbookRequest,
   ForbiddenResponse,
   GetWorkbookSnapshotCellsParams,
+  GetWorkbookSnapshotRangeBatchRequest,
   GetWorkbookSnapshotRangeParams,
   ListWorkbookCalculationsParams,
   ListWorkbookSnapshotSheetsParams,
@@ -45,6 +46,7 @@ import type {
   WorkbookResponse,
   WorkbookSnapshotCellsResponse,
   WorkbookSnapshotMetadataResponse,
+  WorkbookSnapshotRangeBatchResponse,
   WorkbookSnapshotRangeResponse,
   WorkbookSnapshotResponse,
   WorkbookSnapshotSheetsResponse,
@@ -3367,6 +3369,129 @@ export const useGetGetWorkbookSnapshotRangeQueryData = () => {
     >(getGetWorkbookSnapshotRangeQueryKey(workbookSnapshotId, params));
 };
 
+export const getGetWorkbookSnapshotRangeBatchUrl = (
+  workbookSnapshotId: string,
+) => {
+  return `/api/v1/workbook-snapshots/${workbookSnapshotId}/ranges`;
+};
+
+/**
+ * @summary Get workbook snapshot ranges
+ */
+export const getWorkbookSnapshotRangeBatch = async (
+  workbookSnapshotId: string,
+  getWorkbookSnapshotRangeBatchRequest: GetWorkbookSnapshotRangeBatchRequest,
+  options?: RequestInit,
+): Promise<WorkbookSnapshotRangeBatchResponse> => {
+  return authedFetch<WorkbookSnapshotRangeBatchResponse>(
+    getGetWorkbookSnapshotRangeBatchUrl(workbookSnapshotId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(getWorkbookSnapshotRangeBatchRequest),
+    },
+  );
+};
+
+export const getGetWorkbookSnapshotRangeBatchMutationOptions = <
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof getWorkbookSnapshotRangeBatch>>,
+    TError,
+    { workbookSnapshotId: string; data: GetWorkbookSnapshotRangeBatchRequest },
+    TContext
+  >;
+  request?: SecondParameter<typeof authedFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof getWorkbookSnapshotRangeBatch>>,
+  TError,
+  { workbookSnapshotId: string; data: GetWorkbookSnapshotRangeBatchRequest },
+  TContext
+> => {
+  const mutationKey = ["getWorkbookSnapshotRangeBatch"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof getWorkbookSnapshotRangeBatch>>,
+    { workbookSnapshotId: string; data: GetWorkbookSnapshotRangeBatchRequest }
+  > = (props) => {
+    const { workbookSnapshotId, data } = props ?? {};
+
+    return getWorkbookSnapshotRangeBatch(
+      workbookSnapshotId,
+      data,
+      requestOptions,
+    );
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GetWorkbookSnapshotRangeBatchMutationResult = NonNullable<
+  Awaited<ReturnType<typeof getWorkbookSnapshotRangeBatch>>
+>;
+export type GetWorkbookSnapshotRangeBatchMutationBody =
+  GetWorkbookSnapshotRangeBatchRequest;
+export type GetWorkbookSnapshotRangeBatchMutationError =
+  | BadRequestResponse
+  | UnauthorizedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | ConflictResponse
+  | UpstreamWorkbookEngineResponseResponse;
+
+/**
+ * @summary Get workbook snapshot ranges
+ */
+export const useGetWorkbookSnapshotRangeBatch = <
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookEngineResponseResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof getWorkbookSnapshotRangeBatch>>,
+      TError,
+      {
+        workbookSnapshotId: string;
+        data: GetWorkbookSnapshotRangeBatchRequest;
+      },
+      TContext
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof getWorkbookSnapshotRangeBatch>>,
+  TError,
+  { workbookSnapshotId: string; data: GetWorkbookSnapshotRangeBatchRequest },
+  TContext
+> => {
+  return useMutation(
+    getGetWorkbookSnapshotRangeBatchMutationOptions(options),
+    queryClient,
+  );
+};
 export const getResolveWorkbookSnapshotValueUrl = (
   workbookSnapshotId: string,
   params: ResolveWorkbookSnapshotValueParams,

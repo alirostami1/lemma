@@ -7,6 +7,7 @@ import type {
   WorkbookSnapshotCells,
   WorkbookSnapshotMetadata,
   WorkbookSnapshotRange,
+  WorkbookSnapshotRangeBatch,
   WorkbookSnapshotSheetsPage,
 } from "../domain/index.js";
 
@@ -36,6 +37,9 @@ export type WorkbookSnapshotCellsResult = {
 };
 export type WorkbookSnapshotRangeResult = {
   workbookSnapshotRange: WorkbookSnapshotRange;
+};
+export type WorkbookSnapshotRangeBatchResult = {
+  workbookSnapshotRangeBatch: WorkbookSnapshotRangeBatch;
 };
 export type WorkbookSnapshotValueResult = { value: JsonValue };
 export type WorkbookEngineHealthResult = { health: WorkbookEngineHealth };

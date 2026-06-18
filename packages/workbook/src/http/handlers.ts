@@ -15,6 +15,7 @@ import {
   presentWorkbookSnapshotCells,
   presentWorkbookSnapshotMetadata,
   presentWorkbookSnapshotRange,
+  presentWorkbookSnapshotRangeBatch,
   presentWorkbookSnapshotSheets,
   presentWorkbookSnapshots,
   presentWorkbookSnapshotValue,
@@ -277,6 +278,25 @@ export function createWorkbookHandlers(
               workbookSnapshotId,
               ...query,
             }),
+          ),
+          200,
+        );
+      },
+    ),
+    getWorkbookSnapshotRangeBatch: workbookHandler(
+      "getWorkbookSnapshotRangeBatch",
+      async (c) => {
+        const { workbookSnapshotId } = c.req.valid("param");
+        const body = c.req.valid("json");
+        return c.json(
+          presentWorkbookSnapshotRangeBatch(
+            await deps.workbookCalculationService.getWorkbookSnapshotRangeBatch(
+              {
+                currentUser: c.var.identity,
+                workbookSnapshotId,
+                ...body,
+              },
+            ),
           ),
           200,
         );

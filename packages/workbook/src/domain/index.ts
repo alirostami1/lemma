@@ -64,6 +64,8 @@ export type {
   WorkbookSnapshotMetadata,
   WorkbookSnapshotMetadataSheet,
   WorkbookSnapshotRange,
+  WorkbookSnapshotRangeBatch,
+  WorkbookSnapshotRangeBatchItem,
   WorkbookSnapshotSheetsPage,
 } from "./workbook-snapshot.js";
 export {
@@ -71,12 +73,16 @@ export {
   createWorkbookSnapshotCells,
   createWorkbookSnapshotMetadata,
   createWorkbookSnapshotRange,
+  createWorkbookSnapshotRangeBatch,
   DEFAULT_WORKBOOK_SNAPSHOT_SHEET_PAGE_SIZE,
   listWorkbookSnapshotSheets,
   MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_CELLS,
   MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_COLUMNS,
   MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_ROWS,
   MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_VALUE_BYTES,
+  MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_CELLS,
+  MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_REFS,
+  MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_VALUE_BYTES,
   MAX_WORKBOOK_SNAPSHOT_SHEET_PAGE_SIZE,
   resolveWorkbookSnapshotValue,
 } from "./workbook-snapshot.js";

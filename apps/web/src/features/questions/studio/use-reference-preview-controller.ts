@@ -6,7 +6,7 @@ import {
   type WorkbookSelectionValuesByRef,
 } from "#/domains/questions/reference-preview";
 import type { WorkbookPreview } from "#/domains/questions/workbook-preview";
-import { useWorkbookSnapshotRangesQuery } from "#/domains/workbooks/hooks";
+import { useWorkbookSnapshotRangeBatchQuery } from "#/domains/workbooks/hooks";
 
 export type ReferencePreviewController = {
   referencePreviewCache: ReferencePreviewCache;
@@ -36,11 +36,11 @@ export function useReferencePreviewController({
       ),
     [workbookReferenceRefs, workbookSelectionValuesByRef],
   );
-  const workbookReferenceQueries = useWorkbookSnapshotRangesQuery(
-    missingWorkbookReferenceRefs.map((ref) => ({
+  const workbookReferenceQuery = useWorkbookSnapshotRangeBatchQuery(
+    {
       workbookSnapshotId: workbookSnapshotId ?? "",
-      ref,
-    })),
+      refs: missingWorkbookReferenceRefs,
+    },
     {
       enabled: Boolean(workbookSnapshotId),
     },
@@ -48,18 +48,17 @@ export function useReferencePreviewController({
   const fetchedWorkbookSelectionValuesByRef = useMemo(() => {
     const valuesByRef: WorkbookSelectionValuesByRef = {};
 
-    for (const [index, query] of workbookReferenceQueries.entries()) {
-      const ref = missingWorkbookReferenceRefs[index];
-      if (!ref || !query.data) {
+    for (const item of workbookReferenceQuery.data?.ranges ?? []) {
+      if (item.status !== "ok") {
         continue;
       }
 
-      valuesByRef[ref] = query.data.rows;
-      valuesByRef[query.data.ref] = query.data.rows;
+      valuesByRef[item.ref] = item.range.rows;
+      valuesByRef[item.range.ref] = item.range.rows;
     }
 
     return valuesByRef;
-  }, [workbookReferenceQueries, missingWorkbookReferenceRefs]);
+  }, [workbookReferenceQuery.data]);
   const referencePreviewCache = useMemo(
     () =>
       resolveReferencePreviewValues({

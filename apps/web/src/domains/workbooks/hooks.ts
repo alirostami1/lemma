@@ -3,7 +3,6 @@ import {
   type UseQueryOptions,
   useInfiniteQuery,
   useMutation,
-  useQueries,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
@@ -15,6 +14,7 @@ import {
   getWorkbookSnapshotCells,
   getWorkbookSnapshotMetadata,
   getWorkbookSnapshotRange,
+  getWorkbookSnapshotRangeBatch,
   listWorkbookCalculations,
   listWorkbookSnapshotSheets,
   listWorkbookSnapshots,
@@ -28,6 +28,7 @@ import type {
   CreateWorkbookInput,
   DeleteWorkbookInput,
   GetWorkbookSnapshotCellsInput,
+  GetWorkbookSnapshotRangeBatchInput,
   GetWorkbookSnapshotRangeInput,
   ListWorkbookCalculationsInput,
   ListWorkbookSnapshotSheetsInput,
@@ -41,6 +42,7 @@ import type {
   WorkbookSnapshotCells,
   WorkbookSnapshotMetadata,
   WorkbookSnapshotRange,
+  WorkbookSnapshotRangeBatch,
   WorkbookSnapshotSheetsPage,
   WorkbookSnapshotsPage,
   WorkbooksPage,
@@ -188,25 +190,23 @@ export function useWorkbookSnapshotRangeQuery(
   });
 }
 
-export function useWorkbookSnapshotRangesQuery(
-  inputs: GetWorkbookSnapshotRangeInput[],
-  options?: { enabled?: boolean },
+export function useWorkbookSnapshotRangeBatchQuery(
+  input: GetWorkbookSnapshotRangeBatchInput,
+  options?: Omit<
+    UseQueryOptions<WorkbookSnapshotRangeBatch>,
+    "queryKey" | "queryFn" | "enabled"
+  > & { enabled?: boolean },
 ) {
-  return useQueries({
-    queries: inputs.map((input) => {
-      const { workbookSnapshotId, ...params } = input;
+  const { workbookSnapshotId, ...params } = input;
+  const { enabled = true, ...queryOptions } = options ?? {};
 
-      return {
-        queryKey: workbookKeys.snapshotRange(workbookSnapshotId, params),
-        queryFn: () => getWorkbookSnapshotRange(input),
-        enabled:
-          options?.enabled !== false &&
-          Boolean(workbookSnapshotId) &&
-          Boolean(input.ref),
-        retry: false,
-        staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
-      };
-    }),
+  return useQuery({
+    queryKey: workbookKeys.snapshotRangeBatch(workbookSnapshotId, params),
+    queryFn: () => getWorkbookSnapshotRangeBatch(input),
+    enabled: enabled && Boolean(workbookSnapshotId) && input.refs.length > 0,
+    retry: false,
+    staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
+    ...queryOptions,
   });
 }
 

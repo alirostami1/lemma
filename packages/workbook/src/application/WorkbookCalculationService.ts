@@ -19,6 +19,7 @@ import type {
   WorkbookSnapshotByIdCommand,
   WorkbookSnapshotCellsCommand,
   WorkbookSnapshotMetadataCommand,
+  WorkbookSnapshotRangeBatchCommand,
   WorkbookSnapshotRangeCommand,
 } from "./commands.js";
 import type {
@@ -27,6 +28,7 @@ import type {
   WorkbookEngineHealthResult,
   WorkbookSnapshotCellsResult,
   WorkbookSnapshotMetadataResult,
+  WorkbookSnapshotRangeBatchResult,
   WorkbookSnapshotRangeResult,
   WorkbookSnapshotResult,
   WorkbookSnapshotSheetsResult,
@@ -234,6 +236,12 @@ export class WorkbookCalculationService {
     command: WorkbookSnapshotRangeCommand,
   ): Promise<WorkbookSnapshotRangeResult> {
     return this.snapshotService.getWorkbookSnapshotRange(command);
+  }
+
+  async getWorkbookSnapshotRangeBatch(
+    command: WorkbookSnapshotRangeBatchCommand,
+  ): Promise<WorkbookSnapshotRangeBatchResult> {
+    return this.snapshotService.getWorkbookSnapshotRangeBatch(command);
   }
 
   async resolveWorkbookSnapshotValue(

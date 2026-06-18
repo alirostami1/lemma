@@ -2066,6 +2066,173 @@ export const GetWorkbookSnapshotRange502Response = zod.strictObject({
 });
 
 /**
+ * @summary Get workbook snapshot ranges
+ */
+export const getWorkbookSnapshotRangeBatchPathWorkbookSnapshotIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+
+export const GetWorkbookSnapshotRangeBatchParams = zod.strictObject({
+  workbookSnapshotId: zod
+    .string()
+    .regex(getWorkbookSnapshotRangeBatchPathWorkbookSnapshotIdRegExp),
+});
+
+export const getWorkbookSnapshotRangeBatchBodyRefsMax = 50;
+
+export const GetWorkbookSnapshotRangeBatchBody = zod.strictObject({
+  refs: zod
+    .array(zod.string().min(1))
+    .min(1)
+    .max(getWorkbookSnapshotRangeBatchBodyRefsMax),
+});
+
+export const getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneSheetIndexMin = 0;
+
+export const getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneRowCountMin = 0;
+
+export const getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneColumnCountMin = 0;
+
+export const getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneRowsItemMax = 50;
+
+export const getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneRowsMax = 200;
+
+export const getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneCellTypesItemMax = 50;
+
+export const getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneCellTypesMax = 200;
+
+export const getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesMax = 50;
+
+export const GetWorkbookSnapshotRangeBatch200Response = zod.strictObject({
+  workbookSnapshotRangeBatch: zod.strictObject({
+    ranges: zod
+      .array(
+        zod.strictObject({
+          ref: zod.string().min(1),
+          status: zod.enum(["ok", "error"]),
+          range: zod.union([
+            zod.strictObject({
+              sheetIndex: zod
+                .number()
+                .min(
+                  getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneSheetIndexMin,
+                ),
+              sheetName: zod.string().min(1),
+              startRow: zod.number().min(1),
+              startColumn: zod.number().min(1),
+              rowCount: zod
+                .number()
+                .min(
+                  getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneRowCountMin,
+                ),
+              columnCount: zod
+                .number()
+                .min(
+                  getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneColumnCountMin,
+                ),
+              rows: zod
+                .array(
+                  zod
+                    .array(zod.string())
+                    .max(
+                      getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneRowsItemMax,
+                    ),
+                )
+                .max(
+                  getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneRowsMax,
+                ),
+              cellTypes: zod
+                .array(
+                  zod
+                    .array(
+                      zod.enum([
+                        "string",
+                        "number",
+                        "boolean",
+                        "date_like",
+                        "error",
+                        "blank",
+                        "formula_cached",
+                      ]),
+                    )
+                    .max(
+                      getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneCellTypesItemMax,
+                    ),
+                )
+                .max(
+                  getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesItemRangeOneOneCellTypesMax,
+                ),
+              ref: zod.string().min(1),
+              startCellAddress: zod.string().min(1),
+              endCellAddress: zod.string().min(1),
+            }),
+            zod.null(),
+          ]),
+          errorMessage: zod.string().nullable(),
+        }),
+      )
+      .max(
+        getWorkbookSnapshotRangeBatch200ResponseWorkbookSnapshotRangeBatchRangesMax,
+      ),
+  }),
+});
+
+export const GetWorkbookSnapshotRangeBatch400Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotRangeBatch401Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotRangeBatch403Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotRangeBatch404Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotRangeBatch409Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const GetWorkbookSnapshotRangeBatch502Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+/**
  * @summary Resolve workbook snapshot value
  */
 export const resolveWorkbookSnapshotValuePathWorkbookSnapshotIdRegExp =

@@ -6,6 +6,7 @@ import type {
   WorkbookResult,
   WorkbookSnapshotCellsResult,
   WorkbookSnapshotMetadataResult,
+  WorkbookSnapshotRangeBatchResult,
   WorkbookSnapshotRangeResult,
   WorkbookSnapshotResult,
   WorkbookSnapshotSheetsResult,
@@ -28,6 +29,7 @@ import type {
   WorkbookSnapshotCellsResponse,
   WorkbookSnapshot as WorkbookSnapshotDto,
   WorkbookSnapshotMetadataResponse,
+  WorkbookSnapshotRangeBatchResponse,
   WorkbookSnapshotRangeResponse,
   WorkbookSnapshotResponse,
   WorkbookSnapshotSheetsResponse,
@@ -96,6 +98,12 @@ export function presentWorkbookSnapshotRange(
   result: WorkbookSnapshotRangeResult,
 ): WorkbookSnapshotRangeResponse {
   return { workbookSnapshotRange: result.workbookSnapshotRange };
+}
+
+export function presentWorkbookSnapshotRangeBatch(
+  result: WorkbookSnapshotRangeBatchResult,
+): WorkbookSnapshotRangeBatchResponse {
+  return { workbookSnapshotRangeBatch: result.workbookSnapshotRangeBatch };
 }
 
 export function presentWorkbookSnapshots(

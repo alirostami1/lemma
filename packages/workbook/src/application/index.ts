@@ -15,6 +15,7 @@ export type {
   WorkbookSnapshotByIdCommand,
   WorkbookSnapshotCellsCommand,
   WorkbookSnapshotMetadataCommand,
+  WorkbookSnapshotRangeBatchCommand,
   WorkbookSnapshotRangeCommand,
 } from "./commands.js";
 export type {
@@ -24,6 +25,7 @@ export type {
   WorkbookResult,
   WorkbookSnapshotCellsResult,
   WorkbookSnapshotMetadataResult,
+  WorkbookSnapshotRangeBatchResult,
   WorkbookSnapshotRangeResult,
   WorkbookSnapshotResult,
   WorkbookSnapshotSheetsResult,

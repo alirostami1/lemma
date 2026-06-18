@@ -78,6 +78,10 @@ export type WorkbookSnapshotRangeCommand = WorkbookSnapshotByIdCommand & {
   ref: string;
 };
 
+export type WorkbookSnapshotRangeBatchCommand = WorkbookSnapshotByIdCommand & {
+  refs: string[];
+};
+
 export type ResolveWorkbookSnapshotValueCommand =
   WorkbookSnapshotByIdCommand & {
     source:

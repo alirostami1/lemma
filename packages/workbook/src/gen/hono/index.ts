@@ -20,6 +20,7 @@ import type {
   WorkbookResponse,
   WorkbookSnapshotCellsResponse,
   WorkbookSnapshotMetadataResponse,
+  WorkbookSnapshotRangeBatchResponse,
   WorkbookSnapshotRangeResponse,
   WorkbookSnapshotResponse,
   WorkbookSnapshotSheetsResponse,
@@ -39,6 +40,8 @@ import {
   GetWorkbookSnapshotCellsQueryParams,
   GetWorkbookSnapshotMetadataParams,
   GetWorkbookSnapshotParams,
+  GetWorkbookSnapshotRangeBatchBody,
+  GetWorkbookSnapshotRangeBatchParams,
   GetWorkbookSnapshotRangeParams,
   GetWorkbookSnapshotRangeQueryParams,
   ListWorkbookCalculationsParams,
@@ -218,6 +221,15 @@ type GetWorkbookSnapshotRangeResponses = {
   "409": ErrorResponse;
   "502": ErrorResponse;
 };
+type GetWorkbookSnapshotRangeBatchResponses = {
+  "200": WorkbookSnapshotRangeBatchResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
 type ResolveWorkbookSnapshotValueResponses = {
   "200": WorkbookSnapshotValueResponse;
   "400": ErrorResponse;
@@ -374,6 +386,17 @@ export type WorkbookHandlerMap = {
     },
     TypedHandlerResponse<GetWorkbookSnapshotRangeResponses>
   >;
+  getWorkbookSnapshotRangeBatch: Handler<
+    WorkbookAppEnv,
+    "/workbook-snapshots/:workbookSnapshotId/ranges",
+    {
+      out: {
+        param: z.infer<typeof GetWorkbookSnapshotRangeBatchParams>;
+        json: z.infer<typeof GetWorkbookSnapshotRangeBatchBody>;
+      };
+    },
+    TypedHandlerResponse<GetWorkbookSnapshotRangeBatchResponses>
+  >;
   resolveWorkbookSnapshotValue: Handler<
     WorkbookAppEnv,
     "/workbook-snapshots/:workbookSnapshotId/values",
@@ -521,6 +544,14 @@ export function createWorkbookRoutes(deps: {
     zValidator("param", GetWorkbookSnapshotRangeParams, validationHook),
     zValidator("query", GetWorkbookSnapshotRangeQueryParams, validationHook),
     deps.handlers.getWorkbookSnapshotRange,
+  );
+
+  app.post(
+    "/workbook-snapshots/:workbookSnapshotId/ranges",
+    deps.requireIdentity,
+    zValidator("param", GetWorkbookSnapshotRangeBatchParams, validationHook),
+    zValidator("json", GetWorkbookSnapshotRangeBatchBody, validationHook),
+    deps.handlers.getWorkbookSnapshotRangeBatch,
   );
 
   app.get(

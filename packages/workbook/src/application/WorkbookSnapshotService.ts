@@ -3,6 +3,7 @@ import {
   createWorkbookSnapshotCells,
   createWorkbookSnapshotMetadata,
   createWorkbookSnapshotRange,
+  createWorkbookSnapshotRangeBatch,
   listWorkbookSnapshotSheets,
   resolveWorkbookSnapshotValue,
   workbookCalculationId as toWorkbookCalculationId,
@@ -16,11 +17,13 @@ import type {
   WorkbookSnapshotByIdCommand,
   WorkbookSnapshotCellsCommand,
   WorkbookSnapshotMetadataCommand,
+  WorkbookSnapshotRangeBatchCommand,
   WorkbookSnapshotRangeCommand,
 } from "./commands.js";
 import type {
   WorkbookSnapshotCellsResult,
   WorkbookSnapshotMetadataResult,
+  WorkbookSnapshotRangeBatchResult,
   WorkbookSnapshotRangeResult,
   WorkbookSnapshotResult,
   WorkbookSnapshotSheetsResult,
@@ -153,6 +156,20 @@ export class WorkbookSnapshotService {
       return {
         workbookSnapshotRange: createWorkbookSnapshotRange(snapshot, {
           ref: command.ref,
+        }),
+      };
+    });
+  }
+
+  async getWorkbookSnapshotRangeBatch(
+    command: WorkbookSnapshotRangeBatchCommand,
+  ): Promise<WorkbookSnapshotRangeBatchResult> {
+    return this.operation("get_workbook_snapshot_range_batch", async () => {
+      const snapshot = (await this.getWorkbookSnapshot(command))
+        .workbookSnapshot;
+      return {
+        workbookSnapshotRangeBatch: createWorkbookSnapshotRangeBatch(snapshot, {
+          refs: command.refs,
         }),
       };
     });

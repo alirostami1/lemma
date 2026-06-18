@@ -10,6 +10,8 @@ import type {
   WorkbookSnapshot as WorkbookSnapshotDto,
   WorkbookSnapshotMetadata as WorkbookSnapshotMetadataDto,
   WorkbookSnapshotMetadataResponse,
+  WorkbookSnapshotRangeBatchItem as WorkbookSnapshotRangeBatchItemDto,
+  WorkbookSnapshotRangeBatchResponse,
   WorkbookSnapshotRange as WorkbookSnapshotRangeDto,
   WorkbookSnapshotRangeResponse,
   WorkbookSnapshotResponse,
@@ -28,6 +30,8 @@ import type {
   WorkbookSnapshotCells,
   WorkbookSnapshotMetadata,
   WorkbookSnapshotRange,
+  WorkbookSnapshotRangeBatch,
+  WorkbookSnapshotRangeBatchItem,
   WorkbookSnapshotSheet,
   WorkbookSnapshotSheetsPage,
   WorkbookSnapshotsPage,
@@ -105,6 +109,36 @@ export function mapWorkbookSnapshotRange(
     ref: dto.ref,
     startCellAddress: dto.startCellAddress,
     endCellAddress: dto.endCellAddress,
+  };
+}
+
+export function mapWorkbookSnapshotRangeBatchItem(
+  dto: WorkbookSnapshotRangeBatchItemDto,
+): WorkbookSnapshotRangeBatchItem {
+  if (dto.status === "ok" && dto.range) {
+    return {
+      ref: dto.ref,
+      status: "ok",
+      range: mapWorkbookSnapshotRange(dto.range),
+      errorMessage: null,
+    };
+  }
+
+  return {
+    ref: dto.ref,
+    status: "error",
+    range: null,
+    errorMessage: dto.errorMessage ?? "Range could not be loaded.",
+  };
+}
+
+export function mapWorkbookSnapshotRangeBatchResponse(
+  response: WorkbookSnapshotRangeBatchResponse,
+): WorkbookSnapshotRangeBatch {
+  return {
+    ranges: response.workbookSnapshotRangeBatch.ranges.map(
+      mapWorkbookSnapshotRangeBatchItem,
+    ),
   };
 }
 
