@@ -1,5 +1,12 @@
-export * from "./env.js";
-export * from "./errors.js";
-export * from "./handlers.js";
-export * from "./presenters.js";
-export * from "./routes.js";
+export type { FilesAppEnv, RequireIdentity } from "./env.js";
+export { handleFilesError } from "./errors.js";
+export type { FilesHandlersDeps } from "./handlers.js";
+export { createFilesHandlers } from "./handlers.js";
+export {
+  presentCreateFileUpload,
+  presentDownloadFileUrl,
+  presentFile,
+  presentFiles,
+} from "./presenters.js";
+export type { FilesRoutesDeps } from "./routes.js";
+export { filesRoutes } from "./routes.js";

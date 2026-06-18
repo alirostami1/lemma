@@ -1,1 +1,2 @@
-export * from "./PgBossJobQueue.js";
+export type { PgBossJobQueueConfig } from "./PgBossJobQueue.js";
+export { PgBossJobQueue } from "./PgBossJobQueue.js";

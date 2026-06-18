@@ -1,2 +1,2 @@
-export * from "./CentrifugoRealtimePublisher.js";
-export * from "./HmacJwtTokenSigner.js";
+export { CentrifugoRealtimePublisher } from "./CentrifugoRealtimePublisher.js";
+export { HmacJwtTokenSigner } from "./HmacJwtTokenSigner.js";
