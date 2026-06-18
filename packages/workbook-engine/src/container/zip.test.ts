@@ -1,12 +1,29 @@
+import { createRequire } from "node:module";
+import { buffer as streamToBuffer } from "node:stream/consumers";
 import { describe, expect, it } from "vitest";
 import type { WorkbookEngineConfig } from "../domain.js";
 import { InvalidWorkbookError } from "../domain.js";
 import { openXlsxZipContainer } from "./zip.js";
 
+const require = createRequire(import.meta.url);
+const yazl = require("yazl") as YazlModule;
+
+type YazlModule = {
+  ZipFile: new () => {
+    outputStream: NodeJS.ReadableStream;
+    addBuffer(
+      buffer: Buffer,
+      metadataPath: string,
+      options?: { compress?: boolean },
+    ): void;
+    end(): void;
+  };
+};
+
 describe("openXlsxZipContainer", () => {
   it("indexes safe zip entries", async () => {
-    const container = openXlsxZipContainer(
-      makeZip([{ name: "xl/workbook.xml", body: "<workbook />" }]),
+    const container = await openXlsxZipContainer(
+      await makeZip([{ name: "xl/workbook.xml", body: "<workbook />" }]),
       config(),
     );
 
@@ -16,37 +33,43 @@ describe("openXlsxZipContainer", () => {
       throw new Error("Missing test entry.");
     }
 
-    await expect(container.readTextEntry(entry)).resolves.toBe("<workbook />");
+    try {
+      await expect(container.readTextEntry(entry)).resolves.toBe(
+        "<workbook />",
+      );
+    } finally {
+      container.close();
+    }
   });
 
-  it("rejects duplicate entries", () => {
-    expect(() =>
+  it("rejects duplicate entries", async () => {
+    await expect(
       openXlsxZipContainer(
-        makeZip([
+        await makeZip([
           { name: "xl/workbook.xml", body: "" },
           { name: "xl/workbook.xml", body: "" },
         ]),
         config(),
       ),
-    ).toThrow(InvalidWorkbookError);
+    ).rejects.toThrow(InvalidWorkbookError);
   });
 
-  it("rejects path traversal entries", () => {
-    expect(() =>
+  it("rejects path traversal entries", async () => {
+    await expect(
       openXlsxZipContainer(
-        makeZip([{ name: "../xl/workbook.xml", body: "" }]),
+        makeUnsafeZip([{ name: "../xl/workbook.xml", body: "" }]),
         config(),
       ),
-    ).toThrow(InvalidWorkbookError);
+    ).rejects.toThrow(InvalidWorkbookError);
   });
 
-  it("rejects oversized expanded data", () => {
-    expect(() =>
+  it("rejects oversized expanded data", async () => {
+    await expect(
       openXlsxZipContainer(
-        makeZip([{ name: "xl/workbook.xml", body: "abc" }]),
+        await makeZip([{ name: "xl/workbook.xml", body: "abc" }]),
         { ...config(), maxZipTotalUncompressedBytes: 2 },
       ),
-    ).toThrow(InvalidWorkbookError);
+    ).rejects.toThrow(InvalidWorkbookError);
   });
 });
 
@@ -63,7 +86,16 @@ function config(): WorkbookEngineConfig {
   };
 }
 
-function makeZip(entries: Array<{ name: string; body: string }>): Buffer {
+async function makeZip(entries: Array<{ name: string; body: string }>) {
+  const zip = new yazl.ZipFile();
+  for (const entry of entries) {
+    zip.addBuffer(Buffer.from(entry.body), entry.name, { compress: false });
+  }
+  zip.end();
+  return streamToBuffer(zip.outputStream);
+}
+
+function makeUnsafeZip(entries: Array<{ name: string; body: string }>): Buffer {
   const localParts: Buffer[] = [];
   const centralParts: Buffer[] = [];
   let localOffset = 0;

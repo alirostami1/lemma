@@ -31,77 +31,81 @@ export async function inspectXlsx(
     });
   }
 
-  const container = openXlsxZipContainer(buffer, config);
-  const findings = collectForbiddenEntryFindings(container.entries);
-  const workbookEntry = container.byName.get("xl/workbook.xml");
-  if (!container.byName.has("[Content_Types].xml") || !workbookEntry) {
-    throw new InvalidWorkbookError("Workbook must be an .xlsx file.", {
-      sheetCount: 0,
-      cellCount: 0,
-      formulaCount: 0,
-      forbiddenFeatureFindings: ["not_xlsx"],
-    });
-  }
+  const container = await openXlsxZipContainer(buffer, config);
+  try {
+    const findings = collectForbiddenEntryFindings(container.entries);
+    const workbookEntry = container.byName.get("xl/workbook.xml");
+    if (!container.byName.has("[Content_Types].xml") || !workbookEntry) {
+      throw new InvalidWorkbookError("Workbook must be an .xlsx file.", {
+        sheetCount: 0,
+        cellCount: 0,
+        formulaCount: 0,
+        forbiddenFeatureFindings: ["not_xlsx"],
+      });
+    }
 
-  findings.push(
-    ...collectWorkbookXmlFindings(
-      await readBoundedXmlPart({
-        partName: workbookEntry.name,
-        read: () => container.readTextEntry(workbookEntry),
-        config,
-      }),
-    ),
-  );
+    findings.push(
+      ...collectWorkbookXmlFindings(
+        await readBoundedXmlPart({
+          partName: workbookEntry.name,
+          read: () => container.readTextEntry(workbookEntry),
+          config,
+        }),
+      ),
+    );
 
-  let sheetCount = 0;
-  let cellCount = 0;
-  let formulaCount = 0;
-  let relationshipPartCount = 0;
-  for (const entry of container.entries) {
-    if (entry.name.endsWith(".rels")) {
-      relationshipPartCount += 1;
-      if (relationshipPartCount > (config.maxRelationshipParts ?? 1_000)) {
-        throw new InvalidWorkbookError(
-          "Workbook has too many relationship parts.",
-          {
-            sheetCount,
-            cellCount,
-            formulaCount,
-            forbiddenFeatureFindings: ["relationship_part_count_exceeded"],
-          },
-        );
+    let sheetCount = 0;
+    let cellCount = 0;
+    let formulaCount = 0;
+    let relationshipPartCount = 0;
+    for (const entry of container.entries) {
+      if (entry.name.endsWith(".rels")) {
+        relationshipPartCount += 1;
+        if (relationshipPartCount > (config.maxRelationshipParts ?? 1_000)) {
+          throw new InvalidWorkbookError(
+            "Workbook has too many relationship parts.",
+            {
+              sheetCount,
+              cellCount,
+              formulaCount,
+              forbiddenFeatureFindings: ["relationship_part_count_exceeded"],
+            },
+          );
+        }
+        const xml = await readBoundedXmlPart({
+          partName: entry.name,
+          read: () => container.readTextEntry(entry),
+          config,
+        });
+        findings.push(...collectRelationshipXmlFindings(entry.name, xml));
       }
-      const xml = await readBoundedXmlPart({
-        partName: entry.name,
-        read: () => container.readTextEntry(entry),
-        config,
-      });
-      findings.push(...collectRelationshipXmlFindings(entry.name, xml));
+      if (
+        entry.name.startsWith("xl/worksheets/") &&
+        entry.name.endsWith(".xml")
+      ) {
+        const xml = await readBoundedXmlPart({
+          partName: entry.name,
+          read: () => container.readTextEntry(entry),
+          config,
+        });
+        findings.push(...collectWorksheetXmlFindings(xml));
+        sheetCount += 1;
+        cellCount += countMatches(xml, /<c(?:\s|>)/g);
+        formulaCount += countMatches(xml, /<f(?:\s|>)/g);
+      }
     }
-    if (
-      entry.name.startsWith("xl/worksheets/") &&
-      entry.name.endsWith(".xml")
-    ) {
-      const xml = await readBoundedXmlPart({
-        partName: entry.name,
-        read: () => container.readTextEntry(entry),
-        config,
-      });
-      findings.push(...collectWorksheetXmlFindings(xml));
-      sheetCount += 1;
-      cellCount += countMatches(xml, /<c(?:\s|>)/g);
-      formulaCount += countMatches(xml, /<f(?:\s|>)/g);
-    }
-  }
 
-  const inspection = {
-    sheetCount,
-    cellCount,
-    formulaCount,
-    forbiddenFeatureFindings: uniqueFindings(findings),
-  };
-  rejectInvalidInspection(inspection, config);
-  return inspection;
+    const inspection = {
+      sheetCount,
+      cellCount,
+      formulaCount,
+      forbiddenFeatureFindings: uniqueFindings(findings),
+    };
+    rejectInvalidInspection(inspection, config);
+    return inspection;
+  } finally {
+    container.close();
+  }
 }
 
 async function readBoundedXmlPart(input: {

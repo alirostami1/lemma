@@ -1,132 +1,213 @@
-import { inflateRaw } from "node:zlib";
+import { createRequire } from "node:module";
+import { buffer as streamToBuffer } from "node:stream/consumers";
 import type { WorkbookEngineConfig, ZipEntry } from "../domain.js";
 import { InvalidWorkbookError } from "../domain.js";
 
-const END_OF_CENTRAL_DIRECTORY_SIGNATURE = 0x06054b50;
-const CENTRAL_DIRECTORY_SIGNATURE = 0x02014b50;
-const LOCAL_FILE_HEADER_SIGNATURE = 0x04034b50;
+const require = createRequire(import.meta.url);
+const yauzl = require("yauzl") as YauzlModule;
+
+type YauzlModule = {
+  openBuffer(
+    buffer: Buffer,
+    options: {
+      autoClose?: boolean;
+      lazyEntries?: boolean;
+      strictFileNames?: boolean;
+      validateEntrySizes?: boolean;
+    },
+    callback: (error: Error | null, zipFile?: YauzlZipFile) => void,
+  ): void;
+};
+
+type YauzlZipFile = {
+  entryCount: number;
+  close(): void;
+  readEntry(): void;
+  openReadStream(
+    entry: YauzlEntry,
+    callback: (error: Error | null, stream?: NodeJS.ReadableStream) => void,
+  ): void;
+  on(event: "entry", listener: (entry: YauzlEntry) => void): void;
+  on(event: "end", listener: () => void): void;
+  on(event: "error", listener: (error: Error) => void): void;
+};
+
+type YauzlEntry = {
+  fileName: string;
+  compressedSize: number;
+  uncompressedSize: number;
+  compressionMethod: number;
+  relativeOffsetOfLocalHeader: number;
+  isEncrypted(): boolean;
+};
+
+type IndexedZipEntry = ZipEntry & {
+  source: YauzlEntry;
+};
 
 export type XlsxZipContainer = {
   entries: ZipEntry[];
   byName: Map<string, ZipEntry>;
   readEntry(entry: ZipEntry): Promise<Buffer>;
   readTextEntry(entry: ZipEntry): Promise<string>;
+  close(): void;
 };
 
-export function openXlsxZipContainer(
+export async function openXlsxZipContainer(
   buffer: Buffer,
   config: WorkbookEngineConfig,
-): XlsxZipContainer {
-  const entries = parseZipEntries(buffer, config);
+): Promise<XlsxZipContainer> {
+  const zipFile = await openZipBuffer(buffer);
+  const indexedEntries = await indexZipEntries(zipFile, config);
+  const entries: ZipEntry[] = indexedEntries.map(
+    ({ source: _source, ...entry }) => entry,
+  );
   const byName = new Map(entries.map((entry) => [entry.name, entry]));
+  const sourceByName = new Map(
+    indexedEntries.map((entry) => [entry.name, entry.source]),
+  );
+
   return {
     entries,
     byName,
-    readEntry: (entry) => readZipEntry(buffer, entry, config),
+    readEntry: (entry) =>
+      readZipEntry(zipFile, sourceByName.get(entry.name), entry, config),
     async readTextEntry(entry) {
-      return (await readZipEntry(buffer, entry, config)).toString("utf8");
+      return (
+        await readZipEntry(zipFile, sourceByName.get(entry.name), entry, config)
+      ).toString("utf8");
     },
+    close: () => zipFile.close(),
   };
 }
 
-function parseZipEntries(
-  buffer: Buffer,
+function openZipBuffer(buffer: Buffer): Promise<YauzlZipFile> {
+  return new Promise((resolve, reject) => {
+    yauzl.openBuffer(
+      buffer,
+      {
+        autoClose: false,
+        lazyEntries: true,
+        strictFileNames: true,
+        validateEntrySizes: true,
+      },
+      (error, zipFile) => {
+        if (error || !zipFile) {
+          reject(invalidZip("Workbook is not a valid .xlsx zip file."));
+          return;
+        }
+        resolve(zipFile);
+      },
+    );
+  });
+}
+
+function indexZipEntries(
+  zipFile: YauzlZipFile,
   config: WorkbookEngineConfig,
-): ZipEntry[] {
-  const eocd = findCentralDirectory(buffer);
-  const entryCount = buffer.readUInt16LE(eocd + 10);
-  const centralDirectorySize = buffer.readUInt32LE(eocd + 12);
-  let offset = buffer.readUInt32LE(eocd + 16);
-  const centralDirectoryEnd = offset + centralDirectorySize;
-
-  if (centralDirectoryEnd > buffer.length) {
-    throw invalidZip("Workbook zip central directory is outside the file.");
-  }
-  if (entryCount > (config.maxZipEntries ?? 10_000)) {
-    throw invalidZip("Workbook zip has too many entries.", {
-      reason: "zip_entry_count_exceeded",
-      entryCount,
-    });
-  }
-
-  const entries: ZipEntry[] = [];
-  const names = new Set<string>();
-  let totalUncompressedBytes = 0;
-
-  for (let index = 0; index < entryCount; index += 1) {
-    if (offset + 46 > buffer.length) {
-      throw invalidZip("Workbook zip central directory is truncated.");
-    }
-    if (buffer.readUInt32LE(offset) !== CENTRAL_DIRECTORY_SIGNATURE) {
-      throw invalidZip("Workbook zip central directory is invalid.");
-    }
-    const method = buffer.readUInt16LE(offset + 10);
-    const compressedSize = buffer.readUInt32LE(offset + 20);
-    const uncompressedSize = buffer.readUInt32LE(offset + 24);
-    const nameLength = buffer.readUInt16LE(offset + 28);
-    const extraLength = buffer.readUInt16LE(offset + 30);
-    const commentLength = buffer.readUInt16LE(offset + 32);
-    const localHeaderOffset = buffer.readUInt32LE(offset + 42);
-    const nextOffset = offset + 46 + nameLength + extraLength + commentLength;
-
-    if (nextOffset > buffer.length || nextOffset > centralDirectoryEnd) {
-      throw invalidZip("Workbook zip central directory entry is truncated.");
+): Promise<IndexedZipEntry[]> {
+  return new Promise((resolve, reject) => {
+    if (zipFile.entryCount > (config.maxZipEntries ?? 10_000)) {
+      reject(
+        invalidZip("Workbook zip has too many entries.", {
+          reason: "zip_entry_count_exceeded",
+          entryCount: zipFile.entryCount,
+        }),
+      );
+      return;
     }
 
-    const name = buffer
-      .subarray(offset + 46, offset + 46 + nameLength)
-      .toString("utf8");
-    validateEntryMetadata({
-      name,
-      method,
-      compressedSize,
-      uncompressedSize,
-      localHeaderOffset,
-      bufferLength: buffer.length,
-      config,
-      names,
+    const entries: IndexedZipEntry[] = [];
+    const names = new Set<string>();
+    let totalUncompressedBytes = 0;
+    let settled = false;
+
+    function fail(error: Error) {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      zipFile.close();
+      reject(error);
+    }
+
+    zipFile.on("error", (error) => {
+      fail(
+        invalidZip("Workbook zip central directory is invalid.", {
+          cause: error.message,
+        }),
+      );
     });
 
-    totalUncompressedBytes += uncompressedSize;
-    if (
-      totalUncompressedBytes >
-      (config.maxZipTotalUncompressedBytes ?? config.maxFileBytes * 20)
-    ) {
-      throw invalidZip("Workbook zip expands to too many bytes.", {
-        reason: "zip_expanded_size_exceeded",
-      });
-    }
-
-    entries.push({
-      name,
-      compressedSize,
-      uncompressedSize,
-      method,
-      offset: localHeaderOffset,
+    zipFile.on("entry", (entry) => {
+      try {
+        const indexedEntry = toIndexedEntry(entry, config, names);
+        totalUncompressedBytes += indexedEntry.uncompressedSize;
+        if (
+          totalUncompressedBytes >
+          (config.maxZipTotalUncompressedBytes ?? config.maxFileBytes * 20)
+        ) {
+          throw invalidZip("Workbook zip expands to too many bytes.", {
+            reason: "zip_expanded_size_exceeded",
+          });
+        }
+        entries.push(indexedEntry);
+        zipFile.readEntry();
+      } catch (error) {
+        fail(
+          error instanceof Error
+            ? error
+            : invalidZip("Workbook zip is invalid."),
+        );
+      }
     });
-    offset = nextOffset;
-  }
 
-  return entries;
+    zipFile.on("end", () => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      resolve(entries);
+    });
+
+    zipFile.readEntry();
+  });
+}
+
+function toIndexedEntry(
+  entry: YauzlEntry,
+  config: WorkbookEngineConfig,
+  names: Set<string>,
+): IndexedZipEntry {
+  validateEntryMetadata({
+    name: entry.fileName,
+    method: entry.compressionMethod,
+    compressedSize: entry.compressedSize,
+    uncompressedSize: entry.uncompressedSize,
+    offset: entry.relativeOffsetOfLocalHeader,
+    encrypted: entry.isEncrypted(),
+    config,
+    names,
+  });
+
+  return {
+    name: entry.fileName,
+    compressedSize: entry.compressedSize,
+    uncompressedSize: entry.uncompressedSize,
+    method: entry.compressionMethod,
+    offset: entry.relativeOffsetOfLocalHeader,
+    source: entry,
+  };
 }
 
 async function readZipEntry(
-  buffer: Buffer,
+  zipFile: YauzlZipFile,
+  source: YauzlEntry | undefined,
   entry: ZipEntry,
   config: WorkbookEngineConfig,
 ) {
-  if (entry.offset + 30 > buffer.length) {
-    throw invalidZip(`Workbook zip entry is truncated: ${entry.name}`);
-  }
-  if (buffer.readUInt32LE(entry.offset) !== LOCAL_FILE_HEADER_SIGNATURE) {
-    throw invalidZip(`Workbook zip entry is invalid: ${entry.name}`);
-  }
-  const nameLength = buffer.readUInt16LE(entry.offset + 26);
-  const extraLength = buffer.readUInt16LE(entry.offset + 28);
-  const start = entry.offset + 30 + nameLength + extraLength;
-  const end = start + entry.compressedSize;
-  if (end > buffer.length) {
-    throw invalidZip(`Workbook zip entry data is truncated: ${entry.name}`);
+  if (!source) {
+    throw invalidZip(`Workbook zip entry is missing: ${entry.name}`);
   }
   if (
     entry.uncompressedSize > (config.maxZipEntryBytes ?? config.maxFileBytes)
@@ -137,47 +218,34 @@ async function readZipEntry(
     });
   }
 
-  const data = buffer.subarray(start, end);
-  if (entry.method === 0) {
-    return data;
-  }
-  if (entry.method !== 8) {
-    throw invalidZip(`Unsupported workbook zip compression: ${entry.name}`, {
-      reason: "zip_unsupported_compression",
+  const stream = await openReadStream(zipFile, source, entry.name);
+  const data = await streamToBuffer(stream);
+  if (data.length !== entry.uncompressedSize) {
+    throw invalidZip(`Workbook zip entry size mismatch: ${entry.name}`, {
       entry: entry.name,
     });
   }
-  return new Promise<Buffer>((resolve, reject) => {
-    inflateRaw(data, (error, result) => {
-      if (error) {
-        reject(
-          invalidZip(`Workbook zip entry cannot be inflated: ${entry.name}`, {
-            cause: error.message,
-          }),
-        );
-        return;
-      }
-      if (result.length !== entry.uncompressedSize) {
-        reject(
-          invalidZip(`Workbook zip entry size mismatch: ${entry.name}`, {
-            entry: entry.name,
-          }),
-        );
-        return;
-      }
-      resolve(result);
-    });
-  });
+  return data;
 }
 
-function findCentralDirectory(buffer: Buffer) {
-  const min = Math.max(0, buffer.length - 65_557);
-  for (let offset = buffer.length - 22; offset >= min; offset -= 1) {
-    if (buffer.readUInt32LE(offset) === END_OF_CENTRAL_DIRECTORY_SIGNATURE) {
-      return offset;
-    }
-  }
-  throw invalidZip("Workbook is not a valid .xlsx zip file.");
+function openReadStream(
+  zipFile: YauzlZipFile,
+  entry: YauzlEntry,
+  entryName: string,
+): Promise<NodeJS.ReadableStream> {
+  return new Promise((resolve, reject) => {
+    zipFile.openReadStream(entry, (error, stream) => {
+      if (error || !stream) {
+        reject(
+          invalidZip(`Workbook zip entry cannot be read: ${entryName}`, {
+            cause: error?.message,
+          }),
+        );
+        return;
+      }
+      resolve(stream);
+    });
+  });
 }
 
 function validateEntryMetadata(input: {
@@ -185,8 +253,8 @@ function validateEntryMetadata(input: {
   method: number;
   compressedSize: number;
   uncompressedSize: number;
-  localHeaderOffset: number;
-  bufferLength: number;
+  offset: number;
+  encrypted: boolean;
   config: WorkbookEngineConfig;
   names: Set<string>;
 }) {
@@ -204,13 +272,13 @@ function validateEntryMetadata(input: {
   }
   input.names.add(input.name);
 
-  if (input.method !== 0 && input.method !== 8) {
+  if (input.encrypted || (input.method !== 0 && input.method !== 8)) {
     throw invalidZip(`Unsupported workbook zip compression: ${input.name}`, {
       reason: "zip_unsupported_compression",
       entry: input.name,
     });
   }
-  if (input.localHeaderOffset >= input.bufferLength) {
+  if (!Number.isSafeInteger(input.offset) || input.offset < 0) {
     throw invalidZip(`Workbook zip entry offset is invalid: ${input.name}`);
   }
   if (

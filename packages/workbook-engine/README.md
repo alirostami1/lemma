@@ -33,7 +33,8 @@ Inspection is split into reviewable boundaries:
 - `libreoffice-client`: worker boundary, timeouts, response limits, and typed
   failures
 
-The ZIP boundary rejects duplicate entries, unsafe paths, unsupported
+The ZIP boundary uses `yauzl` for central-directory parsing and entry reads. It
+rejects duplicate entries, unsafe paths, unsupported
 compression methods, excessive entry counts, excessive expanded bytes, large
 entries, and high compression ratios before XML inspection or value extraction.
 
@@ -52,6 +53,10 @@ large, calculation failed, unavailable, or invalid response.
 
 - `@lemma/workbook`
 - LibreOffice worker app
+
+Tests use `yazl` to create normal synthetic `.xlsx` ZIP fixtures. Handcrafted
+ZIP bytes are reserved for intentionally malformed archives that `yazl` refuses
+to create.
 
 ## Commands
 
