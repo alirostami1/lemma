@@ -901,6 +901,9 @@ importers:
       '@lemma/events':
         specifier: workspace:*
         version: link:../events
+      '@lemma/http':
+        specifier: workspace:*
+        version: link:../http
       '@lemma/identity':
         specifier: workspace:*
         version: link:../identity

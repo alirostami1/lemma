@@ -53,9 +53,7 @@ export const presentQuestionBlueprint = (
       ...result.questionBlueprint,
       currentVersionId: currentVersion.id,
       currentVersionNumber: currentVersion.versionNumber,
-      document: presentLearnerQuestionBlueprintDocument(
-        currentVersion.document,
-      ),
+      document: toLearnerQuestionBlueprintDocumentDto(currentVersion.document),
       currentVersion: {
         id: currentVersion.id,
         versionNumber: currentVersion.versionNumber,
@@ -140,7 +138,7 @@ export const presentGrade = (
 export const presentQuestionGenerationRun = (
   result: QuestionGenerationRunResultDto,
 ): QuestionGenerationRunResponse => ({
-  questionGenerationRun: presentLearnerQuestionGenerationRun(result),
+  questionGenerationRun: toQuestionGenerationRunDto(result),
 });
 
 export const presentQuestionGenerationRuns = (
@@ -154,7 +152,7 @@ export const presentQuestionGenerationRuns = (
   nextCursor: result.nextCursor,
 });
 
-function presentLearnerQuestionBlueprintDocument(
+function toLearnerQuestionBlueprintDocumentDto(
   document: NonNullable<
     QuestionBlueprintResult["questionBlueprint"]["currentVersion"]
   >["document"],
@@ -166,7 +164,7 @@ function presentLearnerQuestionBlueprintDocument(
       if (block.type === "text") {
         return {
           ...block,
-          content: publicInlineContent(block.content),
+          content: toPublicInlineContentDto(block.content),
         };
       }
       if (block.type === "response") {
@@ -192,7 +190,7 @@ function presentLearnerQuestionBlueprintDocument(
               rowId: cell.rowId,
               columnId: cell.columnId,
               type: cell.type,
-              content: publicInlineContent(cell.content),
+              content: toPublicInlineContentDto(cell.content),
             };
           }
           return {
@@ -212,7 +210,7 @@ function presentLearnerQuestionBlueprintDocument(
   };
 }
 
-function publicInlineContent(
+function toPublicInlineContentDto(
   content: Array<
     | { type: "text"; text: string }
     | {
@@ -230,7 +228,7 @@ function publicInlineContent(
   );
 }
 
-function presentLearnerQuestionGenerationRun(
+function toQuestionGenerationRunDto(
   result: QuestionGenerationRunResultDto,
 ): QuestionGenerationRunDto {
   const run = result.questionGenerationRun;

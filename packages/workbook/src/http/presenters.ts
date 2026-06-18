@@ -16,9 +16,12 @@ import type {
 } from "../domain/index.js";
 import type {
   WorkbookCalculationResponse,
+  WorkbookCalculation as WorkbookCalculationResponseDto,
   WorkbookCalculationsResponse,
+  Workbook as WorkbookDto,
   WorkbookEngineHealthResponse,
   WorkbookResponse,
+  WorkbookSnapshot as WorkbookSnapshotDto,
   WorkbookSnapshotResponse,
   WorkbookSnapshotsResponse,
   WorkbookSnapshotValueResponse,
@@ -26,12 +29,12 @@ import type {
 } from "../gen/types/index.js";
 
 export function presentWorkbook(result: WorkbookResult): WorkbookResponse {
-  return { workbook: presentWorkbookModel(result.workbook) };
+  return { workbook: toWorkbookDto(result.workbook) };
 }
 
 export function presentWorkbooks(result: WorkbooksResult): WorkbooksResponse {
   return {
-    workbooks: result.workbooks.map(presentWorkbookModel),
+    workbooks: result.workbooks.map(toWorkbookDto),
     nextCursor: result.nextCursor,
   };
 }
@@ -40,9 +43,7 @@ export function presentWorkbookCalculation(
   result: WorkbookCalculationDto,
 ): WorkbookCalculationResponse {
   return {
-    workbookCalculation: presentWorkbookCalculationModel(
-      result.workbookCalculation,
-    ),
+    workbookCalculation: toWorkbookCalculationDto(result.workbookCalculation),
   };
 }
 
@@ -51,7 +52,7 @@ export function presentWorkbookCalculations(
 ): WorkbookCalculationsResponse {
   return {
     workbookCalculations: result.workbookCalculations.map(
-      presentWorkbookCalculationModel,
+      toWorkbookCalculationDto,
     ),
     nextCursor: result.nextCursor,
   };
@@ -61,7 +62,7 @@ export function presentWorkbookSnapshot(
   result: WorkbookSnapshotResult,
 ): WorkbookSnapshotResponse {
   return {
-    workbookSnapshot: presentWorkbookSnapshotModel(result.workbookSnapshot),
+    workbookSnapshot: toWorkbookSnapshotDto(result.workbookSnapshot),
   };
 }
 
@@ -69,9 +70,7 @@ export function presentWorkbookSnapshots(
   result: WorkbookSnapshotsResult,
 ): WorkbookSnapshotsResponse {
   return {
-    workbookSnapshots: result.workbookSnapshots.map(
-      presentWorkbookSnapshotModel,
-    ),
+    workbookSnapshots: result.workbookSnapshots.map(toWorkbookSnapshotDto),
     nextCursor: result.nextCursor,
   };
 }
@@ -88,7 +87,7 @@ export function presentWorkbookEngineHealth(
   return { health: result.health };
 }
 
-function presentWorkbookModel(workbook: Workbook) {
+function toWorkbookDto(workbook: Workbook): WorkbookDto {
   return {
     ...workbook,
     createdAt: presentDate(workbook.createdAt),
@@ -96,7 +95,9 @@ function presentWorkbookModel(workbook: Workbook) {
   };
 }
 
-function presentWorkbookCalculationModel(calculation: WorkbookCalculation) {
+function toWorkbookCalculationDto(
+  calculation: WorkbookCalculation,
+): WorkbookCalculationResponseDto {
   return {
     ...calculation,
     startedAt: presentNullableDate(calculation.startedAt),
@@ -106,7 +107,9 @@ function presentWorkbookCalculationModel(calculation: WorkbookCalculation) {
   };
 }
 
-function presentWorkbookSnapshotModel(snapshot: WorkbookSnapshot) {
+function toWorkbookSnapshotDto(
+  snapshot: WorkbookSnapshot,
+): WorkbookSnapshotDto {
   return {
     ...snapshot,
     createdAt: presentDate(snapshot.createdAt),
