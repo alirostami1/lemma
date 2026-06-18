@@ -7,7 +7,10 @@ import {
 } from "#/domains/questions/reference-preview";
 import type { WorkbookPreview } from "#/domains/questions/workbook-preview";
 import { normalizeWorkbookRef } from "#/domains/questions/workbook-reference";
-import { useWorkbookSnapshotRangeBatchQuery } from "#/domains/workbooks/hooks";
+import {
+  useWorkbookSnapshotRangeBatchQueries,
+  WORKBOOK_SNAPSHOT_RANGE_BATCH_REF_LIMIT,
+} from "#/domains/workbooks/hooks";
 
 export type ReferencePreviewController = {
   referencePreviewCache: ReferencePreviewCache;
@@ -46,11 +49,24 @@ export function useReferencePreviewController({
 
     return Array.from(missingRefs);
   }, [workbookReferenceRefs, workbookSelectionValuesByRef]);
-  const workbookReferenceQuery = useWorkbookSnapshotRangeBatchQuery(
-    {
-      workbookSnapshotId: workbookSnapshotId ?? "",
-      refs: missingWorkbookReferenceRefs,
-    },
+  const workbookReferenceRefBatches = useMemo(
+    () =>
+      chunkArray(
+        missingWorkbookReferenceRefs,
+        WORKBOOK_SNAPSHOT_RANGE_BATCH_REF_LIMIT,
+      ),
+    [missingWorkbookReferenceRefs],
+  );
+  const workbookReferenceBatchInputs = useMemo(
+    () =>
+      workbookReferenceRefBatches.map((refs) => ({
+        workbookSnapshotId: workbookSnapshotId ?? "",
+        refs,
+      })),
+    [workbookReferenceRefBatches, workbookSnapshotId],
+  );
+  const workbookReferenceRangeBatch = useWorkbookSnapshotRangeBatchQueries(
+    workbookReferenceBatchInputs,
     {
       enabled: Boolean(workbookSnapshotId),
     },
@@ -58,7 +74,7 @@ export function useReferencePreviewController({
   const fetchedWorkbookSelectionValuesByRef = useMemo(() => {
     const valuesByRef: WorkbookSelectionValuesByRef = {};
 
-    for (const item of workbookReferenceQuery.data?.ranges ?? []) {
+    for (const item of workbookReferenceRangeBatch.ranges) {
       if (item.status !== "ok") {
         continue;
       }
@@ -80,7 +96,7 @@ export function useReferencePreviewController({
     }
 
     return valuesByRef;
-  }, [workbookReferenceQuery.data, workbookReferenceRefs]);
+  }, [workbookReferenceRangeBatch.ranges, workbookReferenceRefs]);
   const referencePreviewCache = useMemo(
     () =>
       resolveReferencePreviewValues({
@@ -137,4 +153,14 @@ function hasWorkbookSelectionValue(
   ref: string,
 ) {
   return Object.hasOwn(valuesByRef ?? {}, ref);
+}
+
+function chunkArray<TValue>(items: TValue[], chunkSize: number) {
+  const chunks: TValue[][] = [];
+
+  for (let index = 0; index < items.length; index += chunkSize) {
+    chunks.push(items.slice(index, index + chunkSize));
+  }
+
+  return chunks;
 }

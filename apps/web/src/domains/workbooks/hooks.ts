@@ -3,6 +3,7 @@ import {
   type UseQueryOptions,
   useInfiniteQuery,
   useMutation,
+  useQueries,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
@@ -49,6 +50,7 @@ import type {
 } from "./model";
 
 const IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS = Number.POSITIVE_INFINITY;
+export const WORKBOOK_SNAPSHOT_RANGE_BATCH_REF_LIMIT = 50;
 
 export function useWorkbooksQuery(
   input?: ListWorkbooksInput,
@@ -226,6 +228,34 @@ export function useWorkbookSnapshotRangeBatchQuery(
     retry: false,
     staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
     ...queryOptions,
+  });
+}
+
+export function useWorkbookSnapshotRangeBatchQueries(
+  inputs: GetWorkbookSnapshotRangeBatchInput[],
+  options?: { enabled?: boolean },
+): WorkbookSnapshotRangeBatch {
+  const { enabled = true } = options ?? {};
+
+  return useQueries({
+    queries: inputs.map((input) => {
+      const { workbookSnapshotId, ...params } = input;
+
+      return {
+        queryKey: workbookKeys.snapshotRangeBatch(workbookSnapshotId, params),
+        queryFn: () => getWorkbookSnapshotRangeBatch(input),
+        enabled:
+          enabled && Boolean(workbookSnapshotId) && input.refs.length > 0,
+        retry: false,
+        staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
+      };
+    }),
+    combine: (results): WorkbookSnapshotRangeBatch => ({
+      ranges: results.flatMap(
+        (result) =>
+          (result.data as WorkbookSnapshotRangeBatch | undefined)?.ranges ?? [],
+      ),
+    }),
   });
 }
 
