@@ -57,6 +57,7 @@ WORKDIR /repo/apps/web
 
 COPY --from=deps /repo/node_modules /repo/node_modules
 COPY --from=deps /repo/apps/web/node_modules /repo/apps/web/node_modules
+COPY --from=build /repo/packages /repo/packages
 COPY --from=deps /repo/package.json /repo/package.json
 COPY --from=deps /repo/pnpm-workspace.yaml /repo/pnpm-workspace.yaml
 COPY --from=build /repo/apps/web/dist ./dist

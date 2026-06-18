@@ -42,32 +42,9 @@ WORKDIR /repo/apps/worker
 
 COPY --from=deps /repo/node_modules /repo/node_modules
 COPY --from=deps /repo/apps/worker/node_modules /repo/apps/worker/node_modules
+COPY --from=build /repo/packages /repo/packages
 COPY --from=deps /repo/package.json /repo/package.json
 COPY --from=deps /repo/pnpm-workspace.yaml /repo/pnpm-workspace.yaml
-COPY --from=build /repo/packages/config/dist /repo/packages/config/dist
-COPY --from=build /repo/packages/config/package.json /repo/packages/config/package.json
-COPY --from=build /repo/packages/db/dist /repo/packages/db/dist
-COPY --from=build /repo/packages/db/package.json /repo/packages/db/package.json
-COPY --from=build /repo/packages/domain/dist /repo/packages/domain/dist
-COPY --from=build /repo/packages/domain/package.json /repo/packages/domain/package.json
-COPY --from=build /repo/packages/error/dist /repo/packages/error/dist
-COPY --from=build /repo/packages/error/package.json /repo/packages/error/package.json
-COPY --from=build /repo/packages/events/dist /repo/packages/events/dist
-COPY --from=build /repo/packages/events/package.json /repo/packages/events/package.json
-COPY --from=build /repo/packages/files/dist /repo/packages/files/dist
-COPY --from=build /repo/packages/files/package.json /repo/packages/files/package.json
-COPY --from=build /repo/packages/jobs/dist /repo/packages/jobs/dist
-COPY --from=build /repo/packages/jobs/package.json /repo/packages/jobs/package.json
-COPY --from=build /repo/packages/notifications/dist /repo/packages/notifications/dist
-COPY --from=build /repo/packages/notifications/package.json /repo/packages/notifications/package.json
-COPY --from=build /repo/packages/observability/dist /repo/packages/observability/dist
-COPY --from=build /repo/packages/observability/package.json /repo/packages/observability/package.json
-COPY --from=build /repo/packages/questions/dist /repo/packages/questions/dist
-COPY --from=build /repo/packages/questions/package.json /repo/packages/questions/package.json
-COPY --from=build /repo/packages/workbook/dist /repo/packages/workbook/dist
-COPY --from=build /repo/packages/workbook/package.json /repo/packages/workbook/package.json
-COPY --from=build /repo/packages/workbook-engine/dist /repo/packages/workbook-engine/dist
-COPY --from=build /repo/packages/workbook-engine/package.json /repo/packages/workbook-engine/package.json
 COPY --from=build /repo/apps/worker/dist ./dist
 COPY --from=build /repo/apps/worker/package.json ./package.json
 

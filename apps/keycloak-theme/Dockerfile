@@ -23,11 +23,17 @@ RUN pnpm --filter @lemma/ui build && pnpm --filter keycloak-theme build-keycloak
 
 FROM quay.io/keycloak/keycloak:26.6.2 AS keycloak-build
 
+ENV KC_DB=postgres
+ENV KC_HEALTH_ENABLED=true
+
 COPY --from=theme-build /repo/apps/keycloak-theme/dist_keycloak/lemma-keycloak-theme.jar /opt/keycloak/providers/lemma-keycloak-theme.jar
 
 RUN /opt/keycloak/bin/kc.sh build
 
 FROM quay.io/keycloak/keycloak:26.6.2
+
+ENV KC_DB=postgres
+ENV KC_HEALTH_ENABLED=true
 
 COPY --from=keycloak-build /opt/keycloak/ /opt/keycloak/
 

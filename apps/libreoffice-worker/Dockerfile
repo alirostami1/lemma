@@ -28,4 +28,4 @@ RUN useradd --create-home --uid 10001 worker
 
 USER worker
 
-CMD ["uv", "run", "--frozen", "lemma-libreoffice-worker"]
+CMD ["lemma-libreoffice-worker"]
