@@ -10,6 +10,7 @@ import type {
 } from "./ids.js";
 import {
   type ValueSource,
+  type WorkbookCellType,
   type WorkbookSparseSheet,
   type WorkbookSparseValues,
   workbookSparseValues,
@@ -58,7 +59,7 @@ export type WorkbookSnapshotCells = {
   rowCount: number;
   columnCount: number;
   rows: string[][];
-  cellTypes: string[][];
+  cellTypes: WorkbookCellType[][];
 };
 
 export type WorkbookSnapshotRange = WorkbookSnapshotCells & {
@@ -415,7 +416,7 @@ function createWorkbookSnapshotCellsForWindow(input: {
 }): WorkbookSnapshotCells {
   enforceCellWindowBounds(input.rowCount, input.columnCount);
   const rows: string[][] = [];
-  const cellTypes: string[][] = [];
+  const cellTypes: WorkbookCellType[][] = [];
   let valueBytes = 0;
 
   for (
@@ -424,7 +425,7 @@ function createWorkbookSnapshotCellsForWindow(input: {
     row += 1
   ) {
     const values: string[] = [];
-    const types: string[] = [];
+    const types: WorkbookCellType[] = [];
 
     for (
       let column = input.startColumn;
