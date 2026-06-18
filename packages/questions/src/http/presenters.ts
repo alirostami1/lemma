@@ -1,3 +1,4 @@
+import { presentDate, presentNullableDate } from "@lemma/http";
 import type {
   GradeQuestionResult,
   QuestionBlueprintResult,
@@ -13,8 +14,8 @@ import type {
 export const presentQuestionSet = (result: QuestionSetResult) => ({
   questionSet: {
     ...result.questionSet,
-    createdAt: result.questionSet.createdAt.toISOString(),
-    updatedAt: result.questionSet.updatedAt.toISOString(),
+    createdAt: presentDate(result.questionSet.createdAt),
+    updatedAt: presentDate(result.questionSet.updatedAt),
   },
 });
 
@@ -40,11 +41,11 @@ export const presentQuestionBlueprint = (result: QuestionBlueprintResult) => {
         versionNumber: currentVersion.versionNumber,
         workbookId: currentVersion.workbookId,
         createdByUserId: currentVersion.createdByUserId,
-        createdAt: currentVersion.createdAt.toISOString(),
+        createdAt: presentDate(currentVersion.createdAt),
       },
-      archivedAt: result.questionBlueprint.archivedAt?.toISOString() ?? null,
-      createdAt: result.questionBlueprint.createdAt.toISOString(),
-      updatedAt: result.questionBlueprint.updatedAt.toISOString(),
+      archivedAt: presentNullableDate(result.questionBlueprint.archivedAt),
+      createdAt: presentDate(result.questionBlueprint.createdAt),
+      updatedAt: presentDate(result.questionBlueprint.updatedAt),
     },
   };
 };
@@ -64,11 +65,11 @@ export const presentQuestionBlueprintAuthoring = (
         versionNumber: currentVersion.versionNumber,
         workbookId: currentVersion.workbookId,
         createdByUserId: currentVersion.createdByUserId,
-        createdAt: currentVersion.createdAt.toISOString(),
+        createdAt: presentDate(currentVersion.createdAt),
       },
-      archivedAt: result.questionBlueprint.archivedAt?.toISOString() ?? null,
-      createdAt: result.questionBlueprint.createdAt.toISOString(),
-      updatedAt: result.questionBlueprint.updatedAt.toISOString(),
+      archivedAt: presentNullableDate(result.questionBlueprint.archivedAt),
+      createdAt: presentDate(result.questionBlueprint.createdAt),
+      updatedAt: presentDate(result.questionBlueprint.updatedAt),
     },
   };
 };
@@ -97,8 +98,8 @@ export const presentQuestion = (result: QuestionResult) => {
       producer: question.producer,
       source: question.source,
       status: question.status,
-      createdAt: question.createdAt.toISOString(),
-      updatedAt: question.updatedAt.toISOString(),
+      createdAt: presentDate(question.createdAt),
+      updatedAt: presentDate(question.updatedAt),
     },
   };
 };
@@ -222,9 +223,9 @@ function presentLearnerQuestionGenerationRun(
     result: run.result,
     errorMessage: run.errorMessage,
     attempts: run.attempts,
-    startedAt: run.startedAt?.toISOString() ?? null,
-    finishedAt: run.finishedAt?.toISOString() ?? null,
-    createdAt: run.createdAt.toISOString(),
-    updatedAt: run.updatedAt.toISOString(),
+    startedAt: presentNullableDate(run.startedAt),
+    finishedAt: presentNullableDate(run.finishedAt),
+    createdAt: presentDate(run.createdAt),
+    updatedAt: presentDate(run.updatedAt),
   };
 }
