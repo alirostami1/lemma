@@ -19,6 +19,7 @@ import { InspectorSwitchField } from "./inspector-field";
 import { InspectorSection } from "./inspector-section";
 import { ReferencePickerPopover } from "./reference-picker-popover";
 import type { TableEditorSelection } from "./table-editor-selection";
+import { getTableRangePreviewViewModel } from "./table-range-preview-view-model";
 
 export function TableInspector({
   blockId,
@@ -57,9 +58,10 @@ export function TableInspector({
   const selectedPreview = selectedRangeReferenceId
     ? (referencePreviewCache[selectedRangeReferenceId] ?? null)
     : null;
-  const selectedPreviewError = getRangePreviewError(selectedPreview);
+  const selectedPreviewViewModel =
+    getTableRangePreviewViewModel(selectedPreview);
   const canApplyRange =
-    Boolean(selectedReference) && selectedPreviewError === null;
+    Boolean(selectedReference) && selectedPreviewViewModel.status === "ready";
 
   return (
     <div className="grid gap-4">
@@ -225,100 +227,26 @@ function RangePreview({
     );
   }
 
-  if (!preview) {
+  const viewModel = getTableRangePreviewViewModel(preview);
+  if (viewModel.status !== "ready") {
     return (
-      <p className="text-xs text-muted-foreground">
-        Select a workbook to preview this range.
+      <p
+        className={
+          viewModel.status === "not_ready"
+            ? "text-xs text-muted-foreground"
+            : "text-xs text-destructive"
+        }
+      >
+        {viewModel.message}
       </p>
     );
   }
-
-  if (preview.status !== "resolved") {
-    return (
-      <p className="text-xs text-destructive">
-        This range is not ready to preview.
-      </p>
-    );
-  }
-
-  const values = preview.rawValue;
-  if (!Array.isArray(values)) {
-    return (
-      <p className="text-xs text-destructive">
-        Selected range must be a rectangular 2D array.
-      </p>
-    );
-  }
-
-  if (values.length === 0) {
-    return <p className="text-xs text-destructive">Selected range is empty.</p>;
-  }
-
-  const rowCount = values.length;
-  const columnCount = values.reduce(
-    (max, row) => (Array.isArray(row) ? Math.max(max, row.length) : max),
-    0,
-  );
-
-  if (columnCount === 0) {
-    return <p className="text-xs text-destructive">Selected range is empty.</p>;
-  }
-
-  const rectangular = values.every(
-    (row) => Array.isArray(row) && row.length === columnCount,
-  );
-  if (!rectangular) {
-    return (
-      <p className="text-xs text-destructive">
-        Selected range must be a rectangular 2D array.
-      </p>
-    );
-  }
-
   return (
     <div className="grid gap-1">
       <p className="text-xs text-muted-foreground">
-        {rowCount} x {columnCount} range
+        {viewModel.rowCount} x {viewModel.columnCount} range
       </p>
-      <p className="text-xs text-muted-foreground">{preview.displayValue}</p>
+      <p className="text-xs text-muted-foreground">{viewModel.displayValue}</p>
     </div>
   );
-}
-
-function getRangePreviewError(
-  preview: ReferencePreviewCache[string] | null,
-): string | null {
-  if (!preview) {
-    return "Select a workbook to preview this range.";
-  }
-
-  if (preview.status !== "resolved") {
-    return "This range is not ready to preview.";
-  }
-
-  const values = preview.rawValue;
-  if (!Array.isArray(values)) {
-    return "Selected range must be a rectangular 2D array.";
-  }
-
-  if (values.length === 0) {
-    return "Selected range is empty.";
-  }
-
-  const columnCount = values.reduce(
-    (max, row) => (Array.isArray(row) ? Math.max(max, row.length) : max),
-    0,
-  );
-  if (columnCount === 0) {
-    return "Selected range is empty.";
-  }
-
-  const rectangular = values.every(
-    (row) => Array.isArray(row) && row.length === columnCount,
-  );
-  if (!rectangular) {
-    return "Selected range must be a rectangular 2D array.";
-  }
-
-  return null;
 }

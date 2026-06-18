@@ -14,7 +14,6 @@ import type {
 } from "#/domains/questions/authoring";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import {
-  getTableCell,
   makeContentCell,
   makeResponseCell,
   repairMissingAnswerFieldForCell,
@@ -31,6 +30,7 @@ import {
 import { TextAuthoringContent } from "../shared/text-authoring-content";
 import { InspectorField } from "./inspector-field";
 import { InspectorSection } from "./inspector-section";
+import { getTableCellInspectorViewModel } from "./table-cell-inspector-view-model";
 import {
   updateTableCellValueInComposedModel,
   updateTableContentCellInlineContentInComposedModel,
@@ -57,31 +57,18 @@ export function TableCellInspector({
   onModelChange(model: TableEditorModel): void;
   onEditorModelChange(model: ComposedEditorModel): void;
 }) {
-  const cell = getTableCell(model, cellId);
-  if (!cell) {
+  const viewModel = getTableCellInspectorViewModel(model, cellId);
+  if (viewModel.status === "missing_cell") {
     return <p className="text-sm text-muted-foreground">Select a cell.</p>;
   }
-  const row = model.rows.find((candidate) => candidate.id === cell.rowId);
-  const column = model.columns.find(
-    (candidate) => candidate.id === cell.columnId,
-  );
-  const cellContext = [row?.label, column?.label].filter(Boolean).join(" | ");
-
-  const responseField =
-    cell.type === "response"
-      ? model.responseFields.find((field) => field.id === cell.responseFieldId)
-      : null;
+  const { cell, context, responseField, title } = viewModel;
 
   return (
     <div className="grid gap-5">
       <div>
-        <h3 className="text-sm font-medium">
-          {cell.type === "response"
-            ? "Selected answer cell"
-            : "Selected content cell"}
-        </h3>
-        {cellContext ? (
-          <p className="text-xs text-muted-foreground">{cellContext}</p>
+        <h3 className="text-sm font-medium">{title}</h3>
+        {context ? (
+          <p className="text-xs text-muted-foreground">{context}</p>
         ) : null}
       </div>
       <InspectorSection title="Cell">
