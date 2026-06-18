@@ -10,20 +10,26 @@ import {
 import type {
   CreateWorkbookCalculationCommand,
   ListWorkbookCalculationsCommand,
+  ListWorkbookSnapshotSheetsCommand,
   ListWorkbookSnapshotsCommand,
   ProcessWorkbookCalculationCommand,
   ResolveWorkbookSnapshotValueCommand,
   RetryWorkbookCalculationCommand,
   WorkbookCalculationByIdCommand,
   WorkbookSnapshotByIdCommand,
-  WorkbookSnapshotPreviewCommand,
+  WorkbookSnapshotCellsCommand,
+  WorkbookSnapshotMetadataCommand,
+  WorkbookSnapshotRangeCommand,
 } from "./commands.js";
 import type {
   WorkbookCalculationDto,
   WorkbookCalculationsResult,
   WorkbookEngineHealthResult,
-  WorkbookSnapshotPreviewResult,
+  WorkbookSnapshotCellsResult,
+  WorkbookSnapshotMetadataResult,
+  WorkbookSnapshotRangeResult,
   WorkbookSnapshotResult,
+  WorkbookSnapshotSheetsResult,
   WorkbookSnapshotsResult,
   WorkbookSnapshotValueResult,
 } from "./dto.js";
@@ -206,10 +212,28 @@ export class WorkbookCalculationService {
     return this.snapshotService.getWorkbookSnapshot(command);
   }
 
-  async getWorkbookSnapshotPreview(
-    command: WorkbookSnapshotPreviewCommand,
-  ): Promise<WorkbookSnapshotPreviewResult> {
-    return this.snapshotService.getWorkbookSnapshotPreview(command);
+  async getWorkbookSnapshotMetadata(
+    command: WorkbookSnapshotMetadataCommand,
+  ): Promise<WorkbookSnapshotMetadataResult> {
+    return this.snapshotService.getWorkbookSnapshotMetadata(command);
+  }
+
+  async listWorkbookSnapshotSheets(
+    command: ListWorkbookSnapshotSheetsCommand,
+  ): Promise<WorkbookSnapshotSheetsResult> {
+    return this.snapshotService.listWorkbookSnapshotSheets(command);
+  }
+
+  async getWorkbookSnapshotCells(
+    command: WorkbookSnapshotCellsCommand,
+  ): Promise<WorkbookSnapshotCellsResult> {
+    return this.snapshotService.getWorkbookSnapshotCells(command);
+  }
+
+  async getWorkbookSnapshotRange(
+    command: WorkbookSnapshotRangeCommand,
+  ): Promise<WorkbookSnapshotRangeResult> {
+    return this.snapshotService.getWorkbookSnapshotRange(command);
   }
 
   async resolveWorkbookSnapshotValue(

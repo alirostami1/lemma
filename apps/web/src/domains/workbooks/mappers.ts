@@ -5,10 +5,16 @@ import type {
   Workbook as WorkbookDto,
   WorkbookInspection as WorkbookInspectionDto,
   WorkbookResponse,
+  WorkbookSnapshotCells as WorkbookSnapshotCellsDto,
+  WorkbookSnapshotCellsResponse,
   WorkbookSnapshot as WorkbookSnapshotDto,
-  WorkbookSnapshotPreview as WorkbookSnapshotPreviewDto,
-  WorkbookSnapshotPreviewResponse,
+  WorkbookSnapshotMetadata as WorkbookSnapshotMetadataDto,
+  WorkbookSnapshotMetadataResponse,
+  WorkbookSnapshotRange as WorkbookSnapshotRangeDto,
+  WorkbookSnapshotRangeResponse,
   WorkbookSnapshotResponse,
+  WorkbookSnapshotSheet as WorkbookSnapshotSheetDto,
+  WorkbookSnapshotSheetsResponse,
   WorkbookSnapshotsResponse,
   WorkbooksResponse,
 } from "#/api/generated/model";
@@ -16,9 +22,14 @@ import type {
   Workbook,
   WorkbookCalculation,
   WorkbookCalculationsPage,
+  WorkbookCellType,
   WorkbookInspection,
   WorkbookSnapshot,
-  WorkbookSnapshotPreview,
+  WorkbookSnapshotCells,
+  WorkbookSnapshotMetadata,
+  WorkbookSnapshotRange,
+  WorkbookSnapshotSheet,
+  WorkbookSnapshotSheetsPage,
   WorkbookSnapshotsPage,
   WorkbooksPage,
 } from "./model";
@@ -55,25 +66,45 @@ export function mapWorkbookSnapshot(
 ): WorkbookSnapshot {
   return {
     ...dto,
-    values: {
-      sheets: dto.values.sheets.map((sheet) => ({
-        ...sheet,
-        cells: { ...sheet.cells },
-        cellTypes: sheet.cellTypes ? { ...sheet.cellTypes } : undefined,
-      })),
-    },
     createdAt: new Date(dto.createdAt),
   };
 }
 
-export function mapWorkbookSnapshotPreview(
-  dto: WorkbookSnapshotPreviewDto,
-): WorkbookSnapshotPreview {
+export function mapWorkbookSnapshotMetadata(
+  dto: WorkbookSnapshotMetadataDto,
+): WorkbookSnapshotMetadata {
   return {
-    sheets: dto.sheets.map((sheet) => ({
-      ...sheet,
-      rows: sheet.rows.map((row) => [...row]),
-    })),
+    ...dto,
+    status: "ready",
+  };
+}
+
+export function mapWorkbookSnapshotSheet(
+  dto: WorkbookSnapshotSheetDto,
+): WorkbookSnapshotSheet {
+  return { ...dto };
+}
+
+export function mapWorkbookSnapshotCells(
+  dto: WorkbookSnapshotCellsDto,
+): WorkbookSnapshotCells {
+  return {
+    ...dto,
+    rows: dto.rows.map((row) => [...row]),
+    cellTypes: dto.cellTypes.map((row) =>
+      row.map((cellType) => cellType as WorkbookCellType),
+    ),
+  };
+}
+
+export function mapWorkbookSnapshotRange(
+  dto: WorkbookSnapshotRangeDto,
+): WorkbookSnapshotRange {
+  return {
+    ...mapWorkbookSnapshotCells(dto),
+    ref: dto.ref,
+    startCellAddress: dto.startCellAddress,
+    endCellAddress: dto.endCellAddress,
   };
 }
 
@@ -122,8 +153,31 @@ export function mapWorkbookSnapshotResponse(
   return mapWorkbookSnapshot(response.workbookSnapshot);
 }
 
-export function mapWorkbookSnapshotPreviewResponse(
-  response: WorkbookSnapshotPreviewResponse,
-): WorkbookSnapshotPreview {
-  return mapWorkbookSnapshotPreview(response.workbookSnapshotPreview);
+export function mapWorkbookSnapshotMetadataResponse(
+  response: WorkbookSnapshotMetadataResponse,
+): WorkbookSnapshotMetadata {
+  return mapWorkbookSnapshotMetadata(response.workbookSnapshotMetadata);
+}
+
+export function mapWorkbookSnapshotSheetsResponse(
+  response: WorkbookSnapshotSheetsResponse,
+): WorkbookSnapshotSheetsPage {
+  return {
+    workbookSnapshotSheets: response.workbookSnapshotSheets.map(
+      mapWorkbookSnapshotSheet,
+    ),
+    nextCursor: response.nextCursor,
+  };
+}
+
+export function mapWorkbookSnapshotCellsResponse(
+  response: WorkbookSnapshotCellsResponse,
+): WorkbookSnapshotCells {
+  return mapWorkbookSnapshotCells(response.workbookSnapshotCells);
+}
+
+export function mapWorkbookSnapshotRangeResponse(
+  response: WorkbookSnapshotRangeResponse,
+): WorkbookSnapshotRange {
+  return mapWorkbookSnapshotRange(response.workbookSnapshotRange);
 }

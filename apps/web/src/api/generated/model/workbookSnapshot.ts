@@ -4,7 +4,6 @@
  * Lemma API
  * OpenAPI spec version: 0.1.0
  */
-import type { WorkbookSparseValues } from "./workbookSparseValues.ts";
 
 export interface WorkbookSnapshot {
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
@@ -15,6 +14,5 @@ export interface WorkbookSnapshot {
   calculationId: string;
   /** @minimum 0 */
   snapshotIndex: number;
-  values: WorkbookSparseValues;
   createdAt: string;
 }

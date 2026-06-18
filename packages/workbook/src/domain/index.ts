@@ -58,9 +58,26 @@ export {
   WORKBOOK_VALIDATION_REQUESTED_EVENT,
   WORKBOOK_VALIDATION_SUCCEEDED_EVENT,
 } from "./workbook-events.js";
-export type { WorkbookSnapshot } from "./workbook-snapshot.js";
+export type {
+  WorkbookSnapshot,
+  WorkbookSnapshotCells,
+  WorkbookSnapshotMetadata,
+  WorkbookSnapshotMetadataSheet,
+  WorkbookSnapshotRange,
+  WorkbookSnapshotSheetsPage,
+} from "./workbook-snapshot.js";
 export {
   createWorkbookSnapshot,
+  createWorkbookSnapshotCells,
+  createWorkbookSnapshotMetadata,
+  createWorkbookSnapshotRange,
+  DEFAULT_WORKBOOK_SNAPSHOT_SHEET_PAGE_SIZE,
+  listWorkbookSnapshotSheets,
+  MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_CELLS,
+  MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_COLUMNS,
+  MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_ROWS,
+  MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_VALUE_BYTES,
+  MAX_WORKBOOK_SNAPSHOT_SHEET_PAGE_SIZE,
   resolveWorkbookSnapshotValue,
 } from "./workbook-snapshot.js";
 export type {
@@ -80,6 +97,7 @@ export {
   MAX_WORKBOOK_NAME_LENGTH,
   requestedCalculationCount,
   WORKBOOK_CALCULATION_STATUS_ACCEPTED_VALUES,
+  WORKBOOK_CELL_TYPE_ACCEPTED_VALUES,
   WORKBOOK_ENGINE_ACCEPTED_VALUES,
   WORKBOOK_STATUS_ACCEPTED_VALUES,
   WORKBOOK_XLSX_CONTENT_TYPE,

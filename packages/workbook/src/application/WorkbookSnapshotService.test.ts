@@ -58,37 +58,172 @@ describe("WorkbookSnapshotService", () => {
     assert.equal(result.value, "42");
   });
 
-  it("returns a bounded snapshot preview for the owner", async () => {
+  it("lists snapshot sheets for the owner", async () => {
     const harness = createHarness();
 
-    const result = await harness.service.getWorkbookSnapshotPreview({
+    const result = await harness.service.listWorkbookSnapshotSheets({
       currentUser: currentUser(ownerUserId),
       workbookSnapshotId: targetSnapshotId,
-      rowLimit: 1,
-      columnLimit: 1,
+      limit: 1,
     });
 
-    assert.deepEqual(result.workbookSnapshotPreview, {
-      sheets: [
+    assert.deepEqual(result, {
+      workbookSnapshotSheets: [
         {
+          sheetIndex: 0,
           name: "Sheet1",
           rowCount: 2,
           columnCount: 2,
-          rows: [["42"]],
+          nonEmptyCellCount: 2,
         },
+      ],
+      nextCursor: null,
+    });
+  });
+
+  it("returns snapshot metadata for the owner", async () => {
+    const harness = createHarness();
+
+    const result = await harness.service.getWorkbookSnapshotMetadata({
+      currentUser: currentUser(ownerUserId),
+      workbookSnapshotId: targetSnapshotId,
+    });
+
+    assert.deepEqual(result.workbookSnapshotMetadata, {
+      status: "ready",
+      sheetCount: 1,
+      cellCount: 2,
+    });
+  });
+
+  it("returns displayed sheet cells with type metadata", async () => {
+    const harness = createHarness();
+
+    const result = await harness.service.getWorkbookSnapshotCells({
+      currentUser: currentUser(ownerUserId),
+      workbookSnapshotId: targetSnapshotId,
+      sheetIndex: 0,
+      startRow: 1,
+      startColumn: 1,
+      rowCount: 2,
+      columnCount: 2,
+    });
+
+    assert.deepEqual(result.workbookSnapshotCells, {
+      sheetIndex: 0,
+      sheetName: "Sheet1",
+      startRow: 1,
+      startColumn: 1,
+      rowCount: 2,
+      columnCount: 2,
+      rows: [
+        ["42", ""],
+        ["", "84"],
+      ],
+      cellTypes: [
+        ["number", "blank"],
+        ["blank", "number"],
       ],
     });
   });
 
-  it("rejects preview limits outside the public bounds", async () => {
+  it("returns selected ranges with normalized references", async () => {
+    const harness = createHarness();
+
+    const result = await harness.service.getWorkbookSnapshotRange({
+      currentUser: currentUser(ownerUserId),
+      workbookSnapshotId: targetSnapshotId,
+      ref: "Sheet1!A1:B2",
+    });
+
+    assert.deepEqual(result.workbookSnapshotRange, {
+      sheetIndex: 0,
+      sheetName: "Sheet1",
+      startRow: 1,
+      startColumn: 1,
+      rowCount: 2,
+      columnCount: 2,
+      rows: [
+        ["42", ""],
+        ["", "84"],
+      ],
+      cellTypes: [
+        ["number", "blank"],
+        ["blank", "number"],
+      ],
+      ref: "'Sheet1'!A1:B2",
+      startCellAddress: "A1",
+      endCellAddress: "B2",
+    });
+  });
+
+  it("rejects sheet page limits outside the public bounds", async () => {
     const harness = createHarness();
 
     await assert.rejects(
       () =>
-        harness.service.getWorkbookSnapshotPreview({
+        harness.service.listWorkbookSnapshotSheets({
           currentUser: currentUser(ownerUserId),
           workbookSnapshotId: targetSnapshotId,
-          rowLimit: 0,
+          limit: 0,
+        }),
+      InvalidWorkbookSnapshotReferenceError,
+    );
+  });
+
+  it("rejects snapshot ranges outside public bounds", async () => {
+    const harness = createHarness();
+
+    await assert.rejects(
+      () =>
+        harness.service.getWorkbookSnapshotCells({
+          currentUser: currentUser(ownerUserId),
+          workbookSnapshotId: targetSnapshotId,
+          sheetIndex: 0,
+          startRow: 1,
+          startColumn: 1,
+          rowCount: 1,
+          columnCount: 51,
+        }),
+      InvalidWorkbookSnapshotReferenceError,
+    );
+  });
+
+  it("rejects cell windows above the total cell cap", async () => {
+    const harness = createHarness();
+
+    await assert.rejects(
+      () =>
+        harness.service.getWorkbookSnapshotCells({
+          currentUser: currentUser(ownerUserId),
+          workbookSnapshotId: targetSnapshotId,
+          sheetIndex: 0,
+          startRow: 1,
+          startColumn: 1,
+          rowCount: 100,
+          columnCount: 50,
+        }),
+      InvalidWorkbookSnapshotReferenceError,
+    );
+  });
+
+  it("rejects cell windows above the value byte cap", async () => {
+    const harness = createHarness({
+      cells: { A1: "x".repeat(256_001) },
+      rowCount: 1,
+      columnCount: 1,
+    });
+
+    await assert.rejects(
+      () =>
+        harness.service.getWorkbookSnapshotCells({
+          currentUser: currentUser(ownerUserId),
+          workbookSnapshotId: targetSnapshotId,
+          sheetIndex: 0,
+          startRow: 1,
+          startColumn: 1,
+          rowCount: 1,
+          columnCount: 1,
         }),
       InvalidWorkbookSnapshotReferenceError,
     );
@@ -108,10 +243,16 @@ describe("WorkbookSnapshotService", () => {
   });
 });
 
-function createHarness() {
+function createHarness(
+  snapshotInput: {
+    cells?: Record<string, string>;
+    rowCount?: number;
+    columnCount?: number;
+  } = {},
+) {
   const repository = new FakeWorkbookRepository();
   repository.calculations.set(targetCalculationId, createCalculation());
-  repository.snapshots.set(targetSnapshotId, createSnapshot());
+  repository.snapshots.set(targetSnapshotId, createSnapshot(snapshotInput));
   return {
     repository,
     service: new WorkbookSnapshotService({ workbookRepository: repository }),
@@ -131,7 +272,14 @@ function createCalculation(): WorkbookCalculation {
   );
 }
 
-function createSnapshot(): WorkbookSnapshot {
+function createSnapshot(
+  input: {
+    cells?: Record<string, string>;
+    rowCount?: number;
+    columnCount?: number;
+  } = {},
+): WorkbookSnapshot {
+  const cells = input.cells ?? { A1: "42", B2: "84" };
   return createWorkbookSnapshot(
     {
       id: targetSnapshotId,
@@ -142,9 +290,10 @@ function createSnapshot(): WorkbookSnapshot {
         sheets: [
           {
             name: "Sheet1",
-            cells: { A1: "42", B2: "84" },
-            rowCount: 2,
-            columnCount: 2,
+            cells,
+            cellTypes: { A1: "number", B2: "number" },
+            rowCount: input.rowCount ?? 2,
+            columnCount: input.columnCount ?? 2,
           },
         ],
       },

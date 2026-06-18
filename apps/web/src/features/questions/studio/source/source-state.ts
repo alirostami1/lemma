@@ -92,7 +92,18 @@ export function getStudioSourceViewState(input: {
     };
   }
 
-  if (getWorkbookSourceStatus(input.selectedWorkbook) !== "ready") {
+  const workbookSourceStatus = getWorkbookSourceStatus(input.selectedWorkbook);
+
+  if (workbookSourceStatus === "pending_validation") {
+    return {
+      status: "loading",
+      title: input.selectedWorkbook.name,
+      description: "Validating source.",
+      canRemove: true,
+    };
+  }
+
+  if (workbookSourceStatus !== "ready") {
     return {
       status: "invalid",
       title: input.selectedWorkbook.name,

@@ -23,8 +23,9 @@ import {
 import {
   MAX_WORKBOOK_CALCULATION_COUNT,
   MAX_WORKBOOK_NAME_LENGTH,
-  MAX_WORKBOOK_SNAPSHOT_PREVIEW_COLUMNS,
-  MAX_WORKBOOK_SNAPSHOT_PREVIEW_ROWS,
+  MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_COLUMNS,
+  MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_ROWS,
+  MAX_WORKBOOK_SNAPSHOT_SHEET_PAGE_SIZE,
   WORKBOOK_CALCULATION_STATUS_ACCEPTED_VALUES,
   WORKBOOK_CELL_TYPE_ACCEPTED_VALUES,
   WORKBOOK_STATUS_ACCEPTED_VALUES,
@@ -66,34 +67,13 @@ const snapshotIdParam: Param = {
   name: "workbookSnapshotId",
   schema: uuidV7Param("workbookSnapshotId").schema,
 };
-
-const sparseValuesSchema: Schema = {
-  name: "WorkbookSparseValues",
+const sheetIndexParam: Param = {
+  name: "sheetIndex",
   schema: {
-    type: "object",
-    required: ["sheets"],
-    properties: {
-      sheets: {
-        type: "array",
-        items: {
-          type: "object",
-          required: ["name", "cells", "rowCount", "columnCount"],
-          properties: {
-            name: { type: "string", minLength: 1 },
-            cells: { type: "object", additionalProperties: { type: "string" } },
-            cellTypes: {
-              type: "object",
-              additionalProperties: {
-                type: "string",
-                enum: WORKBOOK_CELL_TYPE_ACCEPTED_VALUES as unknown as string[],
-              },
-            },
-            rowCount: { type: "integer", minimum: 0 },
-            columnCount: { type: "integer", minimum: 0 },
-          },
-        },
-      },
-    },
+    name: "sheetIndex",
+    in: "path",
+    required: true,
+    schema: { type: "string", pattern: "^[0-9]+$" },
   },
 };
 
@@ -217,7 +197,6 @@ const snapshotSchema: Schema = {
       "workbookId",
       "calculationId",
       "snapshotIndex",
-      "values",
       "createdAt",
     ],
     properties: {
@@ -225,40 +204,106 @@ const snapshotSchema: Schema = {
       workbookId: uuidV7StringSchemaObject(),
       calculationId: uuidV7StringSchemaObject(),
       snapshotIndex: { type: "integer", minimum: 0 },
-      values: schemaRef(sparseValuesSchema),
       createdAt: { type: "string", format: "date-time" },
     },
   },
 };
 
-const snapshotPreviewSchema: Schema = {
-  name: "WorkbookSnapshotPreview",
+const snapshotMetadataSchema: Schema = {
+  name: "WorkbookSnapshotMetadata",
   schema: {
     type: "object",
-    required: ["sheets"],
+    required: ["status", "sheetCount", "cellCount"],
     properties: {
-      sheets: {
+      status: { type: "string", enum: ["ready"] },
+      sheetCount: { type: "integer", minimum: 0 },
+      cellCount: { type: "integer", minimum: 0 },
+    },
+  },
+};
+
+const snapshotSheetSchema: Schema = {
+  name: "WorkbookSnapshotSheet",
+  schema: {
+    type: "object",
+    required: [
+      "sheetIndex",
+      "name",
+      "rowCount",
+      "columnCount",
+      "nonEmptyCellCount",
+    ],
+    properties: {
+      sheetIndex: { type: "integer", minimum: 0 },
+      name: { type: "string", minLength: 1 },
+      rowCount: { type: "integer", minimum: 0 },
+      columnCount: { type: "integer", minimum: 0 },
+      nonEmptyCellCount: { type: "integer", minimum: 0 },
+    },
+  },
+};
+
+const snapshotCellsSchema: Schema = {
+  name: "WorkbookSnapshotCells",
+  schema: {
+    type: "object",
+    required: [
+      "sheetIndex",
+      "sheetName",
+      "startRow",
+      "startColumn",
+      "rowCount",
+      "columnCount",
+      "rows",
+      "cellTypes",
+    ],
+    properties: {
+      sheetIndex: { type: "integer", minimum: 0 },
+      sheetName: { type: "string", minLength: 1 },
+      startRow: { type: "integer", minimum: 1 },
+      startColumn: { type: "integer", minimum: 1 },
+      rowCount: { type: "integer", minimum: 0 },
+      columnCount: { type: "integer", minimum: 0 },
+      rows: {
         type: "array",
+        maxItems: MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_ROWS,
         items: {
-          type: "object",
-          required: ["name", "rowCount", "columnCount", "rows"],
-          properties: {
-            name: { type: "string", minLength: 1 },
-            rowCount: { type: "integer", minimum: 0 },
-            columnCount: { type: "integer", minimum: 0 },
-            rows: {
-              type: "array",
-              maxItems: MAX_WORKBOOK_SNAPSHOT_PREVIEW_ROWS,
-              items: {
-                type: "array",
-                maxItems: MAX_WORKBOOK_SNAPSHOT_PREVIEW_COLUMNS,
-                items: { type: "string" },
-              },
-            },
+          type: "array",
+          maxItems: MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_COLUMNS,
+          items: { type: "string" },
+        },
+      },
+      cellTypes: {
+        type: "array",
+        maxItems: MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_ROWS,
+        items: {
+          type: "array",
+          maxItems: MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_COLUMNS,
+          items: {
+            type: "string",
+            enum: WORKBOOK_CELL_TYPE_ACCEPTED_VALUES as unknown as string[],
           },
         },
       },
     },
+  },
+};
+
+const snapshotRangeSchema: Schema = {
+  name: "WorkbookSnapshotRange",
+  schema: {
+    allOf: [
+      schemaRef(snapshotCellsSchema),
+      {
+        type: "object",
+        required: ["ref", "startCellAddress", "endCellAddress"],
+        properties: {
+          ref: { type: "string", minLength: 1 },
+          startCellAddress: { type: "string", minLength: 1 },
+          endCellAddress: { type: "string", minLength: 1 },
+        },
+      },
+    ],
   },
 };
 
@@ -329,9 +374,21 @@ const snapshotResponseSchema = named(
   "WorkbookSnapshotResponse",
   objectWith("workbookSnapshot", schemaRef(snapshotSchema)),
 );
-const snapshotPreviewResponseSchema = named(
-  "WorkbookSnapshotPreviewResponse",
-  objectWith("workbookSnapshotPreview", schemaRef(snapshotPreviewSchema)),
+const snapshotMetadataResponseSchema = named(
+  "WorkbookSnapshotMetadataResponse",
+  objectWith("workbookSnapshotMetadata", schemaRef(snapshotMetadataSchema)),
+);
+const snapshotSheetsResponseSchema = named(
+  "WorkbookSnapshotSheetsResponse",
+  listWith("workbookSnapshotSheets", schemaRef(snapshotSheetSchema)),
+);
+const snapshotCellsResponseSchema = named(
+  "WorkbookSnapshotCellsResponse",
+  objectWith("workbookSnapshotCells", schemaRef(snapshotCellsSchema)),
+);
+const snapshotRangeResponseSchema = named(
+  "WorkbookSnapshotRangeResponse",
+  objectWith("workbookSnapshotRange", schemaRef(snapshotRangeSchema)),
 );
 const snapshotsResponseSchema = named(
   "WorkbookSnapshotsResponse",
@@ -356,9 +413,11 @@ const schemas = [
   workbookSchema,
   calculationSchema,
   snapshotSchema,
-  snapshotPreviewSchema,
+  snapshotMetadataSchema,
+  snapshotSheetSchema,
+  snapshotCellsSchema,
+  snapshotRangeSchema,
   inspectionSchema,
-  sparseValuesSchema,
   healthSchema,
   createWorkbookRequestSchema,
   updateWorkbookRequestSchema,
@@ -368,7 +427,10 @@ const schemas = [
   calculationResponseSchema,
   calculationsResponseSchema,
   snapshotResponseSchema,
-  snapshotPreviewResponseSchema,
+  snapshotMetadataResponseSchema,
+  snapshotSheetsResponseSchema,
+  snapshotCellsResponseSchema,
+  snapshotRangeResponseSchema,
   snapshotsResponseSchema,
   valueResponseSchema,
   healthResponseSchema,
@@ -380,7 +442,12 @@ const responses = [
   conflictResponse,
   upstreamResponse,
 ];
-const params = [workbookIdParam, calculationIdParam, snapshotIdParam];
+const params = [
+  workbookIdParam,
+  calculationIdParam,
+  snapshotIdParam,
+  sheetIndexParam,
+];
 
 const paths: Paths = {
   "/workbooks": {
@@ -502,25 +569,80 @@ const paths: Paths = {
       snapshotResponseSchema,
     ),
   },
-  "/workbook-snapshots/{workbookSnapshotId}/preview": {
+  "/workbook-snapshots/{workbookSnapshotId}/metadata": {
     parameters: [paramRef(snapshotIdParam)],
     get: op(
-      "getWorkbookSnapshotPreview",
-      "Get workbook snapshot preview",
+      "getWorkbookSnapshotMetadata",
+      "Get workbook snapshot metadata",
       "200",
-      snapshotPreviewResponseSchema,
+      snapshotMetadataResponseSchema,
+    ),
+  },
+  "/workbook-snapshots/{workbookSnapshotId}/sheets": {
+    parameters: [paramRef(snapshotIdParam)],
+    get: op(
+      "listWorkbookSnapshotSheets",
+      "List workbook snapshot sheets",
+      "200",
+      snapshotSheetsResponseSchema,
       undefined,
       [
-        query("rowLimit", {
+        query("limit", {
           type: "integer",
           minimum: 1,
-          maximum: MAX_WORKBOOK_SNAPSHOT_PREVIEW_ROWS,
+          maximum: MAX_WORKBOOK_SNAPSHOT_SHEET_PAGE_SIZE,
         }),
-        query("columnLimit", {
-          type: "integer",
-          minimum: 1,
-          maximum: MAX_WORKBOOK_SNAPSHOT_PREVIEW_COLUMNS,
-        }),
+        query("cursor", { type: "string" }),
+      ],
+    ),
+  },
+  "/workbook-snapshots/{workbookSnapshotId}/sheets/{sheetIndex}/cells": {
+    parameters: [paramRef(snapshotIdParam), paramRef(sheetIndexParam)],
+    get: op(
+      "getWorkbookSnapshotCells",
+      "Get workbook snapshot cells",
+      "200",
+      snapshotCellsResponseSchema,
+      undefined,
+      [
+        query("startRow", { type: "integer", minimum: 1 }, true),
+        query("startColumn", { type: "integer", minimum: 1 }, true),
+        query(
+          "rowCount",
+          {
+            type: "integer",
+            minimum: 1,
+            maximum: MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_ROWS,
+          },
+          true,
+        ),
+        query(
+          "columnCount",
+          {
+            type: "integer",
+            minimum: 1,
+            maximum: MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_COLUMNS,
+          },
+          true,
+        ),
+      ],
+    ),
+  },
+  "/workbook-snapshots/{workbookSnapshotId}/range": {
+    parameters: [paramRef(snapshotIdParam)],
+    get: op(
+      "getWorkbookSnapshotRange",
+      "Get workbook snapshot range",
+      "200",
+      snapshotRangeResponseSchema,
+      undefined,
+      [
+        {
+          name: "ref",
+          in: "query",
+          required: true,
+          schema: { type: "string", minLength: 1 },
+        },
       ],
     ),
   },
@@ -610,8 +732,12 @@ function listWith(name: string, schema: SchemaOrRef): OpenApiSchema {
   } satisfies OpenApiSchema;
 }
 
-function query(name: string, schema: QuerySchema): QueryParameter {
-  return { name, in: "query", required: false, schema };
+function query(
+  name: string,
+  schema: QuerySchema,
+  required = false,
+): QueryParameter {
+  return { name, in: "query", required, schema };
 }
 
 function op(

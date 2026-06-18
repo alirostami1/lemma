@@ -11,8 +11,11 @@ import {
   createWorkbookCalculation,
   deleteWorkbook,
   getWorkbook,
-  getWorkbookSnapshotPreview,
+  getWorkbookSnapshotCells,
+  getWorkbookSnapshotMetadata,
+  getWorkbookSnapshotRange,
   listWorkbookCalculations,
+  listWorkbookSnapshotSheets,
   listWorkbookSnapshots,
   listWorkbooks,
   updateWorkbook,
@@ -23,8 +26,10 @@ import type {
   CreateWorkbookCalculationInput,
   CreateWorkbookInput,
   DeleteWorkbookInput,
-  GetWorkbookSnapshotPreviewInput,
+  GetWorkbookSnapshotCellsInput,
+  GetWorkbookSnapshotRangeInput,
   ListWorkbookCalculationsInput,
+  ListWorkbookSnapshotSheetsInput,
   ListWorkbookSnapshotsInput,
   ListWorkbooksInput,
   UpdateWorkbookInput,
@@ -32,7 +37,10 @@ import type {
   Workbook,
   WorkbookCalculation,
   WorkbookCalculationsPage,
-  WorkbookSnapshotPreview,
+  WorkbookSnapshotCells,
+  WorkbookSnapshotMetadata,
+  WorkbookSnapshotRange,
+  WorkbookSnapshotSheetsPage,
   WorkbookSnapshotsPage,
   WorkbooksPage,
 } from "./model";
@@ -107,18 +115,67 @@ export function useWorkbookSnapshotsQuery(
   });
 }
 
-export function useWorkbookSnapshotPreviewQuery(
-  input: GetWorkbookSnapshotPreviewInput,
+export function useWorkbookSnapshotMetadataQuery(
+  workbookSnapshotId: string,
   options?: Omit<
-    UseQueryOptions<WorkbookSnapshotPreview>,
+    UseQueryOptions<WorkbookSnapshotMetadata>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  return useQuery({
+    queryKey: workbookKeys.snapshotMetadata(workbookSnapshotId),
+    queryFn: () => getWorkbookSnapshotMetadata(workbookSnapshotId),
+    enabled: Boolean(workbookSnapshotId),
+    ...options,
+  });
+}
+
+export function useWorkbookSnapshotSheetsQuery(
+  input: ListWorkbookSnapshotSheetsInput,
+  options?: Omit<
+    UseQueryOptions<WorkbookSnapshotSheetsPage>,
     "queryKey" | "queryFn"
   >,
 ) {
   const { workbookSnapshotId, ...params } = input;
 
   return useQuery({
-    queryKey: workbookKeys.snapshotPreview(workbookSnapshotId, params),
-    queryFn: () => getWorkbookSnapshotPreview(input),
+    queryKey: workbookKeys.snapshotSheets(workbookSnapshotId, params),
+    queryFn: () => listWorkbookSnapshotSheets(input),
+    enabled: Boolean(workbookSnapshotId),
+    ...options,
+  });
+}
+
+export function useWorkbookSnapshotCellsQuery(
+  input: GetWorkbookSnapshotCellsInput,
+  options?: Omit<
+    UseQueryOptions<WorkbookSnapshotCells>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  const { workbookSnapshotId, ...params } = input;
+
+  return useQuery({
+    queryKey: workbookKeys.snapshotCells(workbookSnapshotId, params),
+    queryFn: () => getWorkbookSnapshotCells(input),
+    enabled: Boolean(workbookSnapshotId),
+    ...options,
+  });
+}
+
+export function useWorkbookSnapshotRangeQuery(
+  input: GetWorkbookSnapshotRangeInput,
+  options?: Omit<
+    UseQueryOptions<WorkbookSnapshotRange>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  const { workbookSnapshotId, ...params } = input;
+
+  return useQuery({
+    queryKey: workbookKeys.snapshotRange(workbookSnapshotId, params),
+    queryFn: () => getWorkbookSnapshotRange(input),
     enabled: Boolean(workbookSnapshotId),
     ...options,
   });

@@ -4,8 +4,11 @@ import type {
   WorkbookCalculationsResult,
   WorkbookEngineHealthResult,
   WorkbookResult,
-  WorkbookSnapshotPreviewResult,
+  WorkbookSnapshotCellsResult,
+  WorkbookSnapshotMetadataResult,
+  WorkbookSnapshotRangeResult,
   WorkbookSnapshotResult,
+  WorkbookSnapshotSheetsResult,
   WorkbookSnapshotsResult,
   WorkbookSnapshotValueResult,
   WorkbooksResult,
@@ -23,7 +26,11 @@ import type {
   WorkbookEngineHealthResponse,
   WorkbookResponse,
   WorkbookSnapshot as WorkbookSnapshotDto,
+  WorkbookSnapshotCellsResponse,
+  WorkbookSnapshotMetadataResponse,
+  WorkbookSnapshotRangeResponse,
   WorkbookSnapshotResponse,
+  WorkbookSnapshotSheetsResponse,
   WorkbookSnapshotsResponse,
   WorkbookSnapshotValueResponse,
   WorkbooksResponse,
@@ -67,10 +74,28 @@ export function presentWorkbookSnapshot(
   };
 }
 
-export function presentWorkbookSnapshotPreview(
-  result: WorkbookSnapshotPreviewResult,
-): WorkbookSnapshotPreviewResponse {
-  return { workbookSnapshotPreview: result.workbookSnapshotPreview };
+export function presentWorkbookSnapshotMetadata(
+  result: WorkbookSnapshotMetadataResult,
+): WorkbookSnapshotMetadataResponse {
+  return { workbookSnapshotMetadata: result.workbookSnapshotMetadata };
+}
+
+export function presentWorkbookSnapshotSheets(
+  result: WorkbookSnapshotSheetsResult,
+): WorkbookSnapshotSheetsResponse {
+  return result;
+}
+
+export function presentWorkbookSnapshotCells(
+  result: WorkbookSnapshotCellsResult,
+): WorkbookSnapshotCellsResponse {
+  return { workbookSnapshotCells: result.workbookSnapshotCells };
+}
+
+export function presentWorkbookSnapshotRange(
+  result: WorkbookSnapshotRangeResult,
+): WorkbookSnapshotRangeResponse {
+  return { workbookSnapshotRange: result.workbookSnapshotRange };
 }
 
 export function presentWorkbookSnapshots(
@@ -118,7 +143,10 @@ function toWorkbookSnapshotDto(
   snapshot: WorkbookSnapshot,
 ): WorkbookSnapshotDto {
   return {
-    ...snapshot,
+    id: snapshot.id,
+    workbookId: snapshot.workbookId,
+    calculationId: snapshot.calculationId,
+    snapshotIndex: snapshot.snapshotIndex,
     createdAt: presentDate(snapshot.createdAt),
   };
 }

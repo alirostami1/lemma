@@ -1,12 +1,12 @@
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import type { QuestionGenerationRun } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
-import type { WorkbookPreview } from "#/domains/questions/workbook-preview";
 import type {
   WorkbookPickerController,
   WorkbookPickerRequest,
   WorkbookRangeSelection,
 } from "#/features/questions/table-block-editor";
+import type { WorkbookPickerSheet } from "#/features/questions/use-workbook-picker-cells";
 import type { GenerateQuestionsDialogProps } from "./generation/generation-controller-types";
 import type {
   SaveBlueprintDialogInput,
@@ -91,8 +91,8 @@ export type StudioController = {
   };
   generateDialog: GenerateQuestionsDialogProps;
   workbookPicker: {
-    file: File | null;
-    workbookPreview: WorkbookPreview | null;
+    workbookSnapshotId: string | null;
+    workbookSheets: WorkbookPickerSheet[];
     fileName: string;
     open: boolean;
     request: WorkbookPickerRequest | null;

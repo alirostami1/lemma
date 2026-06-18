@@ -57,18 +57,6 @@ export interface WorkbookCalculation {
   updatedAt: Date;
 }
 
-export interface WorkbookSparseValues {
-  sheets: WorkbookSparseValuesSheet[];
-}
-
-export interface WorkbookSparseValuesSheet {
-  name: string;
-  cells: Record<string, string>;
-  cellTypes?: Record<string, WorkbookCellType>;
-  rowCount: number;
-  columnCount: number;
-}
-
 export type WorkbookCellType =
   | "string"
   | "number"
@@ -83,19 +71,38 @@ export interface WorkbookSnapshot {
   workbookId: string;
   calculationId: string;
   snapshotIndex: number;
-  values: WorkbookSparseValues;
   createdAt: Date;
 }
 
-export interface WorkbookSnapshotPreview {
-  sheets: WorkbookSnapshotPreviewSheet[];
+export interface WorkbookSnapshotMetadata {
+  status: "ready";
+  sheetCount: number;
+  cellCount: number;
 }
 
-export interface WorkbookSnapshotPreviewSheet {
+export interface WorkbookSnapshotSheet {
+  sheetIndex: number;
   name: string;
   rowCount: number;
   columnCount: number;
+  nonEmptyCellCount: number;
+}
+
+export interface WorkbookSnapshotCells {
+  sheetIndex: number;
+  sheetName: string;
+  startRow: number;
+  startColumn: number;
+  rowCount: number;
+  columnCount: number;
   rows: string[][];
+  cellTypes: WorkbookCellType[][];
+}
+
+export interface WorkbookSnapshotRange extends WorkbookSnapshotCells {
+  ref: string;
+  startCellAddress: string;
+  endCellAddress: string;
 }
 
 export interface ListWorkbooksInput {
@@ -142,10 +149,24 @@ export interface ListWorkbookSnapshotsInput {
   cursor?: string;
 }
 
-export interface GetWorkbookSnapshotPreviewInput {
+export interface ListWorkbookSnapshotSheetsInput {
   workbookSnapshotId: string;
-  rowLimit?: number;
-  columnLimit?: number;
+  limit?: number;
+  cursor?: string;
+}
+
+export interface GetWorkbookSnapshotCellsInput {
+  workbookSnapshotId: string;
+  sheetIndex: number;
+  startRow: number;
+  startColumn: number;
+  rowCount: number;
+  columnCount: number;
+}
+
+export interface GetWorkbookSnapshotRangeInput {
+  workbookSnapshotId: string;
+  ref: string;
 }
 
 export interface WorkbooksPage {
@@ -160,5 +181,10 @@ export interface WorkbookCalculationsPage {
 
 export interface WorkbookSnapshotsPage {
   workbookSnapshots: WorkbookSnapshot[];
+  nextCursor: string | null;
+}
+
+export interface WorkbookSnapshotSheetsPage {
+  workbookSnapshotSheets: WorkbookSnapshotSheet[];
   nextCursor: string | null;
 }

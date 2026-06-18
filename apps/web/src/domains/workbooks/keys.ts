@@ -1,6 +1,8 @@
 import type {
-  GetWorkbookSnapshotPreviewInput,
+  GetWorkbookSnapshotCellsInput,
+  GetWorkbookSnapshotRangeInput,
   ListWorkbookCalculationsInput,
+  ListWorkbookSnapshotSheetsInput,
   ListWorkbookSnapshotsInput,
   ListWorkbooksInput,
 } from "./model";
@@ -13,8 +15,16 @@ type ListSnapshotsKeyInput = Omit<
   ListWorkbookSnapshotsInput,
   "workbookCalculationId"
 >;
-type SnapshotPreviewKeyInput = Omit<
-  GetWorkbookSnapshotPreviewInput,
+type SnapshotSheetsKeyInput = Omit<
+  ListWorkbookSnapshotSheetsInput,
+  "workbookSnapshotId"
+>;
+type SnapshotCellsKeyInput = Omit<
+  GetWorkbookSnapshotCellsInput,
+  "workbookSnapshotId"
+>;
+type SnapshotRangeKeyInput = Omit<
+  GetWorkbookSnapshotRangeInput,
   "workbookSnapshotId"
 >;
 
@@ -43,15 +53,33 @@ export const workbookKeys = {
     workbookCalculationId: string,
     input?: ListSnapshotsKeyInput,
   ) => [...workbookKeys.snapshots(workbookCalculationId), input ?? {}] as const,
-  snapshotPreview: (
+  snapshotMetadata: (workbookSnapshotId: string) =>
+    [...workbookKeys.all, "snapshot", workbookSnapshotId, "metadata"] as const,
+  snapshotSheets: (
     workbookSnapshotId: string,
-    input?: SnapshotPreviewKeyInput,
+    input?: SnapshotSheetsKeyInput,
   ) =>
     [
       ...workbookKeys.all,
       "snapshot",
       workbookSnapshotId,
-      "preview",
+      "sheets",
+      input ?? {},
+    ] as const,
+  snapshotCells: (workbookSnapshotId: string, input: SnapshotCellsKeyInput) =>
+    [
+      ...workbookKeys.all,
+      "snapshot",
+      workbookSnapshotId,
+      "cells",
+      input,
+    ] as const,
+  snapshotRange: (workbookSnapshotId: string, input?: SnapshotRangeKeyInput) =>
+    [
+      ...workbookKeys.all,
+      "snapshot",
+      workbookSnapshotId,
+      "range",
       input ?? {},
     ] as const,
 };

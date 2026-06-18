@@ -2,18 +2,30 @@ import { useMemo } from "react";
 import type { WorkbookPreview } from "#/domains/questions/workbook-preview";
 import {
   useWorkbookCalculationsQuery,
-  useWorkbookSnapshotPreviewQuery,
+  useWorkbookSnapshotCellsQuery,
+  useWorkbookSnapshotMetadataQuery,
+  useWorkbookSnapshotSheetsQuery,
   useWorkbookSnapshotsQuery,
 } from "#/domains/workbooks/hooks";
-import type { WorkbookSnapshotPreview } from "#/domains/workbooks/model";
+import type {
+  WorkbookSnapshotCells,
+  WorkbookSnapshotSheet,
+} from "#/domains/workbooks/model";
 
 export type SelectedWorkbookPreviewController = {
-  workbookFile: File | null;
   workbookPreview: WorkbookPreview | null;
+  workbookSnapshotId: string | null;
+  workbookSheets: WorkbookSnapshotSheet[];
   workbookPreviewError: string | null;
   isWorkbookPreviewPending: boolean;
+  needsWorkbookPreviewCalculation: boolean;
   previewStatus: "idle" | "loading" | "ready" | "error";
 };
+
+const SOURCE_PREVIEW_REFETCH_INTERVAL_MS = 1_000;
+const RETRIABLE_PREVIEW_CALCULATION_ERRORS = new Set([
+  "values must be JSON-compatible.",
+]);
 
 export function useSelectedWorkbookPreview({
   selectedWorkbook,
@@ -30,48 +42,96 @@ export function useSelectedWorkbookPreview({
   const calculationsQuery = useWorkbookCalculationsQuery(
     {
       workbookId: selectedWorkbook?.id ?? "",
-      status: "succeeded",
       limit: 1,
     },
-    { enabled: shouldLoadPreview },
+    {
+      enabled: shouldLoadPreview,
+      refetchInterval: (query) => {
+        const calculation = query.state.data?.workbookCalculations[0];
+        return !calculation ||
+          calculation.status === "queued" ||
+          calculation.status === "running"
+          ? SOURCE_PREVIEW_REFETCH_INTERVAL_MS
+          : false;
+      },
+    },
   );
+  const calculation = calculationsQuery.data?.workbookCalculations[0] ?? null;
   const calculationId =
-    calculationsQuery.data?.workbookCalculations[0]?.id ?? "";
+    calculation?.status === "succeeded" ? calculation.id : "";
+  const isCalculationPending =
+    !calculation ||
+    calculation.status === "queued" ||
+    calculation.status === "running";
+  const didCalculationFail =
+    calculation?.status === "failed" || calculation?.status === "cancelled";
+  const isRetriableCalculationFailure =
+    calculation?.status === "failed" &&
+    calculation.errorMessage !== null &&
+    RETRIABLE_PREVIEW_CALCULATION_ERRORS.has(calculation.errorMessage);
+  const needsWorkbookPreviewCalculation = Boolean(
+    shouldLoadPreview &&
+      calculationsQuery.isSuccess &&
+      (!calculation || isRetriableCalculationFailure),
+  );
   const shouldLoadSnapshots = shouldLoadPreview && Boolean(calculationId);
   const snapshotsQuery = useWorkbookSnapshotsQuery(
     {
       workbookCalculationId: calculationId,
       limit: 1,
     },
-    { enabled: shouldLoadSnapshots },
+    {
+      enabled: shouldLoadSnapshots,
+      refetchInterval: (query) => {
+        return query.state.data?.workbookSnapshots[0]
+          ? false
+          : SOURCE_PREVIEW_REFETCH_INTERVAL_MS;
+      },
+    },
   );
   const snapshotId = snapshotsQuery.data?.workbookSnapshots[0]?.id ?? "";
-  const shouldLoadSnapshotPreview = shouldLoadSnapshots && Boolean(snapshotId);
-  const snapshotPreviewQuery = useWorkbookSnapshotPreviewQuery(
+  const shouldLoadSnapshotDetails = shouldLoadSnapshots && Boolean(snapshotId);
+  const metadataQuery = useWorkbookSnapshotMetadataQuery(snapshotId, {
+    enabled: shouldLoadSnapshotDetails,
+  });
+  const sheetsQuery = useWorkbookSnapshotSheetsQuery(
+    { workbookSnapshotId: snapshotId, limit: 25 },
+    { enabled: shouldLoadSnapshotDetails },
+  );
+  const firstSheet = sheetsQuery.data?.workbookSnapshotSheets[0] ?? null;
+  const firstSheetCellsQuery = useWorkbookSnapshotCellsQuery(
     {
       workbookSnapshotId: snapshotId,
-      rowLimit: 50,
-      columnLimit: 20,
+      sheetIndex: firstSheet?.sheetIndex ?? 0,
+      startRow: 1,
+      startColumn: 1,
+      rowCount: 50,
+      columnCount: 20,
     },
-    { enabled: shouldLoadSnapshotPreview },
+    { enabled: shouldLoadSnapshotDetails && Boolean(firstSheet) },
   );
   const workbookPreview = useMemo(() => {
-    if (!snapshotPreviewQuery.data || !selectedWorkbook) {
+    if (!selectedWorkbook || !sheetsQuery.data || !firstSheetCellsQuery.data) {
       return null;
     }
-    return mapSnapshotPreviewToWorkbookPreview(
-      snapshotPreviewQuery.data,
+    return mapSnapshotCellsToWorkbookPreview(
+      firstSheetCellsQuery.data,
+      sheetsQuery.data.workbookSnapshotSheets,
       selectedWorkbook.originalName,
     );
-  }, [selectedWorkbook, snapshotPreviewQuery.data]);
+  }, [firstSheetCellsQuery.data, selectedWorkbook, sheetsQuery.data]);
   const isWorkbookPreviewPending =
     (shouldLoadPreview && calculationsQuery.isPending) ||
     (shouldLoadSnapshots && snapshotsQuery.isPending) ||
-    (shouldLoadSnapshotPreview && snapshotPreviewQuery.isPending);
+    (shouldLoadSnapshotDetails && metadataQuery.isPending) ||
+    (shouldLoadSnapshotDetails && sheetsQuery.isPending) ||
+    (Boolean(firstSheet) && firstSheetCellsQuery.isPending);
   const hasPreviewError =
     calculationsQuery.isError ||
     snapshotsQuery.isError ||
-    snapshotPreviewQuery.isError;
+    metadataQuery.isError ||
+    sheetsQuery.isError ||
+    firstSheetCellsQuery.isError;
 
   if (!selectedWorkbook) {
     return idleController;
@@ -81,60 +141,86 @@ export function useSelectedWorkbookPreview({
     return errorController("Source is not ready.");
   }
 
-  if (isWorkbookPreviewPending) {
-    return {
-      workbookFile: null,
-      workbookPreview: null,
-      workbookPreviewError: null,
-      isWorkbookPreviewPending: true,
-      previewStatus: "loading",
-    };
-  }
-
   if (hasPreviewError) {
     return errorController("Source preview could not be loaded.");
   }
 
-  if (!calculationId || !snapshotId || !workbookPreview) {
-    return errorController("Source preview is not available yet.");
+  if (didCalculationFail) {
+    return {
+      ...errorController("Source preview could not be generated."),
+      needsWorkbookPreviewCalculation,
+    };
+  }
+
+  if (isWorkbookPreviewPending || isCalculationPending) {
+    return {
+      ...loadingController,
+      needsWorkbookPreviewCalculation,
+    };
+  }
+
+  if (
+    !calculationId ||
+    !snapshotId ||
+    !metadataQuery.data ||
+    !sheetsQuery.data
+  ) {
+    return loadingController;
   }
 
   return {
-    workbookFile: null,
     workbookPreview,
+    workbookSnapshotId: snapshotId,
+    workbookSheets: sheetsQuery.data.workbookSnapshotSheets,
     workbookPreviewError: null,
     isWorkbookPreviewPending: false,
+    needsWorkbookPreviewCalculation: false,
     previewStatus: "ready",
   };
 }
 
 const idleController: SelectedWorkbookPreviewController = {
-  workbookFile: null,
   workbookPreview: null,
+  workbookSnapshotId: null,
+  workbookSheets: [],
   workbookPreviewError: null,
   isWorkbookPreviewPending: false,
+  needsWorkbookPreviewCalculation: false,
   previewStatus: "idle",
+};
+
+const loadingController: SelectedWorkbookPreviewController = {
+  workbookPreview: null,
+  workbookSnapshotId: null,
+  workbookSheets: [],
+  workbookPreviewError: null,
+  isWorkbookPreviewPending: true,
+  needsWorkbookPreviewCalculation: false,
+  previewStatus: "loading",
 };
 
 function errorController(message: string): SelectedWorkbookPreviewController {
   return {
-    workbookFile: null,
     workbookPreview: null,
+    workbookSnapshotId: null,
+    workbookSheets: [],
     workbookPreviewError: message,
     isWorkbookPreviewPending: false,
+    needsWorkbookPreviewCalculation: false,
     previewStatus: "error",
   };
 }
 
-function mapSnapshotPreviewToWorkbookPreview(
-  preview: WorkbookSnapshotPreview,
+function mapSnapshotCellsToWorkbookPreview(
+  cells: WorkbookSnapshotCells,
+  sheets: WorkbookSnapshotSheet[],
   fileName: string,
 ): WorkbookPreview {
   return {
     fileName,
-    sheets: preview.sheets.map((sheet) => ({
+    sheets: sheets.map((sheet) => ({
       name: sheet.name,
-      rows: sheet.rows,
+      rows: sheet.sheetIndex === cells.sheetIndex ? cells.rows : [],
       columnCount: sheet.columnCount,
     })),
   };

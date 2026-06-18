@@ -77,4 +77,22 @@ describe("workbook engine values", () => {
       ),
     ).toThrow(WorkbookEngineError);
   });
+
+  it("omits missing cell types from normalized sparse values", () => {
+    const normalized = normalizeWorkbookSparseValues(
+      {
+        sheets: [
+          {
+            name: "Sheet1",
+            cells: { A1: "alpha" },
+            rowCount: 1,
+            columnCount: 1,
+          },
+        ],
+      },
+      { maxSheets: 1, maxCells: 1, maxCachedValueBytes: 100 },
+    );
+
+    expect(normalized.sheets[0]).not.toHaveProperty("cellTypes");
+  });
 });

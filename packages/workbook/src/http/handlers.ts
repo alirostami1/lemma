@@ -12,7 +12,10 @@ import {
   presentWorkbookCalculations,
   presentWorkbookEngineHealth,
   presentWorkbookSnapshot,
-  presentWorkbookSnapshotPreview,
+  presentWorkbookSnapshotCells,
+  presentWorkbookSnapshotMetadata,
+  presentWorkbookSnapshotRange,
+  presentWorkbookSnapshotSheets,
   presentWorkbookSnapshots,
   presentWorkbookSnapshotValue,
   presentWorkbooks,
@@ -212,14 +215,64 @@ export function createWorkbookHandlers(
         200,
       );
     }),
-    getWorkbookSnapshotPreview: workbookHandler(
-      "getWorkbookSnapshotPreview",
+    getWorkbookSnapshotMetadata: workbookHandler(
+      "getWorkbookSnapshotMetadata",
+      async (c) => {
+        const { workbookSnapshotId } = c.req.valid("param");
+        return c.json(
+          presentWorkbookSnapshotMetadata(
+            await deps.workbookCalculationService.getWorkbookSnapshotMetadata({
+              currentUser: c.var.identity,
+              workbookSnapshotId,
+            }),
+          ),
+          200,
+        );
+      },
+    ),
+    listWorkbookSnapshotSheets: workbookHandler(
+      "listWorkbookSnapshotSheets",
       async (c) => {
         const { workbookSnapshotId } = c.req.valid("param");
         const query = c.req.valid("query");
         return c.json(
-          presentWorkbookSnapshotPreview(
-            await deps.workbookCalculationService.getWorkbookSnapshotPreview({
+          presentWorkbookSnapshotSheets(
+            await deps.workbookCalculationService.listWorkbookSnapshotSheets({
+              currentUser: c.var.identity,
+              workbookSnapshotId,
+              ...query,
+            }),
+          ),
+          200,
+        );
+      },
+    ),
+    getWorkbookSnapshotCells: workbookHandler(
+      "getWorkbookSnapshotCells",
+      async (c) => {
+        const { workbookSnapshotId, sheetIndex } = c.req.valid("param");
+        const query = c.req.valid("query");
+        return c.json(
+          presentWorkbookSnapshotCells(
+            await deps.workbookCalculationService.getWorkbookSnapshotCells({
+              currentUser: c.var.identity,
+              workbookSnapshotId,
+              sheetIndex: Number(sheetIndex),
+              ...query,
+            }),
+          ),
+          200,
+        );
+      },
+    ),
+    getWorkbookSnapshotRange: workbookHandler(
+      "getWorkbookSnapshotRange",
+      async (c) => {
+        const { workbookSnapshotId } = c.req.valid("param");
+        const query = c.req.valid("query");
+        return c.json(
+          presentWorkbookSnapshotRange(
+            await deps.workbookCalculationService.getWorkbookSnapshotRange({
               currentUser: c.var.identity,
               workbookSnapshotId,
               ...query,

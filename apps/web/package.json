@@ -52,7 +52,6 @@
     "tailwind-merge": "catalog:",
     "tailwindcss": "catalog:",
     "tw-animate-css": "catalog:",
-    "xlsx": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

@@ -5,4 +5,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type WorkbookSparseValuesSheetsItemCells = { [key: string]: string };
+export type GetWorkbookSnapshotRangeParams = {
+  /**
+   * @minLength 1
+   */
+  ref: string;
+};

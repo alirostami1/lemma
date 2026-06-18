@@ -13,13 +13,15 @@ import {
   useSpreadsheetRangeSelection,
   useSpreadsheetSheet,
 } from "@lemma/ui/components/spreadsheet";
-import { useEffect } from "react";
-import type { WorkbookPreview } from "#/domains/questions/workbook-preview";
+import { useEffect, useMemo } from "react";
 import type {
   WorkbookRangeSelection,
   WorkbookSelectionRequirement,
 } from "#/features/questions/table-block-editor";
-import { useWorkbookPreview } from "./use-workbook-preview";
+import {
+  useWorkbookPickerCells,
+  type WorkbookPickerSheet,
+} from "./use-workbook-picker-cells";
 import { WorkbookSelectionSummary } from "./workbook-selection-summary";
 import {
   buildWorkbookRangeSelection,
@@ -28,8 +30,8 @@ import {
 } from "./workbook-validation";
 
 type WorkbookPickerDialogProps = {
-  file: File | null;
-  workbookPreview?: WorkbookPreview | null;
+  workbookSnapshotId?: string | null;
+  workbookSheets?: WorkbookPickerSheet[];
   fileName: string;
   open: boolean;
   onOpenChange(open: boolean): void;
@@ -38,26 +40,54 @@ type WorkbookPickerDialogProps = {
 };
 
 export function WorkbookPickerDialog({
-  file,
-  workbookPreview,
+  workbookSnapshotId,
+  workbookSheets = [],
   fileName,
   open,
   onOpenChange,
   selectionRequirement,
   onSelectRange,
 }: WorkbookPickerDialogProps) {
-  const { workbook: fileWorkbook, status: fileStatus } = useWorkbookPreview(
-    file,
-    open && !workbookPreview,
+  const hasSource = Boolean(workbookSnapshotId);
+  const sheetTabs = useMemo(
+    () =>
+      workbookSheets.map((sheet) => ({
+        name: sheet.name,
+        rows: [],
+        columnCount: Math.min(sheet.columnCount, 20),
+      })),
+    [workbookSheets],
   );
-  const workbook = workbookPreview ?? fileWorkbook;
-  const status = workbookPreview ? "idle" : fileStatus;
-  const hasSource = Boolean(file || workbookPreview);
-  const sheets = workbook?.sheets ?? [];
-  const { activeSheet, activeSheetName, setActiveSheetName } =
-    useSpreadsheetSheet(sheets);
+  const { activeSheetName, setActiveSheetName } =
+    useSpreadsheetSheet(sheetTabs);
+  const activeSheetSummary =
+    workbookSheets.find((sheet) => sheet.name === activeSheetName) ??
+    workbookSheets[0] ??
+    null;
+  const cellsQuery = useWorkbookPickerCells({
+    activeSheet: activeSheetSummary,
+    open,
+    workbookSnapshotId,
+  });
+  const sheets = useMemo(
+    () =>
+      workbookSheets.map((sheet) => ({
+        name: sheet.name,
+        rows:
+          sheet.sheetIndex === cellsQuery.data?.sheetIndex
+            ? cellsQuery.data.rows
+            : [],
+        columnCount:
+          sheet.sheetIndex === cellsQuery.data?.sheetIndex
+            ? cellsQuery.data.columnCount
+            : Math.min(sheet.columnCount, 20),
+      })),
+    [cellsQuery.data, workbookSheets],
+  );
+  const activeSheet =
+    sheets.find((sheet) => sheet.name === activeSheetName) ?? sheets[0] ?? null;
   const rangeSelection = useSpreadsheetRangeSelection();
-  const workbookSelectionResetKey = `${status}:${workbook?.fileName ?? ""}:${
+  const workbookSelectionResetKey = `${fileName}:${activeSheetName}:${
     sheets.length
   }`;
 
@@ -109,11 +139,11 @@ export function WorkbookPickerDialog({
             <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
               {fileName ? "Loading source..." : "No source selected."}
             </div>
-          ) : status === "loading" ? (
+          ) : cellsQuery.isPending ? (
             <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
               Loading source...
             </div>
-          ) : status === "error" ? (
+          ) : cellsQuery.isError ? (
             <div className="flex flex-1 items-center justify-center p-8 text-sm text-destructive">
               Source preview could not be loaded.
             </div>

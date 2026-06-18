@@ -59,9 +59,23 @@ export type WorkbookSnapshotByIdCommand = ListCommand & {
   workbookSnapshotId: string;
 };
 
-export type WorkbookSnapshotPreviewCommand = WorkbookSnapshotByIdCommand & {
-  rowLimit?: number;
-  columnLimit?: number;
+export type WorkbookSnapshotMetadataCommand = WorkbookSnapshotByIdCommand;
+
+export type ListWorkbookSnapshotSheetsCommand = WorkbookSnapshotByIdCommand & {
+  limit?: number;
+  cursor?: string;
+};
+
+export type WorkbookSnapshotCellsCommand = WorkbookSnapshotByIdCommand & {
+  sheetIndex: number;
+  startRow: number;
+  startColumn: number;
+  rowCount: number;
+  columnCount: number;
+};
+
+export type WorkbookSnapshotRangeCommand = WorkbookSnapshotByIdCommand & {
+  ref: string;
 };
 
 export type ResolveWorkbookSnapshotValueCommand =

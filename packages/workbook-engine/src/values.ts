@@ -182,13 +182,15 @@ export function normalizeWorkbookSparseValues(
         }),
       );
       const inferred = inferWorkbookSparseSheetSize(cells);
-      return {
+      const normalizedSheet = {
         name: sheet.name,
         cells,
-        cellTypes: sheet.cellTypes,
         rowCount: Math.max(sheet.rowCount, inferred.rowCount),
         columnCount: Math.max(sheet.columnCount, inferred.columnCount),
       };
+      return sheet.cellTypes
+        ? { ...normalizedSheet, cellTypes: sheet.cellTypes }
+        : normalizedSheet;
     }),
   };
 }

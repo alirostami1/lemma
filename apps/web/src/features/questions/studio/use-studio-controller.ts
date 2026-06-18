@@ -182,10 +182,9 @@ export function useStudioController(
     saveDialog: save.saveDialog,
     generateDialog: generation.generateDialog,
     workbookPicker: {
-      file: source.workbookPreviewController.workbookFile,
-      workbookPreview: source.workbookPreviewController.workbookPreview,
+      workbookSnapshotId: source.workbookPreviewController.workbookSnapshotId,
+      workbookSheets: source.workbookPreviewController.workbookSheets,
       fileName:
-        source.workbookPreviewController.workbookFile?.name ??
         source.selectedWorkbook?.originalName ??
         (draft.selectedWorkbookId ? "Selected source could not be found." : ""),
       open: workbookPickerRequest !== null,
