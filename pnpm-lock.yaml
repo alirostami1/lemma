@@ -787,9 +787,6 @@ importers:
       '@hono/zod-validator':
         specifier: 'catalog:'
         version: 0.7.6(hono@4.12.25)(zod@4.4.3)
-      '@lemma/domain':
-        specifier: workspace:*
-        version: link:../domain
       '@lemma/error':
         specifier: workspace:*
         version: link:../error

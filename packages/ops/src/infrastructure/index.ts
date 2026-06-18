@@ -1,1 +1,1 @@
-export * from "./KyselyOpsRepository.js";
+export { KyselyOpsRepository } from "./KyselyOpsRepository.js";

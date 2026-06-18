@@ -3,13 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "sideEffects": false,
   "exports": {
-    ".": {
-      "types": "./src/index.ts",
-      "development": "./src/index.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
-    },
     "./application": {
       "types": "./src/application/index.ts",
       "development": "./src/application/index.ts",

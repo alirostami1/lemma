@@ -3,20 +3,26 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./src/index.ts",
       "development": "./src/index.ts",
-      "import": "./dist/src/index.js",
-      "default": "./dist/src/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./browser": {
       "types": "./src/browser.ts",
       "development": "./src/browser.ts",
-      "import": "./dist/src/browser.js",
-      "default": "./dist/src/browser.js"
+      "import": "./dist/browser.js",
+      "default": "./dist/browser.js"
     },
-    "./openapi": "./openapi/openapi.ts"
+    "./openapi": {
+      "types": "./src/openapi.ts",
+      "development": "./src/openapi.ts",
+      "import": "./dist/openapi.js",
+      "default": "./dist/openapi.js"
+    }
   },
   "scripts": {
     "check-types": "tsc --noEmit",
@@ -27,7 +33,6 @@
   },
   "dependencies": {
     "@hono/zod-validator": "catalog:",
-    "@lemma/domain": "workspace:*",
     "@lemma/error": "workspace:*",
     "hono": "catalog:",
     "openapi-types": "catalog:",

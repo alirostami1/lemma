@@ -1,17 +1,206 @@
-export * from "./errors.js";
-export * from "./ids.js";
-export * from "./primitives.js";
-export * from "./question.js";
-export * from "./question-answer.js";
-export * from "./question-blueprint.js";
-export * from "./question-blueprint-document.js";
-export * from "./question-body.js";
-export * from "./question-generation-events.js";
-export * from "./question-generation-run.js";
-export * from "./question-grading.js";
-export * from "./question-producer.js";
-export * from "./question-reference.js";
-export * from "./question-set.js";
-export * from "./question-source.js";
-export * from "./question-value-expression.js";
-export * from "./question-values.js";
+export {
+  InvalidQuestionAnswerError,
+  InvalidQuestionBlueprintDocumentError,
+  InvalidQuestionBodyError,
+  InvalidQuestionFieldError,
+  InvalidQuestionGenerationRunResultError,
+  InvalidQuestionProducerError,
+  InvalidQuestionSolutionError,
+  InvalidQuestionSourcePlanError,
+  InvalidQuestionStateTransitionError,
+} from "./errors.js";
+export type {
+  QuestionBlueprintId,
+  QuestionBlueprintVersionId,
+  QuestionGenerationRunId,
+  QuestionId,
+  QuestionSetId,
+  UserId,
+  WorkbookCalculationId,
+  WorkbookId,
+  WorkbookSnapshotId,
+  WorkbookVersionId,
+} from "./ids.js";
+export {
+  questionBlueprintId,
+  questionBlueprintVersionId,
+  questionGenerationRunId,
+  questionId,
+  questionSetId,
+  userId,
+  workbookCalculationId,
+  workbookId,
+  workbookSnapshotId,
+  workbookVersionId,
+} from "./ids.js";
+export {
+  assertMaxLength,
+  assertNonEmptyString,
+  assertNullableDescription,
+  assertUuid,
+} from "./primitives.js";
+export type {
+  CreateWorkbookQuestionSourceInput,
+  Question,
+  WorkbookQuestionSource,
+} from "./question.js";
+export {
+  archiveQuestion,
+  createQuestion,
+  deleteQuestion,
+  reconstituteQuestion,
+  workbookQuestionSource,
+} from "./question.js";
+export type {
+  QuestionAnswer,
+  QuestionResponseValue,
+} from "./question-answer.js";
+export { questionAnswer } from "./question-answer.js";
+export type {
+  QuestionBlueprint,
+  QuestionBlueprintVersion,
+} from "./question-blueprint.js";
+export {
+  archiveQuestionBlueprint,
+  createQuestionBlueprint,
+  createQuestionBlueprintVersion,
+  deleteQuestionBlueprint,
+  reconstituteQuestionBlueprint,
+  reconstituteQuestionBlueprintVersion,
+  updateQuestionBlueprintMetadata,
+} from "./question-blueprint.js";
+export type {
+  QuestionBlueprintBlock,
+  QuestionBlueprintDocument,
+  QuestionBlueprintResponseBlock,
+  QuestionBlueprintRichTextBlock,
+  QuestionBlueprintSeparatorBlock,
+  QuestionBlueprintTableBlock,
+  QuestionBlueprintTableCell,
+  QuestionBlueprintTextBlock,
+} from "./question-blueprint-document.js";
+export { questionBlueprintDocument } from "./question-blueprint-document.js";
+export type {
+  BlueprintInlineContent,
+  QuestionBlock,
+  QuestionBody,
+  QuestionGrading,
+  QuestionResponseBlock,
+  QuestionResponseField,
+  QuestionRichTextBlock,
+  QuestionSeparatorBlock,
+  QuestionTableBlock,
+  QuestionTableCell,
+  QuestionTableContentCell,
+  QuestionTableResponseCell,
+  QuestionTextBlock,
+  RangeCellOffset,
+  RenderedInlineContent,
+  RichContent,
+  RichContentNode,
+  RichListItemNode,
+  RichTextNode,
+} from "./question-body.js";
+export {
+  blueprintInlineContent,
+  grading,
+  questionBody,
+  renderedInlineContent,
+  richContent,
+  validatedBlocks,
+  validatedResponseFields,
+  validateResponseFields,
+} from "./question-body.js";
+export {
+  QUESTION_GENERATION_RUN_CANCELLED_EVENT,
+  QUESTION_GENERATION_RUN_FAILED_EVENT,
+  QUESTION_GENERATION_RUN_MATERIALIZING_EVENT,
+  QUESTION_GENERATION_RUN_REQUESTED_EVENT,
+  QUESTION_GENERATION_RUN_SUCCEEDED_EVENT,
+  QUESTION_GENERATION_RUN_WAITING_FOR_WORKBOOK_CALCULATION_EVENT,
+  QUESTION_SET_QUESTIONS_ADDED_EVENT,
+} from "./question-generation-events.js";
+export type {
+  QuestionGenerationRun,
+  QuestionGenerationRunResult,
+} from "./question-generation-run.js";
+export {
+  assertCanMaterialize,
+  assertQuestionGenerationRunCanRetry,
+  cancelQuestionGenerationRun,
+  createQuestionGenerationRun,
+  isTerminalRun,
+  markQuestionGenerationRunFailed,
+  markQuestionGenerationRunMaterializing,
+  markQuestionGenerationRunSucceeded,
+  markQuestionGenerationRunWaitingForWorkbookCalculation,
+  reconstituteQuestionGenerationRun,
+} from "./question-generation-run.js";
+export type {
+  GradeDetail,
+  GradeResult,
+  QuestionFieldRule,
+  QuestionSolution,
+} from "./question-grading.js";
+export { questionSolution } from "./question-grading.js";
+export type { QuestionProducer } from "./question-producer.js";
+export { questionProducer } from "./question-producer.js";
+export type {
+  QuestionReference,
+  QuestionReferenceSource,
+} from "./question-reference.js";
+export {
+  assertQuestionReferenceId,
+  questionReferenceSource,
+} from "./question-reference.js";
+export type { QuestionSet, QuestionSetQuestion } from "./question-set.js";
+export {
+  archiveQuestionSet,
+  createQuestionSet,
+  createQuestionSetQuestion,
+  deleteQuestionSet,
+  reconstituteQuestionSet,
+  renameQuestionSet,
+} from "./question-set.js";
+export type {
+  QuestionSourcePlan,
+  QuestionSourceReference,
+} from "./question-source.js";
+export { questionSourcePlan } from "./question-source.js";
+export type { QuestionValueExpression } from "./question-value-expression.js";
+export { questionValueExpression } from "./question-value-expression.js";
+export type {
+  QuestionBlueprintDescription,
+  QuestionBlueprintName,
+  QuestionBlueprintStatus,
+  QuestionBlueprintVisibility,
+  QuestionDescription,
+  QuestionGenerationRunStatus,
+  QuestionName,
+  QuestionSetDescription,
+  QuestionSetName,
+  QuestionSetStatus,
+  QuestionStatus,
+} from "./question-values.js";
+export {
+  MAX_GENERATION_RUN_COUNT,
+  MAX_QUESTION_DESCRIPTION_LENGTH,
+  MAX_QUESTION_NAME_LENGTH,
+  QUESTION_BLUEPRINT_STATUS_ACCEPTED_VALUES,
+  QUESTION_BLUEPRINT_VISIBILITY_ACCEPTED_VALUES,
+  QUESTION_GENERATION_RUN_STATUS_ACCEPTED_VALUES,
+  QUESTION_SET_STATUS_ACCEPTED_VALUES,
+  QUESTION_STATUS_ACCEPTED_VALUES,
+  questionBlueprintDescription,
+  questionBlueprintName,
+  questionBlueprintStatus,
+  questionBlueprintVisibility,
+  questionDescription,
+  questionGenerationRunStatus,
+  questionName,
+  questionSetDescription,
+  questionSetName,
+  questionSetStatus,
+  questionStatus,
+  requestedGenerationCount,
+} from "./question-values.js";

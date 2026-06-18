@@ -64,6 +64,7 @@ for (const file of files) {
   const imports = extractImports(source);
   for (const importRecord of imports) {
     checkNoPackageSrcImport(file, importRecord.specifier);
+    checkNoPackageDistImport(file, importRecord.specifier);
     checkDomainImportRules(file, importRecord.specifier);
     checkDeclaredDependency(file, importRecord.specifier);
     checkWorkspaceExport(file, importRecord.specifier);
@@ -124,6 +125,13 @@ function extractImports(source) {
   return imports;
 }
 
+function checkNoPackageDistImport(file, specifier) {
+  if (/^@lemma\/[^/]+\/dist(?:\/|$)/u.test(specifier)) {
+    addViolation(file, `do not import another package dist path: ${specifier}`);
+    return;
+  }
+}
+
 function checkNoPackageSrcImport(file, specifier) {
   if (/^@lemma\/[^/]+\/src(?:\/|$)/u.test(specifier)) {
     addViolation(file, `do not import another package src path: ${specifier}`);
@@ -144,11 +152,11 @@ function checkNoPackageSrcImport(file, specifier) {
     importerPackage &&
     importedPackage &&
     importerPackage.packageJson.name !== importedPackage.packageJson.name &&
-    isPackageSourceFile(resolved)
+    isWorkspaceSourceFile(resolved)
   ) {
     addViolation(
       file,
-      `do not import another package src path: ${specifier}`,
+      `do not import another workspace source path: ${specifier}`,
     );
   }
 }
@@ -182,10 +190,7 @@ function checkWorkspaceExport(file, specifier) {
   const subpath =
     specifier === packageName ? "." : `.${specifier.slice(packageName.length)}`;
   if (!isPackageSubpathExported(importedPackage.packageJson, subpath)) {
-    addViolation(
-      file,
-      `${packageName} does not export subpath ${subpath}`,
-    );
+    addViolation(file, `${packageName} does not export subpath ${subpath}`);
   }
 }
 
@@ -251,8 +256,8 @@ function getOwningWorkspacePackage(file) {
   );
 }
 
-function isPackageSourceFile(file) {
-  return /^packages\/[^/]+\/src\//u.test(
+function isWorkspaceSourceFile(file) {
+  return /^(?:apps|packages)\/[^/]+\/src\//u.test(
     normalizePath(path.relative(repoRoot, file)),
   );
 }

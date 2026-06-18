@@ -1,14 +1,96 @@
-export * from "./commands.js";
-export * from "./dto.js";
-export * from "./errors.js";
-export * from "./mappers.js";
-export * from "./policies.js";
-export * from "./ports.js";
-export * from "./WorkbookAccessAdapter.js";
-export * from "./WorkbookCalculationProcessorService.js";
-export * from "./WorkbookCalculationRequestAdapter.js";
-export * from "./WorkbookCalculationService.js";
-export * from "./WorkbookFileProviderErrorMapper.js";
-export * from "./WorkbookService.js";
-export * from "./WorkbookSnapshotService.js";
-export * from "./workbook-events.js";
+export type {
+  CreateWorkbookCalculationCommand,
+  CreateWorkbookCommand,
+  ListCommand,
+  ListWorkbookCalculationsCommand,
+  ListWorkbookSnapshotsCommand,
+  ProcessWorkbookCalculationCommand,
+  ResolveWorkbookSnapshotValueCommand,
+  RetryWorkbookCalculationCommand,
+  UpdateWorkbookCommand,
+  ValidateWorkbookCommand,
+  WorkbookByIdCommand,
+  WorkbookCalculationByIdCommand,
+  WorkbookSnapshotByIdCommand,
+} from "./commands.js";
+export type {
+  WorkbookCalculationDto,
+  WorkbookCalculationsResult,
+  WorkbookEngineHealthResult,
+  WorkbookResult,
+  WorkbookSnapshotResult,
+  WorkbookSnapshotsResult,
+  WorkbookSnapshotValueResult,
+  WorkbooksResult,
+} from "./dto.js";
+export {
+  ForbiddenWorkbookActionError,
+  WorkbookApplicationError,
+  WorkbookCalculationFailedError,
+  WorkbookCalculationNotFoundError,
+  WorkbookEngineFailureError,
+  WorkbookFileNotFoundError,
+  WorkbookFileProviderFailureError,
+  WorkbookFileUnavailableError,
+  WorkbookNotFoundError,
+  WorkbookRepositoryFailureError,
+  WorkbookSnapshotNotFoundError,
+} from "./errors.js";
+export {
+  decodeListCursor,
+  decodeSnapshotIndexCursor,
+  encodeListCursor,
+  encodeSnapshotIndexCursor,
+  normalizeListLimit,
+} from "./mappers.js";
+export {
+  canCreateWorkbook,
+  canListWorkbooks,
+  canManageWorkbook,
+  canManageWorkbookCalculation,
+  canRequestWorkbookCalculation,
+  canValidateWorkbook,
+  canViewWorkbook,
+  canViewWorkbookCalculation,
+  canViewWorkbookSnapshot,
+} from "./policies.js";
+export type {
+  Clock,
+  IdGenerator,
+  WorkbookAccessPort,
+  WorkbookCalculationPort,
+  WorkbookCalculator,
+  WorkbookCalculatorOptions,
+  WorkbookFileContent,
+  WorkbookFileMetadata,
+  WorkbookFileProviderPort,
+  WorkbookInternalSnapshotResolverPort,
+  WorkbookRepository,
+  WorkbookSnapshotResolverPort,
+  WorkbookTransactionPort,
+} from "./ports.js";
+export { WorkbookAccessAdapter } from "./WorkbookAccessAdapter.js";
+export { WorkbookCalculationProcessorService } from "./WorkbookCalculationProcessorService.js";
+export { WorkbookCalculationRequestAdapter } from "./WorkbookCalculationRequestAdapter.js";
+export { WorkbookCalculationService } from "./WorkbookCalculationService.js";
+export { mapWorkbookFileProviderErrors } from "./WorkbookFileProviderErrorMapper.js";
+export { WorkbookService } from "./WorkbookService.js";
+export { WorkbookSnapshotService } from "./WorkbookSnapshotService.js";
+export type {
+  WorkbookCalculationFinishedPayload,
+  WorkbookCalculationRequestedPayload,
+  WorkbookValidationFinishedPayload,
+  WorkbookValidationRequestedPayload,
+} from "./workbook-events.js";
+export {
+  WORKBOOK_CALCULATION_FAILED_EVENT,
+  WORKBOOK_CALCULATION_REQUESTED_EVENT,
+  WORKBOOK_CALCULATION_SUCCEEDED_EVENT,
+  WORKBOOK_VALIDATION_FAILED_EVENT,
+  WORKBOOK_VALIDATION_REQUESTED_EVENT,
+  WORKBOOK_VALIDATION_SUCCEEDED_EVENT,
+  workbookCalculationFinishedEvent,
+  workbookCalculationRequestedEvent,
+  workbookValidationFinishedEvent,
+  workbookValidationRequestedEvent,
+} from "./workbook-events.js";

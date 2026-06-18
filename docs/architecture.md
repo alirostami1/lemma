@@ -22,6 +22,10 @@ Rules:
 - apps may compose packages
 - packages may import other packages through public exports
 - packages must not import another package's `src/*`
+- packages must not import another package's `dist/*`
+- relative imports must not cross workspace package source roots
+- each workspace package must declare imported package dependencies
+- new public entry points must be added to `package.json` exports intentionally
 - generated files are regenerated, not hand edited
 
 ## Runtime Services

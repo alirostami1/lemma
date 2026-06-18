@@ -1,6 +1,9 @@
-export * from "./KyselyOutboxRepository.js";
+export {
+  KyselyOutboxRepository,
+  processedEventConsumer,
+} from "./KyselyOutboxRepository.js";
 export type {
   OutboxDatabase,
   OutboxDatabaseExecutor,
 } from "./outbox-database.js";
-export * from "./outbox-repository-factory.js";
+export { createKyselyOutboxRepository } from "./outbox-repository-factory.js";

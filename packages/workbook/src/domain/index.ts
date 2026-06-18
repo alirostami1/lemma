@@ -1,8 +1,92 @@
-export * from "./errors.js";
-export * from "./ids.js";
-export * from "./primitives.js";
-export * from "./workbook.js";
-export * from "./workbook-calculation.js";
-export * from "./workbook-events.js";
-export * from "./workbook-snapshot.js";
-export * from "./workbook-values.js";
+export {
+  InvalidWorkbookFieldError,
+  InvalidWorkbookFileMetadataError,
+  InvalidWorkbookInspectionError,
+  InvalidWorkbookSnapshotDataError,
+  InvalidWorkbookSnapshotReferenceError,
+  InvalidWorkbookSparseValuesError,
+  InvalidWorkbookStateTransitionError,
+} from "./errors.js";
+export type {
+  FileId,
+  UserId,
+  WorkbookCalculationId,
+  WorkbookId,
+  WorkbookSnapshotId,
+} from "./ids.js";
+export {
+  fileId,
+  userId,
+  workbookCalculationId,
+  workbookId,
+  workbookSnapshotId,
+} from "./ids.js";
+export {
+  assertJsonValue,
+  assertMaxLength,
+  assertNonEmptyString,
+  assertNonNegativeInteger,
+  assertUuid,
+  oneOf,
+} from "./primitives.js";
+export type { Workbook } from "./workbook.js";
+export {
+  archiveWorkbook,
+  assertWorkbookFileMetadata,
+  assertWorkbookIsUsable,
+  createWorkbook,
+  deleteWorkbook,
+  markWorkbookInvalid,
+  markWorkbookValid,
+  requestWorkbookValidation,
+  updateWorkbook,
+} from "./workbook.js";
+export type { WorkbookCalculation } from "./workbook-calculation.js";
+export {
+  cancelWorkbookCalculation,
+  createWorkbookCalculation,
+  isTerminalWorkbookCalculation,
+  markWorkbookCalculationFailed,
+  markWorkbookCalculationRunning,
+  markWorkbookCalculationSucceeded,
+} from "./workbook-calculation.js";
+export {
+  WORKBOOK_CALCULATION_FAILED_EVENT,
+  WORKBOOK_CALCULATION_REQUESTED_EVENT,
+  WORKBOOK_CALCULATION_SUCCEEDED_EVENT,
+  WORKBOOK_VALIDATION_FAILED_EVENT,
+  WORKBOOK_VALIDATION_REQUESTED_EVENT,
+  WORKBOOK_VALIDATION_SUCCEEDED_EVENT,
+} from "./workbook-events.js";
+export type { WorkbookSnapshot } from "./workbook-snapshot.js";
+export {
+  createWorkbookSnapshot,
+  resolveWorkbookSnapshotValue,
+} from "./workbook-snapshot.js";
+export type {
+  ValueSource,
+  WorkbookCalculationStatus,
+  WorkbookEngineHealth,
+  WorkbookEngineName,
+  WorkbookInspection,
+  WorkbookName,
+  WorkbookSnapshotValue,
+  WorkbookSparseSheet,
+  WorkbookSparseValues,
+  WorkbookStatus,
+} from "./workbook-values.js";
+export {
+  MAX_WORKBOOK_CALCULATION_COUNT,
+  MAX_WORKBOOK_NAME_LENGTH,
+  requestedCalculationCount,
+  WORKBOOK_CALCULATION_STATUS_ACCEPTED_VALUES,
+  WORKBOOK_ENGINE_ACCEPTED_VALUES,
+  WORKBOOK_STATUS_ACCEPTED_VALUES,
+  WORKBOOK_XLSX_CONTENT_TYPE,
+  workbookCalculationStatus,
+  workbookEngineName,
+  workbookInspection,
+  workbookName,
+  workbookSparseValues,
+  workbookStatus,
+} from "./workbook-values.js";
