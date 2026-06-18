@@ -10,7 +10,7 @@
     "check": "pnpm check:docs && pnpm check:architecture && turbo run check",
     "test": "turbo run test",
     "check-types": "turbo run check-types",
-    "prepare": "lefthook install",
+    "hooks:install": "lefthook install",
     "check:architecture": "node scripts/check-package-boundaries.mjs && turbo run check:architecture",
     "check:docs": "node scripts/check-docs.mjs",
     "check:generated": "pnpm generate:openapi && node scripts/check-generated-clean.mjs",
