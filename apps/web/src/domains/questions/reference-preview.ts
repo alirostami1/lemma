@@ -6,6 +6,7 @@ import {
   type ValueExpression,
 } from "./authoring";
 import {
+  normalizeWorkbookRef,
   resolveWorkbookPreviewValue,
   type WorkbookPreviewForReferences,
 } from "./workbook-reference";
@@ -173,7 +174,10 @@ function resolveReferenceSourcePreview({
     };
   }
   if (source.type === "workbook_cell" || source.type === "workbook_range") {
-    const selectedValues = workbookSelectionValuesByRef[source.ref];
+    const normalizedRef = normalizeWorkbookRef(source.ref);
+    const selectedValues =
+      workbookSelectionValuesByRef[source.ref] ??
+      (normalizedRef ? workbookSelectionValuesByRef[normalizedRef] : undefined);
     if (selectedValues) {
       const rawValue =
         source.type === "workbook_cell"

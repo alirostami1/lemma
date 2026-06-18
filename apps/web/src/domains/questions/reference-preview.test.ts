@@ -36,6 +36,37 @@ describe("reference preview cache", () => {
     });
   });
 
+  it("resolves workbook references from normalized selected refs", () => {
+    const model: ComposedEditorModel = {
+      schemaVersion: 1,
+      blocks: [],
+      responseFields: [],
+      references: [
+        {
+          id: "score",
+          source: { type: "workbook_cell", ref: "Sheet1!a1" },
+        },
+      ],
+    };
+
+    expect(
+      resolveReferencePreviewValues({
+        model,
+        workbookPreview: null,
+        workbookSelectionValuesByRef: {
+          "'Sheet1'!A1:A1": [["90"]],
+        },
+        now,
+      }),
+    ).toMatchObject({
+      score: {
+        status: "resolved",
+        displayValue: "90",
+        rawValue: "90",
+      },
+    });
+  });
+
   it("formats fallback references", () => {
     expect(formatReferenceFallback("revenue")).toBe("{{ .revenue }}");
   });

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseWorkbookRef, resolveWorkbookValue } from "./workbook-reference";
+import {
+  normalizeWorkbookRef,
+  parseWorkbookRef,
+  resolveWorkbookValue,
+} from "./workbook-reference";
 
 describe("workbook references", () => {
   it("parses quoted, escaped, lowercase, and absolute refs", () => {
@@ -49,5 +53,13 @@ describe("workbook references", () => {
       ["A1", "B1"],
       ["A2", "B2"],
     ]);
+  });
+
+  it("normalizes equivalent refs to one canonical range ref", () => {
+    expect(normalizeWorkbookRef("Sheet1!a1")).toBe("'Sheet1'!A1:A1");
+    expect(normalizeWorkbookRef("'Sheet1'!$A$1")).toBe("'Sheet1'!A1:A1");
+    expect(normalizeWorkbookRef("'Bob''s Sheet'!$a$1:$b$2")).toBe(
+      "'Bob''s Sheet'!A1:B2",
+    );
   });
 });

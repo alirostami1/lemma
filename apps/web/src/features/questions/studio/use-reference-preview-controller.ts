@@ -6,6 +6,7 @@ import {
   type WorkbookSelectionValuesByRef,
 } from "#/domains/questions/reference-preview";
 import type { WorkbookPreview } from "#/domains/questions/workbook-preview";
+import { normalizeWorkbookRef } from "#/domains/questions/workbook-reference";
 import { useWorkbookSnapshotRangeBatchQuery } from "#/domains/workbooks/hooks";
 
 export type ReferencePreviewController = {
@@ -29,13 +30,22 @@ export function useReferencePreviewController({
     () => getWorkbookReferenceRefs(model),
     [model],
   );
-  const missingWorkbookReferenceRefs = useMemo(
-    () =>
-      workbookReferenceRefs.filter(
-        (ref) => !Object.hasOwn(workbookSelectionValuesByRef ?? {}, ref),
-      ),
-    [workbookReferenceRefs, workbookSelectionValuesByRef],
-  );
+  const missingWorkbookReferenceRefs = useMemo(() => {
+    const missingRefs = new Set<string>();
+
+    for (const { ref, normalizedRef } of workbookReferenceRefs) {
+      if (
+        hasWorkbookSelectionValue(workbookSelectionValuesByRef, ref) ||
+        hasWorkbookSelectionValue(workbookSelectionValuesByRef, normalizedRef)
+      ) {
+        continue;
+      }
+
+      missingRefs.add(normalizedRef);
+    }
+
+    return Array.from(missingRefs);
+  }, [workbookReferenceRefs, workbookSelectionValuesByRef]);
   const workbookReferenceQuery = useWorkbookSnapshotRangeBatchQuery(
     {
       workbookSnapshotId: workbookSnapshotId ?? "",
@@ -55,10 +65,22 @@ export function useReferencePreviewController({
 
       valuesByRef[item.ref] = item.range.rows;
       valuesByRef[item.range.ref] = item.range.rows;
+
+      const normalizedRef =
+        normalizeWorkbookRef(item.range.ref) ?? normalizeWorkbookRef(item.ref);
+      if (normalizedRef) {
+        valuesByRef[normalizedRef] = item.range.rows;
+
+        for (const referenceRef of workbookReferenceRefs) {
+          if (referenceRef.normalizedRef === normalizedRef) {
+            valuesByRef[referenceRef.ref] = item.range.rows;
+          }
+        }
+      }
     }
 
     return valuesByRef;
-  }, [workbookReferenceQuery.data]);
+  }, [workbookReferenceQuery.data, workbookReferenceRefs]);
   const referencePreviewCache = useMemo(
     () =>
       resolveReferencePreviewValues({
@@ -82,15 +104,37 @@ export function useReferencePreviewController({
   };
 }
 
+type WorkbookReferenceRef = {
+  ref: string;
+  normalizedRef: string;
+};
+
 function getWorkbookReferenceRefs(model: ComposedEditorModel) {
-  return Array.from(
-    new Set(
-      model.references.flatMap((reference) =>
-        reference.source.type === "workbook_cell" ||
-        reference.source.type === "workbook_range"
-          ? [reference.source.ref]
-          : [],
-      ),
-    ),
-  );
+  const refsByOriginalRef = new Map<string, WorkbookReferenceRef>();
+
+  for (const reference of model.references) {
+    if (
+      reference.source.type !== "workbook_cell" &&
+      reference.source.type !== "workbook_range"
+    ) {
+      continue;
+    }
+
+    const ref = reference.source.ref;
+    if (!refsByOriginalRef.has(ref)) {
+      refsByOriginalRef.set(ref, {
+        ref,
+        normalizedRef: normalizeWorkbookRef(ref) ?? ref,
+      });
+    }
+  }
+
+  return Array.from(refsByOriginalRef.values());
+}
+
+function hasWorkbookSelectionValue(
+  valuesByRef: WorkbookSelectionValuesByRef | undefined,
+  ref: string,
+) {
+  return Object.hasOwn(valuesByRef ?? {}, ref);
 }
