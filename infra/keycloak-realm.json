@@ -5,6 +5,7 @@
   "loginWithEmailAllowed": true,
   "resetPasswordAllowed": true,
   "verifyEmail": false,
+  "loginTheme": "lemma",
   "clients": [
     {
       "clientId": "lemma-web",
