@@ -90,7 +90,6 @@ jobs:
     needs: changes
     if: |
       needs.changes.outputs.app == 'true' ||
-      needs.changes.outputs.infra == 'true' ||
       needs.changes.outputs.workflow == 'true'
     runs-on: ubuntu-latest
     steps:

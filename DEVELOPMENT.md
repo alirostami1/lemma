@@ -99,7 +99,8 @@ CI should stay change-scoped as the repo grows:
 - Dockerfile changes run Dockerfile lint/build checks for affected images.
 - Ansible changes run playbook syntax checks and can add stricter lint checks
   as the role set stabilizes.
-- production Compose/Caddy/script changes run infra validation.
+- production Compose/Caddy/script changes run infra validation, not full app
+  validation.
 - app/package changes run TypeScript, lint, and tests for affected packages.
 
 CI path groups live in `.github/path-filters/ci.yml`. The required branch
