@@ -42,6 +42,7 @@ export function useSourceController(input: {
   loadWorkbookPickerPreview: boolean;
   model: ComposedEditorModel;
   selectedWorkbookId: string | null;
+  isVersionBoundSource: boolean;
   onSelectedWorkbookIdChange(workbookId: string | null): void;
 }): SourceController {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -97,6 +98,7 @@ export function useSourceController(input: {
       : workbookPreviewController.previewStatus,
     previewError:
       sourcePreparationError ?? workbookPreviewController.workbookPreviewError,
+    isVersionBoundSource: input.isVersionBoundSource,
   });
 
   const requestPreviewCalculation = useCallback(

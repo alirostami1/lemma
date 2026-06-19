@@ -57,4 +57,24 @@ describe("getStudioSourceViewState", () => {
       canRemove: true,
     });
   });
+
+  it("returns targeted error when a version-bound source cannot be found", () => {
+    expect(
+      getStudioSourceViewState({
+        sourceRequirement: { status: "required", workbookRefs: ["Sheet1!A1"] },
+        selectedWorkbookId: "workbook_1",
+        selectedWorkbook: null,
+        isWorkbooksLoading: false,
+        previewStatus: "idle",
+        previewError: null,
+        isVersionBoundSource: true,
+      }),
+    ).toEqual({
+      status: "error",
+      title: "Version source not found",
+      description: "This blueprint version's saved source could not be found.",
+      issue: "Reattach the source and save a new blueprint version.",
+      canRemove: true,
+    });
+  });
 });

@@ -16,7 +16,7 @@ type WritableRef<T> = {
 type DraftStatusSetter = (status: "idle" | "autosaved" | "failed") => void;
 type NavigateToStudio = (options: {
   to: "/studio";
-  search: Record<string, never>;
+  search: { blueprintId?: string };
 }) => unknown;
 
 export function useBlueprintDraftResetAction(input: {
@@ -93,6 +93,7 @@ export function useBlueprintDraftMarkSavedAction(input: {
   authoringModel: ComposedEditorModel;
   draftStorageKey: string;
   loadedBlueprintKeyRef: WritableRef<string | null>;
+  navigate: NavigateToStudio;
   replaceCurrentSnapshot(): void;
   setBlueprintDescription(description: string): void;
   setBlueprintName(name: string): void;
@@ -158,6 +159,7 @@ export function useBlueprintDraftMarkSavedAction(input: {
         input.setLocalDraftError("Local draft could not be marked as synced.");
       }
       input.replaceCurrentSnapshot();
+      void input.navigate({ to: "/studio", search: { blueprintId } });
     },
     [input],
   );

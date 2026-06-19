@@ -8,11 +8,20 @@ export const Route = createFileRoute("/_layout/studio")({
   validateSearch: (search: Record<string, unknown>): StudioRouteSearch => ({
     blueprintId:
       typeof search.blueprintId === "string" ? search.blueprintId : undefined,
+    blueprintVersionId:
+      typeof search.blueprintVersionId === "string"
+        ? search.blueprintVersionId
+        : undefined,
   }),
   component: RouteComponent,
 });
 
 function RouteComponent() {
   const search = Route.useSearch();
-  return <StudioPage blueprintId={search.blueprintId} />;
+  return (
+    <StudioPage
+      blueprintId={search.blueprintId}
+      blueprintVersionId={search.blueprintVersionId}
+    />
+  );
 }

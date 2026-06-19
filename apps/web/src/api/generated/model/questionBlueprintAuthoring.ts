@@ -4,10 +4,10 @@
  * Lemma API
  * OpenAPI spec version: 0.1.0
  */
-import type { QuestionBlueprintAuthoringCurrentVersion } from "./questionBlueprintAuthoringCurrentVersion.ts";
 import type { QuestionBlueprintAuthoringStatus } from "./questionBlueprintAuthoringStatus.ts";
 import type { QuestionBlueprintAuthoringVisibility } from "./questionBlueprintAuthoringVisibility.ts";
 import type { QuestionBlueprintDocument } from "./questionBlueprintDocument.ts";
+import type { QuestionBlueprintVersion } from "./questionBlueprintVersion.ts";
 
 export interface QuestionBlueprintAuthoring {
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
@@ -36,7 +36,13 @@ export interface QuestionBlueprintAuthoring {
   currentVersionId: string;
   /** @minimum 1 */
   currentVersionNumber: number;
-  currentVersion: QuestionBlueprintAuthoringCurrentVersion;
+  currentVersion: QuestionBlueprintVersion;
+  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
+  selectedVersionId: string;
+  /** @minimum 1 */
+  selectedVersionNumber: number;
+  selectedVersion: QuestionBlueprintVersion;
+  versions: QuestionBlueprintVersion[];
   visibility: QuestionBlueprintAuthoringVisibility;
   status: QuestionBlueprintAuthoringStatus;
   /** @nullable */

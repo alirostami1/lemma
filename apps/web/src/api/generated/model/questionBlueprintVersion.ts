@@ -4,8 +4,9 @@
  * Lemma API
  * OpenAPI spec version: 0.1.0
  */
+import type { QuestionBlueprintVersionAsset } from "./questionBlueprintVersionAsset.ts";
 
-export type QuestionBlueprintAuthoringCurrentVersion = {
+export interface QuestionBlueprintVersion {
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
   id: string;
   /** @minimum 1 */
@@ -15,7 +16,8 @@ export type QuestionBlueprintAuthoringCurrentVersion = {
    * @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
    */
   workbookId: string | null;
+  sourceAssets: QuestionBlueprintVersionAsset[];
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
   createdByUserId: string;
   createdAt: string;
-};
+}

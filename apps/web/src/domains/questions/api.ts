@@ -4,11 +4,13 @@ import {
   createQuestionSet as createQuestionSetGenerated,
   getQuestionBlueprintAuthoring as getQuestionBlueprintAuthoringGenerated,
   getQuestionBlueprint as getQuestionBlueprintGenerated,
+  getQuestionBlueprintVersionAuthoring as getQuestionBlueprintVersionAuthoringGenerated,
   getQuestion as getQuestionGenerated,
   getQuestionGenerationRun as getQuestionGenerationRunGenerated,
   getQuestionSet as getQuestionSetGenerated,
   gradeQuestion as gradeQuestionGenerated,
   listQuestionBlueprints as listQuestionBlueprintsGenerated,
+  listQuestionBlueprintVersions as listQuestionBlueprintVersionsGenerated,
   listQuestionSetQuestions as listQuestionSetQuestionsGenerated,
   listQuestionSets as listQuestionSetsGenerated,
   retryQuestionGenerationRun as retryQuestionGenerationRunGenerated,
@@ -18,6 +20,7 @@ import {
   mapQuestionBlueprintAuthoringResponse,
   mapQuestionBlueprintResponse,
   mapQuestionBlueprintsResponse,
+  mapQuestionBlueprintVersionsResponse,
   mapQuestionGenerationRunResponse,
   mapQuestionResponse,
   mapQuestionSetResponse,
@@ -29,6 +32,7 @@ import type {
   CreateQuestionGenerationRunInput,
   CreateQuestionSetInput,
   GetQuestionBlueprintInput,
+  GetQuestionBlueprintVersionInput,
   GetQuestionGenerationRunInput,
   GetQuestionInput,
   GradeQuestionInput,
@@ -38,6 +42,7 @@ import type {
   QuestionBlueprintAuthoringResult,
   QuestionBlueprintResult,
   QuestionBlueprintsPage,
+  QuestionBlueprintVersionsResult,
   QuestionGenerationRunResult,
   QuestionGradeResult,
   QuestionResult,
@@ -114,6 +119,26 @@ export async function getQuestionBlueprintAuthoring({
 }: GetQuestionBlueprintInput): Promise<QuestionBlueprintAuthoringResult> {
   return mapQuestionBlueprintAuthoringResponse(
     await getQuestionBlueprintAuthoringGenerated(questionBlueprintId),
+  );
+}
+
+export async function listQuestionBlueprintVersions({
+  questionBlueprintId,
+}: GetQuestionBlueprintInput): Promise<QuestionBlueprintVersionsResult> {
+  return mapQuestionBlueprintVersionsResponse(
+    await listQuestionBlueprintVersionsGenerated(questionBlueprintId),
+  );
+}
+
+export async function getQuestionBlueprintVersionAuthoring({
+  questionBlueprintId,
+  questionBlueprintVersionId,
+}: GetQuestionBlueprintVersionInput): Promise<QuestionBlueprintAuthoringResult> {
+  return mapQuestionBlueprintAuthoringResponse(
+    await getQuestionBlueprintVersionAuthoringGenerated(
+      questionBlueprintId,
+      questionBlueprintVersionId,
+    ),
   );
 }
 

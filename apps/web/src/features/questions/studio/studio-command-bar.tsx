@@ -32,11 +32,20 @@ export type StudioCommandBarProps = {
   isSaving: boolean;
   saveState: "saved" | "unsaved" | "saving" | "autosaved" | "failed";
   saveError: string | null;
+  selectedVersionId: string | null;
+  versions: Array<{
+    id: string;
+    versionNumber: number;
+    createdAt: Date;
+    sourceCount: number;
+    isCurrent: boolean;
+  }>;
   onBlueprintDescriptionChange(description: string): void;
   onBlueprintNameChange(name: string): void;
   onGenerate(): void;
   onOpenSaveDialog(): void;
   onOpenSavedBlueprints(): void;
+  onOpenVersion(versionId: string): void;
   onReset(): void;
   onRedo(): void;
   onUndo(): void;
@@ -52,11 +61,14 @@ export function StudioCommandBar({
   isSaving,
   saveState,
   saveError,
+  selectedVersionId,
+  versions,
   onBlueprintDescriptionChange,
   onBlueprintNameChange,
   onGenerate,
   onOpenSaveDialog,
   onOpenSavedBlueprints,
+  onOpenVersion,
   onReset,
   onRedo,
   onUndo,
@@ -114,6 +126,28 @@ export function StudioCommandBar({
               onClick={onOpenSavedBlueprints}
               icon={<FolderOpen />}
             />
+            {versions.length > 0 ? (
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                <span className="sr-only">Blueprint version</span>
+                <select
+                  className="h-10 rounded-md border bg-background px-3 text-sm text-foreground"
+                  value={selectedVersionId ?? ""}
+                  onChange={(event) => onOpenVersion(event.currentTarget.value)}
+                >
+                  {versions.map((version) => (
+                    <option key={version.id} value={version.id}>
+                      v{version.versionNumber}
+                      {version.isCurrent ? " current" : ""}
+                      {version.sourceCount > 0
+                        ? ` · ${version.sourceCount} source${
+                            version.sourceCount === 1 ? "" : "s"
+                          }`
+                        : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
             <ToolbarIconButton
               label="Undo"
               disabled={!canUndo}

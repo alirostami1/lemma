@@ -49,12 +49,16 @@ export function createDraftKeyFromSnapshot(snapshot: StudioDraftSnapshot) {
 
 export function shouldWarnBeforeOpeningBlueprint(input: {
   nextBlueprintId: string;
+  nextBlueprintVersionId?: string | null;
   snapshot: StudioDraftSnapshot;
 }) {
   const snapshotKey = createDraftKeyFromSnapshot(input.snapshot);
   const isSynced = input.snapshot.lastRemoteSaveSnapshotKey === snapshotKey;
   return (
-    input.snapshot.loadedBlueprintId !== input.nextBlueprintId || !isSynced
+    input.snapshot.loadedBlueprintId !== input.nextBlueprintId ||
+    (input.snapshot.loadedBlueprintVersionId ?? null) !==
+      (input.nextBlueprintVersionId ?? null) ||
+    !isSynced
   );
 }
 

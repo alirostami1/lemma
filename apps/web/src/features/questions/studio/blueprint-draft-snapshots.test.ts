@@ -33,12 +33,12 @@ describe("blueprint draft snapshots", () => {
       workbookId: "workbook-1",
     });
 
-    expect(state.draftKey).toBe("blueprint:blueprint-1");
+    expect(state.draftKey).toBe("blueprint:blueprint-1:version:version-1");
     expect(state.syncedSnapshot).toMatchObject({
       authoringModel,
       blueprintDescription: "Description",
       blueprintName: " Blueprint ",
-      draftKey: "blueprint:blueprint-1",
+      draftKey: "blueprint:blueprint-1:version:version-1",
       loadedBlueprintId: "blueprint-1",
       loadedBlueprintVersionId: "version-1",
       selectedWorkbookId: "workbook-1",

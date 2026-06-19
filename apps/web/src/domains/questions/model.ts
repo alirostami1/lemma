@@ -43,15 +43,16 @@ export interface QuestionBlueprintVersion {
   id: string;
   versionNumber: number;
   workbookId: string | null;
+  sourceAssets: QuestionBlueprintVersionAsset[];
   createdByUserId: string;
   createdAt: Date;
 }
 
-export interface QuestionBlueprintAuthoringVersion {
-  id: string;
-  versionNumber: number;
-  workbookId: string | null;
-  createdByUserId: string;
+export interface QuestionBlueprintVersionAsset {
+  questionBlueprintVersionId: string;
+  workbookId: string;
+  kind: "workbook";
+  position: number;
   createdAt: Date;
 }
 
@@ -94,7 +95,11 @@ export interface QuestionBlueprintAuthoring {
   workbookId: string | null;
   currentVersionId?: string;
   currentVersionNumber?: number;
-  currentVersion?: QuestionBlueprintAuthoringVersion;
+  currentVersion?: QuestionBlueprintVersion;
+  selectedVersionId: string;
+  selectedVersionNumber: number;
+  selectedVersion: QuestionBlueprintVersion;
+  versions: QuestionBlueprintVersion[];
   visibility: QuestionBlueprintVisibility;
   status: QuestionBlueprintStatus;
   archivedAt: Date | null;
@@ -178,6 +183,11 @@ export interface GetQuestionBlueprintInput {
   questionBlueprintId: string;
 }
 
+export interface GetQuestionBlueprintVersionInput {
+  questionBlueprintId: string;
+  questionBlueprintVersionId: string;
+}
+
 export interface CreateQuestionBlueprintInput {
   name: string;
   description?: string | null;
@@ -242,6 +252,10 @@ export interface QuestionBlueprintResult {
 
 export interface QuestionBlueprintAuthoringResult {
   questionBlueprint: QuestionBlueprintAuthoring;
+}
+
+export interface QuestionBlueprintVersionsResult {
+  versions: QuestionBlueprintVersion[];
 }
 
 export interface QuestionGenerationRunResult {
