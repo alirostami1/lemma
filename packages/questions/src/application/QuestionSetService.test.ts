@@ -39,6 +39,10 @@ const nextBlueprintVersionId = questionBlueprintVersionId(
   "019e9315-6a87-715f-9861-8654df074006",
 );
 const sourceWorkbookId = workbookId("019e9315-6a87-715f-9861-8654df074007");
+const otherWorkbookId = workbookId("019e9315-6a87-715f-9861-8654df074008");
+const updatedBlueprintVersionId = questionBlueprintVersionId(
+  "019e9315-6a87-715f-9861-8654df074009",
+);
 
 describe("QuestionSetService", () => {
   it("updates owned sets and rejects other users", async () => {
@@ -70,7 +74,7 @@ describe("QuestionSetService", () => {
 });
 
 describe("QuestionBlueprintService", () => {
-  it("creates a blueprint with an initial current version", async () => {
+  it("does not save an unused workbook as a source asset", async () => {
     const repository = new FakeQuestionsRepository();
     const service = new QuestionBlueprintService({
       questionsRepository: repository,
@@ -93,10 +97,94 @@ describe("QuestionBlueprintService", () => {
     assert.equal(repository.questionBlueprintVersions.size, 1);
     assert.deepEqual(
       repository.questionBlueprintVersionAssets.get(nextBlueprintVersionId),
+      [],
+    );
+  });
+
+  it("saves source assets only for attached workbooks used by the document", async () => {
+    const repository = new FakeQuestionsRepository();
+    const service = new QuestionBlueprintService({
+      questionsRepository: repository,
+      idGenerator,
+      clock,
+    });
+
+    const result = await service.createQuestionBlueprint({
+      currentUser: currentUser(ownerUserId),
+      name: "Practice",
+      document: workbookBlueprintDocument("source_1"),
+      workbookSources: [
+        { sourceId: "source_1", name: "Used", workbookId: sourceWorkbookId },
+        { sourceId: "source_2", name: "Unused", workbookId: otherWorkbookId },
+      ],
+    });
+
+    assert.deepEqual(result.questionBlueprint.workbookSources, [
+      { sourceId: "source_1", name: "Used", workbookId: sourceWorkbookId },
+    ]);
+    assert.deepEqual(result.questionBlueprint.currentVersion.sourceAssets, [
+      {
+        questionBlueprintVersionId: nextBlueprintVersionId,
+        workbookId: sourceWorkbookId,
+        kind: "workbook",
+        position: 0,
+        createdAt: at,
+      },
+    ]);
+    assert.deepEqual(
+      repository.questionBlueprintVersionAssets.get(nextBlueprintVersionId),
+      result.questionBlueprint.currentVersion.sourceAssets,
+    );
+  });
+
+  it("updates source assets only for attached workbooks used by the new document", async () => {
+    const repository = new FakeQuestionsRepository();
+    const versionIds = [nextBlueprintVersionId, updatedBlueprintVersionId];
+    const service = new QuestionBlueprintService({
+      questionsRepository: repository,
+      idGenerator: {
+        ...idGenerator,
+        questionBlueprintVersionId: () => {
+          const id = versionIds.shift();
+          if (!id) {
+            throw new Error("Unexpected blueprint version id request.");
+          }
+          return id;
+        },
+      },
+      clock,
+    });
+    await service.createQuestionBlueprint({
+      currentUser: currentUser(ownerUserId),
+      name: "Practice",
+      document: workbookBlueprintDocument("source_1"),
+      workbookSources: [
+        { sourceId: "source_1", name: "First", workbookId: sourceWorkbookId },
+        { sourceId: "source_2", name: "Second", workbookId: otherWorkbookId },
+      ],
+    });
+
+    const result = await service.updateQuestionBlueprint({
+      currentUser: currentUser(ownerUserId),
+      questionBlueprintId: nextBlueprintId,
+      patch: {
+        document: workbookBlueprintDocument("source_2"),
+        workbookSources: [
+          { sourceId: "source_1", name: "First", workbookId: sourceWorkbookId },
+          { sourceId: "source_2", name: "Second", workbookId: otherWorkbookId },
+        ],
+      },
+    });
+
+    assert.deepEqual(result.questionBlueprint.workbookSources, [
+      { sourceId: "source_2", name: "Second", workbookId: otherWorkbookId },
+    ]);
+    assert.deepEqual(
+      repository.questionBlueprintVersionAssets.get(updatedBlueprintVersionId),
       [
         {
-          questionBlueprintVersionId: nextBlueprintVersionId,
-          workbookId: sourceWorkbookId,
+          questionBlueprintVersionId: updatedBlueprintVersionId,
+          workbookId: otherWorkbookId,
           kind: "workbook",
           position: 0,
           createdAt: at,
@@ -129,6 +217,25 @@ const emptyBlueprintDocument = {
   responseFields: [],
   references: [],
 };
+
+function workbookBlueprintDocument(sourceId: string) {
+  return {
+    schemaVersion: 1,
+    blocks: [],
+    responseFields: [],
+    references: [
+      {
+        id: "revenue",
+        source: {
+          schemaVersion: 1,
+          type: "workbook_cell",
+          sourceId,
+          ref: "Sheet1!A1",
+        },
+      },
+    ],
+  };
+}
 
 function createTargetSet() {
   return createQuestionSet(
@@ -278,8 +385,12 @@ class FakeQuestionsRepository implements QuestionsRepository {
     version: QuestionBlueprintVersion;
     assets: readonly QuestionBlueprintVersionAsset[];
   }): Promise<QuestionBlueprint | null> {
-    void input;
-    throw new Error("Not implemented.");
+    this.questionBlueprints.set(input.blueprint.id, input.blueprint);
+    this.questionBlueprintVersions.set(input.version.id, input.version);
+    this.questionBlueprintVersionAssets.set(input.version.id, [
+      ...input.assets,
+    ]);
+    return input.blueprint;
   }
 
   async findQuestionById() {
