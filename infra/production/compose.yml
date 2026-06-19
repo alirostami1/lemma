@@ -109,7 +109,7 @@ x-admin-healthcheck: &admin-healthcheck
 
 services:
   caddy:
-    image: ghcr.io/caddybuilds/caddy-cloudflare:2.10.2
+    image: ghcr.io/${LEMMA_IMAGE_OWNER}/lemma-caddy:${LEMMA_SHARED_IMAGE_TAG}
     restart: unless-stopped
     environment:
       CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
