@@ -30,6 +30,8 @@ on:
       - "scripts/production/**"
       - "tsconfig*.json"
       - "turbo.json"
+      - "!apps/**/*.md"
+      - "!packages/**/*.md"
 
 permissions:
   contents: read
