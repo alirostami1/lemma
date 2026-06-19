@@ -18,7 +18,7 @@ import { Skeleton } from "@lemma/ui/components/skeleton";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, FilePlus2, FolderOpen } from "lucide-react";
 import type { ReactNode } from "react";
-import { PrimaryActionPanel, StatusBadge } from "#/components/patterns";
+import { PrimaryActionPanel } from "#/components/patterns";
 import type {
   CreateLauncherAction,
   CreateLauncherListItem,
@@ -161,11 +161,6 @@ export function CreateLauncherItem({ item }: { item: CreateLauncherListItem }) {
       variant="navigation"
       title={item.title}
       description={item.description}
-      status={
-        "statusLabel" in item ? (
-          <StatusBadge>{item.statusLabel}</StatusBadge>
-        ) : undefined
-      }
       navigationAccessory={
         <ArrowRight className="size-4 text-muted-foreground" />
       }

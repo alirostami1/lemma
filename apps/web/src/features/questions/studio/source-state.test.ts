@@ -14,9 +14,9 @@ describe("getStudioSourceViewState", () => {
       }),
     ).toEqual({
       status: "not_required_empty",
-      title: "No source selected",
+      title: "No source attached",
       description:
-        "Add a source if this blueprint needs workbook-backed references.",
+        "Attach a source inside this blueprint if it needs workbook-backed references.",
       canRemove: false,
     });
   });
@@ -34,7 +34,7 @@ describe("getStudioSourceViewState", () => {
     ).toEqual({
       status: "loading",
       title: "Loading source",
-      description: "Loading selected source.",
+      description: "Loading attached source.",
       canRemove: true,
     });
   });
@@ -52,8 +52,8 @@ describe("getStudioSourceViewState", () => {
     ).toEqual({
       status: "error",
       title: "Source not found",
-      description: "Selected source could not be found.",
-      issue: "Choose another source or remove it.",
+      description: "Attached source could not be found.",
+      issue: "Replace the source or remove it from this blueprint.",
       canRemove: true,
     });
   });

@@ -14,7 +14,5 @@ export const Route = createFileRoute("/_layout/studio")({
 
 function RouteComponent() {
   const search = Route.useSearch();
-  return (
-    <StudioPage blueprintId={search.blueprintId} />
-  );
+  return <StudioPage blueprintId={search.blueprintId} />;
 }

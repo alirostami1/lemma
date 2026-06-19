@@ -76,10 +76,10 @@ export function getStudioSourceViewState(input: {
   if (!input.selectedWorkbook) {
     if (input.isWorkbooksLoading) {
       return {
-      status: "loading",
-      title: "Loading source",
-      description: "Loading attached source.",
-      canRemove: true,
+        status: "loading",
+        title: "Loading source",
+        description: "Loading attached source.",
+        canRemove: true,
       };
     }
 
