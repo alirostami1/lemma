@@ -1,5 +1,4 @@
 import type { QuestionBlueprint } from "#/domains/questions/model";
-import type { Workbook } from "#/domains/workbooks/model";
 
 export const CREATE_RECENT_ITEM_LIMIT = 3;
 export const CREATE_CHOOSER_PAGE_SIZE = 10;
@@ -17,17 +16,7 @@ export type SavedBlueprintAction = {
   search: { blueprintId: string };
 };
 
-export type SourceBackedBlueprintAction = {
-  type: "source_backed_blueprint";
-  label: string;
-  to: "/studio";
-  search: { workbookId: string };
-};
-
-export type CreateLauncherAction =
-  | BlankBlueprintAction
-  | SavedBlueprintAction
-  | SourceBackedBlueprintAction;
+export type CreateLauncherAction = BlankBlueprintAction | SavedBlueprintAction;
 
 export type CreateBlueprintListItem = {
   id: string;
@@ -36,17 +25,7 @@ export type CreateBlueprintListItem = {
   action: SavedBlueprintAction;
 };
 
-export type CreateSourceListItem = {
-  id: string;
-  title: string;
-  description: string;
-  statusLabel: string;
-  action: SourceBackedBlueprintAction;
-};
-
-export type CreateLauncherListItem =
-  | CreateBlueprintListItem
-  | CreateSourceListItem;
+export type CreateLauncherListItem = CreateBlueprintListItem;
 
 export type CreatePageViewModel = {
   hero: {
@@ -65,14 +44,6 @@ export type CreatePageViewModel = {
     emptyMessage: string;
     chooseLabel: string;
   };
-  sourceBackedBlueprint: {
-    title: string;
-    description: string;
-    recentItems: CreateSourceListItem[];
-    emptyMessage: string;
-    chooseLabel: string;
-    uploadLabel: string;
-  };
 };
 
 type BlueprintListSource = Pick<
@@ -80,11 +51,8 @@ type BlueprintListSource = Pick<
   "id" | "name" | "status" | "visibility" | "workbookId"
 >;
 
-type SourceListSource = Pick<Workbook, "id" | "name" | "originalName">;
-
 export function buildCreatePageViewModel(input: {
   blueprints: BlueprintListSource[];
-  sources: SourceListSource[];
 }): CreatePageViewModel {
   return {
     hero: {
@@ -110,17 +78,6 @@ export function buildCreatePageViewModel(input: {
       emptyMessage: "No saved blueprints yet.",
       chooseLabel: "Choose blueprint",
     },
-    sourceBackedBlueprint: {
-      title: "Start from source",
-      description: "Start Studio with a source already selected.",
-      recentItems: buildSourceListItems(input.sources).slice(
-        0,
-        CREATE_RECENT_ITEM_LIMIT,
-      ),
-      emptyMessage: "No ready sources yet.",
-      chooseLabel: "Choose source",
-      uploadLabel: "Upload source",
-    },
   };
 }
 
@@ -145,21 +102,4 @@ export function buildBlueprintListItems(
         search: { blueprintId: blueprint.id },
       },
     }));
-}
-
-export function buildSourceListItems(
-  sources: SourceListSource[],
-): CreateSourceListItem[] {
-  return sources.map((source) => ({
-    id: source.id,
-    title: source.name,
-    description: source.originalName,
-    statusLabel: "Ready",
-    action: {
-      type: "source_backed_blueprint",
-      label: "Open with source",
-      to: "/studio",
-      search: { workbookId: source.id },
-    },
-  }));
 }

@@ -22,7 +22,6 @@ type NavigateToStudio = (options: {
 export function useBlueprintDraftResetAction(input: {
   checkedRecoveryDraftKeyRef: WritableRef<string | null>;
   draftStorageKey: string;
-  hasInitializedWorkbookRef: WritableRef<boolean>;
   loadedBlueprintKeyRef: WritableRef<string | null>;
   navigate: NavigateToStudio;
   replaceCurrentSnapshot(): void;
@@ -65,7 +64,6 @@ export function useBlueprintDraftResetAction(input: {
     input.setLoadedBlueprintVersionId(null);
     input.setDraftStorageKey(nextDraftStorageKey);
     input.loadedBlueprintKeyRef.current = null;
-    input.hasInitializedWorkbookRef.current = true;
     input.checkedRecoveryDraftKeyRef.current = nextDraftStorageKey;
     input.setLastSavedDraftKey(null);
     input.setLastRemoteSaveSnapshotKey(null);
@@ -94,7 +92,6 @@ export function useBlueprintDraftResetAction(input: {
 export function useBlueprintDraftMarkSavedAction(input: {
   authoringModel: ComposedEditorModel;
   draftStorageKey: string;
-  initialWorkbookId: string;
   loadedBlueprintKeyRef: WritableRef<string | null>;
   replaceCurrentSnapshot(): void;
   setBlueprintDescription(description: string): void;
@@ -137,7 +134,6 @@ export function useBlueprintDraftMarkSavedAction(input: {
         blueprintId,
         blueprintName: nextBlueprintName,
         blueprintVersionId,
-        initialWorkbookId: input.initialWorkbookId,
         workbookId,
       });
       input.setBlueprintName(nextBlueprintName);

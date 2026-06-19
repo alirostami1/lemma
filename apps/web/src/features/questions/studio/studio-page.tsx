@@ -7,7 +7,6 @@ import { WorkbookPickerDialog } from "../workbook-picker-dialog";
 import { GenerateQuestionsDialog } from "./generation/generate-questions-dialog";
 import { SaveBlueprintDialog } from "./save-blueprint-dialog";
 import { SavedBlueprintsDialog } from "./saved-blueprints-dialog";
-import { SourcePickerDialog } from "./source/source-picker-dialog";
 import { StudioSourceBar } from "./source/studio-source-bar";
 import { WorkbookUploadInline } from "./source/workbook-upload-inline";
 import { StudioCommandBar } from "./studio-command-bar";
@@ -46,7 +45,6 @@ export function StudioPage(input: StudioRouteSearch = {}) {
             sourceCard={studio.source.sourceCard}
             onAddSource={studio.source.actions.addSource}
             onChangeSource={studio.source.actions.changeSource}
-            onUploadSource={studio.source.actions.uploadSource}
             onRemoveSource={studio.source.actions.removeSource}
           />
         </div>
@@ -71,15 +69,6 @@ export function StudioPage(input: StudioRouteSearch = {}) {
         <SaveBlueprintDialog {...studio.saveDialog} />
         <GenerateQuestionsDialog {...studio.generateDialog} />
         <SavedBlueprintsDialog {...studio.savedBlueprints} />
-        <SourcePickerDialog
-          open={studio.source.pickerDialog.open}
-          sources={studio.source.pickerDialog.sources}
-          isLoading={studio.source.pickerDialog.isLoading}
-          errorMessage={studio.source.pickerDialog.errorMessage}
-          onOpenChange={studio.source.pickerDialog.onOpenChange}
-          onSelectSource={studio.source.pickerDialog.onSelectSource}
-          onUploadSource={studio.source.pickerDialog.onUploadSource}
-        />
         <WorkbookUploadInline
           open={studio.source.uploadDialog.open}
           onOpenChange={studio.source.uploadDialog.onOpenChange}

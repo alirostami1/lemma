@@ -10,17 +10,16 @@ describe("StudioSourceBar", () => {
         sourceCard={{
           status: "loading",
           title: "Loading source",
-          description: "Loading selected source.",
+          description: "Loading attached source.",
           canRemove: true,
         }}
         onAddSource={() => {}}
         onChangeSource={() => {}}
-        onUploadSource={() => {}}
         onRemoveSource={() => {}}
       />,
     );
 
     expect(screen.getByText("Loading source")).toBeTruthy();
-    expect(screen.getByText("Loading selected source.")).toBeTruthy();
+    expect(screen.getByText("Loading attached source.")).toBeTruthy();
   });
 });

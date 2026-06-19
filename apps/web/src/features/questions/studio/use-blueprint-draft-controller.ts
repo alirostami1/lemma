@@ -87,12 +87,10 @@ export type StudioResetConfirmationState = {
 
 type UseBlueprintDraftControllerInput = {
   initialBlueprintId: string;
-  initialWorkbookId: string;
 };
 
 export function useBlueprintDraftController({
   initialBlueprintId,
-  initialWorkbookId,
 }: UseBlueprintDraftControllerInput): BlueprintDraftController {
   const navigate = useNavigate();
   const [initialLocalDraft] = useState(() =>
@@ -121,15 +119,13 @@ export function useBlueprintDraftController({
       initialLocalDraft?.authoringModel ?? createDefaultComposedEditorModel(),
   );
   const [selectedWorkbookId, setSelectedWorkbookId] = useState(
-    initialLocalDraft?.selectedWorkbookId ??
-      (initialBlueprintId ? "" : initialWorkbookId),
+    initialLocalDraft?.selectedWorkbookId ?? "",
   );
   const [draftStorageKey, setDraftStorageKey] = useState(
     () =>
       initialLocalDraft?.draftKey ??
       createStudioDraftKey({
         loadedBlueprintId: initialBlueprintId || null,
-        initialWorkbookId,
       }),
   );
   const [lastSavedDraftKey, setLastSavedDraftKey] = useState<string | null>(
@@ -158,7 +154,6 @@ export function useBlueprintDraftController({
   const loadedBlueprintKeyRef = useRef<string | null>(null);
   const confirmedBlueprintOpenIdsRef = useRef(new Set<string>());
   const cancelledBlueprintOpenIdRef = useRef<string | null>(null);
-  const hasInitializedWorkbookRef = useRef(initialLocalDraft !== null);
   const loadedBlueprintQuery = useQuestionBlueprintAuthoringQuery(
     { questionBlueprintId: initialBlueprintId },
     { enabled: initialBlueprintId.length > 0 },
@@ -231,15 +226,6 @@ export function useBlueprintDraftController({
   });
 
   useEffect(() => {
-    if (hasInitializedWorkbookRef.current || initialWorkbookId.length === 0) {
-      return;
-    }
-
-    hasInitializedWorkbookRef.current = true;
-    setSelectedWorkbookId(initialWorkbookId);
-  }, [initialWorkbookId]);
-
-  useEffect(() => {
     if (
       initialBlueprintId.length === 0 ||
       loadedBlueprintKeyRef.current === initialBlueprintId ||
@@ -262,7 +248,6 @@ export function useBlueprintDraftController({
     const nextDraftState = createLoadedBlueprintDraftSnapshotState({
       blueprint: loadedBlueprint,
       blueprintId: initialBlueprintId,
-      initialWorkbookId,
     });
     if (!nextDraftState.ok) {
       setLoadError("Blueprint could not be loaded.");
@@ -277,7 +262,6 @@ export function useBlueprintDraftController({
     } = nextDraftState.value;
 
     loadedBlueprintKeyRef.current = initialBlueprintId;
-    hasInitializedWorkbookRef.current = true;
     setLoadError(null);
     setBlueprintName(loadedBlueprint.name);
     setBlueprintDescription(loadedBlueprint.description ?? "");
@@ -302,7 +286,6 @@ export function useBlueprintDraftController({
   }, [
     blueprintOpenWarningSnapshot,
     initialBlueprintId,
-    initialWorkbookId,
     loadedBlueprintQuery.data,
     loadedBlueprintQuery.isError,
     replaceCurrentSnapshot,
@@ -393,7 +376,6 @@ export function useBlueprintDraftController({
   const resetStudioDraft = useBlueprintDraftResetAction({
     checkedRecoveryDraftKeyRef,
     draftStorageKey,
-    hasInitializedWorkbookRef,
     loadedBlueprintKeyRef,
     navigate,
     replaceCurrentSnapshot,
@@ -419,7 +401,6 @@ export function useBlueprintDraftController({
   const markSaved = useBlueprintDraftMarkSavedAction({
     authoringModel,
     draftStorageKey,
-    initialWorkbookId,
     loadedBlueprintKeyRef,
     replaceCurrentSnapshot,
     setBlueprintDescription,

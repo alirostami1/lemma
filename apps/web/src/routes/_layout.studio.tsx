@@ -6,8 +6,6 @@ export const Route = createFileRoute("/_layout/studio")({
   ssr: false,
   beforeLoad: requireLogin,
   validateSearch: (search: Record<string, unknown>): StudioRouteSearch => ({
-    workbookId:
-      typeof search.workbookId === "string" ? search.workbookId : undefined,
     blueprintId:
       typeof search.blueprintId === "string" ? search.blueprintId : undefined,
   }),
@@ -16,10 +14,5 @@ export const Route = createFileRoute("/_layout/studio")({
 
 function RouteComponent() {
   const search = Route.useSearch();
-  return (
-    <StudioPage
-      workbookId={search.workbookId}
-      blueprintId={search.blueprintId}
-    />
-  );
+  return <StudioPage blueprintId={search.blueprintId} />;
 }

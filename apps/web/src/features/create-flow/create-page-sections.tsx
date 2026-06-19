@@ -16,9 +16,9 @@ import {
 } from "@lemma/ui/components/resource-list";
 import { Skeleton } from "@lemma/ui/components/skeleton";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, FilePlus2, FolderOpen, Upload } from "lucide-react";
+import { ArrowRight, FilePlus2, FolderOpen } from "lucide-react";
 import type { ReactNode } from "react";
-import { PrimaryActionPanel, StatusBadge } from "#/components/patterns";
+import { PrimaryActionPanel } from "#/components/patterns";
 import type {
   CreateLauncherAction,
   CreateLauncherListItem,
@@ -86,46 +86,6 @@ export function SavedBlueprintPanel({
           <FolderOpen />
           {savedBlueprints.chooseLabel}
         </Button>
-      }
-      onRetry={onRetry}
-    />
-  );
-}
-
-export function SourceBlueprintPanel({
-  sourceBackedBlueprint,
-  isLoading,
-  errorMessage,
-  onChoose,
-  onUpload,
-  onRetry,
-}: {
-  sourceBackedBlueprint: CreatePageViewModel["sourceBackedBlueprint"];
-  isLoading: boolean;
-  errorMessage: string | null;
-  onChoose(): void;
-  onUpload(): void;
-  onRetry(): void;
-}) {
-  return (
-    <SecondaryLauncherPanel
-      title={sourceBackedBlueprint.title}
-      description={sourceBackedBlueprint.description}
-      items={sourceBackedBlueprint.recentItems}
-      isLoading={isLoading}
-      errorMessage={errorMessage}
-      emptyMessage={sourceBackedBlueprint.emptyMessage}
-      footer={
-        <>
-          <Button type="button" variant="outline" onClick={onChoose}>
-            <FolderOpen />
-            {sourceBackedBlueprint.chooseLabel}
-          </Button>
-          <Button type="button" variant="ghost" onClick={onUpload}>
-            <Upload />
-            {sourceBackedBlueprint.uploadLabel}
-          </Button>
-        </>
       }
       onRetry={onRetry}
     />
@@ -201,11 +161,6 @@ export function CreateLauncherItem({ item }: { item: CreateLauncherListItem }) {
       variant="navigation"
       title={item.title}
       description={item.description}
-      status={
-        "statusLabel" in item ? (
-          <StatusBadge>{item.statusLabel}</StatusBadge>
-        ) : undefined
-      }
       navigationAccessory={
         <ArrowRight className="size-4 text-muted-foreground" />
       }

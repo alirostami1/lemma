@@ -1,7 +1,7 @@
 # @lemma/workbook
 
-Workbook bounded context for uploaded workbook sources, snapshots, validation,
-and calculation orchestration.
+Workbook bounded context for blueprint-attached workbook assets, snapshots,
+validation, and calculation orchestration.
 
 ## Main Surface
 
@@ -15,8 +15,9 @@ and calculation orchestration.
 
 Workbook values are backend-owned. The worker stores sanitized sparse snapshot
 values after inspection/calculation, and Studio reads bounded preview windows
-through workbook APIs. Normal source selection does not download or parse the
-original workbook in the browser.
+through workbook APIs. Studio does not expose a global workbook source chooser;
+workbooks are attached from inside a blueprint workflow and are surfaced only
+through that blueprint/package context.
 
 Public snapshot responses do not expose the full sparse value payload. Callers
 use metadata for snapshot status, paginated sheet lists for sheet details, cells

@@ -2,7 +2,6 @@ import { Button } from "@lemma/ui/components/button";
 import {
   AlertTriangle,
   FileSpreadsheet,
-  FolderOpen,
   Plus,
   Trash2,
   Upload,
@@ -13,13 +12,11 @@ export function StudioSourceBar({
   sourceCard,
   onAddSource,
   onChangeSource,
-  onUploadSource,
   onRemoveSource,
 }: {
   sourceCard: StudioSourceViewState;
   onAddSource(): void;
   onChangeSource(): void;
-  onUploadSource(): void;
   onRemoveSource(): void;
 }) {
   const icon =
@@ -53,7 +50,7 @@ export function StudioSourceBar({
               onClick={onAddSource}
             >
               <Plus />
-              Add source
+              Attach source
             </Button>
           ) : (
             <>
@@ -63,17 +60,8 @@ export function StudioSourceBar({
                 size="sm"
                 onClick={onChangeSource}
               >
-                <FolderOpen />
-                Change source
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={onUploadSource}
-              >
                 <Upload />
-                Upload source
+                Replace source
               </Button>
               {sourceCard.canRemove ? (
                 <Button
