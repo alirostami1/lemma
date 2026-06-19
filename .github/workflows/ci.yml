@@ -139,6 +139,10 @@ jobs:
         run: shellcheck --severity=error scripts/production/*.sh
       - name: Check YAML
         run: yamllint .github/workflows .github/path-filters infra/ansible
+      - name: Check Ansible lint
+        uses: ansible/ansible-lint@v26.4.0
+        with:
+          args: infra/ansible
       - name: Check Ansible syntax
         env:
           ANSIBLE_CONFIG: infra/ansible/ansible.cfg
