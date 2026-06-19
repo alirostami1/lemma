@@ -107,6 +107,10 @@ jobs pass and treats intentionally skipped jobs as OK.
 
 The production deploy workflow should run automatically only when deployable
 paths change. It must always remain available through `workflow_dispatch`.
+The deploy job prints a non-secret deploy plan before changing the VPS.
+After Ansible deploys, CI runs `scripts/production/smoke.sh` against the
+decrypted production env to verify public web, admin, API health, and OIDC
+discovery endpoints through Caddy.
 
 ## Generated Files
 

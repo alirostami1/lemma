@@ -56,6 +56,7 @@
     - "{{ playbook_dir }}/../../../scripts/production/deploy.sh"
     - "{{ playbook_dir }}/../../../scripts/production/rollback.sh"
     - "{{ playbook_dir }}/../../../scripts/production/backup.sh"
+    - "{{ playbook_dir }}/../../../scripts/production/smoke.sh"
 
 - name: Login VPS to GHCR
   ansible.builtin.shell: |
