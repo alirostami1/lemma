@@ -60,14 +60,15 @@
 
 - name: Login VPS to GHCR
   ansible.builtin.shell: |
-    set -eu
+    set -euo pipefail
     printf '%s' "$GHCR_READ_TOKEN" | docker login ghcr.io -u "$GHCR_READ_USER" --password-stdin
   args:
-    executable: /bin/sh
+    executable: /bin/bash
   environment:
     GHCR_READ_USER: "{{ lemma_ghcr_read_user }}"
     GHCR_READ_TOKEN: "{{ lemma_ghcr_read_token }}"
   no_log: true
+  changed_when: false
 
 - name: Run production deploy
   ansible.builtin.command:
@@ -76,3 +77,4 @@
     LEMMA_IMAGE_TAG: "{{ lemma_image_tag }}"
     LEMMA_IMAGE_OWNER: "{{ lemma_image_owner }}"
     LEMMA_COMPOSE_PROJECT: "{{ lemma_compose_project }}"
+  changed_when: true
