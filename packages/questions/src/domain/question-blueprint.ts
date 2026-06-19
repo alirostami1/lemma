@@ -51,6 +51,30 @@ export type QuestionBlueprintVersion = {
   createdAt: Date;
 };
 
+export type QuestionBlueprintVersionAsset = {
+  questionBlueprintVersionId: QuestionBlueprintVersionId;
+  workbookId: WorkbookId;
+  kind: "workbook";
+  position: number;
+  createdAt: Date;
+};
+
+export function createQuestionBlueprintVersionAssets(
+  input: {
+    questionBlueprintVersionId: QuestionBlueprintVersionId;
+    workbookIds: readonly WorkbookId[];
+  },
+  at: Date,
+): QuestionBlueprintVersionAsset[] {
+  return input.workbookIds.map((id, index) => ({
+    questionBlueprintVersionId: input.questionBlueprintVersionId,
+    workbookId: id,
+    kind: "workbook",
+    position: index,
+    createdAt: at,
+  }));
+}
+
 export function createQuestionBlueprint(
   input: {
     id: QuestionBlueprintId;
@@ -155,6 +179,34 @@ export function reconstituteQuestionBlueprintVersion(input: {
     document: questionBlueprintDocument(input.document),
     workbookId: input.workbookId === null ? null : workbookId(input.workbookId),
     createdByUserId: userId(input.createdByUserId),
+    createdAt: input.createdAt,
+  };
+}
+
+export function reconstituteQuestionBlueprintVersionAsset(input: {
+  questionBlueprintVersionId: string;
+  workbookId: string;
+  kind: string;
+  position: number;
+  createdAt: Date;
+}): QuestionBlueprintVersionAsset {
+  if (input.kind !== "workbook") {
+    throw new InvalidQuestionFieldError(
+      "question blueprint version asset kind must be workbook",
+    );
+  }
+  if (!Number.isInteger(input.position) || input.position < 0) {
+    throw new InvalidQuestionFieldError(
+      "question blueprint version asset position must be a non-negative integer",
+    );
+  }
+  return {
+    questionBlueprintVersionId: questionBlueprintVersionId(
+      input.questionBlueprintVersionId,
+    ),
+    workbookId: workbookId(input.workbookId),
+    kind: "workbook",
+    position: input.position,
     createdAt: input.createdAt,
   };
 }

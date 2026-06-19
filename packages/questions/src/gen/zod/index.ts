@@ -3157,7 +3157,68 @@ export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintCurrentVer
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintCurrentVersionSourceAssetsItemQuestionBlueprintVersionIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintCurrentVersionSourceAssetsItemWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintCurrentVersionSourceAssetsItemPositionMin = 0;
+
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintCurrentVersionCreatedByUserIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionIdRegExpOne =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionSourceAssetsItemQuestionBlueprintVersionIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionSourceAssetsItemWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionSourceAssetsItemPositionMin = 0;
+
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionCreatedByUserIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemSourceAssetsItemQuestionBlueprintVersionIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemSourceAssetsItemWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemSourceAssetsItemPositionMin = 0;
+
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemCreatedByUserIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
@@ -3530,6 +3591,27 @@ export const GetQuestionBlueprintAuthoring200Response = zod.strictObject({
           getQuestionBlueprintAuthoring200ResponseQuestionBlueprintCurrentVersionWorkbookIdRegExp,
         )
         .nullable(),
+      sourceAssets: zod.array(
+        zod.strictObject({
+          questionBlueprintVersionId: zod
+            .string()
+            .regex(
+              getQuestionBlueprintAuthoring200ResponseQuestionBlueprintCurrentVersionSourceAssetsItemQuestionBlueprintVersionIdRegExp,
+            ),
+          workbookId: zod
+            .string()
+            .regex(
+              getQuestionBlueprintAuthoring200ResponseQuestionBlueprintCurrentVersionSourceAssetsItemWorkbookIdRegExp,
+            ),
+          kind: zod.enum(["workbook"]),
+          position: zod
+            .number()
+            .min(
+              getQuestionBlueprintAuthoring200ResponseQuestionBlueprintCurrentVersionSourceAssetsItemPositionMin,
+            ),
+          createdAt: zod.iso.datetime({ offset: true }),
+        }),
+      ),
       createdByUserId: zod
         .string()
         .regex(
@@ -3537,6 +3619,96 @@ export const GetQuestionBlueprintAuthoring200Response = zod.strictObject({
         ),
       createdAt: zod.iso.datetime({ offset: true }),
     }),
+    selectedVersionId: zod
+      .string()
+      .regex(
+        getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionIdRegExp,
+      ),
+    selectedVersionNumber: zod.number().min(1),
+    selectedVersion: zod.strictObject({
+      id: zod
+        .string()
+        .regex(
+          getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionIdRegExpOne,
+        ),
+      versionNumber: zod.number().min(1),
+      workbookId: zod
+        .string()
+        .regex(
+          getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionWorkbookIdRegExp,
+        )
+        .nullable(),
+      sourceAssets: zod.array(
+        zod.strictObject({
+          questionBlueprintVersionId: zod
+            .string()
+            .regex(
+              getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionSourceAssetsItemQuestionBlueprintVersionIdRegExp,
+            ),
+          workbookId: zod
+            .string()
+            .regex(
+              getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionSourceAssetsItemWorkbookIdRegExp,
+            ),
+          kind: zod.enum(["workbook"]),
+          position: zod
+            .number()
+            .min(
+              getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionSourceAssetsItemPositionMin,
+            ),
+          createdAt: zod.iso.datetime({ offset: true }),
+        }),
+      ),
+      createdByUserId: zod
+        .string()
+        .regex(
+          getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionCreatedByUserIdRegExp,
+        ),
+      createdAt: zod.iso.datetime({ offset: true }),
+    }),
+    versions: zod.array(
+      zod.strictObject({
+        id: zod
+          .string()
+          .regex(
+            getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemIdRegExp,
+          ),
+        versionNumber: zod.number().min(1),
+        workbookId: zod
+          .string()
+          .regex(
+            getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemWorkbookIdRegExp,
+          )
+          .nullable(),
+        sourceAssets: zod.array(
+          zod.strictObject({
+            questionBlueprintVersionId: zod
+              .string()
+              .regex(
+                getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemSourceAssetsItemQuestionBlueprintVersionIdRegExp,
+              ),
+            workbookId: zod
+              .string()
+              .regex(
+                getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemSourceAssetsItemWorkbookIdRegExp,
+              ),
+            kind: zod.enum(["workbook"]),
+            position: zod
+              .number()
+              .min(
+                getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemSourceAssetsItemPositionMin,
+              ),
+            createdAt: zod.iso.datetime({ offset: true }),
+          }),
+        ),
+        createdByUserId: zod
+          .string()
+          .regex(
+            getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemCreatedByUserIdRegExp,
+          ),
+        createdAt: zod.iso.datetime({ offset: true }),
+      }),
+    ),
     visibility: zod.enum(["private", "shared", "system"]),
     status: zod.enum(["active", "archived", "deleted"]),
     archivedAt: zod.iso.datetime({ offset: true }).nullable(),
@@ -3598,6 +3770,851 @@ export const GetQuestionBlueprintAuthoring502Response = zod.strictObject({
     details: zod.unknown().optional(),
   }),
 });
+
+/**
+ * Authoring-only. Returns immutable version metadata and bound source assets.
+ * @summary List question blueprint versions
+ */
+export const listQuestionBlueprintVersionsPathQuestionBlueprintIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+
+export const ListQuestionBlueprintVersionsParams = zod.strictObject({
+  questionBlueprintId: zod
+    .string()
+    .regex(listQuestionBlueprintVersionsPathQuestionBlueprintIdRegExp),
+});
+
+export const listQuestionBlueprintVersions200ResponseVersionsItemIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+
+export const listQuestionBlueprintVersions200ResponseVersionsItemWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const listQuestionBlueprintVersions200ResponseVersionsItemSourceAssetsItemQuestionBlueprintVersionIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const listQuestionBlueprintVersions200ResponseVersionsItemSourceAssetsItemWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const listQuestionBlueprintVersions200ResponseVersionsItemSourceAssetsItemPositionMin = 0;
+
+export const listQuestionBlueprintVersions200ResponseVersionsItemCreatedByUserIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+
+export const ListQuestionBlueprintVersions200Response = zod.strictObject({
+  versions: zod.array(
+    zod.strictObject({
+      id: zod
+        .string()
+        .regex(listQuestionBlueprintVersions200ResponseVersionsItemIdRegExp),
+      versionNumber: zod.number().min(1),
+      workbookId: zod
+        .string()
+        .regex(
+          listQuestionBlueprintVersions200ResponseVersionsItemWorkbookIdRegExp,
+        )
+        .nullable(),
+      sourceAssets: zod.array(
+        zod.strictObject({
+          questionBlueprintVersionId: zod
+            .string()
+            .regex(
+              listQuestionBlueprintVersions200ResponseVersionsItemSourceAssetsItemQuestionBlueprintVersionIdRegExp,
+            ),
+          workbookId: zod
+            .string()
+            .regex(
+              listQuestionBlueprintVersions200ResponseVersionsItemSourceAssetsItemWorkbookIdRegExp,
+            ),
+          kind: zod.enum(["workbook"]),
+          position: zod
+            .number()
+            .min(
+              listQuestionBlueprintVersions200ResponseVersionsItemSourceAssetsItemPositionMin,
+            ),
+          createdAt: zod.iso.datetime({ offset: true }),
+        }),
+      ),
+      createdByUserId: zod
+        .string()
+        .regex(
+          listQuestionBlueprintVersions200ResponseVersionsItemCreatedByUserIdRegExp,
+        ),
+      createdAt: zod.iso.datetime({ offset: true }),
+    }),
+  ),
+});
+
+export const ListQuestionBlueprintVersions400Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const ListQuestionBlueprintVersions401Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const ListQuestionBlueprintVersions403Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const ListQuestionBlueprintVersions404Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const ListQuestionBlueprintVersions409Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+export const ListQuestionBlueprintVersions502Response = zod.strictObject({
+  error: zod.strictObject({
+    code: zod.string(),
+    message: zod.string(),
+    requestId: zod.string().optional(),
+    details: zod.unknown().optional(),
+  }),
+});
+
+/**
+ * Authoring-only. Returns the private canonical document and source assets from one immutable version.
+ * @summary Get question blueprint version authoring data
+ */
+export const getQuestionBlueprintVersionAuthoringPathQuestionBlueprintIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintVersionAuthoringPathQuestionBlueprintVersionIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+
+export const GetQuestionBlueprintVersionAuthoringParams = zod.strictObject({
+  questionBlueprintId: zod
+    .string()
+    .regex(getQuestionBlueprintVersionAuthoringPathQuestionBlueprintIdRegExp),
+  questionBlueprintVersionId: zod
+    .string()
+    .regex(
+      getQuestionBlueprintVersionAuthoringPathQuestionBlueprintVersionIdRegExp,
+    ),
+});
+
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintOwnerUserIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCreatedByUserIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintNameMax = 160;
+
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDescriptionMax = 1000;
+
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
+
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFourPointsExclusiveMin = 0;
+
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFourGradingTwoToleranceValueMin = 0;
+
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFiveCellsItemTwoPointsExclusiveMin = 0;
+
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
+
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionIdRegExpOne =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionSourceAssetsItemQuestionBlueprintVersionIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionSourceAssetsItemWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionSourceAssetsItemPositionMin = 0;
+
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionCreatedByUserIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionIdRegExpOne =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionSourceAssetsItemQuestionBlueprintVersionIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionSourceAssetsItemWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionSourceAssetsItemPositionMin = 0;
+
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionCreatedByUserIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemSourceAssetsItemQuestionBlueprintVersionIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemSourceAssetsItemWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemSourceAssetsItemPositionMin = 0;
+
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemCreatedByUserIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+
+export const GetQuestionBlueprintVersionAuthoring200Response = zod.strictObject(
+  {
+    questionBlueprint: zod.strictObject({
+      id: zod
+        .string()
+        .regex(
+          getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintIdRegExp,
+        ),
+      ownerUserId: zod
+        .string()
+        .regex(
+          getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintOwnerUserIdRegExp,
+        ),
+      createdByUserId: zod
+        .string()
+        .regex(
+          getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCreatedByUserIdRegExp,
+        ),
+      name: zod
+        .string()
+        .min(1)
+        .max(
+          getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintNameMax,
+        ),
+      description: zod
+        .string()
+        .max(
+          getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDescriptionMax,
+        )
+        .nullable(),
+      document: zod.strictObject({
+        schemaVersion: zod.literal(1),
+        blocks: zod.array(
+          zod.union([
+            zod.strictObject({
+              id: zod.string().min(1),
+              type: zod.enum(["text"]),
+              content: zod.array(
+                zod.union([
+                  zod.strictObject({
+                    type: zod.enum(["text"]),
+                    text: zod.string(),
+                  }),
+                  zod.strictObject({
+                    type: zod.enum(["reference"]),
+                    referenceId: zod.string().min(1),
+                    rangeCell: zod
+                      .strictObject({
+                        rowOffset: zod
+                          .number()
+                          .min(
+                            getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin,
+                          ),
+                        columnOffset: zod
+                          .number()
+                          .min(
+                            getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin,
+                          ),
+                      })
+                      .optional(),
+                    fallbackText: zod.string().optional(),
+                  }),
+                ]),
+              ),
+            }),
+            zod.strictObject({
+              id: zod.string().min(1),
+              type: zod.enum(["rich_text"]),
+              content: zod.strictObject({
+                type: zod.enum(["doc"]),
+                content: zod.array(
+                  zod.union([
+                    zod.strictObject({
+                      type: zod.enum(["paragraph"]),
+                      content: zod
+                        .array(
+                          zod.strictObject({
+                            type: zod.enum(["text"]),
+                            text: zod.string(),
+                          }),
+                        )
+                        .optional(),
+                    }),
+                    zod.strictObject({
+                      type: zod.enum(["heading"]),
+                      attrs: zod.strictObject({
+                        level: zod
+                          .number()
+                          .min(1)
+                          .max(
+                            getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax,
+                          ),
+                      }),
+                      content: zod
+                        .array(
+                          zod.strictObject({
+                            type: zod.enum(["text"]),
+                            text: zod.string(),
+                          }),
+                        )
+                        .optional(),
+                    }),
+                    zod.strictObject({
+                      type: zod.enum(["bullet_list"]),
+                      content: zod.array(
+                        zod.strictObject({
+                          type: zod.enum(["list_item"]),
+                          content: zod.array(
+                            zod.union([
+                              zod.strictObject({
+                                type: zod.enum(["paragraph"]),
+                                content: zod
+                                  .array(
+                                    zod.strictObject({
+                                      type: zod.enum(["text"]),
+                                      text: zod.string(),
+                                    }),
+                                  )
+                                  .optional(),
+                              }),
+                              zod.unknown(),
+                              zod.strictObject({
+                                type: zod.enum(["ordered_list"]),
+                                content: zod.array(zod.unknown()),
+                              }),
+                            ]),
+                          ),
+                        }),
+                      ),
+                    }),
+                    zod.strictObject({
+                      type: zod.enum(["ordered_list"]),
+                      content: zod.array(
+                        zod.strictObject({
+                          type: zod.enum(["list_item"]),
+                          content: zod.array(
+                            zod.union([
+                              zod.strictObject({
+                                type: zod.enum(["paragraph"]),
+                                content: zod
+                                  .array(
+                                    zod.strictObject({
+                                      type: zod.enum(["text"]),
+                                      text: zod.string(),
+                                    }),
+                                  )
+                                  .optional(),
+                              }),
+                              zod.strictObject({
+                                type: zod.enum(["bullet_list"]),
+                                content: zod.array(zod.unknown()),
+                              }),
+                              zod.unknown(),
+                            ]),
+                          ),
+                        }),
+                      ),
+                    }),
+                  ]),
+                ),
+              }),
+            }),
+            zod.strictObject({
+              id: zod.string().min(1),
+              type: zod.enum(["separator"]),
+            }),
+            zod.strictObject({
+              id: zod.string().min(1),
+              type: zod.enum(["response"]),
+              responseFieldId: zod.string().min(1),
+              label: zod.string().optional(),
+              placeholder: zod.string().optional(),
+              correctValueSource: zod
+                .union([
+                  zod.strictObject({
+                    schemaVersion: zod.literal(1),
+                    type: zod.enum(["literal"]),
+                    value: zod.unknown(),
+                  }),
+                  zod.strictObject({
+                    schemaVersion: zod.literal(1),
+                    type: zod.enum(["reference"]),
+                    referenceId: zod.string().min(1),
+                  }),
+                ])
+                .optional(),
+              points: zod
+                .number()
+                .gt(
+                  getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFourPointsExclusiveMin,
+                ),
+              grading: zod.union([
+                zod.strictObject({
+                  mode: zod.enum(["exact"]),
+                }),
+                zod.strictObject({
+                  mode: zod.enum(["number"]),
+                  tolerance: zod.strictObject({
+                    type: zod.enum(["absolute", "relative"]),
+                    value: zod
+                      .number()
+                      .min(
+                        getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFourGradingTwoToleranceValueMin,
+                      ),
+                  }),
+                }),
+                zod.strictObject({
+                  mode: zod.enum(["case_insensitive_text"]),
+                }),
+                zod.strictObject({
+                  mode: zod.enum(["manual"]),
+                }),
+              ]),
+            }),
+            zod.strictObject({
+              id: zod.string().min(1),
+              type: zod.enum(["table"]),
+              showColumnNames: zod.boolean(),
+              showRowNames: zod.boolean(),
+              columns: zod.array(
+                zod.strictObject({
+                  id: zod.string().min(1),
+                  label: zod.string().min(1),
+                }),
+              ),
+              rows: zod.array(
+                zod.strictObject({
+                  id: zod.string().min(1),
+                  label: zod.string().min(1),
+                }),
+              ),
+              cells: zod.array(
+                zod.union([
+                  zod.strictObject({
+                    id: zod.string().min(1),
+                    rowId: zod.string().min(1),
+                    columnId: zod.string().min(1),
+                    type: zod.enum(["content"]),
+                    content: zod.array(
+                      zod.union([
+                        zod.strictObject({
+                          type: zod.enum(["text"]),
+                          text: zod.string(),
+                        }),
+                        zod.strictObject({
+                          type: zod.enum(["reference"]),
+                          referenceId: zod.string().min(1),
+                          rangeCell: zod
+                            .strictObject({
+                              rowOffset: zod
+                                .number()
+                                .min(
+                                  getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin,
+                                ),
+                              columnOffset: zod
+                                .number()
+                                .min(
+                                  getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin,
+                                ),
+                            })
+                            .optional(),
+                          fallbackText: zod.string().optional(),
+                        }),
+                      ]),
+                    ),
+                  }),
+                  zod.strictObject({
+                    id: zod.string().min(1),
+                    rowId: zod.string().min(1),
+                    columnId: zod.string().min(1),
+                    type: zod.enum(["response"]),
+                    responseFieldId: zod.string().min(1),
+                    label: zod.string().optional(),
+                    placeholder: zod.string().optional(),
+                    correctValueSource: zod
+                      .union([
+                        zod.strictObject({
+                          schemaVersion: zod.literal(1),
+                          type: zod.enum(["literal"]),
+                          value: zod.unknown(),
+                        }),
+                        zod.strictObject({
+                          schemaVersion: zod.literal(1),
+                          type: zod.enum(["reference"]),
+                          referenceId: zod.string().min(1),
+                        }),
+                      ])
+                      .optional(),
+                    points: zod
+                      .number()
+                      .gt(
+                        getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFiveCellsItemTwoPointsExclusiveMin,
+                      ),
+                    grading: zod.union([
+                      zod.strictObject({
+                        mode: zod.enum(["exact"]),
+                      }),
+                      zod.strictObject({
+                        mode: zod.enum(["number"]),
+                        tolerance: zod.strictObject({
+                          type: zod.enum(["absolute", "relative"]),
+                          value: zod
+                            .number()
+                            .min(
+                              getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin,
+                            ),
+                        }),
+                      }),
+                      zod.strictObject({
+                        mode: zod.enum(["case_insensitive_text"]),
+                      }),
+                      zod.strictObject({
+                        mode: zod.enum(["manual"]),
+                      }),
+                    ]),
+                  }),
+                ]),
+              ),
+            }),
+          ]),
+        ),
+        responseFields: zod.array(
+          zod.strictObject({
+            id: zod.string(),
+            type: zod.enum(["text", "number", "boolean"]),
+            label: zod.string().optional(),
+            required: zod.boolean().optional(),
+          }),
+        ),
+        references: zod.array(
+          zod.strictObject({
+            id: zod.string().min(1),
+            label: zod.string().optional(),
+            source: zod.union([
+              zod.strictObject({
+                schemaVersion: zod.literal(1),
+                type: zod.enum(["literal"]),
+                value: zod.unknown(),
+              }),
+              zod.strictObject({
+                schemaVersion: zod.literal(1),
+                type: zod.enum(["workbook_cell", "workbook_range"]),
+                ref: zod.string(),
+              }),
+            ]),
+          }),
+        ),
+      }),
+      workbookId: zod
+        .string()
+        .regex(
+          getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintWorkbookIdRegExp,
+        )
+        .nullable(),
+      currentVersionId: zod
+        .string()
+        .regex(
+          getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionIdRegExp,
+        ),
+      currentVersionNumber: zod.number().min(1),
+      currentVersion: zod.strictObject({
+        id: zod
+          .string()
+          .regex(
+            getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionIdRegExpOne,
+          ),
+        versionNumber: zod.number().min(1),
+        workbookId: zod
+          .string()
+          .regex(
+            getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionWorkbookIdRegExp,
+          )
+          .nullable(),
+        sourceAssets: zod.array(
+          zod.strictObject({
+            questionBlueprintVersionId: zod
+              .string()
+              .regex(
+                getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionSourceAssetsItemQuestionBlueprintVersionIdRegExp,
+              ),
+            workbookId: zod
+              .string()
+              .regex(
+                getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionSourceAssetsItemWorkbookIdRegExp,
+              ),
+            kind: zod.enum(["workbook"]),
+            position: zod
+              .number()
+              .min(
+                getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionSourceAssetsItemPositionMin,
+              ),
+            createdAt: zod.iso.datetime({ offset: true }),
+          }),
+        ),
+        createdByUserId: zod
+          .string()
+          .regex(
+            getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionCreatedByUserIdRegExp,
+          ),
+        createdAt: zod.iso.datetime({ offset: true }),
+      }),
+      selectedVersionId: zod
+        .string()
+        .regex(
+          getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionIdRegExp,
+        ),
+      selectedVersionNumber: zod.number().min(1),
+      selectedVersion: zod.strictObject({
+        id: zod
+          .string()
+          .regex(
+            getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionIdRegExpOne,
+          ),
+        versionNumber: zod.number().min(1),
+        workbookId: zod
+          .string()
+          .regex(
+            getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionWorkbookIdRegExp,
+          )
+          .nullable(),
+        sourceAssets: zod.array(
+          zod.strictObject({
+            questionBlueprintVersionId: zod
+              .string()
+              .regex(
+                getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionSourceAssetsItemQuestionBlueprintVersionIdRegExp,
+              ),
+            workbookId: zod
+              .string()
+              .regex(
+                getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionSourceAssetsItemWorkbookIdRegExp,
+              ),
+            kind: zod.enum(["workbook"]),
+            position: zod
+              .number()
+              .min(
+                getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionSourceAssetsItemPositionMin,
+              ),
+            createdAt: zod.iso.datetime({ offset: true }),
+          }),
+        ),
+        createdByUserId: zod
+          .string()
+          .regex(
+            getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionCreatedByUserIdRegExp,
+          ),
+        createdAt: zod.iso.datetime({ offset: true }),
+      }),
+      versions: zod.array(
+        zod.strictObject({
+          id: zod
+            .string()
+            .regex(
+              getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemIdRegExp,
+            ),
+          versionNumber: zod.number().min(1),
+          workbookId: zod
+            .string()
+            .regex(
+              getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemWorkbookIdRegExp,
+            )
+            .nullable(),
+          sourceAssets: zod.array(
+            zod.strictObject({
+              questionBlueprintVersionId: zod
+                .string()
+                .regex(
+                  getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemSourceAssetsItemQuestionBlueprintVersionIdRegExp,
+                ),
+              workbookId: zod
+                .string()
+                .regex(
+                  getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemSourceAssetsItemWorkbookIdRegExp,
+                ),
+              kind: zod.enum(["workbook"]),
+              position: zod
+                .number()
+                .min(
+                  getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemSourceAssetsItemPositionMin,
+                ),
+              createdAt: zod.iso.datetime({ offset: true }),
+            }),
+          ),
+          createdByUserId: zod
+            .string()
+            .regex(
+              getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemCreatedByUserIdRegExp,
+            ),
+          createdAt: zod.iso.datetime({ offset: true }),
+        }),
+      ),
+      visibility: zod.enum(["private", "shared", "system"]),
+      status: zod.enum(["active", "archived", "deleted"]),
+      archivedAt: zod.iso.datetime({ offset: true }).nullable(),
+      createdAt: zod.iso.datetime({ offset: true }),
+      updatedAt: zod.iso.datetime({ offset: true }),
+    }),
+  },
+);
+
+export const GetQuestionBlueprintVersionAuthoring400Response = zod.strictObject(
+  {
+    error: zod.strictObject({
+      code: zod.string(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+      details: zod.unknown().optional(),
+    }),
+  },
+);
+
+export const GetQuestionBlueprintVersionAuthoring401Response = zod.strictObject(
+  {
+    error: zod.strictObject({
+      code: zod.string(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+      details: zod.unknown().optional(),
+    }),
+  },
+);
+
+export const GetQuestionBlueprintVersionAuthoring403Response = zod.strictObject(
+  {
+    error: zod.strictObject({
+      code: zod.string(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+      details: zod.unknown().optional(),
+    }),
+  },
+);
+
+export const GetQuestionBlueprintVersionAuthoring404Response = zod.strictObject(
+  {
+    error: zod.strictObject({
+      code: zod.string(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+      details: zod.unknown().optional(),
+    }),
+  },
+);
+
+export const GetQuestionBlueprintVersionAuthoring409Response = zod.strictObject(
+  {
+    error: zod.strictObject({
+      code: zod.string(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+      details: zod.unknown().optional(),
+    }),
+  },
+);
+
+export const GetQuestionBlueprintVersionAuthoring502Response = zod.strictObject(
+  {
+    error: zod.strictObject({
+      code: zod.string(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+      details: zod.unknown().optional(),
+    }),
+  },
+);
 
 /**
  * @summary List questions

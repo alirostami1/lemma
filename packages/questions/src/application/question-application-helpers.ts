@@ -1,5 +1,6 @@
 import {
   type QuestionBlueprint,
+  type QuestionBlueprintVersion,
   type QuestionSet,
   questionBlueprintDocument,
   questionBlueprintId as toQuestionBlueprintId,
@@ -7,7 +8,10 @@ import {
   questionSetId as toQuestionSetId,
   workbookId as toWorkbookId,
 } from "../domain/index.js";
-import type { HydratedQuestionBlueprint } from "./dto.js";
+import type {
+  HydratedQuestionBlueprint,
+  HydratedQuestionBlueprintVersion,
+} from "./dto.js";
 import {
   ForbiddenQuestionActionError,
   QuestionBlueprintNotFoundError,
@@ -100,10 +104,54 @@ export async function hydrateQuestionBlueprint(
   if (!currentVersion) {
     throw new QuestionBlueprintNotFoundError();
   }
+  const hydratedVersion = await hydrateQuestionBlueprintVersion(
+    questionsRepository,
+    currentVersion,
+  );
   return {
     ...blueprint,
-    currentVersion,
+    currentVersion: hydratedVersion,
   };
+}
+
+export async function hydrateQuestionBlueprintVersion(
+  questionsRepository: QuestionsRepository,
+  version: QuestionBlueprintVersion,
+): Promise<HydratedQuestionBlueprintVersion> {
+  const sourceAssets =
+    await questionsRepository.listQuestionBlueprintVersionAssets({
+      blueprintVersionId: version.id,
+    });
+  return {
+    ...version,
+    sourceAssets,
+  };
+}
+
+export async function hydrateQuestionBlueprintVersions(
+  questionsRepository: QuestionsRepository,
+  versions: QuestionBlueprintVersion[],
+): Promise<HydratedQuestionBlueprintVersion[]> {
+  const assets =
+    await questionsRepository.listQuestionBlueprintVersionAssetsByVersionIds({
+      blueprintVersionIds: versions.map((version) => version.id),
+    });
+  const assetsByVersionId = new Map<
+    string,
+    HydratedQuestionBlueprintVersion["sourceAssets"]
+  >();
+  for (const asset of assets) {
+    const current = assetsByVersionId.get(asset.questionBlueprintVersionId);
+    if (current) {
+      current.push(asset);
+    } else {
+      assetsByVersionId.set(asset.questionBlueprintVersionId, [asset]);
+    }
+  }
+  return versions.map((version) => ({
+    ...version,
+    sourceAssets: assetsByVersionId.get(version.id) ?? [],
+  }));
 }
 
 export function normalizeCanonicalBlueprintInput(input: {

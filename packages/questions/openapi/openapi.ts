@@ -1102,6 +1102,53 @@ const questionBlueprintSchema: Schema = {
   },
 };
 
+const questionBlueprintVersionAssetSchema: Schema = {
+  name: "QuestionBlueprintVersionAsset",
+  schema: {
+    type: "object",
+    required: [
+      "questionBlueprintVersionId",
+      "workbookId",
+      "kind",
+      "position",
+      "createdAt",
+    ],
+    properties: {
+      questionBlueprintVersionId: uuid,
+      workbookId: uuid,
+      kind: { type: "string", enum: ["workbook"] },
+      position: { type: "integer", minimum: 0 },
+      createdAt: dateTime,
+    },
+  },
+};
+
+const questionBlueprintVersionSchema: Schema = {
+  name: "QuestionBlueprintVersion",
+  schema: {
+    type: "object",
+    required: [
+      "id",
+      "versionNumber",
+      "workbookId",
+      "sourceAssets",
+      "createdByUserId",
+      "createdAt",
+    ],
+    properties: {
+      id: uuid,
+      versionNumber: { type: "integer", minimum: 1 },
+      workbookId: nullableUuid,
+      sourceAssets: {
+        type: "array",
+        items: schemaRef(questionBlueprintVersionAssetSchema),
+      },
+      createdByUserId: uuid,
+      createdAt: dateTime,
+    },
+  },
+};
+
 const questionBlueprintAuthoringSchema: Schema = {
   name: "QuestionBlueprintAuthoring",
   schema: {
@@ -1117,6 +1164,10 @@ const questionBlueprintAuthoringSchema: Schema = {
       "currentVersionId",
       "currentVersionNumber",
       "currentVersion",
+      "selectedVersionId",
+      "selectedVersionNumber",
+      "selectedVersion",
+      "versions",
       "visibility",
       "status",
       "archivedAt",
@@ -1140,22 +1191,13 @@ const questionBlueprintAuthoringSchema: Schema = {
       workbookId: nullableUuid,
       currentVersionId: uuid,
       currentVersionNumber: { type: "integer", minimum: 1 },
-      currentVersion: {
-        type: "object",
-        required: [
-          "id",
-          "versionNumber",
-          "workbookId",
-          "createdByUserId",
-          "createdAt",
-        ],
-        properties: {
-          id: uuid,
-          versionNumber: { type: "integer", minimum: 1 },
-          workbookId: nullableUuid,
-          createdByUserId: uuid,
-          createdAt: dateTime,
-        },
+      currentVersion: schemaRef(questionBlueprintVersionSchema),
+      selectedVersionId: uuid,
+      selectedVersionNumber: { type: "integer", minimum: 1 },
+      selectedVersion: schemaRef(questionBlueprintVersionSchema),
+      versions: {
+        type: "array",
+        items: schemaRef(questionBlueprintVersionSchema),
       },
       visibility: {
         type: "string",
@@ -1328,6 +1370,19 @@ const questionBlueprintAuthoringResponseSchema: Schema = {
     required: ["questionBlueprint"],
     properties: {
       questionBlueprint: schemaRef(questionBlueprintAuthoringSchema),
+    },
+  },
+};
+const listQuestionBlueprintVersionsResponseSchema: Schema = {
+  name: "ListQuestionBlueprintVersionsResponse",
+  schema: {
+    type: "object",
+    required: ["versions"],
+    properties: {
+      versions: {
+        type: "array",
+        items: schemaRef(questionBlueprintVersionSchema),
+      },
     },
   },
 };
@@ -1547,6 +1602,15 @@ const questionBlueprintParam: Param = {
     schema: uuid,
   },
 };
+const questionBlueprintVersionParam: Param = {
+  name: "QuestionBlueprintVersionIdParam",
+  schema: {
+    name: "questionBlueprintVersionId",
+    in: "path",
+    required: true,
+    schema: uuid,
+  },
+};
 const questionParam: Param = {
   name: "QuestionIdParam",
   schema: {
@@ -1620,6 +1684,8 @@ export const schemas = Object.freeze([
   gradeResultSchema,
   questionSetSchema,
   questionBlueprintSchema,
+  questionBlueprintVersionAssetSchema,
+  questionBlueprintVersionSchema,
   questionBlueprintAuthoringSchema,
   questionSchema,
   questionGenerationRunSchema,
@@ -1628,6 +1694,7 @@ export const schemas = Object.freeze([
   listQuestionBlueprintsResponseSchema,
   questionBlueprintResponseSchema,
   questionBlueprintAuthoringResponseSchema,
+  listQuestionBlueprintVersionsResponseSchema,
   listQuestionsResponseSchema,
   questionResponseSchema,
   gradeQuestionResponseSchema,
@@ -1651,6 +1718,7 @@ export const responses = Object.freeze([
 export const params = Object.freeze([
   questionSetParam,
   questionBlueprintParam,
+  questionBlueprintVersionParam,
   questionParam,
   questionGenerationRunParam,
 ]);
@@ -2028,6 +2096,64 @@ export const paths: Paths = {
       },
     },
   },
+  "/question-blueprints/{questionBlueprintId}/versions": {
+    parameters: [paramRef(questionBlueprintParam)],
+    get: {
+      tags: [tagRef(questionTag)],
+      summary: "List question blueprint versions",
+      description:
+        "Authoring-only. Returns immutable version metadata and bound source assets.",
+      operationId: "listQuestionBlueprintVersions",
+      security: [keycloakSecurityRequirement],
+      responses: {
+        "200": {
+          description: "Question blueprint versions.",
+          content: {
+            "application/json": {
+              schema: schemaRef(listQuestionBlueprintVersionsResponseSchema),
+            },
+          },
+        },
+        "400": responseRef(badRequestResponse),
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+        "404": responseRef(notFoundResponse),
+        "409": responseRef(conflictResponse),
+        "502": responseRef(upstreamWorkbookResponse),
+      },
+    },
+  },
+  "/question-blueprints/{questionBlueprintId}/versions/{questionBlueprintVersionId}/authoring":
+    {
+      parameters: [
+        paramRef(questionBlueprintParam),
+        paramRef(questionBlueprintVersionParam),
+      ],
+      get: {
+        tags: [tagRef(questionTag)],
+        summary: "Get question blueprint version authoring data",
+        description:
+          "Authoring-only. Returns the private canonical document and source assets from one immutable version.",
+        operationId: "getQuestionBlueprintVersionAuthoring",
+        security: [keycloakSecurityRequirement],
+        responses: {
+          "200": {
+            description: "Question blueprint version authoring data.",
+            content: {
+              "application/json": {
+                schema: schemaRef(questionBlueprintAuthoringResponseSchema),
+              },
+            },
+          },
+          "400": responseRef(badRequestResponse),
+          "401": responseRef(unauthorizedResponse),
+          "403": responseRef(forbiddenResponse),
+          "404": responseRef(notFoundResponse),
+          "409": responseRef(conflictResponse),
+          "502": responseRef(upstreamWorkbookResponse),
+        },
+      },
+    },
 
   "/questions": {
     get: {

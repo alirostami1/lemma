@@ -93,6 +93,14 @@ export interface QuestionBlueprints {
   workbookId: string | null;
 }
 
+export interface QuestionBlueprintVersionAssets {
+  createdAt: Generated<Timestamp>;
+  kind: Generated<string>;
+  position: Generated<number>;
+  questionBlueprintVersionId: string;
+  workbookId: string;
+}
+
 export interface QuestionBlueprintVersions {
   createdAt: Generated<Timestamp>;
   createdByUserId: string;
@@ -242,6 +250,7 @@ export interface DB {
   files: Files;
   fileUploads: FileUploads;
   questionBlueprintMembers: QuestionBlueprintMembers;
+  questionBlueprintVersionAssets: QuestionBlueprintVersionAssets;
   questionBlueprints: QuestionBlueprints;
   questionBlueprintVersions: QuestionBlueprintVersions;
   questionGenerationRuns: QuestionGenerationRuns;

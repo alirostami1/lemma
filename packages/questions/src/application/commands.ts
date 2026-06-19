@@ -42,6 +42,10 @@ export type UpdateQuestionBlueprintCommand = ListCommand & {
 export type QuestionBlueprintByIdCommand = ListCommand & {
   questionBlueprintId: string;
 };
+export type QuestionBlueprintVersionByIdCommand =
+  QuestionBlueprintByIdCommand & {
+    questionBlueprintVersionId: string;
+  };
 
 export type QuestionByIdCommand = ListCommand & { questionId: string };
 export type GradeQuestionCommand = ListCommand & {

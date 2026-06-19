@@ -6,6 +6,7 @@ import type {
   QuestionBlueprintId,
   QuestionBlueprintStatus,
   QuestionBlueprintVersion,
+  QuestionBlueprintVersionAsset,
   QuestionBlueprintVersionId,
   QuestionGenerationRun,
   QuestionGenerationRunId,
@@ -97,6 +98,20 @@ export class KyselyQuestionsRepository implements QuestionsRepository {
     return this.blueprints.listQuestionBlueprintVersions(input);
   }
 
+  listQuestionBlueprintVersionAssets(input: {
+    blueprintVersionId: QuestionBlueprintVersionId;
+  }): Promise<QuestionBlueprintVersionAsset[]> {
+    return this.blueprints.listQuestionBlueprintVersionAssets(input);
+  }
+
+  listQuestionBlueprintVersionAssetsByVersionIds(input: {
+    blueprintVersionIds: readonly QuestionBlueprintVersionId[];
+  }): Promise<QuestionBlueprintVersionAsset[]> {
+    return this.blueprints.listQuestionBlueprintVersionAssetsByVersionIds(
+      input,
+    );
+  }
+
   listQuestionBlueprintsByOwnerUserId(input: {
     ownerUserId: UserId;
     statuses?: readonly QuestionBlueprintStatus[];
@@ -122,6 +137,7 @@ export class KyselyQuestionsRepository implements QuestionsRepository {
   createQuestionBlueprintWithVersion(input: {
     blueprint: QuestionBlueprint;
     version: QuestionBlueprintVersion;
+    assets: readonly QuestionBlueprintVersionAsset[];
   }): Promise<QuestionBlueprint> {
     return this.blueprints.createQuestionBlueprintWithVersion(input);
   }
@@ -144,6 +160,7 @@ export class KyselyQuestionsRepository implements QuestionsRepository {
   updateQuestionBlueprintWithNewVersion(input: {
     blueprint: QuestionBlueprint;
     version: QuestionBlueprintVersion;
+    assets: readonly QuestionBlueprintVersionAsset[];
   }): Promise<QuestionBlueprint | null> {
     return this.blueprints.updateQuestionBlueprintWithNewVersion(input);
   }

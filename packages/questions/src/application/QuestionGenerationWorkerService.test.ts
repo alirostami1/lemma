@@ -14,6 +14,7 @@ import {
   type Question,
   type QuestionBlueprint,
   type QuestionBlueprintVersion,
+  type QuestionBlueprintVersionAsset,
   type QuestionGenerationRun,
   type QuestionSet,
   type QuestionSetQuestion,
@@ -451,6 +452,12 @@ function createQuestionsRepository(input: {
     async listQuestionBlueprintVersions() {
       return [input.version];
     },
+    async listQuestionBlueprintVersionAssets() {
+      return [];
+    },
+    async listQuestionBlueprintVersionAssetsByVersionIds() {
+      return [];
+    },
     async listQuestionBlueprintsByOwnerUserId() {
       return [blueprint];
     },
@@ -460,7 +467,11 @@ function createQuestionsRepository(input: {
     async createQuestionBlueprintVersion(version: QuestionBlueprintVersion) {
       return version;
     },
-    async createQuestionBlueprintWithVersion(next) {
+    async createQuestionBlueprintWithVersion(next: {
+      blueprint: QuestionBlueprint;
+      version: QuestionBlueprintVersion;
+      assets: readonly QuestionBlueprintVersionAsset[];
+    }) {
       return next.blueprint;
     },
     async updateQuestionBlueprint(nextBlueprint: QuestionBlueprint) {
@@ -469,7 +480,11 @@ function createQuestionsRepository(input: {
     async updateQuestionBlueprintCurrentVersion() {
       return blueprint;
     },
-    async updateQuestionBlueprintWithNewVersion(next) {
+    async updateQuestionBlueprintWithNewVersion(next: {
+      blueprint: QuestionBlueprint;
+      version: QuestionBlueprintVersion;
+      assets: readonly QuestionBlueprintVersionAsset[];
+    }) {
       return next.blueprint;
     },
     async findQuestionById() {

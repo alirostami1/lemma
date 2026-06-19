@@ -3,6 +3,7 @@ import type {
   Question,
   QuestionBlueprint,
   QuestionBlueprintVersion,
+  QuestionBlueprintVersionAsset,
   QuestionGenerationRun,
   QuestionSet,
 } from "../domain/index.js";
@@ -13,10 +14,22 @@ export type QuestionSetsResult = {
   nextCursor: string | null;
 };
 export type HydratedQuestionBlueprint = QuestionBlueprint & {
-  currentVersion: QuestionBlueprintVersion;
+  currentVersion: HydratedQuestionBlueprintVersion;
+};
+export type HydratedQuestionBlueprintVersion = QuestionBlueprintVersion & {
+  sourceAssets: QuestionBlueprintVersionAsset[];
 };
 export type QuestionBlueprintResult = {
   questionBlueprint: HydratedQuestionBlueprint;
+};
+export type QuestionBlueprintAuthoringResult = {
+  questionBlueprint: HydratedQuestionBlueprint & {
+    selectedVersion: HydratedQuestionBlueprintVersion;
+    versions: HydratedQuestionBlueprintVersion[];
+  };
+};
+export type QuestionBlueprintVersionsResult = {
+  versions: HydratedQuestionBlueprintVersion[];
 };
 export type QuestionBlueprintsResult = {
   questionBlueprints: HydratedQuestionBlueprint[];
