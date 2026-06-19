@@ -60,6 +60,7 @@ export function ReferenceCreateForm({
     () => getInitialSourceType(allowedSourceTypes, initialSourceType),
   );
   const [literalValue, setLiteralValue] = useState("");
+  const [workbookSourceId, setWorkbookSourceId] = useState("source_1");
   const [workbookRef, setWorkbookRef] = useState("");
   const [error, setError] = useState<string | null>(null);
   const singleAllowedSourceType =
@@ -81,6 +82,7 @@ export function ReferenceCreateForm({
     const source = createSourceDraft({
       sourceType,
       literalValue,
+      workbookSourceId,
       workbookRef,
     });
 
@@ -97,6 +99,7 @@ export function ReferenceCreateForm({
     setReferenceId(createUniqueReferenceDraft(model).id);
     setSourceType(getInitialSourceType(allowedSourceTypes, initialSourceType));
     setLiteralValue("");
+    setWorkbookSourceId("source_1");
     setWorkbookRef("");
   }
 
@@ -187,9 +190,10 @@ export function ReferenceCreateForm({
                   sourceType === "workbook_range" ? "range" : "cell",
               }}
               onChange={(event) => setWorkbookRef(event.currentTarget.value)}
-              onWorkbookSelect={(selection) =>
-                setWorkbookRef(selection.reference)
-              }
+              onWorkbookSelect={(selection) => {
+                setWorkbookSourceId(selection.sourceId ?? "source_1");
+                setWorkbookRef(selection.reference);
+              }}
             />
           </InspectorField>
         )}
@@ -217,9 +221,10 @@ export function ReferenceCreateForm({
 function createSourceDraft(input: {
   sourceType: ReferenceSourceDraft["type"];
   literalValue: string;
+  workbookSourceId: string;
   workbookRef: string;
 }): ReferenceSourceDraft | null {
-  const { sourceType, literalValue, workbookRef } = input;
+  const { sourceType, literalValue, workbookSourceId, workbookRef } = input;
   if (sourceType === "literal") {
     const normalizedLiteralValue =
       literalValue.trim().length === 0
@@ -239,6 +244,7 @@ function createSourceDraft(input: {
 
   return {
     type: sourceType,
+    sourceId: workbookSourceId,
     ref,
   };
 }

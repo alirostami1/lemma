@@ -24,10 +24,12 @@ export type ReferenceSourceDraft =
     }
   | {
       type: "workbook_cell";
+      sourceId: string;
       ref: string;
     }
   | {
       type: "workbook_range";
+      sourceId: string;
       ref: string;
     };
 

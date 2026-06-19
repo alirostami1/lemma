@@ -91,7 +91,11 @@ describe("composed authoring helpers", () => {
       references: [
         {
           id: "reference_1",
-          source: { type: "workbook_range", ref: "'Sheet1'!A1:B2" },
+          source: {
+            type: "workbook_range",
+            sourceId: "source_1",
+            ref: "'Sheet1'!A1:B2",
+          },
         },
         {
           id: "reference_2",
@@ -99,7 +103,11 @@ describe("composed authoring helpers", () => {
         },
         {
           id: "answer_source",
-          source: { type: "workbook_cell", ref: "'Sheet1'!A1" },
+          source: {
+            type: "workbook_cell",
+            sourceId: "source_1",
+            ref: "'Sheet1'!A1",
+          },
         },
       ],
     };

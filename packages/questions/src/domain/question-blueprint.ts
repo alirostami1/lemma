@@ -17,6 +17,7 @@ import {
   type QuestionBlueprintDocument,
   questionBlueprintDocument,
 } from "./question-blueprint-document.js";
+import type { QuestionReferenceSource } from "./question-reference.js";
 import {
   type QuestionBlueprintDescription,
   type QuestionBlueprintName,
@@ -36,6 +37,7 @@ export type QuestionBlueprint = Timestamped & {
   description: QuestionBlueprintDescription | null;
   visibility: QuestionBlueprintVisibility;
   workbookId: WorkbookId | null;
+  workbookSources: QuestionBlueprintWorkbookSource[];
   currentVersionId: QuestionBlueprintVersionId | null;
   status: QuestionBlueprintStatus;
   archivedAt: Date | null;
@@ -47,6 +49,7 @@ export type QuestionBlueprintVersion = {
   versionNumber: number;
   document: QuestionBlueprintDocument;
   workbookId: WorkbookId | null;
+  workbookSources: QuestionBlueprintWorkbookSource[];
   createdByUserId: UserId;
   createdAt: Date;
 };
@@ -75,6 +78,12 @@ export function createQuestionBlueprintVersionAssets(
   }));
 }
 
+export type QuestionBlueprintWorkbookSource = {
+  sourceId: string;
+  name: string;
+  workbookId: WorkbookId;
+};
+
 export function createQuestionBlueprint(
   input: {
     id: QuestionBlueprintId;
@@ -83,6 +92,7 @@ export function createQuestionBlueprint(
     name: QuestionBlueprintName;
     description: QuestionBlueprintDescription | null;
     workbookId?: WorkbookId | null;
+    workbookSources?: QuestionBlueprintWorkbookSource[];
     visibility?: QuestionBlueprintVisibility;
   },
   at: Date,
@@ -95,6 +105,7 @@ export function createQuestionBlueprint(
     description: input.description,
     visibility: input.visibility ?? "private",
     workbookId: input.workbookId ?? null,
+    workbookSources: input.workbookSources ?? [],
     currentVersionId: null,
     status: "active",
     archivedAt: null,
@@ -110,6 +121,7 @@ export function createQuestionBlueprintVersion(
     versionNumber: number;
     document: QuestionBlueprintDocument;
     workbookId?: string | null;
+    workbookSources?: QuestionBlueprintWorkbookSource[];
     createdByUserId: UserId;
   },
   at: Date,
@@ -124,6 +136,7 @@ export function createQuestionBlueprintVersion(
       input.workbookId === undefined || input.workbookId === null
         ? null
         : workbookId(input.workbookId),
+    workbookSources: input.workbookSources ?? [],
     createdByUserId: input.createdByUserId,
     createdAt: at,
   };
@@ -137,6 +150,7 @@ export function reconstituteQuestionBlueprint(input: {
   description: string | null;
   visibility?: string;
   workbookId: string | null;
+  workbookSources?: unknown;
   currentVersionId: string | null;
   status: string;
   archivedAt: Date | null;
@@ -151,6 +165,7 @@ export function reconstituteQuestionBlueprint(input: {
     description: questionBlueprintDescription(input.description),
     visibility: questionBlueprintVisibility(input.visibility ?? "private"),
     workbookId: input.workbookId === null ? null : workbookId(input.workbookId),
+    workbookSources: questionBlueprintWorkbookSources(input.workbookSources),
     currentVersionId:
       input.currentVersionId === null
         ? null
@@ -168,6 +183,7 @@ export function reconstituteQuestionBlueprintVersion(input: {
   versionNumber: number;
   document: unknown;
   workbookId: string | null;
+  workbookSources?: unknown;
   createdByUserId: string;
   createdAt: Date;
 }): QuestionBlueprintVersion {
@@ -178,6 +194,7 @@ export function reconstituteQuestionBlueprintVersion(input: {
     versionNumber: input.versionNumber,
     document: questionBlueprintDocument(input.document),
     workbookId: input.workbookId === null ? null : workbookId(input.workbookId),
+    workbookSources: questionBlueprintWorkbookSources(input.workbookSources),
     createdByUserId: userId(input.createdByUserId),
     createdAt: input.createdAt,
   };
@@ -209,6 +226,76 @@ export function reconstituteQuestionBlueprintVersionAsset(input: {
     position: input.position,
     createdAt: input.createdAt,
   };
+}
+
+export function questionBlueprintWorkbookSources(
+  input: unknown,
+): QuestionBlueprintWorkbookSource[] {
+  if (input === undefined || input === null) {
+    return [];
+  }
+  if (!Array.isArray(input)) {
+    throw new InvalidQuestionFieldError(
+      "question blueprint workbook sources must be an array",
+    );
+  }
+  const sourceIds = new Set<string>();
+  return input.map((source) => {
+    if (typeof source !== "object" || source === null) {
+      throw new InvalidQuestionFieldError(
+        "question blueprint workbook source must be an object",
+      );
+    }
+    const record = source as Record<string, unknown>;
+    const sourceId = questionBlueprintWorkbookSourceId(record.sourceId);
+    if (sourceIds.has(sourceId)) {
+      throw new InvalidQuestionFieldError(
+        "question blueprint workbook source ids must be unique",
+      );
+    }
+    sourceIds.add(sourceId);
+    return {
+      sourceId,
+      name: questionBlueprintWorkbookSourceName(record.name),
+      workbookId: workbookId(record.workbookId),
+    };
+  });
+}
+
+export function questionBlueprintWorkbookSourceId(value: unknown): string {
+  if (typeof value !== "string" || !/^[A-Za-z][A-Za-z0-9_-]*$/u.test(value)) {
+    throw new InvalidQuestionFieldError(
+      "question blueprint workbook source id must start with a letter and contain only letters, numbers, underscores, or hyphens",
+    );
+  }
+  return value;
+}
+
+export function questionBlueprintWorkbookSourceName(value: unknown): string {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new InvalidQuestionFieldError(
+      "question blueprint workbook source name must be a non-empty string",
+    );
+  }
+  return value.trim();
+}
+
+export function workbookSourceIdsUsedByDocument(
+  document: QuestionBlueprintDocument,
+): Set<string> {
+  const sourceIds = new Set<string>();
+  for (const reference of document.references) {
+    if (isWorkbookReferenceSource(reference.source)) {
+      sourceIds.add(reference.source.sourceId);
+    }
+  }
+  return sourceIds;
+}
+
+function isWorkbookReferenceSource(
+  source: QuestionReferenceSource,
+): source is Extract<QuestionReferenceSource, { sourceId: string }> {
+  return source.type === "workbook_cell" || source.type === "workbook_range";
 }
 
 function assertPositiveVersionNumber(versionNumber: number): void {

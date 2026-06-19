@@ -86,6 +86,7 @@ function createVersion(input: { workbookId: WorkbookId | null }) {
             source: {
               schemaVersion: 1,
               type: "workbook_cell",
+              sourceId: "source_1",
               ref: "Sheet1!A1",
             },
           },

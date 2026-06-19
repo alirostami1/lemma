@@ -1,47 +1,54 @@
 import type { BlueprintSourceRequirement } from "#/domains/questions/source-requirements";
 import type { Workbook } from "#/domains/workbooks/model";
 import { getWorkbookSourceStatus } from "#/domains/workbooks/source-status";
+import type { StudioSourceSessionSource } from "./source-session-registry";
+
+type StudioSourceViewStateBase = {
+  sources?: StudioSourceSessionSource[];
+  activeSourceId?: string | null;
+  onActivateSourceId?(sourceId: string): void;
+};
 
 export type StudioSourceViewState =
-  | {
+  | (StudioSourceViewStateBase & {
       status: "not_required_empty";
       title: string;
       description: string;
       canRemove: false;
-    }
-  | {
+    })
+  | (StudioSourceViewStateBase & {
       status: "required_missing";
       title: string;
       description: string;
       issue: string;
       canRemove: false;
-    }
-  | {
+    })
+  | (StudioSourceViewStateBase & {
       status: "loading";
       title: string;
       description: string;
       canRemove: true;
-    }
-  | {
+    })
+  | (StudioSourceViewStateBase & {
       status: "ready";
       title: string;
       description: string;
       canRemove: true;
-    }
-  | {
+    })
+  | (StudioSourceViewStateBase & {
       status: "invalid";
       title: string;
       description: string;
       issue: string;
       canRemove: true;
-    }
-  | {
+    })
+  | (StudioSourceViewStateBase & {
       status: "error";
       title: string;
       description: string;
       issue: string;
       canRemove: true;
-    };
+    });
 
 export function getStudioSourceViewState(input: {
   sourceRequirement: BlueprintSourceRequirement;

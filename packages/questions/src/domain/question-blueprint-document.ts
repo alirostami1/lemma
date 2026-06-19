@@ -121,7 +121,12 @@ export function questionBlueprintDocument(
     referenceIds,
     fail,
   );
-  return { schemaVersion: 1, blocks, responseFields, references };
+  return {
+    schemaVersion: 1,
+    blocks,
+    responseFields,
+    references,
+  };
 }
 
 function validatedReferences(

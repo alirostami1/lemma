@@ -8,9 +8,10 @@ describe("workbook value source adapter", () => {
       toWorkbookValueSource({
         schemaVersion: 1,
         type: "workbook_range",
+        sourceId: "source_1",
         ref: "Sheet1!A1:B2",
       }),
-      { type: "range", ref: "Sheet1!A1:B2" },
+      { type: "range", sourceId: "source_1", ref: "Sheet1!A1:B2" },
     );
   });
 });

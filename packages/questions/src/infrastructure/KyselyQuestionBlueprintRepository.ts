@@ -166,6 +166,7 @@ export class KyselyQuestionBlueprintRepository {
     blueprintId: QuestionBlueprintId;
     currentVersionId: QuestionBlueprintVersionId;
     workbookId: QuestionBlueprint["workbookId"];
+    workbookSources?: QuestionBlueprint["workbookSources"];
     updatedAt: Date;
   }): Promise<QuestionBlueprint | null> {
     const row = await this.db
@@ -173,6 +174,9 @@ export class KyselyQuestionBlueprintRepository {
       .set({
         currentVersionId: input.currentVersionId,
         workbookId: input.workbookId,
+        ...(input.workbookSources === undefined
+          ? {}
+          : { workbookSources: input.workbookSources as never }),
         updatedAt: input.updatedAt,
       })
       .where("id", "=", input.blueprintId)
@@ -219,6 +223,7 @@ export class KyselyQuestionBlueprintRepository {
         .set({
           currentVersionId: versionRow.id,
           workbookId: versionRow.workbookId,
+          workbookSources: versionRow.workbookSources,
         })
         .where("id", "=", blueprintRow.id)
         .returningAll()
@@ -263,6 +268,7 @@ export class KyselyQuestionBlueprintRepository {
         .set({
           currentVersionId: versionRow.id,
           workbookId: versionRow.workbookId,
+          workbookSources: versionRow.workbookSources,
         })
         .where("id", "=", blueprintRow.id)
         .returningAll()

@@ -34,11 +34,13 @@ export type { WorkbookPreviewForReferences };
 
 export function resolveReferencePreviewValues({
   model,
+  activeSourceId = null,
   workbookSelectionValuesByRef = {},
   workbookPreview,
   now = Date.now(),
 }: {
   model: ComposedEditorModel;
+  activeSourceId?: string | null;
   workbookSelectionValuesByRef?: WorkbookSelectionValuesByRef;
   workbookPreview: WorkbookPreviewForReferences | null;
   now?: number;
@@ -49,6 +51,7 @@ export function resolveReferencePreviewValues({
     cache[reference.id] = resolveReferenceSourcePreview({
       referenceId: reference.id,
       source: reference.source,
+      activeSourceId,
       workbookSelectionValuesByRef,
       workbookPreview,
       now,
@@ -154,12 +157,14 @@ export function resolveValueExpressionPreview({
 function resolveReferenceSourcePreview({
   referenceId,
   source,
+  activeSourceId,
   workbookSelectionValuesByRef,
   workbookPreview,
   now,
 }: {
   referenceId: string;
   source: ReferenceSourceDraft;
+  activeSourceId: string | null;
   workbookSelectionValuesByRef: WorkbookSelectionValuesByRef;
   workbookPreview: WorkbookPreviewForReferences | null;
   now: number;
@@ -174,6 +179,15 @@ function resolveReferenceSourcePreview({
     };
   }
   if (source.type === "workbook_cell" || source.type === "workbook_range") {
+    if (activeSourceId !== null && source.sourceId !== activeSourceId) {
+      return {
+        referenceId,
+        status: "missing_source",
+        displayValue: formatReferenceFallback(referenceId),
+        updatedAt: now,
+      };
+    }
+
     const normalizedRef = normalizeWorkbookRef(source.ref);
     const selectedValues =
       workbookSelectionValuesByRef[source.ref] ??

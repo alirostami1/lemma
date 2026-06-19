@@ -177,7 +177,11 @@ describe("composed blueprint conversions", () => {
       currentModel,
       rangeReference: {
         id: "range",
-        source: { type: "workbook_range", ref: "Sheet1!A1:B2" },
+        source: {
+          type: "workbook_range",
+          sourceId: "source_1",
+          ref: "Sheet1!A1:B2",
+        },
       },
       values: [
         ["A1", "B1"],
@@ -422,7 +426,11 @@ describe("composed blueprint conversions", () => {
       references: [
         {
           id: "unused_ref",
-          source: { type: "workbook_cell", ref: "'Sheet1'!A1" },
+          source: {
+            type: "workbook_cell",
+            sourceId: "source_1",
+            ref: "'Sheet1'!A1",
+          },
         },
       ],
     };
@@ -447,7 +455,11 @@ describe("composed blueprint conversions", () => {
       references: [
         {
           id: "revenue",
-          source: { type: "workbook_cell", ref: "'Sheet1'!A1" },
+          source: {
+            type: "workbook_cell",
+            sourceId: "source_1",
+            ref: "'Sheet1'!A1",
+          },
         },
       ],
     };
@@ -457,7 +469,12 @@ describe("composed blueprint conversions", () => {
     ).toEqual([
       {
         id: "revenue",
-        source: { schemaVersion: 1, type: "workbook_cell", ref: "'Sheet1'!A1" },
+        source: {
+          schemaVersion: 1,
+          type: "workbook_cell",
+          sourceId: "source_1",
+          ref: "'Sheet1'!A1",
+        },
       },
     ]);
     expect(extractWorkbookReferenceRefsFromComposedEditorModel(model)).toEqual([
@@ -578,7 +595,11 @@ describe("composed blueprint conversions", () => {
       references: [
         {
           id: "answer_source",
-          source: { type: "workbook_cell", ref: "'Sheet1'!B2" },
+          source: {
+            type: "workbook_cell",
+            sourceId: "source_1",
+            ref: "'Sheet1'!B2",
+          },
         },
       ],
     };
@@ -614,7 +635,11 @@ describe("composed blueprint conversions", () => {
       references: [
         {
           id: "table_source",
-          source: { type: "workbook_range", ref: "'Sheet1'!A1:B2" },
+          source: {
+            type: "workbook_range",
+            sourceId: "source_1",
+            ref: "'Sheet1'!A1:B2",
+          },
         },
       ],
     };

@@ -8,6 +8,7 @@ import type { QuestionBlueprintAuthoringStatus } from "./questionBlueprintAuthor
 import type { QuestionBlueprintAuthoringVisibility } from "./questionBlueprintAuthoringVisibility.ts";
 import type { QuestionBlueprintDocument } from "./questionBlueprintDocument.ts";
 import type { QuestionBlueprintVersion } from "./questionBlueprintVersion.ts";
+import type { QuestionBlueprintWorkbookSource } from "./questionBlueprintWorkbookSource.ts";
 
 export interface QuestionBlueprintAuthoring {
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
@@ -32,6 +33,7 @@ export interface QuestionBlueprintAuthoring {
    * @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
    */
   workbookId: string | null;
+  workbookSources: QuestionBlueprintWorkbookSource[];
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
   currentVersionId: string;
   /** @minimum 1 */

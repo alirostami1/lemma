@@ -29,13 +29,19 @@ describe("CanonicalQuestionMaterializer", () => {
         },
         {
           id: "revenue",
-          source: { schemaVersion: 1, type: "workbook_cell", ref: "Sheet1!A1" },
+          source: {
+            schemaVersion: 1,
+            type: "workbook_cell",
+            sourceId: "source_1",
+            ref: "Sheet1!A1",
+          },
         },
         {
           id: "revenue_range",
           source: {
             schemaVersion: 1,
             type: "workbook_range",
+            sourceId: "source_1",
             ref: "Sheet1!A1:A2",
           },
         },
@@ -120,6 +126,7 @@ describe("CanonicalQuestionMaterializer", () => {
           source: {
             schemaVersion: 1,
             type: "workbook_range",
+            sourceId: "source_1",
             ref: "Sheet1!A1:B2",
           },
         },

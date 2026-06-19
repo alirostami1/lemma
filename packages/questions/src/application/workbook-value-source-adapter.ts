@@ -69,10 +69,10 @@ export function toWorkbookValueSource(
   source: QuestionReferenceSource,
 ): WorkbookValueSource {
   if (source.type === "workbook_cell") {
-    return { type: "cell", ref: source.ref };
+    return { type: "cell", sourceId: source.sourceId, ref: source.ref };
   }
   if (source.type === "workbook_range") {
-    return { type: "range", ref: source.ref };
+    return { type: "range", sourceId: source.sourceId, ref: source.ref };
   }
   if (source.type === "literal") {
     return { type: "literal", value: source.value };

@@ -18,6 +18,7 @@ export type ReferencePreviewController = {
 
 type UseReferencePreviewControllerInput = {
   model: ComposedEditorModel;
+  activeSourceId?: string | null;
   workbookSnapshotId?: string | null;
   workbookSelectionValuesByRef?: WorkbookSelectionValuesByRef;
   workbookPreview: WorkbookPreview | null;
@@ -25,13 +26,14 @@ type UseReferencePreviewControllerInput = {
 
 export function useReferencePreviewController({
   model,
+  activeSourceId,
   workbookSnapshotId,
   workbookSelectionValuesByRef,
   workbookPreview,
 }: UseReferencePreviewControllerInput): ReferencePreviewController {
   const workbookReferenceRefs = useMemo(
-    () => getWorkbookReferenceRefs(model),
-    [model],
+    () => getWorkbookReferenceRefs(model, activeSourceId ?? null),
+    [activeSourceId, model],
   );
   const missingWorkbookReferenceRefs = useMemo(() => {
     const missingRefs = new Set<string>();
@@ -101,6 +103,7 @@ export function useReferencePreviewController({
     () =>
       resolveReferencePreviewValues({
         model,
+        activeSourceId: activeSourceId ?? null,
         workbookSelectionValuesByRef: {
           ...fetchedWorkbookSelectionValuesByRef,
           ...workbookSelectionValuesByRef,
@@ -125,13 +128,22 @@ type WorkbookReferenceRef = {
   normalizedRef: string;
 };
 
-function getWorkbookReferenceRefs(model: ComposedEditorModel) {
+function getWorkbookReferenceRefs(
+  model: ComposedEditorModel,
+  activeSourceId: string | null,
+) {
   const refsByOriginalRef = new Map<string, WorkbookReferenceRef>();
 
   for (const reference of model.references) {
     if (
       reference.source.type !== "workbook_cell" &&
       reference.source.type !== "workbook_range"
+    ) {
+      continue;
+    }
+    if (
+      activeSourceId !== null &&
+      reference.source.sourceId !== activeSourceId
     ) {
       continue;
     }

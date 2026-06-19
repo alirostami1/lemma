@@ -37,6 +37,7 @@ function createBlueprint(
       responseFields: [],
     },
     workbookId: null,
+    workbookSources: [],
     visibility: "private",
     status: "active",
     archivedAt: null,

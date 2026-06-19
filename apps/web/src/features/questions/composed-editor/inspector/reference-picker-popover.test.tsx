@@ -116,7 +116,11 @@ describe("ReferencePickerPopover", () => {
           }),
           expect.objectContaining({
             id: "cell_ref",
-            source: { type: "workbook_cell", ref: "'Sheet1'!A1" },
+            source: {
+              type: "workbook_cell",
+              sourceId: "source_1",
+              ref: "'Sheet1'!A1",
+            },
           }),
         ]),
       }),
@@ -140,7 +144,11 @@ describe("ReferencePickerPopover", () => {
         references: expect.arrayContaining([
           expect.objectContaining({
             id: "range_ref",
-            source: { type: "workbook_range", ref: "'Sheet1'!A1:B2" },
+            source: {
+              type: "workbook_range",
+              sourceId: "source_1",
+              ref: "'Sheet1'!A1:B2",
+            },
           }),
         ]),
       }),

@@ -10,6 +10,7 @@ export type BuildQuestionBlueprintDraftInput = {
   description: string;
   model: ComposedEditorModel;
   workbookId: string | null;
+  workbookSources?: QuestionBlueprintDraft["workbookSources"];
 };
 
 export type BuildQuestionBlueprintDraftResult =
@@ -45,6 +46,7 @@ export function buildQuestionBlueprintDraft(
           stripUnusedComposedReferences(input.model),
         ),
         workbookId: input.workbookId,
+        workbookSources: input.workbookSources,
       },
     };
   } catch (error) {

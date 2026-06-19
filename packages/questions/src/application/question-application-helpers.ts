@@ -1,12 +1,16 @@
 import {
+  InvalidQuestionFieldError,
   type QuestionBlueprint,
   type QuestionBlueprintVersion,
+  type QuestionBlueprintWorkbookSource,
   type QuestionSet,
   questionBlueprintDocument,
+  questionBlueprintWorkbookSources,
   questionBlueprintId as toQuestionBlueprintId,
   questionId as toQuestionId,
   questionSetId as toQuestionSetId,
   workbookId as toWorkbookId,
+  workbookSourceIdsUsedByDocument,
 } from "../domain/index.js";
 import type {
   HydratedQuestionBlueprint,
@@ -157,10 +161,61 @@ export async function hydrateQuestionBlueprintVersions(
 export function normalizeCanonicalBlueprintInput(input: {
   document: unknown;
   workbookId: string | null;
+  workbookSources?: unknown;
 }) {
+  const document = questionBlueprintDocument(input.document);
+  const workbookSources = normalizeWorkbookSources({
+    document,
+    workbookId: input.workbookId,
+    workbookSources: input.workbookSources,
+  });
   return {
-    document: questionBlueprintDocument(input.document),
-    workbookId:
-      input.workbookId === null ? null : toWorkbookId(input.workbookId),
+    document,
+    workbookId: workbookSources[0]?.workbookId ?? null,
+    workbookSources,
   };
+}
+
+function normalizeWorkbookSources(input: {
+  document: ReturnType<typeof questionBlueprintDocument>;
+  workbookId: string | null;
+  workbookSources?: unknown;
+}): QuestionBlueprintWorkbookSource[] {
+  const usedSourceIds = workbookSourceIdsUsedByDocument(input.document);
+  if (usedSourceIds.size === 0) {
+    return [];
+  }
+
+  const sources =
+    input.workbookSources === undefined
+      ? legacyWorkbookSource(input.workbookId)
+      : questionBlueprintWorkbookSources(input.workbookSources);
+  const sourcesById = new Map(
+    sources.map((source) => [source.sourceId, source]),
+  );
+  const usedSources: QuestionBlueprintWorkbookSource[] = [];
+  for (const sourceId of usedSourceIds) {
+    const source = sourcesById.get(sourceId);
+    if (!source) {
+      throw new InvalidQuestionFieldError(
+        `workbook reference source ${sourceId} is not attached to this blueprint`,
+      );
+    }
+    usedSources.push(source);
+  }
+  return usedSources;
+}
+
+function legacyWorkbookSource(
+  workbookId: string | null,
+): QuestionBlueprintWorkbookSource[] {
+  return workbookId === null
+    ? []
+    : [
+        {
+          sourceId: "source_1",
+          name: "Source 1",
+          workbookId: toWorkbookId(workbookId),
+        },
+      ];
 }

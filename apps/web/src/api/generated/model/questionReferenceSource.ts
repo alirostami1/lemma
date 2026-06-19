@@ -14,5 +14,7 @@ export type QuestionReferenceSource =
   | {
       schemaVersion: 1;
       type: "workbook_cell" | "workbook_range";
+      /** @minLength 1 */
+      sourceId: string;
       ref: string;
     };

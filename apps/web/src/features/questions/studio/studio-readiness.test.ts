@@ -74,7 +74,11 @@ describe("studio readiness", () => {
       references: [
         {
           id: "revenue",
-          source: { type: "workbook_cell", ref: "'Sheet1'!A1" },
+          source: {
+            type: "workbook_cell",
+            sourceId: "source_1",
+            ref: "'Sheet1'!A1",
+          },
         },
       ],
       blocks: [
@@ -108,7 +112,11 @@ describe("studio readiness", () => {
       references: [
         {
           id: "revenue",
-          source: { type: "workbook_cell", ref: "'Sheet1'!A1:B2" },
+          source: {
+            type: "workbook_cell",
+            sourceId: "source_1",
+            ref: "'Sheet1'!A1:B2",
+          },
         },
       ],
       blocks: [
@@ -136,7 +144,11 @@ describe("studio readiness", () => {
       references: [
         {
           id: "unused",
-          source: { type: "workbook_cell", ref: "'Sheet1'!A1" },
+          source: {
+            type: "workbook_cell",
+            sourceId: "source_1",
+            ref: "'Sheet1'!A1",
+          },
         },
       ],
     };

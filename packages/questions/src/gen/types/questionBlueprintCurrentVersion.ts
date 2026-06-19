@@ -4,6 +4,7 @@
  * Lemma Questions API
  * OpenAPI spec version: 0.1.0
  */
+import type { QuestionBlueprintWorkbookSource } from "./questionBlueprintWorkbookSource.js";
 
 export type QuestionBlueprintCurrentVersion = {
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
@@ -15,6 +16,7 @@ export type QuestionBlueprintCurrentVersion = {
    * @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
    */
   workbookId: string | null;
+  workbookSources: QuestionBlueprintWorkbookSource[];
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
   createdByUserId: string;
   createdAt: string;

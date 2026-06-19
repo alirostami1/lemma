@@ -91,6 +91,7 @@ export interface QuestionBlueprints {
   updatedAt: Generated<Timestamp>;
   visibility: Generated<string>;
   workbookId: string | null;
+  workbookSources: Generated<Json>;
 }
 
 export interface QuestionBlueprintVersionAssets {
@@ -109,6 +110,7 @@ export interface QuestionBlueprintVersions {
   questionBlueprintId: string;
   versionNumber: number;
   workbookId: string | null;
+  workbookSources: Generated<Json>;
 }
 
 export interface QuestionGenerationRuns {

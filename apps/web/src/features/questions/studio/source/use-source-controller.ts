@@ -13,12 +13,18 @@ import {
   useSelectedWorkbookPreview,
 } from "../use-selected-workbook-preview";
 import {
+  type StudioSourceSessionSource,
+  useSourceSessionRegistry,
+} from "./source-session-registry";
+import {
   getStudioSourceViewState,
   type StudioSourceViewState,
 } from "./source-state";
 
 export type SourceController = {
   sourceCard: StudioSourceViewState;
+  sources: StudioSourceSessionSource[];
+  activeSource: StudioSourceSessionSource | null;
   uploadDialog: {
     open: boolean;
     onOpenChange(open: boolean): void;
@@ -30,6 +36,8 @@ export type SourceController = {
     removeSource(): void;
   };
   getWorkbookName(workbookId: string | null): string | null;
+  getSourceById(sourceId: string): StudioSourceSessionSource | null;
+  getSourceByName(sourceName: string): StudioSourceSessionSource | null;
   selectedWorkbook: Workbook | null;
   sourceRequirement: ReturnType<typeof getBlueprintSourceRequirement>;
   workbookPreviewController: SelectedWorkbookPreviewController;
@@ -41,6 +49,7 @@ const SOURCE_PREVIEW_REQUESTED_COUNT = 1;
 export function useSourceController(input: {
   loadWorkbookPickerPreview: boolean;
   model: ComposedEditorModel;
+  initialSources?: StudioSourceSessionSource[];
   selectedWorkbookId: string | null;
   isVersionBoundSource: boolean;
   onSelectedWorkbookIdChange(workbookId: string | null): void;
@@ -74,6 +83,12 @@ export function useSourceController(input: {
     [input.model],
   );
   const selectedWorkbook = selectedWorkbookQuery.data ?? null;
+  const sourceRegistry = useSourceSessionRegistry({
+    activeWorkbook: selectedWorkbook,
+    initialSources: input.initialSources ?? [],
+    selectedWorkbookId: input.selectedWorkbookId,
+    onSelectedWorkbookIdChange: input.onSelectedWorkbookIdChange,
+  });
   const workbookPreviewController = useSelectedWorkbookPreview({
     loadPickerPreview: input.loadWorkbookPickerPreview,
     selectedWorkbook: selectedWorkbook
@@ -180,7 +195,14 @@ export function useSourceController(input: {
   }
 
   return {
-    sourceCard,
+    sourceCard: {
+      ...sourceCard,
+      sources: sourceRegistry.sources,
+      activeSourceId: sourceRegistry.activeSource?.sourceId ?? null,
+      onActivateSourceId: sourceRegistry.activateSourceById,
+    },
+    sources: sourceRegistry.sources,
+    activeSource: sourceRegistry.activeSource,
     uploadDialog: {
       open: isUploadOpen,
       onOpenChange: setIsUploadOpen,
@@ -198,7 +220,7 @@ export function useSourceController(input: {
           workbookId: validatingWorkbook.id,
           calculationRequested: false,
         });
-        input.onSelectedWorkbookIdChange(validatingWorkbook.id);
+        sourceRegistry.attachWorkbook(validatingWorkbook);
         setIsUploadOpen(false);
       },
     },
@@ -209,13 +231,12 @@ export function useSourceController(input: {
         setSourcePreparation(null);
         setSourcePreparationError(null);
         requestedPreviewCalculationWorkbookIdsRef.current.clear();
-        input.onSelectedWorkbookIdChange(null);
+        sourceRegistry.removeActiveSource();
       },
     },
-    getWorkbookName: (workbookId) =>
-      selectedWorkbook && selectedWorkbook.id === workbookId
-        ? selectedWorkbook.name
-        : null,
+    getWorkbookName: sourceRegistry.getWorkbookName,
+    getSourceById: sourceRegistry.getSourceById,
+    getSourceByName: sourceRegistry.getSourceByName,
     selectedWorkbook,
     sourceRequirement,
     workbookPreviewController,

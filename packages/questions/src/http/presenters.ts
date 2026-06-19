@@ -61,6 +61,7 @@ export const presentQuestionBlueprint = (
         id: currentVersion.id,
         versionNumber: currentVersion.versionNumber,
         workbookId: currentVersion.workbookId,
+        workbookSources: currentVersion.workbookSources,
         createdByUserId: currentVersion.createdByUserId,
         createdAt: presentDate(currentVersion.createdAt),
       },
@@ -246,6 +247,7 @@ function toQuestionBlueprintVersionDto(
     id: version.id,
     versionNumber: version.versionNumber,
     workbookId: version.workbookId,
+    workbookSources: version.workbookSources,
     sourceAssets: version.sourceAssets.map((asset) => ({
       questionBlueprintVersionId: asset.questionBlueprintVersionId,
       workbookId: asset.workbookId,

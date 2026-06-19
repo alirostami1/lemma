@@ -150,15 +150,27 @@ describe("buildQuestionBlueprintDraft", () => {
         },
         {
           id: "range",
-          source: { type: "workbook_range", ref: "Sheet1!A1:B2" },
+          source: {
+            type: "workbook_range",
+            sourceId: "source_1",
+            ref: "Sheet1!A1:B2",
+          },
         },
         {
           id: "answer",
-          source: { type: "workbook_cell", ref: "Sheet1!C1" },
+          source: {
+            type: "workbook_cell",
+            sourceId: "source_1",
+            ref: "Sheet1!C1",
+          },
         },
         {
           id: "unused",
-          source: { type: "workbook_cell", ref: "Sheet1!Z99" },
+          source: {
+            type: "workbook_cell",
+            sourceId: "source_1",
+            ref: "Sheet1!Z99",
+          },
         },
       ],
     };
@@ -188,6 +200,7 @@ describe("buildQuestionBlueprintDraft", () => {
               source: {
                 schemaVersion: 1,
                 type: "workbook_range",
+                sourceId: "source_1",
                 ref: "Sheet1!A1:B2",
               },
             },
@@ -196,6 +209,7 @@ describe("buildQuestionBlueprintDraft", () => {
               source: {
                 schemaVersion: 1,
                 type: "workbook_cell",
+                sourceId: "source_1",
                 ref: "Sheet1!C1",
               },
             },

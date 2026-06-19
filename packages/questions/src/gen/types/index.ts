@@ -86,6 +86,7 @@ export * from "./questionBlueprintVersion.js";
 export * from "./questionBlueprintVersionAsset.js";
 export * from "./questionBlueprintVersionAssetKind.js";
 export * from "./questionBlueprintVisibility.js";
+export * from "./questionBlueprintWorkbookSource.js";
 export * from "./questionBody.js";
 export * from "./questionBodySchemaVersion.js";
 export * from "./questionGenerationRun.js";

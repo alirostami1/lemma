@@ -19,6 +19,9 @@ export function StudioSourceBar({
   onChangeSource(): void;
   onRemoveSource(): void;
 }) {
+  const sources = sourceCard.sources ?? [];
+  const activeSourceId = sourceCard.activeSourceId ?? null;
+  const onActivateSourceId = sourceCard.onActivateSourceId;
   const icon =
     sourceCard.status === "required_missing" ||
     sourceCard.status === "invalid" ||
@@ -38,6 +41,28 @@ export function StudioSourceBar({
             <p className="text-xs text-muted-foreground md:truncate">
               {sourceCard.description}
             </p>
+            {sources.length > 0 ? (
+              <div className="mt-1 flex flex-wrap gap-1">
+                {sources.map((source) => (
+                  <button
+                    type="button"
+                    key={source.sourceId}
+                    className={
+                      source.sourceId === activeSourceId
+                        ? "rounded border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary"
+                        : "rounded border bg-muted/40 px-1.5 py-0.5 text-[11px] text-muted-foreground hover:bg-muted"
+                    }
+                    disabled={
+                      !onActivateSourceId || source.sourceId === activeSourceId
+                    }
+                    onClick={() => onActivateSourceId?.(source.sourceId)}
+                    title={source.workbookName ?? source.sourceName}
+                  >
+                    {source.sourceName}
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
@@ -61,7 +86,7 @@ export function StudioSourceBar({
                 onClick={onChangeSource}
               >
                 <Upload />
-                Replace source
+                Attach source
               </Button>
               {sourceCard.canRemove ? (
                 <Button

@@ -160,6 +160,10 @@ export interface WorkbookCalculationPort {
   requestCalculation(input: {
     createdByUserId: UserId;
     workbookId: WorkbookId;
+    workbookSources?: readonly {
+      sourceId: string;
+      workbookId: WorkbookId;
+    }[];
     requestedCount: number;
     correlationId?: string | null;
     lineage: OperationLineage;

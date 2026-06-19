@@ -359,6 +359,7 @@ function createBlueprintVersion() {
             source: {
               schemaVersion: 1,
               type: "workbook_cell",
+              sourceId: "source_1",
               ref: "Sheet1!A1",
             },
           },
@@ -409,6 +410,13 @@ function createQuestionsRepository(input: {
     visibility: questionBlueprintVisibility("private"),
     currentVersionId: versionId,
     workbookId: workbookIdValue,
+    workbookSources: [
+      {
+        sourceId: "source_1",
+        name: "Source 1",
+        workbookId: workbookIdValue,
+      },
+    ],
     archivedAt: null,
     createdAt: at,
     updatedAt: at,

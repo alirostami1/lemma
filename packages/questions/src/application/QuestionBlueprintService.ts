@@ -103,6 +103,7 @@ export class QuestionBlueprintService {
     const compiled = normalizeCanonicalBlueprintInput({
       document: command.document,
       workbookId: command.workbookId ?? null,
+      workbookSources: command.workbookSources,
     });
     const at = this.deps.clock.now();
     const blueprint = createQuestionBlueprint(
@@ -113,6 +114,7 @@ export class QuestionBlueprintService {
         name: questionBlueprintName(command.name),
         description: questionBlueprintDescription(command.description ?? null),
         workbookId: compiled.workbookId,
+        workbookSources: compiled.workbookSources,
         visibility: questionBlueprintVisibility(
           command.visibility ?? "private",
         ),
@@ -128,6 +130,7 @@ export class QuestionBlueprintService {
         versionNumber: 1,
         document: compiled.document,
         workbookId: compiled.workbookId,
+        workbookSources: compiled.workbookSources,
         createdByUserId: blueprint.createdByUserId,
       },
       at,
@@ -246,6 +249,7 @@ export class QuestionBlueprintService {
     );
     const documentChanged = command.patch.document !== undefined;
     const workbookChanged = command.patch.workbookId !== undefined;
+    const workbookSourcesChanged = command.patch.workbookSources !== undefined;
     const at = this.deps.clock.now();
     const updatedMetadata = updateQuestionBlueprintMetadata(
       blueprint,
@@ -263,7 +267,7 @@ export class QuestionBlueprintService {
       },
       at,
     );
-    if (!documentChanged && !workbookChanged) {
+    if (!documentChanged && !workbookChanged && !workbookSourcesChanged) {
       return {
         questionBlueprint: await hydrateQuestionBlueprint(
           this.deps.questionsRepository,
@@ -287,6 +291,10 @@ export class QuestionBlueprintService {
         command.patch.workbookId !== undefined
           ? command.patch.workbookId
           : currentVersion.workbookId,
+      workbookSources:
+        command.patch.workbookSources !== undefined
+          ? command.patch.workbookSources
+          : currentVersion.workbookSources,
     });
     const versions =
       await this.deps.questionsRepository.listQuestionBlueprintVersions({
@@ -306,6 +314,7 @@ export class QuestionBlueprintService {
         versionNumber: nextVersionNumber,
         document: compiled.document,
         workbookId: compiled.workbookId,
+        workbookSources: compiled.workbookSources,
         createdByUserId: toUserId(command.currentUser.user.id),
       },
       at,
@@ -323,6 +332,7 @@ export class QuestionBlueprintService {
           blueprint: {
             ...updatedMetadata,
             workbookId: compiled.workbookId,
+            workbookSources: compiled.workbookSources,
             currentVersionId: version.id,
           },
           version,

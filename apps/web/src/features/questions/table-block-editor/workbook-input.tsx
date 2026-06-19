@@ -29,6 +29,7 @@ export type WorkbookSelectionRequirement = {
 };
 
 export type WorkbookRangeSelection = {
+  sourceId?: string;
   reference: string;
   values: string[][];
 };

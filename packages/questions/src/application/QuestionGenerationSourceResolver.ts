@@ -26,26 +26,37 @@ export class QuestionGenerationSourceResolver {
     version: QuestionBlueprintVersion;
     explicitSource: GenerationWorkbookSource | null;
   }): GenerationWorkbookSource | null {
-    return input.explicitSource !== null
-      ? input.explicitSource
-      : input.version.workbookId
-        ? workbookQuestionSource({
-            type: "workbook_snapshot",
-            workbookId: input.version.workbookId,
-          })
-        : null;
+    if (input.explicitSource !== null) {
+      return input.explicitSource;
+    }
+
+    const workbookId =
+      input.version.workbookSources[0]?.workbookId ?? input.version.workbookId;
+    return workbookId
+      ? workbookQuestionSource({
+          type: "workbook_snapshot",
+          workbookId,
+        })
+      : null;
   }
 
   assertExplicitSourceIsAllowed(input: {
     version: QuestionBlueprintVersion;
     explicitSource: GenerationWorkbookSource | null;
   }): void {
-    if (input.explicitSource === null || input.version.workbookId === null) {
+    if (input.explicitSource === null) {
       return;
     }
-    if (input.explicitSource.workbookId !== input.version.workbookId) {
+    const allowedWorkbookIds = new Set(
+      input.version.workbookSources.length > 0
+        ? input.version.workbookSources.map((source) => source.workbookId)
+        : input.version.workbookId
+          ? [input.version.workbookId]
+          : [],
+    );
+    if (!allowedWorkbookIds.has(input.explicitSource.workbookId)) {
       throw new InvalidQuestionBlueprintError(
-        "explicit workbook source must match blueprint workbook",
+        "explicit workbook source must match a blueprint workbook source",
       );
     }
   }

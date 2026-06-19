@@ -127,6 +127,7 @@ export * from "./questionBlueprintVersion.ts";
 export * from "./questionBlueprintVersionAsset.ts";
 export * from "./questionBlueprintVersionAssetKind.ts";
 export * from "./questionBlueprintVisibility.ts";
+export * from "./questionBlueprintWorkbookSource.ts";
 export * from "./questionBody.ts";
 export * from "./questionBodySchemaVersion.ts";
 export * from "./questionGenerationRun.ts";

@@ -89,6 +89,7 @@ export function mapQuestionBlueprintToInsert(
     createdAt: blueprint.createdAt,
     updatedAt: blueprint.updatedAt,
     workbookId: blueprint.workbookId,
+    workbookSources: blueprint.workbookSources as unknown as JsonObject[],
     currentVersionId: blueprint.currentVersionId,
     archivedAt: blueprint.archivedAt,
   } as Insertable<QuestionBlueprints>;
@@ -104,6 +105,7 @@ export function mapQuestionBlueprintToUpdate(
     status: blueprint.status,
     updatedAt: blueprint.updatedAt,
     archivedAt: blueprint.archivedAt,
+    workbookSources: blueprint.workbookSources as unknown as JsonObject[],
   } as Updateable<QuestionBlueprints>;
 }
 
@@ -116,6 +118,7 @@ export function mapQuestionBlueprintVersionToInsert(
     versionNumber: version.versionNumber,
     document: version.document as JsonObject,
     workbookId: version.workbookId,
+    workbookSources: version.workbookSources as unknown as JsonObject[],
     createdByUserId: version.createdByUserId,
     createdAt: version.createdAt,
   } as Insertable<QuestionBlueprintVersions>;

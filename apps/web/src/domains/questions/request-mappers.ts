@@ -19,6 +19,7 @@ export function toCreateQuestionBlueprintRequest(
     visibility: input.visibility,
     document: input.document,
     workbookId: input.workbookId,
+    workbookSources: input.workbookSources,
   };
 }
 
@@ -31,6 +32,7 @@ export function toUpdateQuestionBlueprintRequest(
     visibility: input.visibility,
     document: input.document,
     workbookId: input.workbookId,
+    workbookSources: input.workbookSources,
     status: input.status,
   };
 }

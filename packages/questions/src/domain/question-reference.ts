@@ -23,8 +23,8 @@ export type QuestionReference = {
 
 export type QuestionReferenceSource =
   | { schemaVersion: 1; type: "literal"; value: JsonValue }
-  | { schemaVersion: 1; type: "workbook_cell"; ref: string }
-  | { schemaVersion: 1; type: "workbook_range"; ref: string };
+  | { schemaVersion: 1; type: "workbook_cell"; sourceId: string; ref: string }
+  | { schemaVersion: 1; type: "workbook_range"; sourceId: string; ref: string };
 
 export function assertQuestionReferenceId(
   value: unknown,
@@ -42,6 +42,7 @@ export function assertQuestionReferenceId(
 export function questionReferenceSource(
   input: unknown,
   failWith: (message: string) => never,
+  workbookSourceIds?: ReadonlySet<string>,
 ): QuestionReferenceSource {
   assertPlainRecord(
     input,
@@ -54,6 +55,10 @@ export function questionReferenceSource(
     return { schemaVersion: 1, type: "literal", value: input.value };
   }
   if (input.type === "workbook_cell" || input.type === "workbook_range") {
+    assertQuestionReferenceSourceId(input.sourceId, "sourceId", failWith);
+    if (workbookSourceIds && !workbookSourceIds.has(input.sourceId)) {
+      failWith("workbook reference sourceId must reference a workbook source");
+    }
     assertNonEmptyString(input.ref, "ref", failWith);
     if (
       !rawWorkbookRefPattern.test(input.ref) &&
@@ -69,7 +74,25 @@ export function questionReferenceSource(
     if (input.type === "workbook_range" && !input.ref.includes(":")) {
       failWith("workbook_range ref must be a range");
     }
-    return { schemaVersion: 1, type: input.type, ref: input.ref };
+    return {
+      schemaVersion: 1,
+      type: input.type,
+      sourceId: input.sourceId,
+      ref: input.ref,
+    };
   }
   failWith("question reference source type is invalid");
+}
+
+export function assertQuestionReferenceSourceId(
+  value: unknown,
+  field: string,
+  fail: (message: string) => never,
+): asserts value is string {
+  assertNonEmptyString(value, field, fail);
+  if (!referenceIdPattern.test(value)) {
+    fail(
+      `${field} must start with a letter and contain only letters, numbers, underscores, or hyphens`,
+    );
+  }
 }

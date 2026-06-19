@@ -230,6 +230,7 @@ function ReferenceEditorFields({
                         ...current,
                         source: {
                           type: current.source.type,
+                          sourceId: current.source.sourceId,
                           ref: event.currentTarget.value,
                         },
                       },
@@ -243,6 +244,7 @@ function ReferenceEditorFields({
                         ...current,
                         source: {
                           type: current.source.type,
+                          sourceId: selection.sourceId ?? "source_1",
                           ref: selection.reference,
                         },
                       },
@@ -327,9 +329,9 @@ function createNextReferenceSource(
 
   if (source.type === "workbook_cell" || source.type === "workbook_range") {
     return source.type === type
-      ? { type: source.type, ref: source.ref }
-      : { type, ref: "" };
+      ? { type: source.type, sourceId: source.sourceId, ref: source.ref }
+      : { type, sourceId: source.sourceId, ref: "" };
   }
 
-  return { type, ref: "" };
+  return { type, sourceId: "source_1", ref: "" };
 }

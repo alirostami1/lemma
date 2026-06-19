@@ -116,12 +116,14 @@ export function toQuestionReferenceSource(
       return {
         schemaVersion: 1,
         type: "workbook_cell",
+        sourceId: source.sourceId,
         ref: source.ref,
       };
     case "workbook_range":
       return {
         schemaVersion: 1,
         type: "workbook_range",
+        sourceId: source.sourceId,
         ref: source.ref,
       };
     default:
@@ -136,9 +138,17 @@ export function toReferenceSource(
     case "literal":
       return { type: "literal", value: toTableAnswerValue(source.value) };
     case "workbook_cell":
-      return { type: "workbook_cell", ref: source.ref };
+      return {
+        type: "workbook_cell",
+        sourceId: source.sourceId,
+        ref: source.ref,
+      };
     case "workbook_range":
-      return { type: "workbook_range", ref: source.ref };
+      return {
+        type: "workbook_range",
+        sourceId: source.sourceId,
+        ref: source.ref,
+      };
     default:
       return assertNever(source);
   }

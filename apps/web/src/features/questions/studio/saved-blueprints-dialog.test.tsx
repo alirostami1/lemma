@@ -71,6 +71,7 @@ function createBlueprint(name: string, timestamp: string): QuestionBlueprint {
       responseFields: [],
     },
     workbookId: null,
+    workbookSources: [],
     visibility: "private",
     status: "active",
     archivedAt: null,

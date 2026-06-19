@@ -70,13 +70,19 @@ describe("composable question canonical model", () => {
         literalReference,
         {
           id: "cell",
-          source: { schemaVersion: 1, type: "workbook_cell", ref: "Sheet1!A1" },
+          source: {
+            schemaVersion: 1,
+            type: "workbook_cell",
+            sourceId: "source_1",
+            ref: "Sheet1!A1",
+          },
         },
         {
           id: "range",
           source: {
             schemaVersion: 1,
             type: "workbook_range",
+            sourceId: "source_1",
             ref: "Sheet1!A1:B2",
           },
         },
@@ -221,9 +227,24 @@ describe("composable question canonical model", () => {
 
   it("rejects malformed and mismatched workbook references", () => {
     for (const source of [
-      { schemaVersion: 1, type: "workbook_cell", ref: "A1:B2" },
-      { schemaVersion: 1, type: "workbook_range", ref: "A1" },
-      { schemaVersion: 1, type: "workbook_cell", ref: "not-a-ref" },
+      {
+        schemaVersion: 1,
+        type: "workbook_cell",
+        sourceId: "source_1",
+        ref: "A1:B2",
+      },
+      {
+        schemaVersion: 1,
+        type: "workbook_range",
+        sourceId: "source_1",
+        ref: "A1",
+      },
+      {
+        schemaVersion: 1,
+        type: "workbook_cell",
+        sourceId: "source_1",
+        ref: "not-a-ref",
+      },
     ]) {
       assert.throws(() =>
         questionBlueprintDocument({

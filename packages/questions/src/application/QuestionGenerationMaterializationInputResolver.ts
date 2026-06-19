@@ -85,6 +85,10 @@ export class QuestionGenerationMaterializationInputResolver {
         await this.deps.workbookCalculationPort.requestCalculation({
           createdByUserId: run.createdByUserId,
           workbookId: run.source.workbookId,
+          workbookSources: version.workbookSources.map((source) => ({
+            sourceId: source.sourceId,
+            workbookId: source.workbookId,
+          })),
           requestedCount: run.requestedCount,
           correlationId: run.id,
           lineage: input.lineage,

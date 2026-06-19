@@ -89,6 +89,9 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
     .addColumn("description", "text")
     .addColumn("visibility", "text", (c) => c.notNull().defaultTo("private"))
     .addColumn("workbook_id", "uuid")
+    .addColumn("workbook_sources", "jsonb", (c) =>
+      c.notNull().defaultTo(sql`'[]'::jsonb`),
+    )
     .addColumn("current_version_id", "uuid")
     .addColumn("status", "text", (c) => c.notNull().defaultTo("active"))
     .addColumn("archived_at", "timestamptz")
@@ -113,6 +116,10 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
     .addCheckConstraint(
       "question_blueprints_name_nonempty_check",
       sql`length(trim(name)) > 0`,
+    )
+    .addCheckConstraint(
+      "question_blueprints_workbook_sources_array_check",
+      sql`jsonb_typeof(workbook_sources) = 'array'`,
     )
     .addForeignKeyConstraint(
       "question_blueprints_owner_user_id_foreign",
@@ -168,6 +175,9 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
     .addColumn("version_number", "integer", (c) => c.notNull())
     .addColumn("document", "jsonb", (c) => c.notNull())
     .addColumn("workbook_id", "uuid")
+    .addColumn("workbook_sources", "jsonb", (c) =>
+      c.notNull().defaultTo(sql`'[]'::jsonb`),
+    )
     .addColumn("created_by_user_id", "uuid", (c) => c.notNull())
     .addColumn("created_at", "timestamptz", (c) =>
       c.notNull().defaultTo(sql`now()`),
@@ -211,6 +221,10 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
     .addCheckConstraint(
       "question_blueprint_versions_document_references_array_check",
       sql`jsonb_typeof(document->'references') = 'array'`,
+    )
+    .addCheckConstraint(
+      "question_blueprint_versions_workbook_sources_array_check",
+      sql`jsonb_typeof(workbook_sources) = 'array'`,
     )
     .addForeignKeyConstraint(
       "question_blueprint_versions_question_blueprint_id_foreign",

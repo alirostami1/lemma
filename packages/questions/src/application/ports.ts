@@ -139,6 +139,10 @@ export interface WorkbookCalculationPort {
   requestCalculation(input: {
     createdByUserId: UserId;
     workbookId: WorkbookId;
+    workbookSources: readonly {
+      sourceId: string;
+      workbookId: WorkbookId;
+    }[];
     requestedCount: number;
     correlationId?: string | null;
     lineage: OperationLineage;
@@ -146,8 +150,8 @@ export interface WorkbookCalculationPort {
 }
 
 export type WorkbookValueSource =
-  | { type: "cell"; ref: string }
-  | { type: "range"; ref: string }
+  | { type: "cell"; sourceId: string; ref: string }
+  | { type: "range"; sourceId: string; ref: string }
   | { type: "literal"; value: JsonValue };
 
 export interface WorkbookSnapshotResolverPort {

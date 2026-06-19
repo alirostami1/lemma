@@ -54,7 +54,11 @@ export function mapQuestionBlueprint(
     id: dto.currentVersion.id,
     versionNumber: dto.currentVersion.versionNumber,
     workbookId: dto.currentVersion.workbookId,
-    sourceAssets: [],
+    sourceAssets: dto.currentVersion.sourceAssets.map((asset) => ({
+      ...asset,
+      createdAt: new Date(asset.createdAt),
+    })),
+    workbookSources: dto.currentVersion.workbookSources ?? [],
     createdByUserId: dto.currentVersion.createdByUserId,
     createdAt: new Date(dto.currentVersion.createdAt),
   };
@@ -222,6 +226,7 @@ function mapQuestionBlueprintVersion(
     id: dto.id,
     versionNumber: dto.versionNumber,
     workbookId: dto.workbookId,
+    workbookSources: dto.workbookSources ?? [],
     sourceAssets: dto.sourceAssets.map((asset) => ({
       ...asset,
       createdAt: new Date(asset.createdAt),

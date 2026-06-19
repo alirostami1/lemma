@@ -44,6 +44,13 @@ export function useStudioController(
   const source = useSourceController({
     loadWorkbookPickerPreview: workbookPickerRequest !== null,
     model: draft.authoringModel,
+    initialSources:
+      draft.loadedBlueprint?.workbookSources.map((item) => ({
+        sourceId: item.sourceId,
+        sourceName: item.name,
+        workbookId: item.workbookId,
+        workbookName: null,
+      })) ?? [],
     selectedWorkbookId: draft.selectedWorkbookId || null,
     isVersionBoundSource: Boolean(draft.loadedBlueprintVersionId),
     onSelectedWorkbookIdChange: (workbookId) => {
@@ -52,6 +59,7 @@ export function useStudioController(
   });
   const referencePreview = useReferencePreviewController({
     model: draft.authoringModel,
+    activeSourceId: source.activeSource?.sourceId ?? null,
     workbookSnapshotId: source.workbookPreviewController.workbookSnapshotId,
     workbookSelectionValuesByRef,
     workbookPreview: source.workbookPreviewController.workbookPreview,
@@ -83,6 +91,11 @@ export function useStudioController(
     hasUnsavedChanges: draft.hasUnsavedChanges,
     loadedBlueprintId: draft.loadedBlueprintId,
     selectedWorkbookId: draft.selectedWorkbookId,
+    workbookSources: source.sources.map((item) => ({
+      sourceId: item.sourceId,
+      name: item.sourceName,
+      workbookId: item.workbookId,
+    })),
     readiness,
     onSaved: (saved) => {
       draft.markSaved(saved);
@@ -241,11 +254,12 @@ export function useStudioController(
       onLoadMoreWorkbookSheets:
         source.workbookPreviewController.loadMoreWorkbookSheets,
       onSelect: (selection: WorkbookRangeSelection) => {
+        const sourceId = source.activeSource?.sourceId ?? "source_1";
         setWorkbookSelectionValuesByRef((currentValues) => ({
           ...currentValues,
           [selection.reference]: selection.values,
         }));
-        workbookPickerRequest?.onSelect(selection);
+        workbookPickerRequest?.onSelect({ ...selection, sourceId });
         setWorkbookPickerRequest(null);
       },
     },

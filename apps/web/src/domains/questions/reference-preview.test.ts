@@ -44,7 +44,11 @@ describe("reference preview cache", () => {
       references: [
         {
           id: "score",
-          source: { type: "workbook_cell", ref: "Sheet1!a1" },
+          source: {
+            type: "workbook_cell",
+            sourceId: "source_1",
+            ref: "Sheet1!a1",
+          },
         },
       ],
     };

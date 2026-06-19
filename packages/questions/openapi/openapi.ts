@@ -97,14 +97,28 @@ const questionReferenceSourceSchema: Schema = {
       },
       {
         type: "object",
-        required: ["schemaVersion", "type", "ref"],
+        required: ["schemaVersion", "type", "sourceId", "ref"],
         properties: {
           schemaVersion: { type: "number", enum: [1] },
           type: { enum: ["workbook_cell", "workbook_range"] },
+          sourceId: { type: "string", minLength: 1 },
           ref: { type: "string" },
         },
       },
     ],
+  },
+};
+const questionBlueprintWorkbookSourceSchema: Schema = {
+  name: "QuestionBlueprintWorkbookSource",
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: ["sourceId", "name", "workbookId"],
+    properties: {
+      sourceId: { type: "string", minLength: 1 },
+      name: { type: "string", minLength: 1 },
+      workbookId: uuid,
+    },
   },
 };
 const blueprintInlineTextSchema: Schema = {
@@ -1044,6 +1058,7 @@ const questionBlueprintSchema: Schema = {
       "description",
       "document",
       "workbookId",
+      "workbookSources",
       "currentVersionId",
       "currentVersionNumber",
       "currentVersion",
@@ -1068,6 +1083,10 @@ const questionBlueprintSchema: Schema = {
       },
       document: schemaRef(publicQuestionBlueprintDocumentSchema),
       workbookId: nullableUuid,
+      workbookSources: {
+        type: "array",
+        items: schemaRef(questionBlueprintWorkbookSourceSchema),
+      },
       currentVersionId: uuid,
       currentVersionNumber: { type: "integer", minimum: 1 },
       currentVersion: {
@@ -1076,6 +1095,7 @@ const questionBlueprintSchema: Schema = {
           "id",
           "versionNumber",
           "workbookId",
+          "workbookSources",
           "createdByUserId",
           "createdAt",
         ],
@@ -1083,6 +1103,10 @@ const questionBlueprintSchema: Schema = {
           id: uuid,
           versionNumber: { type: "integer", minimum: 1 },
           workbookId: nullableUuid,
+          workbookSources: {
+            type: "array",
+            items: schemaRef(questionBlueprintWorkbookSourceSchema),
+          },
           createdByUserId: uuid,
           createdAt: dateTime,
         },
@@ -1132,6 +1156,7 @@ const questionBlueprintVersionSchema: Schema = {
       "versionNumber",
       "workbookId",
       "sourceAssets",
+      "workbookSources",
       "createdByUserId",
       "createdAt",
     ],
@@ -1142,6 +1167,10 @@ const questionBlueprintVersionSchema: Schema = {
       sourceAssets: {
         type: "array",
         items: schemaRef(questionBlueprintVersionAssetSchema),
+      },
+      workbookSources: {
+        type: "array",
+        items: schemaRef(questionBlueprintWorkbookSourceSchema),
       },
       createdByUserId: uuid,
       createdAt: dateTime,
@@ -1161,6 +1190,7 @@ const questionBlueprintAuthoringSchema: Schema = {
       "description",
       "document",
       "workbookId",
+      "workbookSources",
       "currentVersionId",
       "currentVersionNumber",
       "currentVersion",
@@ -1189,6 +1219,10 @@ const questionBlueprintAuthoringSchema: Schema = {
       },
       document: schemaRef(questionBlueprintDocumentSchema),
       workbookId: nullableUuid,
+      workbookSources: {
+        type: "array",
+        items: schemaRef(questionBlueprintWorkbookSourceSchema),
+      },
       currentVersionId: uuid,
       currentVersionNumber: { type: "integer", minimum: 1 },
       currentVersion: schemaRef(questionBlueprintVersionSchema),
@@ -1511,6 +1545,10 @@ const createQuestionBlueprintRequestSchema: Schema = {
       },
       document: schemaRef(questionBlueprintDocumentSchema),
       workbookId: nullableUuid,
+      workbookSources: {
+        type: "array",
+        items: schemaRef(questionBlueprintWorkbookSourceSchema),
+      },
     },
   },
 };
@@ -1536,6 +1574,10 @@ const updateQuestionBlueprintRequestSchema: Schema = {
       },
       document: schemaRef(questionBlueprintDocumentSchema),
       workbookId: nullableUuid,
+      workbookSources: {
+        type: "array",
+        items: schemaRef(questionBlueprintWorkbookSourceSchema),
+      },
       status: {
         type: "string",
         enum: QUESTION_BLUEPRINT_STATUS_ACCEPTED_VALUES as unknown as string[],
@@ -1635,6 +1677,7 @@ export const tags: readonly Tag[] = Object.freeze([questionTag]);
 export const schemas = Object.freeze([
   questionValueExpressionSchema,
   questionReferenceSourceSchema,
+  questionBlueprintWorkbookSourceSchema,
   blueprintInlineTextSchema,
   blueprintInlineReferenceSchema,
   blueprintInlineContentSchema,

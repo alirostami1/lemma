@@ -5,6 +5,7 @@ import {
 } from "#/domains/questions";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import {
+  type QuestionBlueprintDraftWorkbookSource,
   toCreateQuestionBlueprintInput,
   toUpdateQuestionBlueprintInput,
 } from "#/domains/questions/blueprint";
@@ -28,6 +29,7 @@ type UseSaveBlueprintControllerInput = {
   blueprintName: string;
   hasUnsavedChanges: boolean;
   loadedBlueprintId: string | null;
+  workbookSources: QuestionBlueprintDraftWorkbookSource[];
   onSaved(input: {
     blueprintDescription: string;
     blueprintId: string;
@@ -64,6 +66,7 @@ export function useSaveBlueprintController({
   loadedBlueprintId,
   onSaved,
   selectedWorkbookId,
+  workbookSources,
   readiness,
 }: UseSaveBlueprintControllerInput): SaveBlueprintController {
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
@@ -106,6 +109,7 @@ export function useSaveBlueprintController({
       model: authoringModel,
       name: nameOverride ?? blueprintName,
       workbookId: selectedWorkbookId || null,
+      workbookSources,
     });
     if (!draft.ok) {
       if (draft.code === "missing_name") {
