@@ -11,9 +11,9 @@
     "test": "turbo run test",
     "check-types": "turbo run check-types",
     "hooks:install": "lefthook install",
-    "check:architecture": "node scripts/check-package-boundaries.mjs && turbo run check:architecture",
-    "check:docs": "node scripts/check-docs.mjs",
-    "check:generated": "pnpm generate:openapi && node scripts/check-generated-clean.mjs",
+    "check:architecture": "depcruise --config dependency-cruiser.config.cjs apps packages scripts && node scripts/check-package-boundaries.mjs && turbo run check:architecture",
+    "check:docs": "markdownlint-cli2",
+    "check:generated": "pnpm generate:openapi && git diff --exit-code -- apps/web/src/api/generated apps/web/src/routeTree.gen.ts apps/keycloak-theme/src/kc.gen.tsx packages/db/src/types.d.ts packages/files/src/gen packages/identity/src/gen packages/ops/src/gen packages/questions/src/gen packages/workbook/src/gen && git diff --cached --exit-code -- apps/web/src/api/generated apps/web/src/routeTree.gen.ts apps/keycloak-theme/src/kc.gen.tsx packages/db/src/types.d.ts packages/files/src/gen packages/identity/src/gen packages/ops/src/gen packages/questions/src/gen packages/workbook/src/gen && git status --porcelain -- apps/web/src/api/generated apps/web/src/routeTree.gen.ts apps/keycloak-theme/src/kc.gen.tsx packages/db/src/types.d.ts packages/files/src/gen packages/identity/src/gen packages/ops/src/gen packages/questions/src/gen packages/workbook/src/gen | (! grep .)",
     "generate:openapi": "turbo run generate:openapi generate:api",
     "db:migrate": "pnpm --filter @lemma/db migrate:latest",
     "db:migrate:env": "node scripts/run-with-env.mjs .env pnpm db:migrate",
@@ -24,7 +24,9 @@
     "infra:down": "podman compose --env-file infra/.env -f infra/compose-dev.yml -f infra/compose-keycloak.yml -f infra/compose-libreoffice-worker.yml -f infra/compose-realtime.yml -f infra/compose-observability.yml -f infra/compose-apps.yml down"
   },
   "devDependencies": {
+    "dependency-cruiser": "^17.4.3",
     "lefthook": "^2.1.9",
+    "markdownlint-cli2": "^0.22.1",
     "turbo": "^2.9.8",
     "typescript": "catalog:"
   },

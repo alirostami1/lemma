@@ -1,4 +1,5 @@
 name: CI
+
 on:
   pull_request:
     branches:
@@ -6,9 +7,93 @@ on:
   push:
     branches:
       - main
+
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
-  validation:
-    name: validation
+  changes:
+    name: detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.filter.outputs.app }}
+      docker: ${{ steps.filter.outputs.docker }}
+      docs: ${{ steps.filter.outputs.docs }}
+      infra: ${{ steps.filter.outputs.infra }}
+      workflow: ${{ steps.filter.outputs.workflow }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Classify changed files
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: .github/path-filters/ci.yml
+
+  pull-request-conventions:
+    name: pull request conventions
+    if: |
+      github.event_name == 'pull_request' &&
+      github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch, title, and issue link
+        env:
+          PR_BRANCH: ${{ github.head_ref }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -eu
+
+          conventional='^(fix|feat|chore|docs|test|refactor|ci|build)\([a-z0-9-]+\): .+'
+          branch='^(fix|feat|chore|docs|test|refactor|ci|build)/[0-9]+-[a-z0-9][a-z0-9-]*$'
+
+          if ! printf '%s' "$PR_BRANCH" | grep -Eq "$branch"; then
+            echo "Branch must match: <type>/<issue-number>-<short-slug>"
+            exit 1
+          fi
+
+          if ! printf '%s' "$PR_TITLE" | grep -Eq "$conventional"; then
+            echo "PR title must match: <type>(<scope>): <imperative summary>"
+            exit 1
+          fi
+
+          if ! printf '%s' "$PR_BODY" | grep -Eiq '(^|[[:space:]])Closes #[0-9]+'; then
+            echo "PR body must include: Closes #<issue-number>"
+            exit 1
+          fi
+
+  docs-validation:
+    name: docs validation
+    needs: changes
+    if: needs.changes.outputs.docs == 'true' || needs.changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.0.8
+        with:
+          version: 11.1.3
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.13.0
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check docs
+        run: pnpm check:docs
+
+  app-validation:
+    name: app validation
+    needs: changes
+    if: |
+      needs.changes.outputs.app == 'true' ||
+      needs.changes.outputs.workflow == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -38,3 +123,107 @@ jobs:
         run: pnpm check
       - name: Test
         run: pnpm test
+
+  infra-validation:
+    name: infra validation
+    needs: changes
+    if: |
+      needs.changes.outputs.infra == 'true' ||
+      needs.changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Install infra validation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible shellcheck yamllint
+      - name: Check shell scripts
+        run: shellcheck --severity=error scripts/production/*.sh
+      - name: Check YAML
+        run: yamllint .github/workflows .github/path-filters infra/ansible
+      - name: Check GitHub Actions
+        run: |
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+          "$(go env GOPATH)/bin/actionlint"
+      - name: Check Ansible lint
+        uses: ansible/ansible-lint@v26.4.0
+        env:
+          ANSIBLE_CONFIG: infra/ansible/ansible.cfg
+        with:
+          args: -c infra/ansible/.ansible-lint.yml --project-dir infra/ansible infra/ansible
+      - name: Check Ansible syntax
+        env:
+          ANSIBLE_CONFIG: infra/ansible/ansible.cfg
+        run: |
+          for playbook in infra/ansible/playbooks/*.yml; do
+            echo "Checking $playbook"
+            ansible-playbook "$playbook" \
+              --syntax-check \
+              --extra-vars "lemma_decrypted_env_file=/tmp/vps.env" \
+              --extra-vars "lemma_image_tag=syntax-check" \
+              --extra-vars "lemma_image_owner=syntax-check" \
+              --extra-vars "lemma_ghcr_read_user=syntax-check" \
+              --extra-vars "lemma_ghcr_read_token=syntax-check"
+          done
+
+  dockerfile-validation:
+    name: dockerfile validation
+    needs: changes
+    if: |
+      needs.changes.outputs.docker == 'true' ||
+      needs.changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Check Dockerfiles
+        uses: hadolint/hadolint-action@v3.3.0
+        with:
+          dockerfile: Dockerfile
+          recursive: true
+          failure-threshold: error
+
+  ci-summary:
+    name: ci summary
+    needs:
+      - changes
+      - pull-request-conventions
+      - docs-validation
+      - app-validation
+      - infra-validation
+      - dockerfile-validation
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check required CI jobs
+        env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          PR_CONVENTIONS_RESULT: ${{ needs.pull-request-conventions.result }}
+          DOCS_RESULT: ${{ needs.docs-validation.result }}
+          APP_VALIDATION_RESULT: ${{ needs.app-validation.result }}
+          INFRA_VALIDATION_RESULT: ${{ needs.infra-validation.result }}
+          DOCKERFILE_VALIDATION_RESULT: ${{ needs.dockerfile-validation.result }}
+        run: |
+          set -eu
+
+          echo "changes: $CHANGES_RESULT"
+          echo "pull-request-conventions: $PR_CONVENTIONS_RESULT"
+          echo "docs-validation: $DOCS_RESULT"
+          echo "app-validation: $APP_VALIDATION_RESULT"
+          echo "infra-validation: $INFRA_VALIDATION_RESULT"
+          echo "dockerfile-validation: $DOCKERFILE_VALIDATION_RESULT"
+
+          if [ "$CHANGES_RESULT" != "success" ]; then
+            exit 1
+          fi
+
+          for result in "$PR_CONVENTIONS_RESULT" "$DOCS_RESULT" "$APP_VALIDATION_RESULT" "$INFRA_VALIDATION_RESULT" "$DOCKERFILE_VALIDATION_RESULT"; do
+            case "$result" in
+              success|skipped)
+                ;;
+              *)
+                exit 1
+                ;;
+            esac
+          done

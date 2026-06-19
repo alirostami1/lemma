@@ -9,6 +9,29 @@ on:
   push:
     branches:
       - main
+    paths:
+      - ".dockerignore"
+      - ".github/workflows/deploy-vps.yml"
+      - ".npmrc"
+      - "apps/api/**"
+      - "apps/admin/**"
+      - "apps/keycloak-theme/**"
+      - "apps/libreoffice-worker/**"
+      - "apps/web/**"
+      - "apps/worker/**"
+      - "infra/ansible/**"
+      - "infra/caddy/**"
+      - "infra/production/**"
+      - "package.json"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "scripts/run-openapi-generator.mjs"
+      - "scripts/production/**"
+      - "tsconfig*.json"
+      - "turbo.json"
+      - "!apps/**/*.md"
+      - "!packages/**/*.md"
 
 permissions:
   contents: read
@@ -85,6 +108,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+      - name: Show deploy plan
+        run: |
+          echo "environment: vps"
+          echo "image owner: ${IMAGE_OWNER}"
+          echo "image tag: ${IMAGE_TAG}"
+          echo "compose: infra/production/compose.yml"
+          echo "playbook: infra/ansible/playbooks/deploy.yml"
       - name: Install SSH key
         uses: webfactory/ssh-agent@v0.9.1
         with:
@@ -122,3 +152,5 @@ jobs:
             --extra-vars "lemma_decrypted_env_file=${GITHUB_WORKSPACE}/.deploy/vps.env" \
             --extra-vars "lemma_ghcr_read_user=${GHCR_READ_USER}" \
             --extra-vars "lemma_ghcr_read_token=${GHCR_READ_TOKEN}"
+      - name: Smoke check public endpoints
+        run: scripts/production/smoke.sh .deploy/vps.env

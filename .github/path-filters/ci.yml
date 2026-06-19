@@ -1,0 +1,29 @@
+app:
+  - ".dockerignore"
+  - ".npmrc"
+  - "apps/**"
+  - "!apps/**/*.md"
+  - "dependency-cruiser.config.cjs"
+  - "packages/**"
+  - "!packages/**/*.md"
+  - "package.json"
+  - "pnpm-lock.yaml"
+  - "pnpm-workspace.yaml"
+  - "scripts/*.mjs"
+  - "turbo.json"
+  - "biome.json"
+  - "tsconfig*.json"
+docs:
+  - ".markdownlint-cli2.yaml"
+  - "**/*.md"
+docker:
+  - ".dockerignore"
+  - ".hadolint.yaml"
+  - "**/Dockerfile"
+infra:
+  - "infra/**"
+  - "scripts/production/**"
+workflow:
+  - ".yamllint.yml"
+  - ".github/path-filters/**"
+  - ".github/workflows/**"

@@ -9,6 +9,68 @@
 5. Rebase on `origin/main` before opening a PR when practical.
 6. Open a PR with the repository template.
 
+## Issue, Branch, Commit, And PR Names
+
+Use one issue per logical change. Branches must be based on `origin/main` unless
+a stacked PR is explicitly requested.
+
+Issue titles use:
+
+```text
+<area>: <problem or outcome>
+```
+
+Branches use:
+
+```text
+<type>/<issue-number>-<short-slug>
+```
+
+PR titles and commit titles use Conventional Commits:
+
+```text
+<type>(<scope>): <imperative summary>
+```
+
+Allowed types:
+
+- `fix`
+- `feat`
+- `chore`
+- `docs`
+- `test`
+- `refactor`
+- `ci`
+- `build`
+
+Common scopes:
+
+- `web`
+- `admin`
+- `api`
+- `worker`
+- `db`
+- `keycloak`
+- `caddy`
+- `files`
+- `deploy`
+- `ansible`
+- `ci`
+- `docs`
+
+PRs target `main` by default and include `Closes #<issue-number>`. Stacked PRs
+must be explicitly called out in the PR body with `Depends on #<pr-number>`.
+CI enforces branch names, PR titles, and issue links on pull requests.
+
+Examples:
+
+```text
+Issue: deploy: Caddy cannot parse Cloudflare trusted proxy source
+Branch: fix/57-caddy-cloudflare-proxy-module
+Commit: fix(deploy): add caddy cloudflare proxy module
+PR: fix(deploy): add caddy cloudflare proxy module
+```
+
 ## Collaboration
 
 - Keep discussion direct and technical.
@@ -21,7 +83,7 @@
 Run before PR:
 
 ```bash
-pnpm check-types && pnpm lint && pnpm test
+pnpm check-types && pnpm check && pnpm test
 ```
 
 For focused work, package filters are fine:
@@ -30,6 +92,32 @@ For focused work, package filters are fine:
 pnpm --filter @lemma/questions test
 pnpm --filter web check-types
 ```
+
+CI should stay change-scoped as the repo grows:
+
+- docs-only changes run docs validation, not deploy.
+- Dockerfile changes run hadolint and build checks for affected images.
+- Ansible changes run ansible-lint and playbook syntax checks.
+- workflow changes run actionlint.
+- production Compose/Caddy/script changes run infra validation, not full app
+  validation.
+- app/package changes run TypeScript, lint, and tests for affected packages.
+
+CI path groups live in `.github/path-filters/ci.yml`. The required branch
+protection check should be `ci summary`; it stays green only when all relevant
+jobs pass and treats intentionally skipped jobs as OK.
+Docs validation currently runs markdownlint. Architecture validation runs
+dependency-cruiser as an import graph baseline plus the repo-specific package
+boundary checks as hard policy. Infra validation currently runs ShellCheck for
+production shell scripts, yamllint for workflow/Ansible YAML, actionlint,
+ansible-lint, and Ansible playbook syntax checks.
+
+The production deploy workflow should run automatically only when deployable
+paths change. It must always remain available through `workflow_dispatch`.
+The deploy job prints a non-secret deploy plan before changing the VPS.
+After Ansible deploys, CI runs `scripts/production/smoke.sh` against the
+decrypted production env to verify public web, admin, API health, and OIDC
+discovery endpoints through Caddy.
 
 ## Generated Files
 
