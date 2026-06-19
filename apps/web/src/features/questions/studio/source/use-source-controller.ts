@@ -5,10 +5,8 @@ import {
   useCreateWorkbookCalculation,
   useValidateWorkbook,
   useWorkbookQuery,
-  useWorkbooksQuery,
 } from "#/domains/workbooks/hooks";
 import type { Workbook } from "#/domains/workbooks/model";
-import { isWorkbookUsableAsSource } from "#/domains/workbooks/source-status";
 import { notifySourceUploaded } from "#/features/notifications";
 import {
   type SelectedWorkbookPreviewController,
@@ -21,15 +19,6 @@ import {
 
 export type SourceController = {
   sourceCard: StudioSourceViewState;
-  pickerDialog: {
-    open: boolean;
-    sources: Workbook[];
-    isLoading: boolean;
-    errorMessage: string | null;
-    onOpenChange(open: boolean): void;
-    onSelectSource(workbookId: string): void;
-    onUploadSource(): void;
-  };
   uploadDialog: {
     open: boolean;
     onOpenChange(open: boolean): void;
@@ -38,7 +27,6 @@ export type SourceController = {
   actions: {
     addSource(): void;
     changeSource(): void;
-    uploadSource(): void;
     removeSource(): void;
   };
   getWorkbookName(workbookId: string | null): string | null;
@@ -56,7 +44,6 @@ export function useSourceController(input: {
   selectedWorkbookId: string | null;
   onSelectedWorkbookIdChange(workbookId: string | null): void;
 }): SourceController {
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [sourcePreparation, setSourcePreparation] = useState<{
     workbookId: string;
@@ -66,7 +53,6 @@ export function useSourceController(input: {
     string | null
   >(null);
   const requestedPreviewCalculationWorkbookIdsRef = useRef(new Set<string>());
-  const workbooksQuery = useWorkbooksQuery();
   const selectedWorkbookQuery = useWorkbookQuery(
     input.selectedWorkbookId ?? "",
     {
@@ -86,12 +72,7 @@ export function useSourceController(input: {
     () => getBlueprintSourceRequirement(input.model),
     [input.model],
   );
-  const workbooks = workbooksQuery.data?.workbooks ?? [];
-  const selectedWorkbookFromList =
-    workbooks.find((workbook) => workbook.id === input.selectedWorkbookId) ??
-    null;
-  const selectedWorkbook =
-    selectedWorkbookQuery.data ?? selectedWorkbookFromList ?? null;
+  const selectedWorkbook = selectedWorkbookQuery.data ?? null;
   const workbookPreviewController = useSelectedWorkbookPreview({
     loadPickerPreview: input.loadWorkbookPickerPreview,
     selectedWorkbook: selectedWorkbook
@@ -102,10 +83,8 @@ export function useSourceController(input: {
         }
       : null,
   });
-  const readySources = workbooks.filter(isWorkbookUsableAsSource);
   const isSelectedWorkbookLoading = input.selectedWorkbookId
-    ? !selectedWorkbook &&
-      (workbooksQuery.isLoading || selectedWorkbookQuery.isLoading)
+    ? !selectedWorkbook && selectedWorkbookQuery.isLoading
     : false;
 
   const sourceCard = getStudioSourceViewState({
@@ -193,33 +172,13 @@ export function useSourceController(input: {
     workbookPreviewController.needsWorkbookPreviewCalculation,
   ]);
 
-  function selectSource(workbookId: string) {
-    setSourcePreparation(null);
-    setSourcePreparationError(null);
-    requestedPreviewCalculationWorkbookIdsRef.current.delete(workbookId);
-    input.onSelectedWorkbookIdChange(workbookId);
-    setIsPickerOpen(false);
-  }
-
   function openUpload() {
     setSourcePreparationError(null);
-    setIsPickerOpen(false);
     setIsUploadOpen(true);
   }
 
   return {
     sourceCard,
-    pickerDialog: {
-      open: isPickerOpen,
-      sources: readySources,
-      isLoading: workbooksQuery.isLoading,
-      errorMessage: workbooksQuery.isError
-        ? "Sources could not be loaded."
-        : null,
-      onOpenChange: setIsPickerOpen,
-      onSelectSource: selectSource,
-      onUploadSource: openUpload,
-    },
     uploadDialog: {
       open: isUploadOpen,
       onOpenChange: setIsUploadOpen,
@@ -242,9 +201,8 @@ export function useSourceController(input: {
       },
     },
     actions: {
-      addSource: () => setIsPickerOpen(true),
-      changeSource: () => setIsPickerOpen(true),
-      uploadSource: openUpload,
+      addSource: openUpload,
+      changeSource: openUpload,
       removeSource: () => {
         setSourcePreparation(null);
         setSourcePreparationError(null);
@@ -253,7 +211,9 @@ export function useSourceController(input: {
       },
     },
     getWorkbookName: (workbookId) =>
-      workbooks.find((workbook) => workbook.id === workbookId)?.name ?? null,
+      selectedWorkbook && selectedWorkbook.id === workbookId
+        ? selectedWorkbook.name
+        : null,
     selectedWorkbook,
     sourceRequirement,
     workbookPreviewController,

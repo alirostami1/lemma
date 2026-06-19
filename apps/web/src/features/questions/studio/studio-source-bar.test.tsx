@@ -15,7 +15,6 @@ describe("StudioSourceBar", () => {
         }}
         onAddSource={() => {}}
         onChangeSource={() => {}}
-        onUploadSource={() => {}}
         onRemoveSource={() => {}}
       />,
     );
