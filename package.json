@@ -13,7 +13,7 @@
     "hooks:install": "lefthook install",
     "check:architecture": "depcruise --config dependency-cruiser.config.cjs apps packages scripts && node scripts/check-package-boundaries.mjs && turbo run check:architecture",
     "check:docs": "markdownlint-cli2",
-    "check:generated": "pnpm generate:openapi && git diff --exit-code -- apps/web/src/api/generated apps/web/src/routeTree.gen.ts apps/keycloak-theme/src/kc.gen.tsx packages/db/src/types.d.ts packages/files/src/gen packages/identity/src/gen packages/ops/src/gen packages/questions/src/gen packages/workbook/src/gen",
+    "check:generated": "pnpm generate:openapi && git diff --exit-code -- apps/web/src/api/generated apps/web/src/routeTree.gen.ts apps/keycloak-theme/src/kc.gen.tsx packages/db/src/types.d.ts packages/files/src/gen packages/identity/src/gen packages/ops/src/gen packages/questions/src/gen packages/workbook/src/gen && git diff --cached --exit-code -- apps/web/src/api/generated apps/web/src/routeTree.gen.ts apps/keycloak-theme/src/kc.gen.tsx packages/db/src/types.d.ts packages/files/src/gen packages/identity/src/gen packages/ops/src/gen packages/questions/src/gen packages/workbook/src/gen && git status --porcelain -- apps/web/src/api/generated apps/web/src/routeTree.gen.ts apps/keycloak-theme/src/kc.gen.tsx packages/db/src/types.d.ts packages/files/src/gen packages/identity/src/gen packages/ops/src/gen packages/questions/src/gen packages/workbook/src/gen | (! grep .)",
     "generate:openapi": "turbo run generate:openapi generate:api",
     "db:migrate": "pnpm --filter @lemma/db migrate:latest",
     "db:migrate:env": "node scripts/run-with-env.mjs .env pnpm db:migrate",
