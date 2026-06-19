@@ -34,7 +34,9 @@ jobs:
 
   pull-request-conventions:
     name: pull request conventions
-    if: github.event_name == 'pull_request'
+    if: |
+      github.event_name == 'pull_request' &&
+      github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Check branch, title, and issue link

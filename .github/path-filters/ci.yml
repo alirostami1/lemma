@@ -1,4 +1,6 @@
 app:
+  - ".dockerignore"
+  - ".npmrc"
   - "apps/**"
   - "packages/**"
   - "package.json"
@@ -9,9 +11,8 @@ app:
   - "biome.json"
   - "tsconfig*.json"
 docs:
-  - "AGENTS.md"
-  - "DEVELOPMENT.md"
-  - "README.md"
+  - "*.md"
+  - ".github/**/*.md"
   - "docs/**"
 infra:
   - "infra/**"

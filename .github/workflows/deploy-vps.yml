@@ -26,7 +26,7 @@ on:
       - "packages/**"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
-      - "scripts/*.mjs"
+      - "scripts/run-openapi-generator.mjs"
       - "scripts/production/**"
       - "tsconfig*.json"
       - "turbo.json"
