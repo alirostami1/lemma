@@ -21,9 +21,9 @@ export function WorkbookUploadInline({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Upload source</DialogTitle>
+          <DialogTitle>Attach source</DialogTitle>
           <DialogDescription>
-            Add a source and keep working in Studio.
+            Upload a workbook for this blueprint only.
           </DialogDescription>
         </DialogHeader>
         <WorkbookUploadForm

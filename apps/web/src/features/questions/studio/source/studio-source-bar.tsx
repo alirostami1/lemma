@@ -50,7 +50,7 @@ export function StudioSourceBar({
               onClick={onAddSource}
             >
               <Plus />
-              Add source
+              Attach source
             </Button>
           ) : (
             <>
