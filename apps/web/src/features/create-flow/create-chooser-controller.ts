@@ -1,7 +1,4 @@
-import type {
-  CreateBlueprintListItem,
-  CreateSourceListItem,
-} from "./create-page-view-model";
+import type { CreateBlueprintListItem } from "./create-page-view-model";
 
 export type CreateChooserController<TItem> = {
   open: boolean;
@@ -18,8 +15,3 @@ export type CreateChooserController<TItem> = {
 
 export type SavedBlueprintChooserController =
   CreateChooserController<CreateBlueprintListItem>;
-
-export type SourceChooserController =
-  CreateChooserController<CreateSourceListItem> & {
-    onUploadSource(): void;
-  };

@@ -12,14 +12,11 @@ import {
 } from "#/lib/errors/api-error";
 import {
   SavedBlueprintChooserDialog,
-  SourceChooserDialog,
-  UploadSourceDialog,
 } from "./create-page-dialogs";
 import {
   BlankBlueprintPanel,
   CreateHeroSection,
   SavedBlueprintPanel,
-  SourceBlueprintPanel,
 } from "./create-page-sections";
 import { useCreatePageController } from "./use-create-page-controller";
 
@@ -59,7 +56,7 @@ export function CreatePage() {
         <BlankBlueprintPanel
           blankBlueprint={controller.viewModel.blankBlueprint}
         />
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4">
           <SavedBlueprintPanel
             savedBlueprints={controller.viewModel.savedBlueprints}
             isLoading={controller.isBlueprintsLoading}
@@ -67,25 +64,11 @@ export function CreatePage() {
             onChoose={() => controller.savedBlueprintChooser.onOpenChange(true)}
             onRetry={controller.onRetryBlueprints}
           />
-          <SourceBlueprintPanel
-            sourceBackedBlueprint={controller.viewModel.sourceBackedBlueprint}
-            isLoading={controller.isSourcesLoading}
-            errorMessage={controller.sourcesErrorMessage}
-            onChoose={() => controller.sourceChooser.onOpenChange(true)}
-            onUpload={() => controller.uploadSourceDialog.onOpenChange(true)}
-            onRetry={controller.onRetrySources}
-          />
         </div>
       </PageContainer>
 
       <SavedBlueprintChooserDialog
         controller={controller.savedBlueprintChooser}
-      />
-      <SourceChooserDialog controller={controller.sourceChooser} />
-      <UploadSourceDialog
-        open={controller.uploadSourceDialog.open}
-        onOpenChange={controller.uploadSourceDialog.onOpenChange}
-        onCreated={controller.uploadSourceDialog.onCreated}
       />
     </>
   );
