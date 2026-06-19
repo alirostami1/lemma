@@ -3370,6 +3370,10 @@ export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVe
   );
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionSourceAssetsItemPositionMin = 0;
 
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionWorkbookSourcesItemWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionCreatedByUserIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
@@ -3393,6 +3397,10 @@ export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsIt
   );
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemSourceAssetsItemPositionMin = 0;
 
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemWorkbookSourcesItemWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemCreatedByUserIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
@@ -3857,6 +3865,17 @@ export const GetQuestionBlueprintAuthoring200Response = zod.strictObject({
           createdAt: zod.iso.datetime({ offset: true }),
         }),
       ),
+      workbookSources: zod.array(
+        zod.strictObject({
+          sourceId: zod.string().min(1),
+          name: zod.string().min(1),
+          workbookId: zod
+            .string()
+            .regex(
+              getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionWorkbookSourcesItemWorkbookIdRegExp,
+            ),
+        }),
+      ),
       createdByUserId: zod
         .string()
         .regex(
@@ -3897,6 +3916,17 @@ export const GetQuestionBlueprintAuthoring200Response = zod.strictObject({
                 getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemSourceAssetsItemPositionMin,
               ),
             createdAt: zod.iso.datetime({ offset: true }),
+          }),
+        ),
+        workbookSources: zod.array(
+          zod.strictObject({
+            sourceId: zod.string().min(1),
+            name: zod.string().min(1),
+            workbookId: zod
+              .string()
+              .regex(
+                getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemWorkbookSourcesItemWorkbookIdRegExp,
+              ),
           }),
         ),
         createdByUserId: zod
@@ -4003,6 +4033,10 @@ export const listQuestionBlueprintVersions200ResponseVersionsItemSourceAssetsIte
   );
 export const listQuestionBlueprintVersions200ResponseVersionsItemSourceAssetsItemPositionMin = 0;
 
+export const listQuestionBlueprintVersions200ResponseVersionsItemWorkbookSourcesItemWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
 export const listQuestionBlueprintVersions200ResponseVersionsItemCreatedByUserIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
@@ -4040,6 +4074,17 @@ export const ListQuestionBlueprintVersions200Response = zod.strictObject({
               listQuestionBlueprintVersions200ResponseVersionsItemSourceAssetsItemPositionMin,
             ),
           createdAt: zod.iso.datetime({ offset: true }),
+        }),
+      ),
+      workbookSources: zod.array(
+        zod.strictObject({
+          sourceId: zod.string().min(1),
+          name: zod.string().min(1),
+          workbookId: zod
+            .string()
+            .regex(
+              listQuestionBlueprintVersions200ResponseVersionsItemWorkbookSourcesItemWorkbookIdRegExp,
+            ),
         }),
       ),
       createdByUserId: zod
@@ -4168,6 +4213,11 @@ export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintWor
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
+
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintWorkbookSourcesItemWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
 export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
@@ -4192,6 +4242,10 @@ export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCur
   );
 export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionSourceAssetsItemPositionMin = 0;
 
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionWorkbookSourcesItemWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
 export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionCreatedByUserIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
@@ -4220,6 +4274,10 @@ export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSel
   );
 export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionSourceAssetsItemPositionMin = 0;
 
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionWorkbookSourcesItemWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
 export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionCreatedByUserIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
@@ -4243,6 +4301,10 @@ export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVer
   );
 export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemSourceAssetsItemPositionMin = 0;
 
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemWorkbookSourcesItemWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
 export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemCreatedByUserIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
@@ -4590,6 +4652,7 @@ export const GetQuestionBlueprintVersionAuthoring200Response = zod.strictObject(
               zod.strictObject({
                 schemaVersion: zod.literal(1),
                 type: zod.enum(["workbook_cell", "workbook_range"]),
+                sourceId: zod.string().min(1),
                 ref: zod.string(),
               }),
             ]),
@@ -4602,6 +4665,17 @@ export const GetQuestionBlueprintVersionAuthoring200Response = zod.strictObject(
           getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintWorkbookIdRegExp,
         )
         .nullable(),
+      workbookSources: zod.array(
+        zod.strictObject({
+          sourceId: zod.string().min(1),
+          name: zod.string().min(1),
+          workbookId: zod
+            .string()
+            .regex(
+              getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintWorkbookSourcesItemWorkbookIdRegExp,
+            ),
+        }),
+      ),
       currentVersionId: zod
         .string()
         .regex(
@@ -4640,6 +4714,17 @@ export const GetQuestionBlueprintVersionAuthoring200Response = zod.strictObject(
                 getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionSourceAssetsItemPositionMin,
               ),
             createdAt: zod.iso.datetime({ offset: true }),
+          }),
+        ),
+        workbookSources: zod.array(
+          zod.strictObject({
+            sourceId: zod.string().min(1),
+            name: zod.string().min(1),
+            workbookId: zod
+              .string()
+              .regex(
+                getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionWorkbookSourcesItemWorkbookIdRegExp,
+              ),
           }),
         ),
         createdByUserId: zod
@@ -4689,6 +4774,17 @@ export const GetQuestionBlueprintVersionAuthoring200Response = zod.strictObject(
             createdAt: zod.iso.datetime({ offset: true }),
           }),
         ),
+        workbookSources: zod.array(
+          zod.strictObject({
+            sourceId: zod.string().min(1),
+            name: zod.string().min(1),
+            workbookId: zod
+              .string()
+              .regex(
+                getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionWorkbookSourcesItemWorkbookIdRegExp,
+              ),
+          }),
+        ),
         createdByUserId: zod
           .string()
           .regex(
@@ -4729,6 +4825,17 @@ export const GetQuestionBlueprintVersionAuthoring200Response = zod.strictObject(
                   getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemSourceAssetsItemPositionMin,
                 ),
               createdAt: zod.iso.datetime({ offset: true }),
+            }),
+          ),
+          workbookSources: zod.array(
+            zod.strictObject({
+              sourceId: zod.string().min(1),
+              name: zod.string().min(1),
+              workbookId: zod
+                .string()
+                .regex(
+                  getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemWorkbookSourcesItemWorkbookIdRegExp,
+                ),
             }),
           ),
           createdByUserId: zod

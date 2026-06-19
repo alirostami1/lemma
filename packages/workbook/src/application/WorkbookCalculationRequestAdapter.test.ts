@@ -94,6 +94,7 @@ describe("WorkbookCalculationRequestAdapter", () => {
     assert.deepEqual(harness.transaction.outboxEvents[0]?.payload, {
       workbookCalculationId: nextCalculationId,
       workbookId: targetWorkbookId,
+      workbookSources: [],
       requestedCount: 5,
       correlationId: "019e9315-6a87-715f-9861-8654df070c09",
     } satisfies WorkbookCalculationRequestedPayload);

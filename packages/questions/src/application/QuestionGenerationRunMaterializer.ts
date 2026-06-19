@@ -36,6 +36,10 @@ export class QuestionGenerationRunMaterializer {
   }): Promise<MaterializedQuestionGenerationRun> {
     const { run, version, workbookSnapshotIds } = input;
     const requiresWorkbook = blueprintRequiresWorkbookSource(version.document);
+    const workbookSourceCount = Math.max(version.workbookSources.length, 1);
+    const requiredSnapshotCount = run.source?.workbookSnapshotId
+      ? run.requestedCount
+      : run.requestedCount * workbookSourceCount;
     if (requiresWorkbook && workbookSnapshotIds.length === 0) {
       throw new WorkbookQuestionSourceError(
         "generation run has no workbook snapshot",
@@ -44,7 +48,7 @@ export class QuestionGenerationRunMaterializer {
     if (
       requiresWorkbook &&
       !run.source?.workbookSnapshotId &&
-      workbookSnapshotIds.length < run.requestedCount
+      workbookSnapshotIds.length < requiredSnapshotCount
     ) {
       throw new WorkbookQuestionSourceError(
         "workbook calculation produced fewer snapshots than requested",
@@ -56,8 +60,16 @@ export class QuestionGenerationRunMaterializer {
     );
     const questions: Question[] = [];
     for (let index = 0; index < run.requestedCount; index += 1) {
+      const snapshotOffset = run.source?.workbookSnapshotId
+        ? index
+        : index * workbookSourceCount;
       const workbookSnapshotId =
-        workbookSnapshotIds[index] ?? workbookSnapshotIds[0] ?? null;
+        workbookSnapshotIds[snapshotOffset] ?? workbookSnapshotIds[0] ?? null;
+      const workbookSnapshotIdsBySourceId = buildSnapshotIdsBySourceId({
+        version,
+        workbookSnapshotIds,
+        snapshotOffset,
+      });
       const questionSource =
         run.source && workbookSnapshotId
           ? {
@@ -68,6 +80,7 @@ export class QuestionGenerationRunMaterializer {
       const materialized = await materializer.materialize({
         document: version.document,
         workbookSnapshotId,
+        workbookSnapshotIdsBySourceId,
       });
       questions.push(
         createQuestion(
@@ -103,6 +116,26 @@ export class QuestionGenerationRunMaterializer {
       ),
     };
   }
+}
+
+function buildSnapshotIdsBySourceId(input: {
+  version: QuestionBlueprintVersion;
+  workbookSnapshotIds: readonly WorkbookSnapshotId[];
+  snapshotOffset: number;
+}): ReadonlyMap<string, WorkbookSnapshotId> | undefined {
+  if (input.version.workbookSources.length === 0) {
+    return undefined;
+  }
+
+  const snapshotIdsBySourceId = new Map<string, WorkbookSnapshotId>();
+  input.version.workbookSources.forEach((source, sourceIndex) => {
+    const workbookSnapshotId =
+      input.workbookSnapshotIds[input.snapshotOffset + sourceIndex];
+    if (workbookSnapshotId) {
+      snapshotIdsBySourceId.set(source.sourceId, workbookSnapshotId);
+    }
+  });
+  return snapshotIdsBySourceId;
 }
 
 function createGenerationProducer(input: {

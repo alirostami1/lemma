@@ -48,6 +48,10 @@ export type RetryWorkbookCalculationCommand = WorkbookCalculationByIdCommand & {
 
 export type ProcessWorkbookCalculationCommand = {
   workbookCalculationId: string;
+  workbookSources?: readonly {
+    sourceId: string;
+    workbookId: string;
+  }[];
   lineage: OperationLineage;
 };
 

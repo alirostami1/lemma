@@ -33,6 +33,7 @@ export class CanonicalQuestionMaterializer {
   async materialize(input: {
     document: QuestionBlueprintDocument;
     workbookSnapshotId?: WorkbookSnapshotId | null;
+    workbookSnapshotIdsBySourceId?: ReadonlyMap<string, WorkbookSnapshotId>;
     currentUser?: CurrentUser;
   }): Promise<{
     body: QuestionBody;
@@ -54,6 +55,7 @@ export class CanonicalQuestionMaterializer {
   private async materializeInternal(input: {
     document: QuestionBlueprintDocument;
     workbookSnapshotId?: WorkbookSnapshotId | null;
+    workbookSnapshotIdsBySourceId?: ReadonlyMap<string, WorkbookSnapshotId>;
     currentUser?: CurrentUser;
   }): Promise<{
     body: QuestionBody;
@@ -140,6 +142,7 @@ export class CanonicalQuestionMaterializer {
   private resolveReference(
     input: {
       workbookSnapshotId?: WorkbookSnapshotId | null;
+      workbookSnapshotIdsBySourceId?: ReadonlyMap<string, WorkbookSnapshotId>;
       currentUser?: CurrentUser;
     },
     source: QuestionReferenceSource,
@@ -147,14 +150,17 @@ export class CanonicalQuestionMaterializer {
     if (source.type === "literal") {
       return source.value;
     }
-    if (!input.workbookSnapshotId) {
+    const workbookSnapshotId =
+      input.workbookSnapshotIdsBySourceId?.get(source.sourceId) ??
+      input.workbookSnapshotId;
+    if (!workbookSnapshotId) {
       throw new WorkbookQuestionSourceError(
         "workbook references require a workbook snapshot",
       );
     }
     return this.valueResolver.resolveReference({
       currentUser: input.currentUser,
-      workbookSnapshotId: input.workbookSnapshotId,
+      workbookSnapshotId,
       source,
     });
   }

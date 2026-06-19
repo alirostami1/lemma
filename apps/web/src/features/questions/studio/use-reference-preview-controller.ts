@@ -111,6 +111,7 @@ export function useReferencePreviewController({
         workbookPreview,
       }),
     [
+      activeSourceId,
       fetchedWorkbookSelectionValuesByRef,
       model,
       workbookSelectionValuesByRef,

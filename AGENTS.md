@@ -20,6 +20,38 @@
 - Do not import from another package's `src/*`.
 - App is pre-release; breaking changes are allowed when they improve long-term design.
 
+## Agent Delegation
+
+- Use `.codex/agents/*` automatically when the task is close to the agent's
+  description and the work can run in parallel without blocking the main path.
+- Keep the main agent on the critical path; delegate only bounded side tasks
+  with disjoint write scopes.
+- Do not delegate overlapping edits to multiple agents.
+- Tell subagents not to run validation or commit unless the user explicitly
+  asked for that.
+- Prefer these agents by task shape:
+  - `issue-planner`: issue reading, implementation breakdown, risky dependency
+    mapping, atomic commit planning.
+  - `repo-reader`: focused read-only tracing before implementation when edit
+    points are unclear.
+  - `backend-implementer`: scoped packages/db, packages/questions, API, domain,
+    repository, service, migration, or generated API changes.
+  - `frontend-implementer`: scoped apps/web, Studio UI/state/hooks/mappers, and
+    packages/ui usage.
+  - `test-writer`: focused test additions for changed behavior or acceptance
+    criteria.
+  - `reviewer`: pre-PR review for bugs, regressions, migrations, API contracts,
+    and missing tests.
+  - `conflict-resolver`: fast resolution for merge, rebase, cherry-pick, patch,
+    generated-file, lockfile, migration, snapshot, and semantic conflicts.
+  - `validator`: run full validation with `pnpm check-types && pnpm check &&
+    pnpm test`, then report exact failing package/file/test/error.
+  - `ci-fixer`: failing CI/check logs, root cause isolation, smallest fix.
+  - `docs-sync`: docs, PR text, issue notes, architecture notes.
+  - `diff-summarizer`: commit titles, PR summaries, release-note style summaries.
+  - `git-publisher`: final commit/push/PR publishing flow when the user asks to
+    commit, push, publish, open a PR, or "ship" changes.
+
 ## GitHub Workflow Discipline
 
 - Create or pick an issue before branch/PR work when asked to publish changes.

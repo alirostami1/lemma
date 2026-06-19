@@ -64,6 +64,7 @@ export class WorkbookCalculationRequestAdapter
           workbookCalculationRequestedEvent({
             id: this.deps.idGenerator.eventId(),
             calculation: persisted,
+            workbookSources: input.workbookSources,
             lineage: input.lineage,
             occurredAt: persisted.createdAt,
           }),

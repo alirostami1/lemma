@@ -181,7 +181,7 @@ describe("QuestionGenerationService workbook orchestration", () => {
         },
         lineage,
       }),
-      /explicit workbook source must match blueprint workbook/,
+      /explicit workbook source must match a blueprint workbook source/,
     );
   });
 

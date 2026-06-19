@@ -6,7 +6,9 @@ import {
   markWorkbookCalculationFailed,
   markWorkbookCalculationSucceeded,
   workbookCalculationId as toWorkbookCalculationId,
+  workbookId as toWorkbookId,
   type WorkbookCalculation,
+  type WorkbookId,
   type WorkbookSnapshot,
 } from "../domain/index.js";
 import type { ProcessWorkbookCalculationCommand } from "./commands.js";
@@ -59,6 +61,7 @@ export class WorkbookCalculationProcessorService {
     try {
       const calculated = await this.calculateSnapshots(
         running,
+        command.workbookSources,
         command.lineage,
       );
       await this.succeedRunningCalculation({
@@ -78,49 +81,69 @@ export class WorkbookCalculationProcessorService {
 
   private async calculateSnapshots(
     running: WorkbookCalculation,
+    workbookSources:
+      | readonly {
+          sourceId: string;
+          workbookId: string;
+        }[]
+      | undefined,
     lineage: OperationLineage,
   ): Promise<{ snapshots: WorkbookSnapshot[]; finishedAt: Date }> {
-    const workbook = await this.deps.workbookRepository.findWorkbookById(
-      running.workbookId,
-    );
+    const sources = normalizeCalculationSources({
+      primaryWorkbookId: running.workbookId,
+      workbookSources,
+    });
+    const finishedAt = this.deps.clock.now();
+    const snapshots: WorkbookSnapshot[] = [];
 
-    if (!workbook) {
-      throw new WorkbookNotFoundError();
-    }
-
-    assertWorkbookIsUsable(workbook);
-
-    const file =
-      await this.deps.workbookFileProvider.readWorkbookFileContentForOwnerUserId(
-        {
-          ownerUserId: workbook.ownerUserId,
-          fileId: workbook.fileId,
-        },
+    for (const [sourceIndex, source] of sources.entries()) {
+      const workbook = await this.deps.workbookRepository.findWorkbookById(
+        source.workbookId,
       );
 
-    const values = await withWorkbookTempFile(file, (path) =>
-      this.deps.workbookCalculator.calculateBatch(
-        path,
-        running.requestedCount,
-        { lineage },
-      ),
-    );
+      if (!workbook) {
+        throw new WorkbookNotFoundError();
+      }
 
-    const finishedAt = this.deps.clock.now();
+      assertWorkbookIsUsable(workbook);
+
+      const file =
+        await this.deps.workbookFileProvider.readWorkbookFileContentForOwnerUserId(
+          {
+            ownerUserId: workbook.ownerUserId,
+            fileId: workbook.fileId,
+          },
+        );
+
+      const values = await withWorkbookTempFile(file, (path) =>
+        this.deps.workbookCalculator.calculateBatch(
+          path,
+          running.requestedCount,
+          { lineage },
+        ),
+      );
+
+      snapshots.push(
+        ...values.map((snapshotValues, questionIndex) =>
+          createWorkbookSnapshot(
+            {
+              id: this.deps.idGenerator.workbookSnapshotId(),
+              workbookId: workbook.id,
+              calculationId: running.id,
+              snapshotIndex: questionIndex * sources.length + sourceIndex,
+              values: snapshotValues,
+            },
+            finishedAt,
+          ),
+        ),
+      );
+    }
+
     return {
       finishedAt,
-      snapshots: values.map((snapshotValues, index) =>
-        createWorkbookSnapshot(
-          {
-            id: this.deps.idGenerator.workbookSnapshotId(),
-            workbookId: running.workbookId,
-            calculationId: running.id,
-            snapshotIndex: index,
-            values: snapshotValues,
-          },
-          finishedAt,
-        ),
-      ),
+      snapshots: snapshots.sort((left, right) => {
+        return left.snapshotIndex - right.snapshotIndex;
+      }),
     };
   }
 
@@ -142,7 +165,7 @@ export class WorkbookCalculationProcessorService {
         await outboxRepository.appendEvents([
           this.finishedCalculationEvent({
             calculation: result.calculation,
-            snapshots: result.snapshots,
+            snapshots: sortSnapshotsByIndex(result.snapshots),
             lineage: input.lineage,
           }),
         ]);
@@ -201,4 +224,30 @@ export class WorkbookCalculationProcessorService {
 
 function errorMessageFromUnknown(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
+}
+
+function sortSnapshotsByIndex(
+  snapshots: readonly WorkbookSnapshot[],
+): WorkbookSnapshot[] {
+  return [...snapshots].sort((left, right) => {
+    return left.snapshotIndex - right.snapshotIndex;
+  });
+}
+
+function normalizeCalculationSources(input: {
+  primaryWorkbookId: WorkbookId;
+  workbookSources:
+    | readonly {
+        sourceId: string;
+        workbookId: string;
+      }[]
+    | undefined;
+}): { workbookId: WorkbookId }[] {
+  if (!input.workbookSources || input.workbookSources.length === 0) {
+    return [{ workbookId: input.primaryWorkbookId }];
+  }
+
+  return input.workbookSources.map((source) => ({
+    workbookId: toWorkbookId(source.workbookId),
+  }));
 }

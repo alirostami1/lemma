@@ -36,6 +36,10 @@ export type WorkbookValidateJobData = JsonObject & {
 
 export type WorkbookCalculateJobData = JsonObject & {
   workbookCalculationId: string;
+  workbookSources: {
+    sourceId: string;
+    workbookId: string;
+  }[];
   lineage: OperationLineage;
 };
 
@@ -80,10 +84,16 @@ export function workbookValidateJobData(input: {
 
 export function workbookCalculateJobData(input: {
   workbookCalculationId: string;
+  workbookSources?: readonly {
+    sourceId: string;
+    workbookId: string;
+  }[];
   lineage: OperationLineage;
 }): WorkbookCalculateJobData {
   return {
     workbookCalculationId: input.workbookCalculationId,
+    workbookSources:
+      input.workbookSources?.map((source) => ({ ...source })) ?? [],
     lineage: input.lineage,
   };
 }

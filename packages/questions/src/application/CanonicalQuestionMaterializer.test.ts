@@ -10,6 +10,8 @@ import { CanonicalQuestionMaterializer } from "./CanonicalQuestionMaterializer.j
 
 const workbookSnapshotId =
   "019e9315-6a87-715f-9861-8654df070c4c" as WorkbookSnapshotId;
+const secondWorkbookSnapshotId =
+  "019e9315-6a87-715f-9861-8654df070c4d" as WorkbookSnapshotId;
 
 describe("CanonicalQuestionMaterializer", () => {
   it("freezes literal and workbook references into body, solution, and source plan", async () => {
@@ -180,6 +182,74 @@ describe("CanonicalQuestionMaterializer", () => {
           type: "content",
           text: "A2",
         },
+      ],
+    });
+  });
+
+  it("resolves workbook references with the snapshot for their source", async () => {
+    const resolvedSnapshotIds: (WorkbookSnapshotId | null | undefined)[] = [];
+    const materializer = new CanonicalQuestionMaterializer({
+      async resolveReference({ workbookSnapshotId }): Promise<JsonValue> {
+        resolvedSnapshotIds.push(workbookSnapshotId);
+        return workbookSnapshotId === secondWorkbookSnapshotId ? 2400 : 1200;
+      },
+    });
+    const document = questionBlueprintDocument({
+      schemaVersion: 1,
+      references: [
+        {
+          id: "primary",
+          source: {
+            schemaVersion: 1,
+            type: "workbook_cell",
+            sourceId: "source_1",
+            ref: "Sheet1!A1",
+          },
+        },
+        {
+          id: "secondary",
+          source: {
+            schemaVersion: 1,
+            type: "workbook_cell",
+            sourceId: "source_2",
+            ref: "Sheet1!A1",
+          },
+        },
+      ],
+      responseFields: [],
+      blocks: [
+        {
+          id: "prompt",
+          type: "text",
+          content: [
+            { type: "reference", referenceId: "primary" },
+            { type: "text", text: "/" },
+            { type: "reference", referenceId: "secondary" },
+          ],
+        },
+      ],
+    });
+
+    const result = await materializer.materialize({
+      document,
+      workbookSnapshotId,
+      workbookSnapshotIdsBySourceId: new Map([
+        ["source_1", workbookSnapshotId],
+        ["source_2", secondWorkbookSnapshotId],
+      ]),
+    });
+
+    assert.deepEqual(resolvedSnapshotIds, [
+      workbookSnapshotId,
+      secondWorkbookSnapshotId,
+    ]);
+    assert.deepEqual(result.body.blocks[0], {
+      id: "prompt",
+      type: "text",
+      content: [
+        { type: "value", referenceId: "primary", displayValue: "1200" },
+        { type: "text", text: "/" },
+        { type: "value", referenceId: "secondary", displayValue: "2400" },
       ],
     });
   });

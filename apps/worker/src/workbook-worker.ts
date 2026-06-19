@@ -59,6 +59,7 @@ export async function registerWorkbookCalculationWorker(input: {
       run: (job) =>
         input.workbookCalculationService.processWorkbookCalculation({
           workbookCalculationId: job.data.workbookCalculationId,
+          workbookSources: job.data.workbookSources,
           lineage: job.data.lineage,
         }),
     }),
@@ -79,9 +80,24 @@ function parseWorkbookCalculateJob(
 ): WorkbookCalculateJobData {
   if (
     typeof data.workbookCalculationId !== "string" ||
-    data.workbookCalculationId.length === 0
+    data.workbookCalculationId.length === 0 ||
+    (data.workbookSources !== undefined &&
+      (!Array.isArray(data.workbookSources) ||
+        !data.workbookSources.every(
+          (source) =>
+            typeof source === "object" &&
+            source !== null &&
+            typeof source.sourceId === "string" &&
+            source.sourceId.length > 0 &&
+            typeof source.workbookId === "string" &&
+            source.workbookId.length > 0,
+        )))
   ) {
     throw new Error("Workbook calculate job payload is invalid.");
   }
-  return { ...data, lineage: parseOperationLineage(data.lineage) };
+  return {
+    ...data,
+    workbookSources: data.workbookSources ?? [],
+    lineage: parseOperationLineage(data.lineage),
+  };
 }

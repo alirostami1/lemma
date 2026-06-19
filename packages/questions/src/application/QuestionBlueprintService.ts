@@ -1,6 +1,7 @@
 import type {
   QuestionBlueprint,
   QuestionBlueprintVersion,
+  WorkbookId,
 } from "../domain/index.js";
 import {
   createQuestionBlueprint,
@@ -10,10 +11,12 @@ import {
   questionBlueprintDescription,
   questionBlueprintName,
   questionBlueprintVisibility,
+  questionBlueprintWorkbookSources,
   questionBlueprintId as toQuestionBlueprintId,
   questionBlueprintStatus as toQuestionBlueprintStatus,
   questionBlueprintVersionId as toQuestionBlueprintVersionId,
   userId as toUserId,
+  workbookId as toWorkbookId,
   updateQuestionBlueprintMetadata,
 } from "../domain/index.js";
 import type {
@@ -138,7 +141,10 @@ export class QuestionBlueprintService {
     const assets = createQuestionBlueprintVersionAssets(
       {
         questionBlueprintVersionId: version.id,
-        workbookIds: compiled.workbookId === null ? [] : [compiled.workbookId],
+        workbookIds: sourceAssetWorkbookIds({
+          workbookId: command.workbookId ?? null,
+          workbookSources: command.workbookSources,
+        }),
       },
       at,
     );
@@ -322,7 +328,16 @@ export class QuestionBlueprintService {
     const assets = createQuestionBlueprintVersionAssets(
       {
         questionBlueprintVersionId: version.id,
-        workbookIds: compiled.workbookId === null ? [] : [compiled.workbookId],
+        workbookIds: sourceAssetWorkbookIds({
+          workbookId:
+            command.patch.workbookId !== undefined
+              ? command.patch.workbookId
+              : currentVersion.workbookId,
+          workbookSources:
+            command.patch.workbookSources !== undefined
+              ? command.patch.workbookSources
+              : currentVersion.workbookSources,
+        }),
       },
       at,
     );
@@ -397,4 +412,16 @@ export class QuestionBlueprintService {
       versions,
     };
   }
+}
+
+function sourceAssetWorkbookIds(input: {
+  workbookId: string | null;
+  workbookSources?: unknown;
+}): WorkbookId[] {
+  if (input.workbookSources !== undefined) {
+    return questionBlueprintWorkbookSources(input.workbookSources).map(
+      (source) => source.workbookId,
+    );
+  }
+  return input.workbookId === null ? [] : [toWorkbookId(input.workbookId)];
 }

@@ -98,6 +98,7 @@ describe("JobDispatcher", () => {
         name: WORKBOOK_CALCULATE_JOB,
         data: {
           workbookCalculationId: "019e9315-6a87-715f-9861-8654df070c75",
+          workbookSources: [],
           lineage,
         },
         retryLimit: 3,

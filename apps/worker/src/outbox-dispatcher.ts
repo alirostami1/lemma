@@ -216,9 +216,11 @@ export class OutboxPollingDispatcher {
     event: OutboxEvent,
   ): Promise<EventConsumerResult> {
     const workbookCalculationId = getWorkbookCalculationIdFromEvent(event);
+    const workbookSources = getWorkbookCalculationSourcesFromEvent(event);
     await this.deps.jobDispatcher.enqueueWorkbookCalculation({
       jobId: event.id,
       workbookCalculationId,
+      workbookSources,
       lineage: childOperationLineage(event.lineage, event.id),
       retryLimit: this.deps.config.queueRetryLimit,
       retryDelaySeconds: this.deps.config.queueRetryDelaySeconds,
@@ -321,6 +323,33 @@ function getWorkbookCalculationIdFromEvent(event: OutboxEvent): string {
     );
   }
   return value;
+}
+
+function getWorkbookCalculationSourcesFromEvent(event: OutboxEvent): {
+  sourceId: string;
+  workbookId: string;
+}[] {
+  if (event.eventType !== WORKBOOK_CALCULATION_REQUESTED_EVENT) {
+    throw new Error(`Unsupported outbox event type: ${event.eventType}`);
+  }
+  const sources = event.payload.workbookSources;
+  if (!Array.isArray(sources)) {
+    return [];
+  }
+  return sources.flatMap((source) => {
+    const record = source as Record<string, unknown>;
+    if (
+      typeof source !== "object" ||
+      source === null ||
+      typeof record.sourceId !== "string" ||
+      record.sourceId.length === 0 ||
+      typeof record.workbookId !== "string" ||
+      record.workbookId.length === 0
+    ) {
+      return [];
+    }
+    return [{ sourceId: record.sourceId, workbookId: record.workbookId }];
+  });
 }
 
 function getWorkbookCalculationResultFromEvent(event: OutboxEvent): {

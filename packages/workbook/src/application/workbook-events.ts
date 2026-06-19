@@ -40,6 +40,10 @@ export type WorkbookValidationFinishedPayload = JsonObject & {
 export type WorkbookCalculationRequestedPayload = JsonObject & {
   workbookCalculationId: string;
   workbookId: string;
+  workbookSources: {
+    sourceId: string;
+    workbookId: string;
+  }[];
   requestedCount: number;
   correlationId: string | null;
 };
@@ -101,6 +105,10 @@ export function workbookValidationFinishedEvent(input: {
 export function workbookCalculationRequestedEvent(input: {
   id: string;
   calculation: WorkbookCalculation;
+  workbookSources?: readonly {
+    sourceId: string;
+    workbookId: string;
+  }[];
   lineage: OperationLineage;
   occurredAt: Date;
 }): DomainEventEnvelope<WorkbookCalculationRequestedPayload> {
@@ -113,6 +121,8 @@ export function workbookCalculationRequestedEvent(input: {
     payload: {
       workbookCalculationId: input.calculation.id,
       workbookId: input.calculation.workbookId,
+      workbookSources:
+        input.workbookSources?.map((source) => ({ ...source })) ?? [],
       requestedCount: input.calculation.requestedCount,
       correlationId: input.calculation.correlationId,
     },

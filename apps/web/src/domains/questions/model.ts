@@ -49,6 +49,15 @@ export interface QuestionBlueprintVersion {
   createdAt: Date;
 }
 
+export interface QuestionBlueprintCurrentVersion {
+  id: string;
+  versionNumber: number;
+  workbookId: string | null;
+  workbookSources: QuestionBlueprintWorkbookSource[];
+  createdByUserId: string;
+  createdAt: Date;
+}
+
 export interface QuestionBlueprintVersionAsset {
   questionBlueprintVersionId: string;
   workbookId: string;
@@ -85,7 +94,7 @@ export interface QuestionBlueprint {
   workbookSources: QuestionBlueprintWorkbookSource[];
   currentVersionId?: string;
   currentVersionNumber?: number;
-  currentVersion?: QuestionBlueprintVersion;
+  currentVersion?: QuestionBlueprintCurrentVersion;
   visibility: QuestionBlueprintVisibility;
   status: QuestionBlueprintStatus;
   archivedAt: Date | null;
