@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   changes:
@@ -27,56 +28,28 @@ jobs:
           fetch-depth: 0
       - name: Classify changed files
         id: filter
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          PUSH_BEFORE_SHA: ${{ github.event.before }}
-          HEAD_SHA: ${{ github.sha }}
-        run: |
-          set -eu
-
-          if [ "$EVENT_NAME" = "pull_request" ]; then
-            base="$PR_BASE_SHA"
-            head="$PR_HEAD_SHA"
-          else
-            base="$PUSH_BEFORE_SHA"
-            head="$HEAD_SHA"
-            if [ "$base" = "0000000000000000000000000000000000000000" ]; then
-              base="$(git rev-parse "$head^")"
-            fi
-          fi
-
-          app=false
-          docs=false
-          infra=false
-          workflow=false
-
-          while IFS= read -r file; do
-            case "$file" in
-              .github/workflows/*)
-                workflow=true
-                ;;
-              AGENTS.md|DEVELOPMENT.md|README.md|docs/*)
-                docs=true
-                ;;
-              infra/*|scripts/production/*)
-                infra=true
-                ;;
-              apps/*|packages/*|package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json|biome.json|tsconfig*.json)
-                app=true
-                ;;
-            esac
-          done <<EOF
-          $(git diff --name-only "$base" "$head")
-          EOF
-
-          {
-            echo "app=$app"
-            echo "docs=$docs"
-            echo "infra=$infra"
-            echo "workflow=$workflow"
-          } >> "$GITHUB_OUTPUT"
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            app:
+              - "apps/**"
+              - "packages/**"
+              - "package.json"
+              - "pnpm-lock.yaml"
+              - "pnpm-workspace.yaml"
+              - "turbo.json"
+              - "biome.json"
+              - "tsconfig*.json"
+            docs:
+              - "AGENTS.md"
+              - "DEVELOPMENT.md"
+              - "README.md"
+              - "docs/**"
+            infra:
+              - "infra/**"
+              - "scripts/production/**"
+            workflow:
+              - ".github/workflows/**"
 
   docs-validation:
     name: docs validation
@@ -136,3 +109,38 @@ jobs:
         run: pnpm check
       - name: Test
         run: pnpm test
+
+  ci-summary:
+    name: ci summary
+    needs:
+      - changes
+      - docs-validation
+      - validation
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check required CI jobs
+        env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          DOCS_RESULT: ${{ needs.docs-validation.result }}
+          VALIDATION_RESULT: ${{ needs.validation.result }}
+        run: |
+          set -eu
+
+          echo "changes: $CHANGES_RESULT"
+          echo "docs-validation: $DOCS_RESULT"
+          echo "validation: $VALIDATION_RESULT"
+
+          if [ "$CHANGES_RESULT" != "success" ]; then
+            exit 1
+          fi
+
+          for result in "$DOCS_RESULT" "$VALIDATION_RESULT"; do
+            case "$result" in
+              success|skipped)
+                ;;
+              *)
+                exit 1
+                ;;
+            esac
+          done
