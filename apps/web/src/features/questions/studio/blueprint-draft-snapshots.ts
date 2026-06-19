@@ -32,8 +32,9 @@ export function createLoadedBlueprintDraftSnapshotState(input: {
 
   const draftStorageKey = createStudioDraftKey({
     loadedBlueprintId: input.blueprintId,
+    loadedBlueprintVersionId: input.blueprint.selectedVersionId ?? null,
   });
-  const blueprintVersionId = input.blueprint.currentVersionId ?? null;
+  const blueprintVersionId = input.blueprint.selectedVersionId ?? null;
   const selectedWorkbookId = input.blueprint.workbookId ?? "";
   const blueprintDescription = input.blueprint.description ?? "";
   const remoteSnapshotKey = createDraftSnapshotKey({
@@ -107,6 +108,7 @@ export function createSavedBlueprintDraftSnapshotState(input: {
   });
   const draftKey = createStudioDraftKey({
     loadedBlueprintId: input.blueprintId,
+    loadedBlueprintVersionId: input.blueprintVersionId ?? null,
   });
   const syncedSnapshot = createStudioDraftSnapshot({
     draftKey,

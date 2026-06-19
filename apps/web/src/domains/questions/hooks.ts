@@ -14,10 +14,12 @@ import {
   getQuestion,
   getQuestionBlueprint,
   getQuestionBlueprintAuthoring,
+  getQuestionBlueprintVersionAuthoring,
   getQuestionGenerationRun,
   getQuestionSet,
   gradeQuestion,
   listQuestionBlueprints,
+  listQuestionBlueprintVersions,
   listQuestionSetQuestions,
   listQuestionSets,
   retryQuestionGenerationRun,
@@ -29,6 +31,7 @@ import type {
   CreateQuestionGenerationRunInput,
   CreateQuestionSetInput,
   GetQuestionBlueprintInput,
+  GetQuestionBlueprintVersionInput,
   GetQuestionGenerationRunInput,
   GetQuestionInput,
   GradeQuestionInput,
@@ -38,6 +41,7 @@ import type {
   QuestionBlueprintAuthoringResult,
   QuestionBlueprintResult,
   QuestionBlueprintsPage,
+  QuestionBlueprintVersionsResult,
   QuestionGenerationRunResult,
   QuestionGradeResult,
   QuestionResult,
@@ -205,6 +209,41 @@ export function useQuestionBlueprintAuthoringQuery(
   });
 }
 
+export function useQuestionBlueprintVersionAuthoringQuery(
+  input: GetQuestionBlueprintVersionInput,
+  options?: Omit<
+    UseQueryOptions<QuestionBlueprintAuthoringResult>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  return useQuery({
+    queryKey: questionKeys.questionBlueprintVersionAuthoring(
+      input.questionBlueprintId,
+      input.questionBlueprintVersionId,
+    ),
+    queryFn: () => getQuestionBlueprintVersionAuthoring(input),
+    enabled: Boolean(
+      input.questionBlueprintId && input.questionBlueprintVersionId,
+    ),
+    ...options,
+  });
+}
+
+export function useQuestionBlueprintVersionsQuery(
+  input: GetQuestionBlueprintInput,
+  options?: Omit<
+    UseQueryOptions<QuestionBlueprintVersionsResult>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  return useQuery({
+    queryKey: questionKeys.questionBlueprintVersions(input.questionBlueprintId),
+    queryFn: () => listQuestionBlueprintVersions(input),
+    enabled: Boolean(input.questionBlueprintId),
+    ...options,
+  });
+}
+
 export function useQuestionGenerationRunQuery(
   input: GetQuestionGenerationRunInput,
   options?: Omit<
@@ -302,6 +341,11 @@ export function useCreateQuestionBlueprint(
         ),
       });
       await queryClient.invalidateQueries({
+        queryKey: questionKeys.questionBlueprintVersions(
+          result.questionBlueprint.id,
+        ),
+      });
+      await queryClient.invalidateQueries({
         queryKey: questionKeys.questionBlueprints(),
       });
       await options?.onSuccess?.(result, variables, onMutateResult, context);
@@ -328,6 +372,11 @@ export function useUpdateQuestionBlueprint(
       );
       await queryClient.invalidateQueries({
         queryKey: questionKeys.questionBlueprintAuthoring(
+          result.questionBlueprint.id,
+        ),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: questionKeys.questionBlueprintVersions(
           result.questionBlueprint.id,
         ),
       });

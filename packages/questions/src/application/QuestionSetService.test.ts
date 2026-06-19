@@ -8,6 +8,7 @@ import {
   type Question,
   type QuestionBlueprint,
   type QuestionBlueprintVersion,
+  type QuestionBlueprintVersionAsset,
   type QuestionGenerationRun,
   type QuestionSet,
   type QuestionSetQuestion,
@@ -17,6 +18,7 @@ import {
   questionSetId,
   questionSetName,
   userId,
+  workbookId,
 } from "../domain/index.js";
 import { ForbiddenQuestionActionError } from "./errors.js";
 import type { Clock, IdGenerator, QuestionsRepository } from "./ports.js";
@@ -36,6 +38,7 @@ const nextBlueprintId = questionBlueprintId(
 const nextBlueprintVersionId = questionBlueprintVersionId(
   "019e9315-6a87-715f-9861-8654df074006",
 );
+const sourceWorkbookId = workbookId("019e9315-6a87-715f-9861-8654df074007");
 
 describe("QuestionSetService", () => {
   it("updates owned sets and rejects other users", async () => {
@@ -79,6 +82,7 @@ describe("QuestionBlueprintService", () => {
       currentUser: currentUser(ownerUserId),
       name: "Practice",
       document: emptyBlueprintDocument,
+      workbookId: sourceWorkbookId,
     });
 
     assert.equal(result.questionBlueprint.id, nextBlueprintId);
@@ -87,6 +91,18 @@ describe("QuestionBlueprintService", () => {
       nextBlueprintVersionId,
     );
     assert.equal(repository.questionBlueprintVersions.size, 1);
+    assert.deepEqual(
+      repository.questionBlueprintVersionAssets.get(nextBlueprintVersionId),
+      [
+        {
+          questionBlueprintVersionId: nextBlueprintVersionId,
+          workbookId: sourceWorkbookId,
+          kind: "workbook",
+          position: 0,
+          createdAt: at,
+        },
+      ],
+    );
   });
 });
 
@@ -150,6 +166,10 @@ class FakeQuestionsRepository implements QuestionsRepository {
     string,
     QuestionBlueprintVersion
   >();
+  readonly questionBlueprintVersionAssets = new Map<
+    string,
+    QuestionBlueprintVersionAsset[]
+  >();
 
   async findQuestionSetById(id: QuestionSet["id"]) {
     return this.questionSets.get(id) ?? null;
@@ -197,6 +217,22 @@ class FakeQuestionsRepository implements QuestionsRepository {
     return [...this.questionBlueprintVersions.values()];
   }
 
+  async listQuestionBlueprintVersionAssets(input: {
+    blueprintVersionId: QuestionBlueprintVersion["id"];
+  }) {
+    return (
+      this.questionBlueprintVersionAssets.get(input.blueprintVersionId) ?? []
+    );
+  }
+
+  async listQuestionBlueprintVersionAssetsByVersionIds(input: {
+    blueprintVersionIds: readonly QuestionBlueprintVersion["id"][];
+  }) {
+    return input.blueprintVersionIds.flatMap(
+      (id) => this.questionBlueprintVersionAssets.get(id) ?? [],
+    );
+  }
+
   async listQuestionBlueprintsByOwnerUserId() {
     return [...this.questionBlueprints.values()];
   }
@@ -214,6 +250,7 @@ class FakeQuestionsRepository implements QuestionsRepository {
   async createQuestionBlueprintWithVersion(input: {
     blueprint: QuestionBlueprint;
     version: QuestionBlueprintVersion;
+    assets: readonly QuestionBlueprintVersionAsset[];
   }) {
     const blueprint = {
       ...input.blueprint,
@@ -221,6 +258,9 @@ class FakeQuestionsRepository implements QuestionsRepository {
     };
     this.questionBlueprints.set(blueprint.id, blueprint);
     this.questionBlueprintVersions.set(input.version.id, input.version);
+    this.questionBlueprintVersionAssets.set(input.version.id, [
+      ...input.assets,
+    ]);
     return blueprint;
   }
 
@@ -233,7 +273,12 @@ class FakeQuestionsRepository implements QuestionsRepository {
     throw new Error("Not implemented.");
   }
 
-  async updateQuestionBlueprintWithNewVersion(): Promise<QuestionBlueprint | null> {
+  async updateQuestionBlueprintWithNewVersion(input: {
+    blueprint: QuestionBlueprint;
+    version: QuestionBlueprintVersion;
+    assets: readonly QuestionBlueprintVersionAsset[];
+  }): Promise<QuestionBlueprint | null> {
+    void input;
     throw new Error("Not implemented.");
   }
 

@@ -1,6 +1,9 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useQuestionBlueprintAuthoringQuery } from "#/domains/questions";
+import {
+  useQuestionBlueprintAuthoringQuery,
+  useQuestionBlueprintVersionAuthoringQuery,
+} from "#/domains/questions";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import { createDefaultComposedEditorModel } from "#/domains/questions/authoring";
 import type { QuestionBlueprintAuthoring } from "#/domains/questions/model";
@@ -87,10 +90,12 @@ export type StudioResetConfirmationState = {
 
 type UseBlueprintDraftControllerInput = {
   initialBlueprintId: string;
+  initialBlueprintVersionId: string;
 };
 
 export function useBlueprintDraftController({
   initialBlueprintId,
+  initialBlueprintVersionId,
 }: UseBlueprintDraftControllerInput): BlueprintDraftController {
   const navigate = useNavigate();
   const [initialLocalDraft] = useState(() =>
@@ -107,7 +112,10 @@ export function useBlueprintDraftController({
   );
   const [loadedBlueprintVersionId, setLoadedBlueprintVersionId] = useState<
     string | null
-  >(initialLocalDraft?.loadedBlueprintVersionId ?? null);
+  >(
+    initialLocalDraft?.loadedBlueprintVersionId ??
+      (initialBlueprintVersionId || null),
+  );
   const [blueprintName, setBlueprintName] = useState(
     initialLocalDraft?.blueprintName ?? "Question blueprint",
   );
@@ -126,6 +134,7 @@ export function useBlueprintDraftController({
       initialLocalDraft?.draftKey ??
       createStudioDraftKey({
         loadedBlueprintId: initialBlueprintId || null,
+        loadedBlueprintVersionId: initialBlueprintVersionId || null,
       }),
   );
   const [lastSavedDraftKey, setLastSavedDraftKey] = useState<string | null>(
@@ -151,13 +160,34 @@ export function useBlueprintDraftController({
     initialLocalDraft !== null,
   );
   const [loadError, setLoadError] = useState<string | null>(null);
+  const initialBlueprintOpenKey = createBlueprintOpenKey(
+    initialBlueprintId,
+    initialBlueprintVersionId,
+  );
   const loadedBlueprintKeyRef = useRef<string | null>(null);
   const confirmedBlueprintOpenIdsRef = useRef(new Set<string>());
   const cancelledBlueprintOpenIdRef = useRef<string | null>(null);
   const loadedBlueprintQuery = useQuestionBlueprintAuthoringQuery(
     { questionBlueprintId: initialBlueprintId },
-    { enabled: initialBlueprintId.length > 0 },
+    {
+      enabled:
+        initialBlueprintId.length > 0 && initialBlueprintVersionId.length === 0,
+    },
   );
+  const loadedBlueprintVersionQuery = useQuestionBlueprintVersionAuthoringQuery(
+    {
+      questionBlueprintId: initialBlueprintId,
+      questionBlueprintVersionId: initialBlueprintVersionId,
+    },
+    {
+      enabled:
+        initialBlueprintId.length > 0 && initialBlueprintVersionId.length > 0,
+    },
+  );
+  const activeLoadedBlueprintQuery =
+    initialBlueprintVersionId.length > 0
+      ? loadedBlueprintVersionQuery
+      : loadedBlueprintQuery;
 
   const currentDraftKey = useMemo(
     () =>
@@ -193,6 +223,8 @@ export function useBlueprintDraftController({
     draftStorageKey,
     hasUserEdited,
     initialBlueprintId,
+    initialBlueprintOpenKey,
+    initialBlueprintVersionId,
     lastRemoteSaveSnapshotKey,
     lastSavedDraftKey,
     loadedBlueprintId,
@@ -228,19 +260,19 @@ export function useBlueprintDraftController({
   useEffect(() => {
     if (
       initialBlueprintId.length === 0 ||
-      loadedBlueprintKeyRef.current === initialBlueprintId ||
-      !confirmedBlueprintOpenIdsRef.current.has(initialBlueprintId) ||
-      cancelledBlueprintOpenIdRef.current === initialBlueprintId
+      loadedBlueprintKeyRef.current === initialBlueprintOpenKey ||
+      !confirmedBlueprintOpenIdsRef.current.has(initialBlueprintOpenKey) ||
+      cancelledBlueprintOpenIdRef.current === initialBlueprintOpenKey
     ) {
       return;
     }
 
-    if (loadedBlueprintQuery.isError) {
+    if (activeLoadedBlueprintQuery.isError) {
       setLoadError("Blueprint could not be loaded.");
       return;
     }
 
-    const loadedBlueprint = loadedBlueprintQuery.data?.questionBlueprint;
+    const loadedBlueprint = activeLoadedBlueprintQuery.data?.questionBlueprint;
     if (!loadedBlueprint) {
       return;
     }
@@ -261,7 +293,7 @@ export function useBlueprintDraftController({
       syncedSnapshot,
     } = nextDraftState.value;
 
-    loadedBlueprintKeyRef.current = initialBlueprintId;
+    loadedBlueprintKeyRef.current = initialBlueprintOpenKey;
     setLoadError(null);
     setBlueprintName(loadedBlueprint.name);
     setBlueprintDescription(loadedBlueprint.description ?? "");
@@ -286,14 +318,15 @@ export function useBlueprintDraftController({
   }, [
     blueprintOpenWarningSnapshot,
     initialBlueprintId,
-    loadedBlueprintQuery.data,
-    loadedBlueprintQuery.isError,
+    activeLoadedBlueprintQuery.data,
+    activeLoadedBlueprintQuery.isError,
     replaceCurrentSnapshot,
+    initialBlueprintOpenKey,
   ]);
 
   const isRemoteLoadPending =
     initialBlueprintId.length > 0 &&
-    (loadedBlueprintKeyRef.current !== initialBlueprintId ||
+    (loadedBlueprintKeyRef.current !== initialBlueprintOpenKey ||
       lastRemoteSaveSnapshotKey === null) &&
     loadError === null;
   const { checkedRecoveryDraftKeyRef } = useStudioLocalDraftEffects({
@@ -308,7 +341,7 @@ export function useBlueprintDraftController({
     lastLocalSavedDraftKey,
     lastRemoteSaveSnapshotKey,
     lastSavedDraftKey,
-    loadedBlueprint: loadedBlueprintQuery.data?.questionBlueprint ?? null,
+    loadedBlueprint: activeLoadedBlueprintQuery.data?.questionBlueprint ?? null,
     loadedBlueprintId,
     loadedBlueprintVersionId,
     selectedWorkbookId,
@@ -353,7 +386,7 @@ export function useBlueprintDraftController({
       return;
     }
 
-    cancelledBlueprintOpenIdRef.current = initialBlueprintId;
+    cancelledBlueprintOpenIdRef.current = initialBlueprintOpenKey;
     restoreSnapshot(blueprintOpenWarningSnapshot);
     setBlueprintOpenWarningSnapshot(null);
     void navigate({ to: "/studio", search: {} });
@@ -365,7 +398,7 @@ export function useBlueprintDraftController({
     }
 
     deleteStudioDraftSnapshot(blueprintOpenWarningSnapshot.draftKey);
-    confirmedBlueprintOpenIdsRef.current.add(initialBlueprintId);
+    confirmedBlueprintOpenIdsRef.current.add(initialBlueprintOpenKey);
     setBlueprintOpenWarningSnapshot(null);
     setRecoverySnapshot(null);
     setIsRecoveryResolved(false);
@@ -402,6 +435,7 @@ export function useBlueprintDraftController({
     authoringModel,
     draftStorageKey,
     loadedBlueprintKeyRef,
+    navigate,
     replaceCurrentSnapshot,
     setBlueprintDescription,
     setBlueprintName,
@@ -446,11 +480,11 @@ export function useBlueprintDraftController({
       },
     },
     hasUnsavedChanges,
-    isLoadingBlueprint: loadedBlueprintQuery.isLoading,
+    isLoadingBlueprint: activeLoadedBlueprintQuery.isLoading,
     loadError,
     localDraftError,
     localDraftStatus,
-    loadedBlueprint: loadedBlueprintQuery.data?.questionBlueprint ?? null,
+    loadedBlueprint: activeLoadedBlueprintQuery.data?.questionBlueprint ?? null,
     loadedBlueprintId,
     loadedBlueprintVersionId,
     resetConfirmation: {
@@ -476,4 +510,13 @@ export function useBlueprintDraftController({
 function readInitialLocalDraft() {
   const result = readLatestStudioDraftSnapshot();
   return result.ok ? result.value : null;
+}
+
+function createBlueprintOpenKey(
+  blueprintId: string,
+  blueprintVersionId: string,
+) {
+  return blueprintVersionId.length > 0
+    ? `${blueprintId}:${blueprintVersionId}`
+    : blueprintId;
 }

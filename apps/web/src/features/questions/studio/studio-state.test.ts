@@ -46,9 +46,20 @@ describe("studio state", () => {
     expect(
       shouldWarnBeforeOpeningBlueprint({
         nextBlueprintId: "blueprint-1",
+        nextBlueprintVersionId: "version-1",
         snapshot: syncedSameBlueprint,
       }),
     ).toBe(false);
+    expect(
+      shouldWarnBeforeOpeningBlueprint({
+        nextBlueprintId: "blueprint-1",
+        nextBlueprintVersionId: "version-2",
+        snapshot: {
+          ...syncedSameBlueprint,
+          loadedBlueprintVersionId: "version-1",
+        },
+      }),
+    ).toBe(true);
     expect(
       shouldWarnBeforeOpeningBlueprint({
         nextBlueprintId: "blueprint-1",

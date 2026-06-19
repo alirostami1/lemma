@@ -59,14 +59,17 @@ export { questionAnswer } from "./question-answer.js";
 export type {
   QuestionBlueprint,
   QuestionBlueprintVersion,
+  QuestionBlueprintVersionAsset,
 } from "./question-blueprint.js";
 export {
   archiveQuestionBlueprint,
   createQuestionBlueprint,
   createQuestionBlueprintVersion,
+  createQuestionBlueprintVersionAssets,
   deleteQuestionBlueprint,
   reconstituteQuestionBlueprint,
   reconstituteQuestionBlueprintVersion,
+  reconstituteQuestionBlueprintVersionAsset,
   updateQuestionBlueprintMetadata,
 } from "./question-blueprint.js";
 export type {

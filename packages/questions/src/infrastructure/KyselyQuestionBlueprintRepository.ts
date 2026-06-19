@@ -4,6 +4,7 @@ import type {
   QuestionBlueprintId,
   QuestionBlueprintStatus,
   QuestionBlueprintVersion,
+  QuestionBlueprintVersionAsset,
   QuestionBlueprintVersionId,
   UserId,
 } from "../domain/index.js";
@@ -11,6 +12,8 @@ import {
   mapQuestionBlueprintRowToDomain,
   mapQuestionBlueprintToInsert,
   mapQuestionBlueprintToUpdate,
+  mapQuestionBlueprintVersionAssetRowToDomain,
+  mapQuestionBlueprintVersionAssetToInsert,
   mapQuestionBlueprintVersionRowToDomain,
   mapQuestionBlueprintVersionToInsert,
 } from "./KyselyQuestionMappers.js";
@@ -66,6 +69,34 @@ export class KyselyQuestionBlueprintRepository {
       .orderBy("versionNumber", "asc")
       .execute();
     return rows.map(mapQuestionBlueprintVersionRowToDomain);
+  }
+
+  async listQuestionBlueprintVersionAssets(input: {
+    blueprintVersionId: QuestionBlueprintVersion["id"];
+  }): Promise<QuestionBlueprintVersionAsset[]> {
+    const rows = await this.db
+      .selectFrom("questionBlueprintVersionAssets")
+      .selectAll()
+      .where("questionBlueprintVersionId", "=", input.blueprintVersionId)
+      .orderBy("position", "asc")
+      .execute();
+    return rows.map(mapQuestionBlueprintVersionAssetRowToDomain);
+  }
+
+  async listQuestionBlueprintVersionAssetsByVersionIds(input: {
+    blueprintVersionIds: readonly QuestionBlueprintVersion["id"][];
+  }): Promise<QuestionBlueprintVersionAsset[]> {
+    if (input.blueprintVersionIds.length === 0) {
+      return [];
+    }
+    const rows = await this.db
+      .selectFrom("questionBlueprintVersionAssets")
+      .selectAll()
+      .where("questionBlueprintVersionId", "in", input.blueprintVersionIds)
+      .orderBy("questionBlueprintVersionId", "asc")
+      .orderBy("position", "asc")
+      .execute();
+    return rows.map(mapQuestionBlueprintVersionAssetRowToDomain);
   }
 
   async listQuestionBlueprintsByOwnerUserId(input: {
@@ -153,6 +184,7 @@ export class KyselyQuestionBlueprintRepository {
   async createQuestionBlueprintWithVersion(input: {
     blueprint: QuestionBlueprint;
     version: QuestionBlueprintVersion;
+    assets: readonly QuestionBlueprintVersionAsset[];
   }): Promise<QuestionBlueprint> {
     return this.db.transaction().execute(async (tx) => {
       const blueprintRow = await tx
@@ -171,6 +203,17 @@ export class KyselyQuestionBlueprintRepository {
         })
         .returningAll()
         .executeTakeFirstOrThrow();
+      if (input.assets.length > 0) {
+        await tx
+          .insertInto("questionBlueprintVersionAssets")
+          .values(
+            input.assets.map((asset) => ({
+              ...mapQuestionBlueprintVersionAssetToInsert(asset),
+              questionBlueprintVersionId: versionRow.id,
+            })),
+          )
+          .execute();
+      }
       const updatedBlueprintRow = await tx
         .updateTable("questionBlueprints")
         .set({
@@ -187,6 +230,7 @@ export class KyselyQuestionBlueprintRepository {
   async updateQuestionBlueprintWithNewVersion(input: {
     blueprint: QuestionBlueprint;
     version: QuestionBlueprintVersion;
+    assets: readonly QuestionBlueprintVersionAsset[];
   }): Promise<QuestionBlueprint | null> {
     return this.db.transaction().execute(async (tx) => {
       const blueprintRow = await tx
@@ -203,6 +247,17 @@ export class KyselyQuestionBlueprintRepository {
         .values(mapQuestionBlueprintVersionToInsert(input.version))
         .returningAll()
         .executeTakeFirstOrThrow();
+      if (input.assets.length > 0) {
+        await tx
+          .insertInto("questionBlueprintVersionAssets")
+          .values(
+            input.assets.map((asset) => ({
+              ...mapQuestionBlueprintVersionAssetToInsert(asset),
+              questionBlueprintVersionId: versionRow.id,
+            })),
+          )
+          .execute();
+      }
       const updatedBlueprintRow = await tx
         .updateTable("questionBlueprints")
         .set({

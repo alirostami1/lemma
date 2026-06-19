@@ -23,6 +23,7 @@ import type {
 
 export type StudioRouteSearch = {
   blueprintId?: string;
+  blueprintVersionId?: string;
 };
 
 export type StudioController = {
@@ -37,11 +38,20 @@ export type StudioController = {
     isSaving: boolean;
     saveState: "saved" | "unsaved" | "saving" | "autosaved" | "failed";
     saveError: string | null;
+    selectedVersionId: string | null;
+    versions: Array<{
+      id: string;
+      versionNumber: number;
+      createdAt: Date;
+      sourceCount: number;
+      isCurrent: boolean;
+    }>;
     onBlueprintDescriptionChange(description: string): void;
     onBlueprintNameChange(name: string): void;
     onGenerate(): void;
     onOpenSaveDialog(): void;
     onOpenSavedBlueprints(): void;
+    onOpenVersion(versionId: string): void;
     onReset(): void;
     onRedo(): void;
     onUndo(): void;

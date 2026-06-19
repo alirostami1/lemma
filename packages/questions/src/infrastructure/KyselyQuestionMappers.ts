@@ -1,5 +1,6 @@
 import type {
   QuestionBlueprints,
+  QuestionBlueprintVersionAssets,
   QuestionBlueprintVersions,
   QuestionGenerationRuns,
   QuestionSets,
@@ -11,11 +12,13 @@ import {
   type Question,
   type QuestionBlueprint,
   type QuestionBlueprintVersion,
+  type QuestionBlueprintVersionAsset,
   type QuestionGenerationRun,
   type QuestionSet,
   reconstituteQuestion,
   reconstituteQuestionBlueprint,
   reconstituteQuestionBlueprintVersion,
+  reconstituteQuestionBlueprintVersionAsset,
   reconstituteQuestionGenerationRun,
   reconstituteQuestionSet,
 } from "../domain/index.js";
@@ -66,6 +69,12 @@ export function mapQuestionBlueprintVersionRowToDomain(
   return reconstituteQuestionBlueprintVersion(row);
 }
 
+export function mapQuestionBlueprintVersionAssetRowToDomain(
+  row: Selectable<QuestionBlueprintVersionAssets>,
+): QuestionBlueprintVersionAsset {
+  return reconstituteQuestionBlueprintVersionAsset(row);
+}
+
 export function mapQuestionBlueprintToInsert(
   blueprint: QuestionBlueprint,
 ): Insertable<QuestionBlueprints> {
@@ -110,6 +119,18 @@ export function mapQuestionBlueprintVersionToInsert(
     createdByUserId: version.createdByUserId,
     createdAt: version.createdAt,
   } as Insertable<QuestionBlueprintVersions>;
+}
+
+export function mapQuestionBlueprintVersionAssetToInsert(
+  asset: QuestionBlueprintVersionAsset,
+): Insertable<QuestionBlueprintVersionAssets> {
+  return {
+    questionBlueprintVersionId: asset.questionBlueprintVersionId,
+    workbookId: asset.workbookId,
+    kind: asset.kind,
+    position: asset.position,
+    createdAt: asset.createdAt,
+  };
 }
 
 export function mapQuestionRowToDomain(row: Selectable<Questions>): Question {

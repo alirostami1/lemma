@@ -10,6 +10,7 @@ import type {
   QuestionBlueprintId,
   QuestionBlueprintStatus,
   QuestionBlueprintVersion,
+  QuestionBlueprintVersionAsset,
   QuestionBlueprintVersionId,
   QuestionGenerationRun,
   QuestionGenerationRunId,
@@ -59,6 +60,12 @@ export interface QuestionsRepository {
   listQuestionBlueprintVersions(input: {
     blueprintId: QuestionBlueprintId;
   }): Promise<QuestionBlueprintVersion[]>;
+  listQuestionBlueprintVersionAssets(input: {
+    blueprintVersionId: QuestionBlueprintVersionId;
+  }): Promise<QuestionBlueprintVersionAsset[]>;
+  listQuestionBlueprintVersionAssetsByVersionIds(input: {
+    blueprintVersionIds: readonly QuestionBlueprintVersionId[];
+  }): Promise<QuestionBlueprintVersionAsset[]>;
   listQuestionBlueprintsByOwnerUserId(input: {
     ownerUserId: UserId;
     statuses?: readonly QuestionBlueprintStatus[];
@@ -75,6 +82,7 @@ export interface QuestionsRepository {
   createQuestionBlueprintWithVersion(input: {
     blueprint: QuestionBlueprint;
     version: QuestionBlueprintVersion;
+    assets: readonly QuestionBlueprintVersionAsset[];
   }): Promise<QuestionBlueprint>;
   updateQuestionBlueprint(
     blueprint: QuestionBlueprint,
@@ -88,6 +96,7 @@ export interface QuestionsRepository {
   updateQuestionBlueprintWithNewVersion(input: {
     blueprint: QuestionBlueprint;
     version: QuestionBlueprintVersion;
+    assets: readonly QuestionBlueprintVersionAsset[];
   }): Promise<QuestionBlueprint | null>;
 
   findQuestionById(id: QuestionId): Promise<Question | null>;

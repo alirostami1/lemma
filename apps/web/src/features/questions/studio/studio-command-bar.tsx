@@ -3,6 +3,13 @@ import { Button } from "@lemma/ui/components/button";
 import { InlineError } from "@lemma/ui/components/inline-error";
 import { Input } from "@lemma/ui/components/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@lemma/ui/components/select";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -32,11 +39,20 @@ export type StudioCommandBarProps = {
   isSaving: boolean;
   saveState: "saved" | "unsaved" | "saving" | "autosaved" | "failed";
   saveError: string | null;
+  selectedVersionId: string | null;
+  versions: Array<{
+    id: string;
+    versionNumber: number;
+    createdAt: Date;
+    sourceCount: number;
+    isCurrent: boolean;
+  }>;
   onBlueprintDescriptionChange(description: string): void;
   onBlueprintNameChange(name: string): void;
   onGenerate(): void;
   onOpenSaveDialog(): void;
   onOpenSavedBlueprints(): void;
+  onOpenVersion(versionId: string): void;
   onReset(): void;
   onRedo(): void;
   onUndo(): void;
@@ -52,11 +68,14 @@ export function StudioCommandBar({
   isSaving,
   saveState,
   saveError,
+  selectedVersionId,
+  versions,
   onBlueprintDescriptionChange,
   onBlueprintNameChange,
   onGenerate,
   onOpenSaveDialog,
   onOpenSavedBlueprints,
+  onOpenVersion,
   onReset,
   onRedo,
   onUndo,
@@ -114,6 +133,29 @@ export function StudioCommandBar({
               onClick={onOpenSavedBlueprints}
               icon={<FolderOpen />}
             />
+            {versions.length > 0 ? (
+              <Select
+                value={selectedVersionId ?? ""}
+                onValueChange={onOpenVersion}
+              >
+                <SelectTrigger aria-label="Blueprint version" className="h-10">
+                  <SelectValue placeholder="Version" />
+                </SelectTrigger>
+                <SelectContent>
+                  {versions.map((version) => (
+                    <SelectItem key={version.id} value={version.id}>
+                      v{version.versionNumber}
+                      {version.isCurrent ? " current" : ""}
+                      {version.sourceCount > 0
+                        ? ` · ${version.sourceCount} source${
+                            version.sourceCount === 1 ? "" : "s"
+                          }`
+                        : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
             <ToolbarIconButton
               label="Undo"
               disabled={!canUndo}

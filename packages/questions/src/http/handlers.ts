@@ -16,6 +16,7 @@ import {
   presentQuestionBlueprint,
   presentQuestionBlueprintAuthoring,
   presentQuestionBlueprints,
+  presentQuestionBlueprintVersions,
   presentQuestionGenerationRun,
   presentQuestionGenerationRuns,
   presentQuestionSet,
@@ -182,6 +183,40 @@ export function createQuestionsHandlers(
               currentUser: c.var.identity,
               questionBlueprintId,
             }),
+          ),
+          200,
+        );
+      },
+    ),
+    listQuestionBlueprintVersions: questionsHandler(
+      "listQuestionBlueprintVersions",
+      async (c) => {
+        const { questionBlueprintId } = c.req.valid("param");
+        return c.json(
+          presentQuestionBlueprintVersions(
+            await deps.questionBlueprintService.listQuestionBlueprintVersions({
+              currentUser: c.var.identity,
+              questionBlueprintId,
+            }),
+          ),
+          200,
+        );
+      },
+    ),
+    getQuestionBlueprintVersionAuthoring: questionsHandler(
+      "getQuestionBlueprintVersionAuthoring",
+      async (c) => {
+        const { questionBlueprintId, questionBlueprintVersionId } =
+          c.req.valid("param");
+        return c.json(
+          presentQuestionBlueprintAuthoring(
+            await deps.questionBlueprintService.getQuestionBlueprintVersionAuthoring(
+              {
+                currentUser: c.var.identity,
+                questionBlueprintId,
+                questionBlueprintVersionId,
+              },
+            ),
           ),
           200,
         );

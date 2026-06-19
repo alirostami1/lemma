@@ -50,6 +50,7 @@ export function getStudioSourceViewState(input: {
   isWorkbooksLoading: boolean;
   previewStatus: "idle" | "loading" | "ready" | "error";
   previewError: string | null;
+  isVersionBoundSource?: boolean;
 }): StudioSourceViewState {
   const requiresSource = input.sourceRequirement.status === "required";
 
@@ -85,9 +86,18 @@ export function getStudioSourceViewState(input: {
 
     return {
       status: "error",
-      title: "Source not found",
-      description: "Attached source could not be found.",
-      issue: "Replace the source or remove it from this blueprint.",
+      title:
+        input.isVersionBoundSource === true
+          ? "Version source not found"
+          : "Source not found",
+      description:
+        input.isVersionBoundSource === true
+          ? "This blueprint version's saved source could not be found."
+          : "Attached source could not be found.",
+      issue:
+        input.isVersionBoundSource === true
+          ? "Reattach the source and save a new blueprint version."
+          : "Replace the source or remove it from this blueprint.",
       canRemove: true,
     };
   }

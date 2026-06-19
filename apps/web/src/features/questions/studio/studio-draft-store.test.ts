@@ -19,8 +19,10 @@ describe("studio draft store", () => {
     const snapshot = createStudioDraftSnapshot({
       draftKey: createStudioDraftKey({
         loadedBlueprintId: "blueprint_1",
+        loadedBlueprintVersionId: "version_1",
       }),
       loadedBlueprintId: "blueprint_1",
+      loadedBlueprintVersionId: "version_1",
       selectedWorkbookId: "workbook_1",
       blueprintName: "Blueprint",
       blueprintDescription: "Description",
@@ -30,6 +32,7 @@ describe("studio draft store", () => {
     });
 
     expect(writeStudioDraftSnapshot(snapshot).ok).toBe(true);
+    expect(snapshot.draftKey).toBe("blueprint:blueprint_1:version:version_1");
     expect(readStudioDraftSnapshot(snapshot.draftKey)).toEqual({
       ok: true,
       value: snapshot,

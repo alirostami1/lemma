@@ -16,6 +16,7 @@ import type {
   ErrorResponse,
   GradeQuestionResponse,
   ListQuestionBlueprintsResponse,
+  ListQuestionBlueprintVersionsResponse,
   ListQuestionGenerationRunsResponse,
   ListQuestionSetsResponse,
   ListQuestionsResponse,
@@ -35,12 +36,14 @@ import {
   DeleteQuestionSetParams,
   GetQuestionBlueprintAuthoringParams,
   GetQuestionBlueprintParams,
+  GetQuestionBlueprintVersionAuthoringParams,
   GetQuestionGenerationRunParams,
   GetQuestionParams,
   GetQuestionSetParams,
   GradeQuestionBody,
   GradeQuestionParams,
   ListQuestionBlueprintsQueryParams,
+  ListQuestionBlueprintVersionsParams,
   ListQuestionGenerationRunsQueryParams,
   ListQuestionSetQuestionsParams,
   ListQuestionSetQuestionsQueryParams,
@@ -173,6 +176,24 @@ type DeleteQuestionBlueprintResponses = {
   "409": ErrorResponse;
 };
 type GetQuestionBlueprintAuthoringResponses = {
+  "200": QuestionBlueprintAuthoringResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
+type ListQuestionBlueprintVersionsResponses = {
+  "200": ListQuestionBlueprintVersionsResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
+type GetQuestionBlueprintVersionAuthoringResponses = {
   "200": QuestionBlueprintAuthoringResponse;
   "400": ErrorResponse;
   "401": ErrorResponse;
@@ -354,6 +375,22 @@ export type QuestionsHandlerMap = {
     { out: { param: z.infer<typeof GetQuestionBlueprintAuthoringParams> } },
     TypedHandlerResponse<GetQuestionBlueprintAuthoringResponses>
   >;
+  listQuestionBlueprintVersions: Handler<
+    QuestionsAppEnv,
+    "/question-blueprints/:questionBlueprintId/versions",
+    { out: { param: z.infer<typeof ListQuestionBlueprintVersionsParams> } },
+    TypedHandlerResponse<ListQuestionBlueprintVersionsResponses>
+  >;
+  getQuestionBlueprintVersionAuthoring: Handler<
+    QuestionsAppEnv,
+    "/question-blueprints/:questionBlueprintId/versions/:questionBlueprintVersionId/authoring",
+    {
+      out: {
+        param: z.infer<typeof GetQuestionBlueprintVersionAuthoringParams>;
+      };
+    },
+    TypedHandlerResponse<GetQuestionBlueprintVersionAuthoringResponses>
+  >;
   listQuestions: Handler<
     QuestionsAppEnv,
     "/questions",
@@ -511,6 +548,24 @@ export function createQuestionsRoutes(deps: {
     deps.requireIdentity,
     zValidator("param", GetQuestionBlueprintAuthoringParams, validationHook),
     deps.handlers.getQuestionBlueprintAuthoring,
+  );
+
+  app.get(
+    "/question-blueprints/:questionBlueprintId/versions",
+    deps.requireIdentity,
+    zValidator("param", ListQuestionBlueprintVersionsParams, validationHook),
+    deps.handlers.listQuestionBlueprintVersions,
+  );
+
+  app.get(
+    "/question-blueprints/:questionBlueprintId/versions/:questionBlueprintVersionId/authoring",
+    deps.requireIdentity,
+    zValidator(
+      "param",
+      GetQuestionBlueprintVersionAuthoringParams,
+      validationHook,
+    ),
+    deps.handlers.getQuestionBlueprintVersionAuthoring,
   );
 
   app.get(

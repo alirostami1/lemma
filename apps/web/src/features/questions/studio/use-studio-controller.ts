@@ -1,3 +1,4 @@
+import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   WorkbookPickerRequest,
@@ -24,7 +25,9 @@ export type { StudioRouteSearch } from "./studio-controller-types";
 export function useStudioController(
   input: StudioRouteSearch = {},
 ): StudioController {
+  const navigate = useNavigate();
   const initialBlueprintId = input.blueprintId ?? "";
+  const initialBlueprintVersionId = input.blueprintVersionId ?? "";
   const [workbookPickerRequest, setWorkbookPickerRequest] =
     useState<WorkbookPickerRequest | null>(null);
   const [workbookSelectionValuesByRef, setWorkbookSelectionValuesByRef] =
@@ -36,11 +39,13 @@ export function useStudioController(
   }, []);
   const draft = useBlueprintDraftController({
     initialBlueprintId,
+    initialBlueprintVersionId,
   });
   const source = useSourceController({
     loadWorkbookPickerPreview: workbookPickerRequest !== null,
     model: draft.authoringModel,
     selectedWorkbookId: draft.selectedWorkbookId || null,
+    isVersionBoundSource: Boolean(draft.loadedBlueprintVersionId),
     onSelectedWorkbookIdChange: (workbookId) => {
       draft.setSelectedWorkbookId(workbookId ?? "");
     },
@@ -89,6 +94,17 @@ export function useStudioController(
   const savedBlueprints = useSavedBlueprintsController({
     onGenerateBlueprint: generation.onGenerateBlueprint,
   });
+  const commandBarVersions = useMemo(
+    () =>
+      (draft.loadedBlueprint?.versions ?? []).map((version) => ({
+        id: version.id,
+        versionNumber: version.versionNumber,
+        createdAt: version.createdAt,
+        sourceCount: version.sourceAssets.length,
+        isCurrent: version.id === draft.loadedBlueprint?.currentVersionId,
+      })),
+    [draft.loadedBlueprint?.currentVersionId, draft.loadedBlueprint?.versions],
+  );
 
   useEffect(() => {
     if (previousSelectedWorkbookIdRef.current === null) {
@@ -146,6 +162,8 @@ export function useStudioController(
       isSaving: save.commandBarSave.isSaving,
       saveState: studioState.saveState,
       saveError: studioState.saveError,
+      selectedVersionId: draft.loadedBlueprintVersionId,
+      versions: commandBarVersions,
       onBlueprintDescriptionChange: (description) => {
         draft.setBlueprintDescription(description);
         save.clearMessages();
@@ -161,6 +179,18 @@ export function useStudioController(
       },
       onOpenSaveDialog: save.commandBarSave.onOpenSaveDialog,
       onOpenSavedBlueprints: () => setIsSavedBlueprintsOpen(true),
+      onOpenVersion: (versionId) => {
+        if (!draft.loadedBlueprintId || !versionId) {
+          return;
+        }
+        void navigate({
+          to: "/studio",
+          search: {
+            blueprintId: draft.loadedBlueprintId,
+            blueprintVersionId: versionId,
+          },
+        });
+      },
       onReset: draft.requestReset,
       onRedo: draft.redo,
       onUndo: draft.undo,

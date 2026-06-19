@@ -1,8 +1,10 @@
 import { presentDate, presentNullableDate } from "@lemma/http";
 import type {
   GradeQuestionResult,
+  QuestionBlueprintAuthoringResult,
   QuestionBlueprintResult,
   QuestionBlueprintsResult,
+  QuestionBlueprintVersionsResult,
   QuestionGenerationRunResultDto,
   QuestionGenerationRunsResult,
   QuestionResult,
@@ -13,6 +15,7 @@ import type {
 import type {
   GradeQuestionResponse,
   ListQuestionBlueprintsResponse,
+  ListQuestionBlueprintVersionsResponse,
   ListQuestionGenerationRunsResponse,
   ListQuestionSetsResponse,
   ListQuestionsResponse,
@@ -69,28 +72,36 @@ export const presentQuestionBlueprint = (
 };
 
 export const presentQuestionBlueprintAuthoring = (
-  result: QuestionBlueprintResult,
+  result: QuestionBlueprintAuthoringResult,
 ): QuestionBlueprintAuthoringResponse => {
   const currentVersion = result.questionBlueprint.currentVersion;
+  const selectedVersion = result.questionBlueprint.selectedVersion;
   return {
     questionBlueprint: {
       ...result.questionBlueprint,
       currentVersionId: currentVersion.id,
       currentVersionNumber: currentVersion.versionNumber,
-      document: currentVersion.document,
-      currentVersion: {
-        id: currentVersion.id,
-        versionNumber: currentVersion.versionNumber,
-        workbookId: currentVersion.workbookId,
-        createdByUserId: currentVersion.createdByUserId,
-        createdAt: presentDate(currentVersion.createdAt),
-      },
+      selectedVersionId: selectedVersion.id,
+      selectedVersionNumber: selectedVersion.versionNumber,
+      document: selectedVersion.document,
+      workbookId: selectedVersion.workbookId,
+      currentVersion: toQuestionBlueprintVersionDto(currentVersion),
+      selectedVersion: toQuestionBlueprintVersionDto(selectedVersion),
+      versions: result.questionBlueprint.versions.map(
+        toQuestionBlueprintVersionDto,
+      ),
       archivedAt: presentNullableDate(result.questionBlueprint.archivedAt),
       createdAt: presentDate(result.questionBlueprint.createdAt),
       updatedAt: presentDate(result.questionBlueprint.updatedAt),
     },
   };
 };
+
+export const presentQuestionBlueprintVersions = (
+  result: QuestionBlueprintVersionsResult,
+): ListQuestionBlueprintVersionsResponse => ({
+  versions: result.versions.map(toQuestionBlueprintVersionDto),
+});
 
 export const presentQuestionBlueprints = (
   result: QuestionBlueprintsResult,
@@ -226,6 +237,25 @@ function toPublicInlineContentDto(
       ? part
       : { type: "text" as const, text: part.fallbackText ?? "" },
   );
+}
+
+function toQuestionBlueprintVersionDto(
+  version: QuestionBlueprintAuthoringResult["questionBlueprint"]["currentVersion"],
+) {
+  return {
+    id: version.id,
+    versionNumber: version.versionNumber,
+    workbookId: version.workbookId,
+    sourceAssets: version.sourceAssets.map((asset) => ({
+      questionBlueprintVersionId: asset.questionBlueprintVersionId,
+      workbookId: asset.workbookId,
+      kind: asset.kind,
+      position: asset.position,
+      createdAt: presentDate(asset.createdAt),
+    })),
+    createdByUserId: version.createdByUserId,
+    createdAt: presentDate(version.createdAt),
+  };
 }
 
 function toQuestionGenerationRunDto(

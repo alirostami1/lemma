@@ -18,6 +18,7 @@ import {
   type Question,
   type QuestionBlueprint,
   type QuestionBlueprintVersion,
+  type QuestionBlueprintVersionAsset,
   type QuestionGenerationRun,
   type QuestionSet,
   type QuestionSetQuestion,
@@ -483,6 +484,12 @@ function createQuestionsRepository(
       void input;
       return [blueprintVersion];
     },
+    async listQuestionBlueprintVersionAssets() {
+      return [];
+    },
+    async listQuestionBlueprintVersionAssetsByVersionIds() {
+      return [];
+    },
     async listQuestionBlueprintsByOwnerUserId(): Promise<QuestionBlueprint[]> {
       return [blueprint];
     },
@@ -517,6 +524,7 @@ function createQuestionsRepository(
     async createQuestionBlueprintWithVersion(input: {
       blueprint: QuestionBlueprint;
       version: QuestionBlueprintVersion;
+      assets: readonly QuestionBlueprintVersionAsset[];
     }): Promise<QuestionBlueprint> {
       return {
         ...input.blueprint,
@@ -527,6 +535,7 @@ function createQuestionsRepository(
     async updateQuestionBlueprintWithNewVersion(input: {
       blueprint: QuestionBlueprint;
       version: QuestionBlueprintVersion;
+      assets: readonly QuestionBlueprintVersionAsset[];
     }): Promise<QuestionBlueprint | null> {
       return {
         ...input.blueprint,

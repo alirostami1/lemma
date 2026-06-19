@@ -327,19 +327,27 @@ describe("composable question canonical model", () => {
       },
       at,
     );
+    const versionWithAssets = {
+      ...version,
+      sourceAssets: [],
+    };
     const blueprint = {
       ...baseBlueprint,
       currentVersionId: version.id,
-      currentVersion: version,
+      currentVersion: versionWithAssets,
     } satisfies QuestionBlueprint & {
-      currentVersion: typeof version;
+      currentVersion: typeof versionWithAssets;
     };
 
     const publicBlueprint = presentQuestionBlueprint({
       questionBlueprint: blueprint,
     }).questionBlueprint;
     const authoringBlueprint = presentQuestionBlueprintAuthoring({
-      questionBlueprint: blueprint,
+      questionBlueprint: {
+        ...blueprint,
+        selectedVersion: versionWithAssets,
+        versions: [versionWithAssets],
+      },
     }).questionBlueprint;
 
     const publicDocument = publicBlueprint.document;

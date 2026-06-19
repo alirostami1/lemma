@@ -22,6 +22,8 @@ export function useStudioBlueprintOpenWarning({
   draftStorageKey,
   hasUserEdited,
   initialBlueprintId,
+  initialBlueprintOpenKey,
+  initialBlueprintVersionId,
   lastRemoteSaveSnapshotKey,
   lastSavedDraftKey,
   loadedBlueprintId,
@@ -39,6 +41,8 @@ export function useStudioBlueprintOpenWarning({
   draftStorageKey: string;
   hasUserEdited: boolean;
   initialBlueprintId: string;
+  initialBlueprintOpenKey: string;
+  initialBlueprintVersionId: string;
   lastRemoteSaveSnapshotKey: string | null;
   lastSavedDraftKey: string | null;
   loadedBlueprintId: string | null;
@@ -59,9 +63,9 @@ export function useStudioBlueprintOpenWarning({
     }
 
     if (
-      loadedBlueprintKeyRef.current === initialBlueprintId ||
-      confirmedBlueprintOpenIdsRef.current.has(initialBlueprintId) ||
-      cancelledBlueprintOpenIdRef.current === initialBlueprintId ||
+      loadedBlueprintKeyRef.current === initialBlueprintOpenKey ||
+      confirmedBlueprintOpenIdsRef.current.has(initialBlueprintOpenKey) ||
+      cancelledBlueprintOpenIdRef.current === initialBlueprintOpenKey ||
       warningSnapshot !== null
     ) {
       return;
@@ -99,13 +103,14 @@ export function useStudioBlueprintOpenWarning({
       shouldWarnBeforeOpeningBlueprint({
         snapshot: nextWarningSnapshot,
         nextBlueprintId: initialBlueprintId,
+        nextBlueprintVersionId: initialBlueprintVersionId || null,
       })
     ) {
       setWarningSnapshot(nextWarningSnapshot);
       return;
     }
 
-    confirmedBlueprintOpenIdsRef.current.add(initialBlueprintId);
+    confirmedBlueprintOpenIdsRef.current.add(initialBlueprintOpenKey);
   }, [
     authoringModel,
     blueprintDescription,
@@ -116,6 +121,8 @@ export function useStudioBlueprintOpenWarning({
     draftStorageKey,
     hasUserEdited,
     initialBlueprintId,
+    initialBlueprintOpenKey,
+    initialBlueprintVersionId,
     lastRemoteSaveSnapshotKey,
     lastSavedDraftKey,
     loadedBlueprintId,

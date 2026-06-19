@@ -1,5 +1,6 @@
 import type {
   ListQuestionBlueprintsResponse,
+  ListQuestionBlueprintVersionsResponse,
   ListQuestionGenerationRunsResponse,
   ListQuestionSetsResponse,
   ListQuestionsResponse,
@@ -7,6 +8,7 @@ import type {
   QuestionBlueprintAuthoringResponse,
   QuestionBlueprint as QuestionBlueprintDto,
   QuestionBlueprintResponse,
+  QuestionBlueprintVersion as QuestionBlueprintVersionDto,
   Question as QuestionDto,
   QuestionGenerationRun as QuestionGenerationRunDto,
   QuestionGenerationRunResponse,
@@ -23,6 +25,8 @@ import type {
   QuestionBlueprintAuthoringResult,
   QuestionBlueprintResult,
   QuestionBlueprintsPage,
+  QuestionBlueprintVersion,
+  QuestionBlueprintVersionsResult,
   QuestionGenerationRun,
   QuestionGenerationRunResult,
   QuestionGenerationRunsPage,
@@ -50,6 +54,7 @@ export function mapQuestionBlueprint(
     id: dto.currentVersion.id,
     versionNumber: dto.currentVersion.versionNumber,
     workbookId: dto.currentVersion.workbookId,
+    sourceAssets: [],
     createdByUserId: dto.currentVersion.createdByUserId,
     createdAt: new Date(dto.currentVersion.createdAt),
   };
@@ -68,19 +73,18 @@ export function mapQuestionBlueprint(
 export function mapQuestionBlueprintAuthoring(
   dto: QuestionBlueprintAuthoringDto,
 ): QuestionBlueprintAuthoring {
-  const currentVersion = {
-    id: dto.currentVersion.id,
-    versionNumber: dto.currentVersion.versionNumber,
-    workbookId: dto.currentVersion.workbookId,
-    createdByUserId: dto.currentVersion.createdByUserId,
-    createdAt: new Date(dto.currentVersion.createdAt),
-  };
+  const currentVersion = mapQuestionBlueprintVersion(dto.currentVersion);
+  const selectedVersion = mapQuestionBlueprintVersion(dto.selectedVersion);
   return {
     ...dto,
     document: dto.document,
     currentVersionId: currentVersion.id,
     currentVersionNumber: currentVersion.versionNumber,
     currentVersion,
+    selectedVersionId: selectedVersion.id,
+    selectedVersionNumber: selectedVersion.versionNumber,
+    selectedVersion,
+    versions: dto.versions.map(mapQuestionBlueprintVersion),
     archivedAt: dto.archivedAt ? new Date(dto.archivedAt) : null,
     createdAt: new Date(dto.createdAt),
     updatedAt: new Date(dto.updatedAt),
@@ -151,6 +155,14 @@ export function mapQuestionBlueprintAuthoringResponse(
   };
 }
 
+export function mapQuestionBlueprintVersionsResponse(
+  response: ListQuestionBlueprintVersionsResponse,
+): QuestionBlueprintVersionsResult {
+  return {
+    versions: response.versions.map(mapQuestionBlueprintVersion),
+  };
+}
+
 export function mapQuestionGenerationRunResponse(
   response: QuestionGenerationRunResponse,
 ): QuestionGenerationRunResult {
@@ -201,4 +213,20 @@ function mapWorkbookQuestionSource(
   dto: WorkbookSourceDto,
 ): WorkbookQuestionSource {
   return { ...dto };
+}
+
+function mapQuestionBlueprintVersion(
+  dto: QuestionBlueprintVersionDto,
+): QuestionBlueprintVersion {
+  return {
+    id: dto.id,
+    versionNumber: dto.versionNumber,
+    workbookId: dto.workbookId,
+    sourceAssets: dto.sourceAssets.map((asset) => ({
+      ...asset,
+      createdAt: new Date(asset.createdAt),
+    })),
+    createdByUserId: dto.createdByUserId,
+    createdAt: new Date(dto.createdAt),
+  };
 }

@@ -50,6 +50,21 @@ export const questionKeys = {
       ...questionKeys.questionBlueprintDetail(questionBlueprintId),
       "authoring",
     ] as const,
+  questionBlueprintVersionAuthoring: (
+    questionBlueprintId: string,
+    questionBlueprintVersionId: string,
+  ) =>
+    [
+      ...questionKeys.questionBlueprintDetail(questionBlueprintId),
+      "versions",
+      questionBlueprintVersionId,
+      "authoring",
+    ] as const,
+  questionBlueprintVersions: (questionBlueprintId: string) =>
+    [
+      ...questionKeys.questionBlueprintDetail(questionBlueprintId),
+      "versions",
+    ] as const,
   generationRuns: () =>
     [...questionKeys.all, "question-generation-runs"] as const,
   generationRunDetails: () =>

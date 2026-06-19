@@ -8,6 +8,7 @@ const MAX_DRAFT_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 
 export type StudioDraftKeyInput = {
   loadedBlueprintId: string | null;
+  loadedBlueprintVersionId?: string | null;
 };
 
 export type StudioDraftSnapshot = {
@@ -29,8 +30,12 @@ export type StudioDraftStoreResult<T> =
 
 export function createStudioDraftKey({
   loadedBlueprintId,
+  loadedBlueprintVersionId,
 }: StudioDraftKeyInput) {
   if (loadedBlueprintId) {
+    if (loadedBlueprintVersionId) {
+      return `blueprint:${loadedBlueprintId}:version:${loadedBlueprintVersionId}`;
+    }
     return `blueprint:${loadedBlueprintId}`;
   }
 
