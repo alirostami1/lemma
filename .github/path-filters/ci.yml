@@ -4,6 +4,7 @@ app:
   - "package.json"
   - "pnpm-lock.yaml"
   - "pnpm-workspace.yaml"
+  - "scripts/*.mjs"
   - "turbo.json"
   - "biome.json"
   - "tsconfig*.json"
