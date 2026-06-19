@@ -22,7 +22,6 @@ import type {
 } from "./use-blueprint-draft-controller";
 
 export type StudioRouteSearch = {
-  workbookId?: string;
   blueprintId?: string;
 };
 

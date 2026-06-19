@@ -25,7 +25,6 @@ export function useStudioController(
   input: StudioRouteSearch = {},
 ): StudioController {
   const initialBlueprintId = input.blueprintId ?? "";
-  const initialWorkbookId = input.workbookId ?? "";
   const [workbookPickerRequest, setWorkbookPickerRequest] =
     useState<WorkbookPickerRequest | null>(null);
   const [workbookSelectionValuesByRef, setWorkbookSelectionValuesByRef] =
@@ -37,7 +36,6 @@ export function useStudioController(
   }, []);
   const draft = useBlueprintDraftController({
     initialBlueprintId,
-    initialWorkbookId,
   });
   const source = useSourceController({
     loadWorkbookPickerPreview: workbookPickerRequest !== null,

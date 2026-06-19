@@ -30,7 +30,6 @@ describe("blueprint draft snapshots", () => {
       blueprintId: "blueprint-1",
       blueprintName: " Blueprint ",
       blueprintVersionId: "version-1",
-      initialWorkbookId: "workbook-initial",
       workbookId: "workbook-1",
     });
 

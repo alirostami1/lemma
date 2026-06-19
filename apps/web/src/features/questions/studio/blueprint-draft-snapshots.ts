@@ -20,7 +20,6 @@ export type LoadedBlueprintDraftSnapshotState = {
 export function createLoadedBlueprintDraftSnapshotState(input: {
   blueprint: QuestionBlueprintAuthoring;
   blueprintId: string;
-  initialWorkbookId: string;
 }): { ok: true; value: LoadedBlueprintDraftSnapshotState } | { ok: false } {
   let authoringModel: ComposedEditorModel;
   try {
@@ -33,7 +32,6 @@ export function createLoadedBlueprintDraftSnapshotState(input: {
 
   const draftStorageKey = createStudioDraftKey({
     loadedBlueprintId: input.blueprintId,
-    initialWorkbookId: input.initialWorkbookId,
   });
   const blueprintVersionId = input.blueprint.currentVersionId ?? null;
   const selectedWorkbookId = input.blueprint.workbookId ?? "";
@@ -72,7 +70,6 @@ export function createResetStudioDraftSnapshotState() {
   const authoringModel = createDefaultComposedEditorModel();
   const draftStorageKey = createStudioDraftKey({
     loadedBlueprintId: null,
-    initialWorkbookId: "",
   });
   const snapshot = createStudioDraftSnapshot({
     draftKey: draftStorageKey,
@@ -99,7 +96,6 @@ export function createSavedBlueprintDraftSnapshotState(input: {
   blueprintId: string;
   blueprintName: string;
   blueprintVersionId?: string | null;
-  initialWorkbookId: string;
   workbookId: string;
 }) {
   const remoteSnapshotKey = createDraftSnapshotKey({
@@ -111,7 +107,6 @@ export function createSavedBlueprintDraftSnapshotState(input: {
   });
   const draftKey = createStudioDraftKey({
     loadedBlueprintId: input.blueprintId,
-    initialWorkbookId: input.initialWorkbookId,
   });
   const syncedSnapshot = createStudioDraftSnapshot({
     draftKey,

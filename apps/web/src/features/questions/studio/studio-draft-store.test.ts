@@ -19,7 +19,6 @@ describe("studio draft store", () => {
     const snapshot = createStudioDraftSnapshot({
       draftKey: createStudioDraftKey({
         loadedBlueprintId: "blueprint_1",
-        initialWorkbookId: "",
       }),
       loadedBlueprintId: "blueprint_1",
       selectedWorkbookId: "workbook_1",
