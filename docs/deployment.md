@@ -41,7 +41,7 @@ records at the VPS:
 - realtime domain
 
 Bootstrap the host with `infra/ansible/playbooks/bootstrap.yml`. Production
-configuration is committed as `infra/production/env.vps.sops.env` and decrypted
+configuration is committed as `infra/production/production.sops.env` and decrypted
 by CI with `SOPS_AGE_KEY`. The deploy workflow runs Ansible to copy the
 decrypted env to `/opt/lemma/.env`, synchronize Compose, Caddy, and production
 scripts, then invoke the production deploy script. Runtime rollout state lives

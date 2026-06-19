@@ -100,7 +100,7 @@ jobs:
           mkdir -p .deploy ~/.ssh
           printf '%s' "$SOPS_AGE_KEY" > .deploy/age.key
           chmod 600 .deploy/age.key
-          SOPS_AGE_KEY_FILE=.deploy/age.key sops --decrypt infra/production/env.vps.sops.env > .deploy/vps.env
+          SOPS_AGE_KEY_FILE=.deploy/age.key sops --decrypt infra/production/production.sops.env > .deploy/vps.env
           chmod 600 .deploy/vps.env
           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
       - name: Deploy with Ansible

@@ -76,7 +76,7 @@ user, opens SSH/HTTP/HTTPS with UFW, and creates `/opt/lemma` directories.
 Edit the encrypted production env file with SOPS:
 
 ```sh
-sops infra/production/env.vps.sops.env
+sops infra/production/production.sops.env
 ```
 
 Generate shell-safe secrets:
@@ -146,7 +146,7 @@ The workflow:
 
 1. Builds API, worker, web, admin, Keycloak, and LibreOffice worker images.
 2. Pushes images to GHCR with the immutable commit SHA tag.
-3. Decrypts `infra/production/env.vps.sops.env`.
+3. Decrypts `infra/production/production.sops.env`.
 4. Runs the Ansible deploy playbook.
 5. The playbook uploads Compose, Caddy, scripts, and `/opt/lemma/.env`.
 6. The playbook logs the VPS into GHCR and runs `/opt/lemma/scripts/production/deploy.sh`.
