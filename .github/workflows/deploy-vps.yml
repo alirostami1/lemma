@@ -10,7 +10,9 @@ on:
     branches:
       - main
     paths:
+      - ".dockerignore"
       - ".github/workflows/deploy-vps.yml"
+      - ".npmrc"
       - "apps/api/**"
       - "apps/admin/**"
       - "apps/keycloak-theme/**"
@@ -24,7 +26,9 @@ on:
       - "packages/**"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
+      - "scripts/*.mjs"
       - "scripts/production/**"
+      - "tsconfig*.json"
       - "turbo.json"
 
 permissions:
