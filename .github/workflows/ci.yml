@@ -143,13 +143,16 @@ jobs:
         env:
           ANSIBLE_CONFIG: infra/ansible/ansible.cfg
         run: |
-          ansible-playbook infra/ansible/playbooks/deploy.yml \
-            --syntax-check \
-            --extra-vars "lemma_decrypted_env_file=/tmp/vps.env" \
-            --extra-vars "lemma_image_tag=syntax-check" \
-            --extra-vars "lemma_image_owner=syntax-check" \
-            --extra-vars "lemma_ghcr_read_user=syntax-check" \
-            --extra-vars "lemma_ghcr_read_token=syntax-check"
+          for playbook in infra/ansible/playbooks/*.yml; do
+            echo "Checking $playbook"
+            ansible-playbook "$playbook" \
+              --syntax-check \
+              --extra-vars "lemma_decrypted_env_file=/tmp/vps.env" \
+              --extra-vars "lemma_image_tag=syntax-check" \
+              --extra-vars "lemma_image_owner=syntax-check" \
+              --extra-vars "lemma_ghcr_read_user=syntax-check" \
+              --extra-vars "lemma_ghcr_read_token=syntax-check"
+          done
 
   ci-summary:
     name: ci summary
