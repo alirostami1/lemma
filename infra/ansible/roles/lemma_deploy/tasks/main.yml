@@ -1,0 +1,77 @@
+---
+- name: Require decrypted env file path
+  ansible.builtin.assert:
+    that:
+      - lemma_decrypted_env_file | length > 0
+      - lemma_image_tag | length > 0
+      - lemma_image_owner | length > 0
+      - lemma_ghcr_read_user | length > 0
+      - lemma_ghcr_read_token | length > 0
+    fail_msg: "lemma_decrypted_env_file, lemma_image_tag, lemma_image_owner, lemma_ghcr_read_user, and lemma_ghcr_read_token are required."
+
+- name: Ensure remote deploy directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0700"
+  loop:
+    - "{{ lemma_root }}"
+    - "{{ lemma_root }}/infra/production"
+    - "{{ lemma_root }}/infra/garage"
+    - "{{ lemma_root }}/scripts/production"
+    - "{{ lemma_root }}/backups"
+
+- name: Copy production environment
+  ansible.builtin.copy:
+    src: "{{ lemma_decrypted_env_file }}"
+    dest: "{{ lemma_root }}/.env"
+    mode: "0600"
+  no_log: true
+
+- name: Ensure deploy state file exists
+  ansible.builtin.file:
+    path: "{{ lemma_root }}/.deploy-state.env"
+    state: touch
+    mode: "0600"
+
+- name: Sync production Compose and Caddy files
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "{{ lemma_root }}/{{ item.dest }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - src: "{{ playbook_dir }}/../../production/compose.yml"
+      dest: infra/production/compose.yml
+      mode: "0644"
+    - src: "{{ playbook_dir }}/../../production/Caddyfile"
+      dest: infra/production/Caddyfile
+      mode: "0644"
+
+- name: Sync production scripts
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ lemma_root }}/scripts/production/{{ item | basename }}"
+    mode: "0755"
+  loop:
+    - "{{ playbook_dir }}/../../../scripts/production/deploy.sh"
+    - "{{ playbook_dir }}/../../../scripts/production/rollback.sh"
+    - "{{ playbook_dir }}/../../../scripts/production/backup.sh"
+
+- name: Login VPS to GHCR
+  ansible.builtin.shell: |
+    set -eu
+    printf '%s' "$GHCR_READ_TOKEN" | docker login ghcr.io -u "$GHCR_READ_USER" --password-stdin
+  args:
+    executable: /bin/sh
+  environment:
+    GHCR_READ_USER: "{{ lemma_ghcr_read_user }}"
+    GHCR_READ_TOKEN: "{{ lemma_ghcr_read_token }}"
+  no_log: true
+
+- name: Run production deploy
+  ansible.builtin.command:
+    cmd: "{{ lemma_root }}/scripts/production/deploy.sh"
+  environment:
+    LEMMA_IMAGE_TAG: "{{ lemma_image_tag }}"
+    LEMMA_IMAGE_OWNER: "{{ lemma_image_owner }}"
+    LEMMA_COMPOSE_PROJECT: "{{ lemma_compose_project }}"

@@ -3,12 +3,15 @@ set -eu
 
 ROOT_DIR="${LEMMA_DEPLOY_ROOT:-/opt/lemma}"
 ENV_FILE="${LEMMA_DEPLOY_ENV_FILE:-$ROOT_DIR/.env}"
+STATE_ENV_FILE="${LEMMA_DEPLOY_STATE_ENV_FILE:-$ROOT_DIR/.deploy-state.env}"
 STATE_FILE="${LEMMA_DEPLOY_STATE_FILE:-$ROOT_DIR/.active-color}"
 LOCK_FILE="${LEMMA_DEPLOY_LOCK_FILE:-$ROOT_DIR/.deploy.lock}"
 COMPOSE_FILE="$ROOT_DIR/infra/production/compose.yml"
 PROJECT_NAME="${LEMMA_COMPOSE_PROJECT:-lemma}"
 
 mkdir -p "$ROOT_DIR" "$ROOT_DIR/infra/production" "$ROOT_DIR/infra/garage"
+touch "$STATE_ENV_FILE"
+chmod 600 "$STATE_ENV_FILE"
 
 exec 9>"$LOCK_FILE"
 if ! flock -n 9; then
@@ -24,7 +27,10 @@ fi
 env_value() {
   key="$1"
   default="${2-}"
-  value="$(grep -E "^${key}=" "$ENV_FILE" | tail -n 1 | cut -d= -f2- || true)"
+  value="$(grep -E "^${key}=" "$STATE_ENV_FILE" | tail -n 1 | cut -d= -f2- || true)"
+  if [ -z "$value" ]; then
+    value="$(grep -E "^${key}=" "$ENV_FILE" | tail -n 1 | cut -d= -f2- || true)"
+  fi
   if [ -n "$value" ]; then
     printf '%s' "$value"
   else
@@ -73,11 +79,11 @@ require_hex_env() {
 set_env() {
   key="$1"
   value="$2"
-  tmp_env="$(mktemp "$ROOT_DIR/.env.tmp.XXXXXX")"
-  grep -v "^${key}=" "$ENV_FILE" > "$tmp_env" || true
+  tmp_env="$(mktemp "$ROOT_DIR/.deploy-state.env.tmp.XXXXXX")"
+  grep -v "^${key}=" "$STATE_ENV_FILE" > "$tmp_env" || true
   printf '%s=%s\n' "$key" "$value" >> "$tmp_env"
   chmod 600 "$tmp_env"
-  mv "$tmp_env" "$ENV_FILE"
+  mv "$tmp_env" "$STATE_ENV_FILE"
 }
 
 ensure_env() {
@@ -122,7 +128,13 @@ if is_placeholder "$requested_tag"; then
   echo "Set LEMMA_IMAGE_TAG to the immutable image tag to deploy." >&2
   exit 1
 fi
+requested_owner="${LEMMA_IMAGE_OWNER:-$(env_value LEMMA_IMAGE_OWNER)}"
+if is_placeholder "$requested_owner"; then
+  echo "Set LEMMA_IMAGE_OWNER to the image owner to deploy." >&2
+  exit 1
+fi
 
+set_env LEMMA_IMAGE_OWNER "$requested_owner"
 ensure_env LEMMA_BLUE_IMAGE_TAG "$requested_tag"
 ensure_env LEMMA_GREEN_IMAGE_TAG "$requested_tag"
 set_color_tag "$next" "$requested_tag"
@@ -264,7 +276,7 @@ cat > "$ROOT_DIR/infra/production/keycloak-realm.json" <<EOF
 EOF
 
 compose() {
-  docker compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"
+  docker compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" --env-file "$STATE_ENV_FILE" -f "$COMPOSE_FILE" "$@"
 }
 
 wait_for_healthy() {

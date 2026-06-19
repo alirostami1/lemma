@@ -1,0 +1,8 @@
+---
+lemma_root: /opt/lemma
+lemma_compose_project: lemma
+lemma_decrypted_env_file: ""
+lemma_image_tag: ""
+lemma_image_owner: ""
+lemma_ghcr_read_user: ""
+lemma_ghcr_read_token: ""

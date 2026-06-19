@@ -1,0 +1,5 @@
+---
+- name: Deploy Lemma production stack
+  hosts: production
+  roles:
+    - role: lemma_deploy
