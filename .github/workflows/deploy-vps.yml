@@ -27,6 +27,7 @@ jobs:
   build:
     name: build and push images
     runs-on: ubuntu-latest
+    environment: vps
     strategy:
       matrix:
         include:

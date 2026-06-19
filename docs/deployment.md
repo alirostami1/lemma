@@ -52,7 +52,8 @@ Required GitHub Actions secrets:
 - `GHCR_READ_USER`
 - `GHCR_READ_TOKEN`
 
-Required GitHub Actions variables for image build-time browser config:
+Required GitHub Actions `vps` environment variables for public, build-time
+browser config:
 
 - `LEMMA_WEB_APP_TITLE`
 - `LEMMA_WEB_APP_URL`
