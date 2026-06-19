@@ -31,15 +31,17 @@ Create A records pointing at the VPS public IPv4 address:
 - `admin.lemma.ac`
 - `auth.lemma.ac`
 - `realtime.lemma.ac`
+- `files.lemma.ac`
 
-Use the exact values in GitHub Actions variables and `/opt/lemma/.env`.
+Use the exact values in GitHub Actions variables and
+`infra/production/production.sops.env`.
 
 ## Cloudflare TLS
 
 The `lemma.ac` zone is behind the Cloudflare proxy. Caddy uses Cloudflare
 DNS-01 ACME validation, so the records can stay proxied during first deploy.
 
-1. In Cloudflare DNS, create the five A records above and leave them proxied
+1. In Cloudflare DNS, create the six A records above and leave them proxied
    (orange cloud).
 2. Create a scoped Cloudflare API token for `lemma.ac` with `Zone:Read` and
    `DNS:Edit`.

@@ -48,6 +48,7 @@ export const s3EnvSchema = z.object({
   LEMMA_S3_ACCESS_KEY_ID: z.string().min(1),
   LEMMA_S3_SECRET_ACCESS_KEY: z.string().min(1),
   LEMMA_S3_ENDPOINT: z.url().optional(),
+  LEMMA_S3_PUBLIC_ENDPOINT: z.url(),
   LEMMA_S3_FORCE_PATH_STYLE: z
     .enum(["true", "false"])
     .default("false")
@@ -156,6 +157,7 @@ export function createWorkbookWorkerConfig(env: Env = process.env) {
       accessKeyId: parsed.LEMMA_S3_ACCESS_KEY_ID,
       secretAccessKey: parsed.LEMMA_S3_SECRET_ACCESS_KEY,
       endpoint: parsed.LEMMA_S3_ENDPOINT,
+      publicEndpoint: parsed.LEMMA_S3_PUBLIC_ENDPOINT,
       forcePathStyle: parsed.LEMMA_S3_FORCE_PATH_STYLE,
       uploadUrlExpiresInSeconds: parsed.LEMMA_S3_UPLOAD_URL_EXPIRES_IN_SECONDS,
       downloadUrlExpiresInSeconds:

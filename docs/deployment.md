@@ -6,9 +6,10 @@ user traffic when possible.
 
 The current repository deployment target is a single Hetzner VPS. It uses Docker
 Compose for Postgres, Garage S3-compatible object storage, Keycloak,
-Centrifugo, LibreOffice worker, API, worker, web, admin, and Caddy. Ansible
-owns host bootstrap and deploy file synchronization; SOPS owns the encrypted
-production environment file.
+Centrifugo, LibreOffice worker, API, worker, web, admin, Caddy, and a public
+Garage route for browser upload/download URLs. Ansible owns host bootstrap and
+deploy file synchronization; SOPS owns the encrypted production environment
+file.
 See `docs/vps-deployment-runbook.md` for the operator checklist and first
 deploy procedure.
 

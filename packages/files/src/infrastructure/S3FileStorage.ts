@@ -17,6 +17,7 @@ export type S3FileStorageConfig = {
   accessKeyId: string;
   secretAccessKey: string;
   endpoint?: string;
+  publicEndpoint: string;
   forcePathStyle: boolean;
   uploadUrlExpiresInSeconds: number;
   downloadUrlExpiresInSeconds: number;
@@ -26,18 +27,28 @@ const instrumentation = instrumentExternal("files", "s3");
 
 export class S3FileStorage implements FileStorage {
   private readonly client: S3Client;
+  private readonly presignClient: S3Client;
   private readonly uploadUrlExpiresInSeconds: number;
   private readonly downloadUrlExpiresInSeconds: number;
 
   constructor(config: S3FileStorageConfig) {
-    this.client = new S3Client({
+    const credentials = {
+      accessKeyId: config.accessKeyId,
+      secretAccessKey: config.secretAccessKey,
+    };
+    const commonConfig = {
       region: config.region,
-      endpoint: config.endpoint,
       forcePathStyle: config.forcePathStyle,
-      credentials: {
-        accessKeyId: config.accessKeyId,
-        secretAccessKey: config.secretAccessKey,
-      },
+      credentials,
+    };
+
+    this.client = new S3Client({
+      ...commonConfig,
+      endpoint: config.endpoint,
+    });
+    this.presignClient = new S3Client({
+      ...commonConfig,
+      endpoint: config.publicEndpoint,
     });
     this.uploadUrlExpiresInSeconds = config.uploadUrlExpiresInSeconds;
     this.downloadUrlExpiresInSeconds = config.downloadUrlExpiresInSeconds;
@@ -51,7 +62,7 @@ export class S3FileStorage implements FileStorage {
   }): Promise<string> {
     return this.storageOperation("create_upload_url", () =>
       getSignedUrl(
-        this.client,
+        this.presignClient,
         new PutObjectCommand({
           Bucket: input.bucket,
           Key: input.key,
@@ -69,7 +80,7 @@ export class S3FileStorage implements FileStorage {
   createDownloadUrl(input: { bucket: string; key: string }): Promise<string> {
     return this.storageOperation("create_download_url", () =>
       getSignedUrl(
-        this.client,
+        this.presignClient,
         new GetObjectCommand({
           Bucket: input.bucket,
           Key: input.key,
