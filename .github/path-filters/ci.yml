@@ -2,8 +2,10 @@ app:
   - ".dockerignore"
   - ".npmrc"
   - "apps/**"
+  - "!apps/**/*.md"
   - "dependency-cruiser.config.cjs"
   - "packages/**"
+  - "!packages/**/*.md"
   - "package.json"
   - "pnpm-lock.yaml"
   - "pnpm-workspace.yaml"
@@ -13,9 +15,7 @@ app:
   - "tsconfig*.json"
 docs:
   - ".markdownlint-cli2.yaml"
-  - "*.md"
-  - ".github/**/*.md"
-  - "docs/**"
+  - "**/*.md"
 docker:
   - ".dockerignore"
   - ".hadolint.yaml"
