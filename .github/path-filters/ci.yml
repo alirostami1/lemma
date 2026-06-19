@@ -16,5 +16,6 @@ infra:
   - "infra/**"
   - "scripts/production/**"
 workflow:
+  - ".yamllint.yml"
   - ".github/path-filters/**"
   - ".github/workflows/**"

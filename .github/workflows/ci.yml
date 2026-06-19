@@ -122,6 +122,36 @@ jobs:
       - name: Test
         run: pnpm test
 
+  infra-validation:
+    name: infra validation
+    needs: changes
+    if: |
+      needs.changes.outputs.infra == 'true' ||
+      needs.changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Install infra validation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible shellcheck yamllint
+      - name: Check shell scripts
+        run: shellcheck --severity=error scripts/production/*.sh
+      - name: Check YAML
+        run: yamllint .github/workflows .github/path-filters infra/ansible
+      - name: Check Ansible syntax
+        env:
+          ANSIBLE_CONFIG: infra/ansible/ansible.cfg
+        run: |
+          ansible-playbook infra/ansible/playbooks/deploy.yml \
+            --syntax-check \
+            --extra-vars "lemma_decrypted_env_file=/tmp/vps.env" \
+            --extra-vars "lemma_image_tag=syntax-check" \
+            --extra-vars "lemma_image_owner=syntax-check" \
+            --extra-vars "lemma_ghcr_read_user=syntax-check" \
+            --extra-vars "lemma_ghcr_read_token=syntax-check"
+
   ci-summary:
     name: ci summary
     needs:
@@ -129,6 +159,7 @@ jobs:
       - pull-request-conventions
       - docs-validation
       - validation
+      - infra-validation
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -138,6 +169,7 @@ jobs:
           PR_CONVENTIONS_RESULT: ${{ needs.pull-request-conventions.result }}
           DOCS_RESULT: ${{ needs.docs-validation.result }}
           VALIDATION_RESULT: ${{ needs.validation.result }}
+          INFRA_VALIDATION_RESULT: ${{ needs.infra-validation.result }}
         run: |
           set -eu
 
@@ -145,12 +177,13 @@ jobs:
           echo "pull-request-conventions: $PR_CONVENTIONS_RESULT"
           echo "docs-validation: $DOCS_RESULT"
           echo "validation: $VALIDATION_RESULT"
+          echo "infra-validation: $INFRA_VALIDATION_RESULT"
 
           if [ "$CHANGES_RESULT" != "success" ]; then
             exit 1
           fi
 
-          for result in "$PR_CONVENTIONS_RESULT" "$DOCS_RESULT" "$VALIDATION_RESULT"; do
+          for result in "$PR_CONVENTIONS_RESULT" "$DOCS_RESULT" "$VALIDATION_RESULT" "$INFRA_VALIDATION_RESULT"; do
             case "$result" in
               success|skipped)
                 ;;
