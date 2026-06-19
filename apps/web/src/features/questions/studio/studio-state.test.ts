@@ -46,6 +46,7 @@ describe("studio state", () => {
     expect(
       shouldWarnBeforeOpeningBlueprint({
         nextBlueprintId: "blueprint-1",
+        nextBlueprintVersionId: "version-1",
         snapshot: syncedSameBlueprint,
       }),
     ).toBe(false);
