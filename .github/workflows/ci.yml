@@ -30,26 +30,38 @@ jobs:
         id: filter
         uses: dorny/paths-filter@v3
         with:
-          filters: |
-            app:
-              - "apps/**"
-              - "packages/**"
-              - "package.json"
-              - "pnpm-lock.yaml"
-              - "pnpm-workspace.yaml"
-              - "turbo.json"
-              - "biome.json"
-              - "tsconfig*.json"
-            docs:
-              - "AGENTS.md"
-              - "DEVELOPMENT.md"
-              - "README.md"
-              - "docs/**"
-            infra:
-              - "infra/**"
-              - "scripts/production/**"
-            workflow:
-              - ".github/workflows/**"
+          filters: .github/path-filters/ci.yml
+
+  pull-request-conventions:
+    name: pull request conventions
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch, title, and issue link
+        env:
+          PR_BRANCH: ${{ github.head_ref }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -eu
+
+          conventional='^(fix|feat|chore|docs|test|refactor|ci|build)\([a-z0-9-]+\): .+'
+          branch='^(fix|feat|chore|docs|test|refactor|ci|build)/[0-9]+-[a-z0-9][a-z0-9-]*$'
+
+          if ! printf '%s' "$PR_BRANCH" | grep -Eq "$branch"; then
+            echo "Branch must match: <type>/<issue-number>-<short-slug>"
+            exit 1
+          fi
+
+          if ! printf '%s' "$PR_TITLE" | grep -Eq "$conventional"; then
+            echo "PR title must match: <type>(<scope>): <imperative summary>"
+            exit 1
+          fi
+
+          if ! printf '%s' "$PR_BODY" | grep -Eiq '(^|[[:space:]])Closes #[0-9]+'; then
+            echo "PR body must include: Closes #<issue-number>"
+            exit 1
+          fi
 
   docs-validation:
     name: docs validation
@@ -114,6 +126,7 @@ jobs:
     name: ci summary
     needs:
       - changes
+      - pull-request-conventions
       - docs-validation
       - validation
     if: always()
@@ -122,12 +135,14 @@ jobs:
       - name: Check required CI jobs
         env:
           CHANGES_RESULT: ${{ needs.changes.result }}
+          PR_CONVENTIONS_RESULT: ${{ needs.pull-request-conventions.result }}
           DOCS_RESULT: ${{ needs.docs-validation.result }}
           VALIDATION_RESULT: ${{ needs.validation.result }}
         run: |
           set -eu
 
           echo "changes: $CHANGES_RESULT"
+          echo "pull-request-conventions: $PR_CONVENTIONS_RESULT"
           echo "docs-validation: $DOCS_RESULT"
           echo "validation: $VALIDATION_RESULT"
 
@@ -135,7 +150,7 @@ jobs:
             exit 1
           fi
 
-          for result in "$DOCS_RESULT" "$VALIDATION_RESULT"; do
+          for result in "$PR_CONVENTIONS_RESULT" "$DOCS_RESULT" "$VALIDATION_RESULT"; do
             case "$result" in
               success|skipped)
                 ;;

@@ -1,0 +1,20 @@
+app:
+  - "apps/**"
+  - "packages/**"
+  - "package.json"
+  - "pnpm-lock.yaml"
+  - "pnpm-workspace.yaml"
+  - "turbo.json"
+  - "biome.json"
+  - "tsconfig*.json"
+docs:
+  - "AGENTS.md"
+  - "DEVELOPMENT.md"
+  - "README.md"
+  - "docs/**"
+infra:
+  - "infra/**"
+  - "scripts/production/**"
+workflow:
+  - ".github/path-filters/**"
+  - ".github/workflows/**"
