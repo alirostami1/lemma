@@ -88,8 +88,8 @@ jobs:
       - name: Check docs
         run: pnpm check:docs
 
-  validation:
-    name: validation
+  app-validation:
+    name: app validation
     needs: changes
     if: |
       needs.changes.outputs.app == 'true' ||
@@ -190,7 +190,7 @@ jobs:
       - changes
       - pull-request-conventions
       - docs-validation
-      - validation
+      - app-validation
       - infra-validation
       - dockerfile-validation
     if: always()
@@ -201,7 +201,7 @@ jobs:
           CHANGES_RESULT: ${{ needs.changes.result }}
           PR_CONVENTIONS_RESULT: ${{ needs.pull-request-conventions.result }}
           DOCS_RESULT: ${{ needs.docs-validation.result }}
-          VALIDATION_RESULT: ${{ needs.validation.result }}
+          APP_VALIDATION_RESULT: ${{ needs.app-validation.result }}
           INFRA_VALIDATION_RESULT: ${{ needs.infra-validation.result }}
           DOCKERFILE_VALIDATION_RESULT: ${{ needs.dockerfile-validation.result }}
         run: |
@@ -210,7 +210,7 @@ jobs:
           echo "changes: $CHANGES_RESULT"
           echo "pull-request-conventions: $PR_CONVENTIONS_RESULT"
           echo "docs-validation: $DOCS_RESULT"
-          echo "validation: $VALIDATION_RESULT"
+          echo "app-validation: $APP_VALIDATION_RESULT"
           echo "infra-validation: $INFRA_VALIDATION_RESULT"
           echo "dockerfile-validation: $DOCKERFILE_VALIDATION_RESULT"
 
@@ -218,7 +218,7 @@ jobs:
             exit 1
           fi
 
-          for result in "$PR_CONVENTIONS_RESULT" "$DOCS_RESULT" "$VALIDATION_RESULT" "$INFRA_VALIDATION_RESULT" "$DOCKERFILE_VALIDATION_RESULT"; do
+          for result in "$PR_CONVENTIONS_RESULT" "$DOCS_RESULT" "$APP_VALIDATION_RESULT" "$INFRA_VALIDATION_RESULT" "$DOCKERFILE_VALIDATION_RESULT"; do
             case "$result" in
               success|skipped)
                 ;;
