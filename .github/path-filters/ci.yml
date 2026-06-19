@@ -2,6 +2,7 @@ app:
   - ".dockerignore"
   - ".npmrc"
   - "apps/**"
+  - "dependency-cruiser.config.cjs"
   - "packages/**"
   - "package.json"
   - "pnpm-lock.yaml"
@@ -11,9 +12,14 @@ app:
   - "biome.json"
   - "tsconfig*.json"
 docs:
+  - ".markdownlint-cli2.yaml"
   - "*.md"
   - ".github/**/*.md"
   - "docs/**"
+docker:
+  - ".dockerignore"
+  - ".hadolint.yaml"
+  - "**/Dockerfile"
 infra:
   - "infra/**"
   - "scripts/production/**"

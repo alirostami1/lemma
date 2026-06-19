@@ -96,8 +96,9 @@ pnpm --filter web check-types
 CI should stay change-scoped as the repo grows:
 
 - docs-only changes run docs validation, not deploy.
-- Dockerfile changes run Dockerfile lint/build checks for affected images.
+- Dockerfile changes run hadolint and build checks for affected images.
 - Ansible changes run ansible-lint and playbook syntax checks.
+- workflow changes run actionlint.
 - production Compose/Caddy/script changes run infra validation, not full app
   validation.
 - app/package changes run TypeScript, lint, and tests for affected packages.
@@ -105,9 +106,11 @@ CI should stay change-scoped as the repo grows:
 CI path groups live in `.github/path-filters/ci.yml`. The required branch
 protection check should be `ci summary`; it stays green only when all relevant
 jobs pass and treats intentionally skipped jobs as OK.
-Infra validation currently runs ShellCheck for production shell scripts,
-yamllint for workflow/Ansible YAML, ansible-lint, and Ansible playbook syntax
-checks.
+Docs validation currently runs markdownlint. Architecture validation runs
+dependency-cruiser as an import graph baseline plus the repo-specific package
+boundary checks as hard policy. Infra validation currently runs ShellCheck for
+production shell scripts, yamllint for workflow/Ansible YAML, actionlint,
+ansible-lint, and Ansible playbook syntax checks.
 
 The production deploy workflow should run automatically only when deployable
 paths change. It must always remain available through `workflow_dispatch`.
