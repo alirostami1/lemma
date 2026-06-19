@@ -60,6 +60,7 @@ Common scopes:
 
 PRs target `main` by default and include `Closes #<issue-number>`. Stacked PRs
 must be explicitly called out in the PR body with `Depends on #<pr-number>`.
+CI enforces branch names, PR titles, and issue links on pull requests.
 
 Examples:
 
@@ -99,6 +100,10 @@ CI should stay change-scoped as the repo grows:
 - Ansible changes run Ansible lint and playbook syntax checks.
 - production Compose/Caddy/script changes run infra validation.
 - app/package changes run TypeScript, lint, and tests for affected packages.
+
+CI path groups live in `.github/path-filters/ci.yml`. The required branch
+protection check should be `ci summary`; it stays green only when all relevant
+jobs pass and treats intentionally skipped jobs as OK.
 
 The production deploy workflow should run automatically only when deployable
 paths change. It must always remain available through `workflow_dispatch`.

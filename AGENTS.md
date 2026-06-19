@@ -29,6 +29,8 @@
 - Use Conventional Commits for commits and PR titles:
   `<type>(<scope>): <imperative summary>`.
 - PRs target `main` by default and include `Closes #<issue-number>`.
+- The pull request convention check enforces branch names, PR titles, and issue
+  links.
 - Only create stacked PRs when the user explicitly requests one; mark them with
   `Depends on #<pr-number>`.
 - Keep unrelated changes out of the branch and stage only files in scope.
@@ -48,6 +50,8 @@ Common scopes: `web`, `admin`, `api`, `worker`, `db`, `keycloak`, `caddy`,
 - Report exact failing package/file/test if validation fails.
 - When editing CI, keep validation and deploy workflows scoped to relevant paths
   so docs-only or unrelated changes do not run production deploys.
+- Keep CI path groups in `.github/path-filters/ci.yml`; use `ci summary` as the
+  required aggregate check.
 
 ## Communication
 
