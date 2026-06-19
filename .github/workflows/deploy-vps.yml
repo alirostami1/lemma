@@ -9,6 +9,23 @@ on:
   push:
     branches:
       - main
+    paths:
+      - ".github/workflows/deploy-vps.yml"
+      - "apps/api/**"
+      - "apps/admin/**"
+      - "apps/keycloak-theme/**"
+      - "apps/libreoffice-worker/**"
+      - "apps/web/**"
+      - "apps/worker/**"
+      - "infra/ansible/**"
+      - "infra/caddy/**"
+      - "infra/production/**"
+      - "package.json"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "scripts/production/**"
+      - "turbo.json"
 
 permissions:
   contents: read
