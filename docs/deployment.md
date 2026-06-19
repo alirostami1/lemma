@@ -74,8 +74,8 @@ browser config:
 ## CI/CD
 
 `.github/workflows/deploy-vps.yml` builds immutable images for API, worker, web,
-admin, Keycloak theme, and LibreOffice worker. Images are pushed to GHCR with the
-commit SHA tag. The deploy job decrypts the SOPS env file and runs:
+admin, Keycloak theme, LibreOffice worker, and Caddy. Images are pushed to GHCR
+with the commit SHA tag. The deploy job decrypts the SOPS env file and runs:
 
 ```sh
 ansible-playbook infra/ansible/playbooks/deploy.yml

@@ -44,6 +44,8 @@ jobs:
             dockerfile: apps/keycloak-theme/Dockerfile
           - image: lemma-libreoffice-worker
             dockerfile: apps/libreoffice-worker/Dockerfile
+          - image: lemma-caddy
+            dockerfile: infra/caddy/Dockerfile
     steps:
       - name: Checkout
         uses: actions/checkout@v6

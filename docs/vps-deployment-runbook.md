@@ -144,7 +144,7 @@ deploy disabled operationally until first boot and rollback are proven.
 
 The workflow:
 
-1. Builds API, worker, web, admin, Keycloak, and LibreOffice worker images.
+1. Builds API, worker, web, admin, Keycloak, LibreOffice worker, and Caddy images.
 2. Pushes images to GHCR with the immutable commit SHA tag.
 3. Decrypts `infra/production/production.sops.env`.
 4. Runs the Ansible deploy playbook.
