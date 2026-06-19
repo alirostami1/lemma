@@ -39,6 +39,25 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     )
     .execute();
 
+  await sql`
+    insert into question_blueprint_version_assets (
+      question_blueprint_version_id,
+      workbook_id,
+      kind,
+      position,
+      created_at
+    )
+    select
+      id,
+      workbook_id,
+      'workbook',
+      0,
+      created_at
+    from question_blueprint_versions
+    where workbook_id is not null
+    on conflict do nothing
+  `.execute(db);
+
   await db.schema
     .createIndex("question_blueprint_version_assets_workbook_id_index")
     .on("question_blueprint_version_assets")
