@@ -3,10 +3,14 @@ set -eu
 
 ROOT_DIR="${LEMMA_DEPLOY_ROOT:-/opt/lemma}"
 ENV_FILE="${LEMMA_DEPLOY_ENV_FILE:-$ROOT_DIR/.env}"
+STATE_ENV_FILE="${LEMMA_DEPLOY_STATE_ENV_FILE:-$ROOT_DIR/.deploy-state.env}"
 STATE_FILE="${LEMMA_DEPLOY_STATE_FILE:-$ROOT_DIR/.active-color}"
 LOCK_FILE="${LEMMA_DEPLOY_LOCK_FILE:-$ROOT_DIR/.deploy.lock}"
 COMPOSE_FILE="$ROOT_DIR/infra/production/compose.yml"
 PROJECT_NAME="${LEMMA_COMPOSE_PROJECT:-lemma}"
+
+touch "$STATE_ENV_FILE"
+chmod 600 "$STATE_ENV_FILE"
 
 exec 9>"$LOCK_FILE"
 if ! flock -n 9; then
@@ -22,7 +26,10 @@ fi
 env_value() {
   key="$1"
   default="${2-}"
-  value="$(grep -E "^${key}=" "$ENV_FILE" | tail -n 1 | cut -d= -f2- || true)"
+  value="$(grep -E "^${key}=" "$STATE_ENV_FILE" | tail -n 1 | cut -d= -f2- || true)"
+  if [ -z "$value" ]; then
+    value="$(grep -E "^${key}=" "$ENV_FILE" | tail -n 1 | cut -d= -f2- || true)"
+  fi
   if [ -n "$value" ]; then
     printf '%s' "$value"
   else
@@ -33,11 +40,11 @@ env_value() {
 set_env() {
   key="$1"
   value="$2"
-  tmp_env="$(mktemp "$ROOT_DIR/.env.tmp.XXXXXX")"
-  grep -v "^${key}=" "$ENV_FILE" > "$tmp_env" || true
+  tmp_env="$(mktemp "$ROOT_DIR/.deploy-state.env.tmp.XXXXXX")"
+  grep -v "^${key}=" "$STATE_ENV_FILE" > "$tmp_env" || true
   printf '%s=%s\n' "$key" "$value" >> "$tmp_env"
   chmod 600 "$tmp_env"
-  mv "$tmp_env" "$ENV_FILE"
+  mv "$tmp_env" "$STATE_ENV_FILE"
 }
 
 current="$(cat "$STATE_FILE" 2>/dev/null || env_value LEMMA_ACTIVE_COLOR blue)"
@@ -62,7 +69,7 @@ if [ -z "$previous_tag" ]; then
 fi
 
 compose() {
-  docker compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"
+  docker compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" --env-file "$STATE_ENV_FILE" -f "$COMPOSE_FILE" "$@"
 }
 
 wait_for_healthy() {

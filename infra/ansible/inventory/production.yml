@@ -1,0 +1,8 @@
+all:
+  children:
+    production:
+      hosts:
+        lemma-vps:
+          ansible_host: replace-with-vps-host
+          ansible_user: deploy
+          ansible_python_interpreter: /usr/bin/python3

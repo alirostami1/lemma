@@ -6,7 +6,9 @@ user traffic when possible.
 
 The current repository deployment target is a single Hetzner VPS. It uses Docker
 Compose for Postgres, Garage S3-compatible object storage, Keycloak,
-Centrifugo, LibreOffice worker, API, worker, web, admin, and Caddy.
+Centrifugo, LibreOffice worker, API, worker, web, admin, and Caddy. Ansible
+owns host bootstrap and deploy file synchronization; SOPS owns the encrypted
+production environment file.
 See `docs/vps-deployment-runbook.md` for the operator checklist and first
 deploy procedure.
 
@@ -38,11 +40,12 @@ records at the VPS:
 - Keycloak domain
 - realtime domain
 
-Create `/opt/lemma`, copy `infra/production/.env.example` to `/opt/lemma/.env`,
-and replace every secret and domain value. Keep `/opt/lemma/.env` only on the
-server. The deploy workflow uploads Compose, Caddy, Garage, and production
-scripts on each deploy. The deploy script renders a production Keycloak realm
-from `/opt/lemma/.env` on first boot, without development seed users.
+Bootstrap the host with `infra/ansible/playbooks/bootstrap.yml`. Production
+configuration is committed as `infra/production/env.vps.sops.env` and decrypted
+by CI with `SOPS_AGE_KEY`. The deploy workflow runs Ansible to copy the
+decrypted env to `/opt/lemma/.env`, synchronize Compose, Caddy, and production
+scripts, then invoke the production deploy script. Runtime rollout state lives
+in `/opt/lemma/.deploy-state.env`.
 
 Required GitHub Actions secrets:
 
@@ -51,6 +54,7 @@ Required GitHub Actions secrets:
 - `VPS_SSH_PRIVATE_KEY`
 - `GHCR_READ_USER`
 - `GHCR_READ_TOKEN`
+- `SOPS_AGE_KEY`
 
 Required GitHub Actions variables for image build-time browser config:
 
@@ -70,10 +74,10 @@ Required GitHub Actions variables for image build-time browser config:
 
 `.github/workflows/deploy-vps.yml` builds immutable images for API, worker, web,
 admin, Keycloak theme, and LibreOffice worker. Images are pushed to GHCR with the
-commit SHA tag. The deploy job connects over SSH and runs:
+commit SHA tag. The deploy job decrypts the SOPS env file and runs:
 
 ```sh
-/opt/lemma/scripts/production/deploy.sh
+ansible-playbook infra/ansible/playbooks/deploy.yml
 ```
 
 Manual deploys can choose an existing image tag through `workflow_dispatch`.
@@ -82,14 +86,15 @@ Manual deploys can choose an existing image tag through `workflow_dispatch`.
 
 `scripts/production/deploy.sh` keeps two app colors: `blue` and `green`.
 
-1. Pull the requested image tag.
-2. Ensure stateful services are running.
-3. Run database migrations.
-4. Start the inactive API, web, and admin color.
-5. Wait for container health checks.
-6. Switch Caddy to the new color.
-7. Restart the single worker on the new image.
-8. Stop the old app color.
+1. Store the requested image tag and owner in `/opt/lemma/.deploy-state.env`.
+2. Pull the requested image tag.
+3. Ensure stateful services are running.
+4. Run database migrations.
+5. Start the inactive API, web, and admin color.
+6. Wait for container health checks.
+7. Switch Caddy to the new color.
+8. Restart the single worker on the new image.
+9. Stop the old app color.
 
 If any new app health check fails, traffic remains on the old color.
 

@@ -22,6 +22,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_OWNER: ${{ github.repository_owner }}
   IMAGE_TAG: ${{ github.event.inputs.image_tag || github.sha }}
+  SOPS_VERSION: v3.10.2
 
 jobs:
   build:
@@ -85,17 +86,36 @@ jobs:
         uses: webfactory/ssh-agent@v0.9.1
         with:
           ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
-      - name: Upload deploy files
+      - name: Install deploy tooling
         run: |
-          ssh -o StrictHostKeyChecking=accept-new "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}" "mkdir -p /opt/lemma/infra/production /opt/lemma/infra/garage /opt/lemma/scripts/production"
-          scp infra/production/compose.yml infra/production/Caddyfile "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}:/opt/lemma/infra/production/"
-          scp scripts/production/deploy.sh scripts/production/rollback.sh scripts/production/backup.sh "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}:/opt/lemma/scripts/production/"
-      - name: Login VPS to GHCR
+          sudo apt-get update
+          sudo apt-get install -y ansible curl
+          curl -fsSL "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64" -o /tmp/sops
+          sudo install -m 0755 /tmp/sops /usr/local/bin/sops
+      - name: Prepare deploy inputs
         env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          mkdir -p .deploy ~/.ssh
+          printf '%s' "$SOPS_AGE_KEY" > .deploy/age.key
+          chmod 600 .deploy/age.key
+          SOPS_AGE_KEY_FILE=.deploy/age.key sops --decrypt infra/production/env.vps.sops.env > .deploy/vps.env
+          chmod 600 .deploy/vps.env
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+      - name: Deploy with Ansible
+        env:
+          ANSIBLE_CONFIG: infra/ansible/ansible.cfg
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_DEPLOY_USER: ${{ secrets.VPS_DEPLOY_USER }}
           GHCR_READ_USER: ${{ secrets.GHCR_READ_USER }}
           GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
         run: |
-          printf '%s' "$GHCR_READ_TOKEN" | ssh "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}" "docker login ghcr.io -u '$GHCR_READ_USER' --password-stdin"
-      - name: Deploy
-        run: |
-          ssh "${{ secrets.VPS_DEPLOY_USER }}@${{ secrets.VPS_HOST }}" "chmod +x /opt/lemma/scripts/production/*.sh && LEMMA_IMAGE_TAG='${{ env.IMAGE_TAG }}' /opt/lemma/scripts/production/deploy.sh"
+          ansible-playbook infra/ansible/playbooks/deploy.yml \
+            --extra-vars "ansible_host=${VPS_HOST}" \
+            --extra-vars "ansible_user=${VPS_DEPLOY_USER}" \
+            --extra-vars "lemma_image_tag=${IMAGE_TAG}" \
+            --extra-vars "lemma_image_owner=${IMAGE_OWNER}" \
+            --extra-vars "lemma_decrypted_env_file=${GITHUB_WORKSPACE}/.deploy/vps.env" \
+            --extra-vars "lemma_ghcr_read_user=${GHCR_READ_USER}" \
+            --extra-vars "lemma_ghcr_read_token=${GHCR_READ_TOKEN}"

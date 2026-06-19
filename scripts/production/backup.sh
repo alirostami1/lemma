@@ -3,15 +3,18 @@ set -eu
 
 ROOT_DIR="${LEMMA_DEPLOY_ROOT:-/opt/lemma}"
 ENV_FILE="${LEMMA_DEPLOY_ENV_FILE:-$ROOT_DIR/.env}"
+STATE_ENV_FILE="${LEMMA_DEPLOY_STATE_ENV_FILE:-$ROOT_DIR/.deploy-state.env}"
 COMPOSE_FILE="$ROOT_DIR/infra/production/compose.yml"
 BACKUP_DIR="${LEMMA_BACKUP_DIR:-$ROOT_DIR/backups}"
 PROJECT_NAME="${LEMMA_COMPOSE_PROJECT:-lemma}"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 
 mkdir -p "$BACKUP_DIR"
+touch "$STATE_ENV_FILE"
+chmod 600 "$STATE_ENV_FILE"
 
 compose() {
-  docker compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"
+  docker compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" --env-file "$STATE_ENV_FILE" -f "$COMPOSE_FILE" "$@"
 }
 
 compose exec -T postgres pg_dump -U "$(grep '^POSTGRES_USER=' "$ENV_FILE" | cut -d= -f2-)" "$(grep '^POSTGRES_DB=' "$ENV_FILE" | cut -d= -f2-)" > "$BACKUP_DIR/postgres-$STAMP.sql"

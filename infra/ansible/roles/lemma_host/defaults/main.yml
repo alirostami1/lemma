@@ -1,0 +1,4 @@
+---
+lemma_deploy_user: deploy
+lemma_root: /opt/lemma
+lemma_ssh_port: 22

@@ -59,44 +59,24 @@ HTTPS. Do not enable it before Caddy has issued origin certificates.
 
 ## VPS Bootstrap
 
-SSH into the VPS as root, then create a deploy user.
+Run the bootstrap playbook from a workstation or CI runner that can SSH to the
+VPS as a sudo-capable user:
 
 ```sh
-adduser deploy
-usermod -aG sudo deploy
+ANSIBLE_CONFIG=infra/ansible/ansible.cfg ansible-playbook infra/ansible/playbooks/bootstrap.yml \
+  --extra-vars "ansible_host=<vps-ip-or-hostname>" \
+  --extra-vars "ansible_user=<sudo-user>"
 ```
 
-Install Docker Engine and the Compose plugin using Docker's official Ubuntu
-packages. Then allow the deploy user to run Docker:
-
-```sh
-usermod -aG docker deploy
-```
-
-Open only SSH, HTTP, and HTTPS:
-
-```sh
-ufw allow OpenSSH
-ufw allow 80/tcp
-ufw allow 443/tcp
-ufw enable
-```
-
-Create deploy directories:
-
-```sh
-mkdir -p /opt/lemma/infra/production /opt/lemma/infra/garage /opt/lemma/scripts/production /opt/lemma/backups
-chown -R deploy:deploy /opt/lemma
-chmod 700 /opt/lemma
-```
+The playbook installs Docker Engine and the Compose plugin, creates the deploy
+user, opens SSH/HTTP/HTTPS with UFW, and creates `/opt/lemma` directories.
 
 ## Server Environment
 
-Copy `infra/production/.env.example` to `/opt/lemma/.env` and replace every
-placeholder.
+Edit the encrypted production env file with SOPS:
 
 ```sh
-install -m 600 -o deploy -g deploy infra/production/.env.example /opt/lemma/.env
+sops infra/production/env.vps.sops.env
 ```
 
 Generate shell-safe secrets:
@@ -106,22 +86,15 @@ openssl rand -base64 32 | tr -d '=+/'
 openssl rand -hex 32
 ```
 
-Set these tag values to the image tag you deploy first:
-
-```sh
-LEMMA_IMAGE_TAG=<git-sha>
-LEMMA_SHARED_IMAGE_TAG=<git-sha>
-LEMMA_BLUE_IMAGE_TAG=<git-sha>
-LEMMA_GREEN_IMAGE_TAG=<git-sha>
-LEMMA_ACTIVE_COLOR=blue
-```
+Do not store image tags or active color in the SOPS env file. The deploy script
+stores rollout state in `/opt/lemma/.deploy-state.env`.
 
 Set `POSTGRES_PASSWORD_URL_ENCODED` to the URL-encoded form of
 `POSTGRES_PASSWORD`. If the password is URL-safe already, it can be the same.
 
 Set `CLOUDFLARE_API_TOKEN` to the scoped Cloudflare token for DNS-01 ACME
-validation. Do not put this token in GitHub unless the workflow later starts
-managing DNS or writing the server `.env`.
+validation. CI decrypts this file using the GitHub environment secret
+`SOPS_AGE_KEY` and copies it to `/opt/lemma/.env`.
 
 ## GitHub Configuration
 
@@ -134,6 +107,7 @@ Required secrets:
 - `VPS_SSH_PRIVATE_KEY`
 - `GHCR_READ_USER`
 - `GHCR_READ_TOKEN`
+- `SOPS_AGE_KEY`
 
 Required variables:
 
@@ -172,15 +146,16 @@ The workflow:
 
 1. Builds API, worker, web, admin, Keycloak, and LibreOffice worker images.
 2. Pushes images to GHCR with the immutable commit SHA tag.
-3. Uploads Compose, Caddy, and production scripts to `/opt/lemma`.
-4. Logs the VPS into GHCR.
-5. Runs `/opt/lemma/scripts/production/deploy.sh`.
+3. Decrypts `infra/production/env.vps.sops.env`.
+4. Runs the Ansible deploy playbook.
+5. The playbook uploads Compose, Caddy, scripts, and `/opt/lemma/.env`.
+6. The playbook logs the VPS into GHCR and runs `/opt/lemma/scripts/production/deploy.sh`.
 
 The deploy script:
 
 1. Acquires `/opt/lemma/.deploy.lock`.
 2. Writes production Garage and Keycloak config from `/opt/lemma/.env`.
-3. Sets the inactive color to the new image tag.
+3. Sets the inactive color and image tag in `/opt/lemma/.deploy-state.env`.
 4. Pulls images.
 5. Starts stateful services.
 6. Runs migrations.

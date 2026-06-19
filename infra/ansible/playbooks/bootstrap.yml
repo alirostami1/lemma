@@ -1,0 +1,6 @@
+---
+- name: Bootstrap Lemma VPS
+  hosts: production
+  become: true
+  roles:
+    - role: lemma_host

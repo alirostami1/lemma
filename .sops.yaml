@@ -1,0 +1,3 @@
+creation_rules:
+  - path_regex: infra/production/.*\.sops\.env$
+    age: age16anad8eq8r3rrrwlv5y9dzp2edq6e0wxndhvtp9j98m4nakevqfqesm88q
