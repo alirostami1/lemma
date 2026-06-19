@@ -3,6 +3,13 @@ import { Button } from "@lemma/ui/components/button";
 import { InlineError } from "@lemma/ui/components/inline-error";
 import { Input } from "@lemma/ui/components/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@lemma/ui/components/select";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -127,15 +134,16 @@ export function StudioCommandBar({
               icon={<FolderOpen />}
             />
             {versions.length > 0 ? (
-              <label className="grid gap-1 text-xs text-muted-foreground">
-                <span className="sr-only">Blueprint version</span>
-                <select
-                  className="h-10 rounded-md border bg-background px-3 text-sm text-foreground"
-                  value={selectedVersionId ?? ""}
-                  onChange={(event) => onOpenVersion(event.currentTarget.value)}
-                >
+              <Select
+                value={selectedVersionId ?? ""}
+                onValueChange={onOpenVersion}
+              >
+                <SelectTrigger aria-label="Blueprint version" className="h-10">
+                  <SelectValue placeholder="Version" />
+                </SelectTrigger>
+                <SelectContent>
                   {versions.map((version) => (
-                    <option key={version.id} value={version.id}>
+                    <SelectItem key={version.id} value={version.id}>
                       v{version.versionNumber}
                       {version.isCurrent ? " current" : ""}
                       {version.sourceCount > 0
@@ -143,10 +151,10 @@ export function StudioCommandBar({
                             version.sourceCount === 1 ? "" : "s"
                           }`
                         : ""}
-                    </option>
+                    </SelectItem>
                   ))}
-                </select>
-              </label>
+                </SelectContent>
+              </Select>
             ) : null}
             <ToolbarIconButton
               label="Undo"
