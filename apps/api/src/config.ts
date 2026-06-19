@@ -47,6 +47,7 @@ export const config = Object.freeze({
     accessKeyId: parsed.LEMMA_S3_ACCESS_KEY_ID,
     secretAccessKey: parsed.LEMMA_S3_SECRET_ACCESS_KEY,
     endpoint: parsed.LEMMA_S3_ENDPOINT,
+    publicEndpoint: parsed.LEMMA_S3_PUBLIC_ENDPOINT,
     forcePathStyle: parsed.LEMMA_S3_FORCE_PATH_STYLE,
     uploadUrlExpiresInSeconds: parsed.LEMMA_S3_UPLOAD_URL_EXPIRES_IN_SECONDS,
     downloadUrlExpiresInSeconds:
