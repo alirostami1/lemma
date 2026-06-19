@@ -174,6 +174,7 @@ cat > "$ROOT_DIR/infra/production/keycloak-realm.json" <<EOF
   "loginWithEmailAllowed": true,
   "resetPasswordAllowed": true,
   "verifyEmail": false,
+  "loginTheme": "lemma",
   "clients": [
     {
       "clientId": "$LEMMA_WEB_OIDC_CLIENT_ID",
