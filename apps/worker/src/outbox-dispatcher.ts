@@ -334,9 +334,11 @@ function getWorkbookCalculationSourcesFromEvent(event: OutboxEvent): {
   }
   const sources = event.payload.workbookSources;
   if (!Array.isArray(sources)) {
-    return [];
+    throw new Error(
+      "workbook_calculation.requested.v1 payload is missing workbookSources.",
+    );
   }
-  return sources.flatMap((source) => {
+  return sources.map((source) => {
     const record = source as Record<string, unknown>;
     if (
       typeof source !== "object" ||
@@ -346,9 +348,11 @@ function getWorkbookCalculationSourcesFromEvent(event: OutboxEvent): {
       typeof record.workbookId !== "string" ||
       record.workbookId.length === 0
     ) {
-      return [];
+      throw new Error(
+        "workbook_calculation.requested.v1 payload contains an invalid workbookSources entry.",
+      );
     }
-    return [{ sourceId: record.sourceId, workbookId: record.workbookId }];
+    return { sourceId: record.sourceId, workbookId: record.workbookId };
   });
 }
 

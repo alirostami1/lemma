@@ -105,7 +105,7 @@ export function workbookValidationFinishedEvent(input: {
 export function workbookCalculationRequestedEvent(input: {
   id: string;
   calculation: WorkbookCalculation;
-  workbookSources?: readonly {
+  workbookSources: readonly {
     sourceId: string;
     workbookId: string;
   }[];
@@ -121,8 +121,7 @@ export function workbookCalculationRequestedEvent(input: {
     payload: {
       workbookCalculationId: input.calculation.id,
       workbookId: input.calculation.workbookId,
-      workbookSources:
-        input.workbookSources?.map((source) => ({ ...source })) ?? [],
+      workbookSources: input.workbookSources.map((source) => ({ ...source })),
       requestedCount: input.calculation.requestedCount,
       correlationId: input.calculation.correlationId,
     },

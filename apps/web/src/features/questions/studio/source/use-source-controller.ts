@@ -117,7 +117,11 @@ export function useSourceController(input: {
   });
 
   const requestPreviewCalculation = useCallback(
-    (workbookId: string) => {
+    (workbookId: string, activeSource: StudioSourceSessionSource | null) => {
+      if (!activeSource || activeSource.workbookId !== workbookId) {
+        return false;
+      }
+
       if (requestedPreviewCalculationWorkbookIdsRef.current.has(workbookId)) {
         return false;
       }
@@ -128,6 +132,12 @@ export function useSourceController(input: {
         workbookId,
         requestedCount: SOURCE_PREVIEW_REQUESTED_COUNT,
         correlationId: `studio-source-preview:${workbookId}`,
+        workbookSources: [
+          {
+            sourceId: activeSource.sourceId,
+            workbookId: activeSource.workbookId,
+          },
+        ],
       })
         .catch(() => {
           setSourcePreparationError("Source preview could not be requested.");
@@ -162,7 +172,7 @@ export function useSourceController(input: {
     }
 
     const workbookId = selectedWorkbook.id;
-    if (requestPreviewCalculation(workbookId)) {
+    if (requestPreviewCalculation(workbookId, sourceRegistry.activeSource)) {
       setSourcePreparation({
         workbookId,
         calculationRequested: true,
@@ -171,7 +181,12 @@ export function useSourceController(input: {
     }
 
     setSourcePreparation(null);
-  }, [requestPreviewCalculation, selectedWorkbook, sourcePreparation]);
+  }, [
+    requestPreviewCalculation,
+    selectedWorkbook,
+    sourcePreparation,
+    sourceRegistry.activeSource,
+  ]);
 
   useEffect(() => {
     if (
@@ -182,10 +197,11 @@ export function useSourceController(input: {
       return;
     }
 
-    requestPreviewCalculation(selectedWorkbook.id);
+    requestPreviewCalculation(selectedWorkbook.id, sourceRegistry.activeSource);
   }, [
     requestPreviewCalculation,
     selectedWorkbook,
+    sourceRegistry.activeSource,
     workbookPreviewController.needsWorkbookPreviewCalculation,
   ]);
 

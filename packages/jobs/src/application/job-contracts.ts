@@ -84,7 +84,7 @@ export function workbookValidateJobData(input: {
 
 export function workbookCalculateJobData(input: {
   workbookCalculationId: string;
-  workbookSources?: readonly {
+  workbookSources: readonly {
     sourceId: string;
     workbookId: string;
   }[];
@@ -92,8 +92,7 @@ export function workbookCalculateJobData(input: {
 }): WorkbookCalculateJobData {
   return {
     workbookCalculationId: input.workbookCalculationId,
-    workbookSources:
-      input.workbookSources?.map((source) => ({ ...source })) ?? [],
+    workbookSources: input.workbookSources.map((source) => ({ ...source })),
     lineage: input.lineage,
   };
 }

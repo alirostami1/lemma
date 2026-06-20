@@ -1,6 +1,7 @@
 import { rootOperationLineage } from "@lemma/domain";
 import { withHttpErrorHandler } from "@lemma/http";
 import type {
+  CreateQuestionBlueprintCommand,
   CreateQuestionGenerationRunCommand,
   QuestionBlueprintService,
   QuestionGenerationService,
@@ -146,7 +147,10 @@ export function createQuestionsHandlers(
     createQuestionBlueprint: questionsHandler(
       "createQuestionBlueprint",
       async (c) => {
-        const body = c.req.valid("json");
+        const body = c.req.valid("json") as Omit<
+          CreateQuestionBlueprintCommand,
+          "currentUser"
+        >;
         return c.json(
           presentQuestionBlueprint(
             await deps.questionBlueprintService.createQuestionBlueprint({

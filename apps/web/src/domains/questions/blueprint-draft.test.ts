@@ -31,6 +31,7 @@ describe("buildQuestionBlueprintDraft", () => {
       description: "",
       model,
       workbookId: null,
+      workbookSources: [],
     });
 
     expect(result).toMatchObject({
@@ -180,6 +181,7 @@ describe("buildQuestionBlueprintDraft", () => {
       description: "  ",
       model,
       workbookId: "workbook_1",
+      workbookSources: [],
     });
 
     expect(result).toEqual({
@@ -188,6 +190,7 @@ describe("buildQuestionBlueprintDraft", () => {
         name: "Revenue blueprint",
         description: null,
         workbookId: "workbook_1",
+        workbookSources: [],
         document: {
           schemaVersion: 1,
           references: [

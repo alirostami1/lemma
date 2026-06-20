@@ -32,6 +32,7 @@ type ValueExpressionInputProps = {
   referencePreviewCache: ReferencePreviewCache;
   valueType?: "text" | "number" | "boolean";
   workbookEnabled: boolean;
+  activeSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onChange(value: ValueExpression): void;
@@ -47,6 +48,7 @@ export function ValueExpressionInput({
   referencePreviewCache,
   valueType,
   workbookEnabled,
+  activeSourceId,
   disabled,
   onModelChange,
   onChange,
@@ -147,6 +149,7 @@ export function ValueExpressionInput({
               selectedReferenceId={value.referenceId || undefined}
               referencePreviewCache={referencePreviewCache}
               workbookEnabled={workbookEnabled}
+              activeSourceId={activeSourceId}
               disabled={disabled}
               onModelChange={onModelChange}
               onSelectReference={(referenceId) =>

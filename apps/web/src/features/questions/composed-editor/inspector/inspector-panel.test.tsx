@@ -35,6 +35,7 @@ describe("InspectorPanel", () => {
         selection={{ type: "document" }}
         referencePreviewCache={{}}
         workbookEnabled={false}
+        activeSourceId={null}
         onModelChange={() => {}}
         onSelectionChange={onSelectionChange}
       />,
@@ -72,6 +73,7 @@ describe("InspectorPanel", () => {
         selection={{ type: "block", blockId: "text_1" }}
         referencePreviewCache={{}}
         workbookEnabled={false}
+        activeSourceId={null}
         onModelChange={() => {}}
         onSelectionChange={() => {}}
       />,
@@ -98,6 +100,7 @@ describe("InspectorPanel", () => {
         selection={{ type: "document" }}
         referencePreviewCache={{}}
         workbookEnabled={false}
+        activeSourceId={null}
         stickyOffset={212}
         onModelChange={() => {}}
         onSelectionChange={() => {}}

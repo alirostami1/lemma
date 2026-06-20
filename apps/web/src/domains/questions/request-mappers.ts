@@ -18,7 +18,6 @@ export function toCreateQuestionBlueprintRequest(
     description: input.description,
     visibility: input.visibility,
     document: input.document,
-    workbookId: input.workbookId,
     workbookSources: input.workbookSources,
   };
 }
@@ -31,7 +30,6 @@ export function toUpdateQuestionBlueprintRequest(
     description: input.description,
     visibility: input.visibility,
     document: input.document,
-    workbookId: input.workbookId,
     workbookSources: input.workbookSources,
     status: input.status,
   };

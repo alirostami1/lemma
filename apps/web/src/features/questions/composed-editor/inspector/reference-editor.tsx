@@ -34,7 +34,7 @@ type ReferenceEditorProps = {
   referenceId: string;
   preview?: ReferencePreviewValue;
   workbookEnabled: boolean;
-  activeSourceId?: string | null;
+  activeSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onSelectionChange(selection: EditorSelection): void;
@@ -73,8 +73,7 @@ function ReferenceEditorFields({
   const [nameError, setNameError] = useState<string | null>(null);
   const [sourceError, setSourceError] = useState<string | null>(null);
 
-  const hasExplicitActiveSource = activeSourceId !== undefined;
-  const isActiveSourceMissing = hasExplicitActiveSource && activeSourceId === null;
+  const isActiveSourceMissing = activeSourceId === null;
 
   useEffect(() => {
     setDraftName(reference.id);
@@ -170,10 +169,7 @@ function ReferenceEditorFields({
           />
         </InspectorField>
 
-        <InspectorField
-          label="Source"
-          error={sourceError ?? undefined}
-        >
+        <InspectorField label="Source" error={sourceError ?? undefined}>
           <Select
             value={sourceType}
             disabled={disabled}
@@ -188,7 +184,7 @@ function ReferenceEditorFields({
               );
               if (!nextSource) {
                 setSourceError(
-                  hasExplicitActiveSource
+                  isActiveSourceMissing
                     ? "Select an active source before switching to workbook references."
                     : "Select a workbook source before using workbook references.",
                 );
@@ -268,9 +264,7 @@ function ReferenceEditorFields({
                         ...current,
                         source: {
                           type: current.source.type,
-                          sourceId:
-                            selection.sourceId ??
-                            (current.source.sourceId || getInitialWorkbookSourceId(activeSourceId)),
+                          sourceId: selection.sourceId,
                           ref: selection.reference,
                         },
                       },
@@ -350,7 +344,7 @@ function getReferencePreviewText(
 function createNextReferenceSource(
   source: ReferenceSourceDraft,
   type: ReferenceSourceDraft["type"],
-  activeSourceId: string | null | undefined,
+  activeSourceId: string | null,
 ): ReferenceSourceDraft | null {
   if (type === "literal") {
     return source.type === "literal"
@@ -364,18 +358,9 @@ function createNextReferenceSource(
       : { type, sourceId: source.sourceId, ref: "" };
   }
 
-  const workbookSourceId = getInitialWorkbookSourceId(activeSourceId);
-  if (!workbookSourceId) {
+  if (activeSourceId === null) {
     return null;
   }
 
-  return { type, sourceId: workbookSourceId, ref: "" };
-}
-
-function getInitialWorkbookSourceId(activeSourceId: string | null | undefined) {
-  if (activeSourceId === undefined) {
-    return "source_1";
-  }
-
-  return activeSourceId ?? "";
+  return { type, sourceId: activeSourceId, ref: "" };
 }

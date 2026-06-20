@@ -27,6 +27,7 @@ export function TableInspector({
   editorModel,
   referencePreviewCache,
   workbookEnabled,
+  activeSourceId,
   disabled,
   onModelChange,
   onEditorModelChange,
@@ -37,6 +38,7 @@ export function TableInspector({
   editorModel: ComposedEditorModel;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
+  activeSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: TableEditorModel): void;
   onEditorModelChange(model: ComposedEditorModel): void;
@@ -103,6 +105,7 @@ export function TableInspector({
           selectedReferenceId={selectedRangeReferenceId ?? undefined}
           referencePreviewCache={referencePreviewCache}
           workbookEnabled={workbookEnabled}
+          activeSourceId={activeSourceId}
           disabled={disabled}
           allowedSourceTypes={["workbook_range"]}
           createSourceTypeDefault="workbook_range"

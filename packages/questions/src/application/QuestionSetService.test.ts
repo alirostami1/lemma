@@ -5,6 +5,7 @@ import { createCurrentUser } from "@lemma/identity/application";
 import { createUser } from "@lemma/identity/domain";
 import {
   createQuestionSet,
+  InvalidQuestionFieldError,
   type Question,
   type QuestionBlueprint,
   type QuestionBlueprintVersion,
@@ -86,7 +87,7 @@ describe("QuestionBlueprintService", () => {
       currentUser: currentUser(ownerUserId),
       name: "Practice",
       document: emptyBlueprintDocument,
-      workbookId: sourceWorkbookId,
+      workbookSources: [],
     });
 
     assert.equal(result.questionBlueprint.id, nextBlueprintId);
@@ -134,6 +135,30 @@ describe("QuestionBlueprintService", () => {
     assert.deepEqual(
       repository.questionBlueprintVersionAssets.get(nextBlueprintVersionId),
       result.questionBlueprint.currentVersion.sourceAssets,
+    );
+  });
+
+  it("rejects create without explicit workbookSources", async () => {
+    const repository = new FakeQuestionsRepository();
+    const service = new QuestionBlueprintService({
+      questionsRepository: repository,
+      idGenerator,
+      clock,
+    });
+
+    await assert.rejects(
+      () =>
+        service.createQuestionBlueprint({
+          currentUser: currentUser(ownerUserId),
+          name: "Practice",
+          document: workbookBlueprintDocument("source_1"),
+        } as never),
+      (error: unknown) => {
+        return (
+          error instanceof InvalidQuestionFieldError &&
+          /workbookSources/.test(error.message)
+        );
+      },
     );
   });
 
@@ -190,6 +215,51 @@ describe("QuestionBlueprintService", () => {
           createdAt: at,
         },
       ],
+    );
+  });
+
+  it("rejects document update without explicit workbookSources", async () => {
+    const repository = new FakeQuestionsRepository();
+    const versionIds = [nextBlueprintVersionId, updatedBlueprintVersionId];
+    const service = new QuestionBlueprintService({
+      questionsRepository: repository,
+      idGenerator: {
+        ...idGenerator,
+        questionBlueprintVersionId: () => {
+          const id = versionIds.shift();
+          if (!id) {
+            throw new Error("Unexpected blueprint version id request.");
+          }
+          return id;
+        },
+      },
+      clock,
+    });
+
+    await service.createQuestionBlueprint({
+      currentUser: currentUser(ownerUserId),
+      name: "Practice",
+      document: workbookBlueprintDocument("source_1"),
+      workbookSources: [
+        { sourceId: "source_1", name: "First", workbookId: sourceWorkbookId },
+      ],
+    });
+
+    await assert.rejects(
+      () =>
+        service.updateQuestionBlueprint({
+          currentUser: currentUser(ownerUserId),
+          questionBlueprintId: nextBlueprintId,
+          patch: {
+            document: workbookBlueprintDocument("source_1"),
+          },
+        }),
+      (error: unknown) => {
+        return (
+          error instanceof InvalidQuestionFieldError &&
+          /workbookSources/.test(error.message)
+        );
+      },
     );
   });
 });

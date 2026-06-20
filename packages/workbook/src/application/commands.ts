@@ -33,6 +33,10 @@ export type ListWorkbookCalculationsCommand = ListCommand & {
 };
 
 export type CreateWorkbookCalculationCommand = WorkbookByIdCommand & {
+  workbookSources: readonly {
+    sourceId: string;
+    workbookId: string;
+  }[];
   requestedCount: number;
   correlationId?: string | null;
   lineage: OperationLineage;
@@ -43,12 +47,16 @@ export type WorkbookCalculationByIdCommand = ListCommand & {
 };
 
 export type RetryWorkbookCalculationCommand = WorkbookCalculationByIdCommand & {
+  workbookSources: readonly {
+    sourceId: string;
+    workbookId: string;
+  }[];
   lineage: OperationLineage;
 };
 
 export type ProcessWorkbookCalculationCommand = {
   workbookCalculationId: string;
-  workbookSources?: readonly {
+  workbookSources: readonly {
     sourceId: string;
     workbookId: string;
   }[];

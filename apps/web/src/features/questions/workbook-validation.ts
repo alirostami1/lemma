@@ -17,10 +17,15 @@ export function buildWorkbookRangeSelection(
   rows: string[][],
   range: SpreadsheetCellRange,
   options: {
+    sourceId: string | null;
     columnStartIndex?: number;
     rowStartIndex?: number;
-  } = {},
+  },
 ): WorkbookRangeSelection {
+  const sourceId = options.sourceId;
+  if (!sourceId) {
+    throw new Error("Cannot build workbook range selection without source id.");
+  }
   const values: string[][] = [];
 
   for (
@@ -48,6 +53,7 @@ export function buildWorkbookRangeSelection(
 
   return {
     reference: formatSpreadsheetRange(sheetName, referenceRange),
+    sourceId,
     values,
   };
 }

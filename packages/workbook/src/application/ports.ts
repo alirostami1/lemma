@@ -160,7 +160,7 @@ export interface WorkbookCalculationPort {
   requestCalculation(input: {
     createdByUserId: UserId;
     workbookId: WorkbookId;
-    workbookSources?: readonly {
+    workbookSources: readonly {
       sourceId: string;
       workbookId: WorkbookId;
     }[];

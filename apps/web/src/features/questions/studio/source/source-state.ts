@@ -5,7 +5,7 @@ import type { StudioSourceSessionSource } from "./source-session-registry";
 
 type StudioSourceViewStateBase = {
   sources?: StudioSourceSessionSource[];
-  activeSourceId?: string | null;
+  activeSourceId: string | null;
   onActivateSourceId?(sourceId: string): void;
 };
 
@@ -65,6 +65,7 @@ export function getStudioSourceViewState(input: {
     if (requiresSource) {
       return {
         status: "required_missing",
+        activeSourceId: null,
         title: "Source required",
         description: "Workbook-backed references need a source attached.",
         issue: "Attach a source to resolve workbook-backed references.",
@@ -74,6 +75,7 @@ export function getStudioSourceViewState(input: {
 
     return {
       status: "not_required_empty",
+      activeSourceId: null,
       title: "No source attached",
       description:
         "Attach a source inside this blueprint if it needs workbook-backed references.",
@@ -85,6 +87,7 @@ export function getStudioSourceViewState(input: {
     if (input.isWorkbooksLoading) {
       return {
         status: "loading",
+        activeSourceId: null,
         title: "Loading source",
         description: "Loading attached source.",
         canRemove: true,
@@ -93,6 +96,7 @@ export function getStudioSourceViewState(input: {
 
     return {
       status: "error",
+      activeSourceId: null,
       title:
         input.isVersionBoundSource === true
           ? "Version source not found"
@@ -114,6 +118,7 @@ export function getStudioSourceViewState(input: {
   if (workbookSourceStatus === "pending_validation") {
     return {
       status: "loading",
+      activeSourceId: null,
       title: input.selectedWorkbook.name,
       description: "Validating source.",
       canRemove: true,
@@ -123,6 +128,7 @@ export function getStudioSourceViewState(input: {
   if (workbookSourceStatus !== "ready") {
     return {
       status: "invalid",
+      activeSourceId: null,
       title: input.selectedWorkbook.name,
       description: "This source is not ready yet.",
       issue: getWorkbookIssue(input.selectedWorkbook),
@@ -133,6 +139,7 @@ export function getStudioSourceViewState(input: {
   if (input.previewStatus === "loading") {
     return {
       status: "loading",
+      activeSourceId: null,
       title: input.selectedWorkbook.name,
       description: "Loading source preview.",
       canRemove: true,
@@ -142,6 +149,7 @@ export function getStudioSourceViewState(input: {
   if (input.previewStatus === "error" || input.previewError) {
     return {
       status: "error",
+      activeSourceId: null,
       title: input.selectedWorkbook.name,
       description: "Source preview could not be loaded.",
       issue: input.previewError ?? "Source preview could not be loaded.",
@@ -151,6 +159,7 @@ export function getStudioSourceViewState(input: {
 
   return {
     status: "ready",
+    activeSourceId: null,
     title: input.selectedWorkbook.name,
     description: "Ready source.",
     canRemove: true,

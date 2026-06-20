@@ -17,7 +17,7 @@ export interface QuestionBlueprintDraft {
   visibility?: QuestionBlueprintVisibility;
   document: QuestionBlueprintDocument;
   workbookId?: string | null;
-  workbookSources?: QuestionBlueprintDraftWorkbookSource[];
+  workbookSources: QuestionBlueprintDraftWorkbookSource[];
 }
 
 export interface WorkbookQuestionGenerationSourceDraft {

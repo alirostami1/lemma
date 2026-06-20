@@ -81,23 +81,21 @@ function parseWorkbookCalculateJob(
   if (
     typeof data.workbookCalculationId !== "string" ||
     data.workbookCalculationId.length === 0 ||
-    (data.workbookSources !== undefined &&
-      (!Array.isArray(data.workbookSources) ||
-        !data.workbookSources.every(
-          (source) =>
-            typeof source === "object" &&
-            source !== null &&
-            typeof source.sourceId === "string" &&
-            source.sourceId.length > 0 &&
-            typeof source.workbookId === "string" &&
-            source.workbookId.length > 0,
-        )))
+    !Array.isArray(data.workbookSources) ||
+    !data.workbookSources.every(
+      (source) =>
+        typeof source === "object" &&
+        source !== null &&
+        typeof source.sourceId === "string" &&
+        source.sourceId.length > 0 &&
+        typeof source.workbookId === "string" &&
+        source.workbookId.length > 0,
+    )
   ) {
     throw new Error("Workbook calculate job payload is invalid.");
   }
   return {
     ...data,
-    workbookSources: data.workbookSources ?? [],
     lineage: parseOperationLineage(data.lineage),
   };
 }

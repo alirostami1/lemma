@@ -212,7 +212,7 @@ export interface CreateQuestionBlueprintInput {
   visibility?: QuestionBlueprintVisibility;
   document: AuthoringQuestionBlueprintDocument;
   workbookId?: string | null;
-  workbookSources?: QuestionBlueprintWorkbookSource[];
+  workbookSources: QuestionBlueprintWorkbookSource[];
 }
 
 export interface UpdateQuestionBlueprintInput {
@@ -222,7 +222,7 @@ export interface UpdateQuestionBlueprintInput {
   visibility?: QuestionBlueprintVisibility;
   document?: AuthoringQuestionBlueprintDocument;
   workbookId?: string | null;
-  workbookSources?: QuestionBlueprintWorkbookSource[];
+  workbookSources: QuestionBlueprintWorkbookSource[];
   status?: QuestionBlueprintStatus;
 }
 

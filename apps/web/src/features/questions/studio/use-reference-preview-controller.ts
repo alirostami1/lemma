@@ -18,7 +18,7 @@ export type ReferencePreviewController = {
 
 type UseReferencePreviewControllerInput = {
   model: ComposedEditorModel;
-  activeSourceId?: string | null;
+  activeSourceId: string | null;
   workbookSnapshotId?: string | null;
   workbookSelectionValuesByRef?: WorkbookSelectionValuesByRef;
   workbookPreview: WorkbookPreview | null;
@@ -32,7 +32,7 @@ export function useReferencePreviewController({
   workbookPreview,
 }: UseReferencePreviewControllerInput): ReferencePreviewController {
   const workbookReferenceRefs = useMemo(
-    () => getWorkbookReferenceRefs(model, activeSourceId ?? null),
+    () => getWorkbookReferenceRefs(model, activeSourceId),
     [activeSourceId, model],
   );
   const missingWorkbookReferenceRefs = useMemo(() => {
@@ -103,7 +103,7 @@ export function useReferencePreviewController({
     () =>
       resolveReferencePreviewValues({
         model,
-        activeSourceId: activeSourceId ?? null,
+        activeSourceId,
         workbookSelectionValuesByRef: {
           ...fetchedWorkbookSelectionValuesByRef,
           ...workbookSelectionValuesByRef,

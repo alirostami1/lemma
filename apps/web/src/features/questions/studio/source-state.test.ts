@@ -14,6 +14,7 @@ describe("getStudioSourceViewState", () => {
       }),
     ).toEqual({
       status: "not_required_empty",
+      activeSourceId: null,
       title: "No source attached",
       description:
         "Attach a source inside this blueprint if it needs workbook-backed references.",
@@ -33,6 +34,7 @@ describe("getStudioSourceViewState", () => {
       }),
     ).toEqual({
       status: "loading",
+      activeSourceId: null,
       title: "Loading source",
       description: "Loading attached source.",
       canRemove: true,
@@ -51,6 +53,7 @@ describe("getStudioSourceViewState", () => {
       }),
     ).toEqual({
       status: "error",
+      activeSourceId: null,
       title: "Source not found",
       description: "Attached source could not be found.",
       issue: "Replace the source or remove it from this blueprint.",
@@ -71,6 +74,7 @@ describe("getStudioSourceViewState", () => {
       }),
     ).toEqual({
       status: "error",
+      activeSourceId: null,
       title: "Version source not found",
       description: "This blueprint version's saved source could not be found.",
       issue: "Reattach the source and save a new blueprint version.",

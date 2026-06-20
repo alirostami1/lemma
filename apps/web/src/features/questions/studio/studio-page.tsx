@@ -78,6 +78,7 @@ export function StudioPage(input: StudioRouteSearch = {}) {
         <WorkbookPickerDialog
           workbookSnapshotId={studio.workbookPicker.workbookSnapshotId}
           workbookSheets={studio.workbookPicker.workbookSheets}
+          activeSourceId={studio.source.activeSource?.sourceId ?? null}
           hasMoreSheets={studio.workbookPicker.hasMoreWorkbookSheets}
           isLoadingMoreSheets={
             studio.workbookPicker.isLoadingMoreWorkbookSheets

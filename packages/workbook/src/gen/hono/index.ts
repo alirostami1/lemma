@@ -53,6 +53,7 @@ import {
   ListWorkbooksQueryParams,
   ResolveWorkbookSnapshotValueParams,
   ResolveWorkbookSnapshotValueQueryParams,
+  RetryWorkbookCalculationBody,
   RetryWorkbookCalculationParams,
   UpdateWorkbookBody,
   UpdateWorkbookParams,
@@ -327,7 +328,12 @@ export type WorkbookHandlerMap = {
   retryWorkbookCalculation: Handler<
     WorkbookAppEnv,
     "/workbook-calculations/:workbookCalculationId/retries",
-    { out: { param: z.infer<typeof RetryWorkbookCalculationParams> } },
+    {
+      out: {
+        param: z.infer<typeof RetryWorkbookCalculationParams>;
+        json: z.infer<typeof RetryWorkbookCalculationBody>;
+      };
+    },
     TypedHandlerResponse<RetryWorkbookCalculationResponses>
   >;
   listWorkbookSnapshots: Handler<
@@ -497,6 +503,7 @@ export function createWorkbookRoutes(deps: {
     "/workbook-calculations/:workbookCalculationId/retries",
     deps.requireIdentity,
     zValidator("param", RetryWorkbookCalculationParams, validationHook),
+    zValidator("json", RetryWorkbookCalculationBody, validationHook),
     deps.handlers.retryWorkbookCalculation,
   );
 

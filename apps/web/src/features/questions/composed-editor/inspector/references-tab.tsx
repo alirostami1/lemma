@@ -27,7 +27,7 @@ export function ReferencesTab({
   selection: EditorSelection;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
-  activeSourceId?: string | null;
+  activeSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onSelectionChange(selection: EditorSelection): void;

@@ -184,12 +184,14 @@ export function createWorkbookHandlers(
       "retryWorkbookCalculation",
       async (c) => {
         const { workbookCalculationId } = c.req.valid("param");
+        const body = c.req.valid("json");
         return c.json(
           presentWorkbookCalculation(
             await deps.workbookCalculationService.retryWorkbookCalculation({
               currentUser: c.var.identity,
               workbookCalculationId,
               lineage: rootOperationLineage(c.var.requestId),
+              ...body,
             }),
           ),
           201,

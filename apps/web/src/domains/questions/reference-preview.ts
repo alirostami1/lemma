@@ -34,13 +34,13 @@ export type { WorkbookPreviewForReferences };
 
 export function resolveReferencePreviewValues({
   model,
-  activeSourceId = null,
+  activeSourceId,
   workbookSelectionValuesByRef = {},
   workbookPreview,
   now = Date.now(),
 }: {
   model: ComposedEditorModel;
-  activeSourceId?: string | null;
+  activeSourceId: string | null;
   workbookSelectionValuesByRef?: WorkbookSelectionValuesByRef;
   workbookPreview: WorkbookPreviewForReferences | null;
   now?: number;

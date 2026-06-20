@@ -37,6 +37,7 @@ import type {
   ListWorkbooksParams,
   NotFoundResponse,
   ResolveWorkbookSnapshotValueParams,
+  RetryWorkbookCalculationRequest,
   UnauthorizedResponse,
   UpdateWorkbookRequest,
   UpstreamWorkbookEngineResponseResponse,
@@ -1647,6 +1648,7 @@ export const getRetryWorkbookCalculationUrl = (
  */
 export const retryWorkbookCalculation = async (
   workbookCalculationId: string,
+  retryWorkbookCalculationRequest: RetryWorkbookCalculationRequest,
   options?: RequestInit,
 ): Promise<WorkbookCalculationResponse> => {
   return authedFetch<WorkbookCalculationResponse>(
@@ -1654,6 +1656,8 @@ export const retryWorkbookCalculation = async (
     {
       ...options,
       method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(retryWorkbookCalculationRequest),
     },
   );
 };
@@ -1671,14 +1675,14 @@ export const getRetryWorkbookCalculationMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof retryWorkbookCalculation>>,
     TError,
-    { workbookCalculationId: string },
+    { workbookCalculationId: string; data: RetryWorkbookCalculationRequest },
     TContext
   >;
   request?: SecondParameter<typeof authedFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof retryWorkbookCalculation>>,
   TError,
-  { workbookCalculationId: string },
+  { workbookCalculationId: string; data: RetryWorkbookCalculationRequest },
   TContext
 > => {
   const mutationKey = ["retryWorkbookCalculation"];
@@ -1692,11 +1696,15 @@ export const getRetryWorkbookCalculationMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof retryWorkbookCalculation>>,
-    { workbookCalculationId: string }
+    { workbookCalculationId: string; data: RetryWorkbookCalculationRequest }
   > = (props) => {
-    const { workbookCalculationId } = props ?? {};
+    const { workbookCalculationId, data } = props ?? {};
 
-    return retryWorkbookCalculation(workbookCalculationId, requestOptions);
+    return retryWorkbookCalculation(
+      workbookCalculationId,
+      data,
+      requestOptions,
+    );
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1705,7 +1713,8 @@ export const getRetryWorkbookCalculationMutationOptions = <
 export type RetryWorkbookCalculationMutationResult = NonNullable<
   Awaited<ReturnType<typeof retryWorkbookCalculation>>
 >;
-
+export type RetryWorkbookCalculationMutationBody =
+  RetryWorkbookCalculationRequest;
 export type RetryWorkbookCalculationMutationError =
   | BadRequestResponse
   | UnauthorizedResponse
@@ -1731,7 +1740,7 @@ export const useRetryWorkbookCalculation = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof retryWorkbookCalculation>>,
       TError,
-      { workbookCalculationId: string },
+      { workbookCalculationId: string; data: RetryWorkbookCalculationRequest },
       TContext
     >;
     request?: SecondParameter<typeof authedFetch>;
@@ -1740,7 +1749,7 @@ export const useRetryWorkbookCalculation = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof retryWorkbookCalculation>>,
   TError,
-  { workbookCalculationId: string },
+  { workbookCalculationId: string; data: RetryWorkbookCalculationRequest },
   TContext
 > => {
   return useMutation(

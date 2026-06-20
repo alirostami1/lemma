@@ -254,12 +254,11 @@ export function useStudioController(
       onLoadMoreWorkbookSheets:
         source.workbookPreviewController.loadMoreWorkbookSheets,
       onSelect: (selection: WorkbookRangeSelection) => {
-        const sourceId = source.activeSource?.sourceId ?? "source_1";
         setWorkbookSelectionValuesByRef((currentValues) => ({
           ...currentValues,
           [selection.reference]: selection.values,
         }));
-        workbookPickerRequest?.onSelect({ ...selection, sourceId });
+        workbookPickerRequest?.onSelect(selection);
         setWorkbookPickerRequest(null);
       },
     },

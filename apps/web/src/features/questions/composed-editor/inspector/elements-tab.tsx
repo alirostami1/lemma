@@ -12,6 +12,7 @@ export function ElementsTab({
   selectedBlock,
   referencePreviewCache,
   workbookEnabled,
+  activeSourceId,
   disabled,
   onModelChange,
   onSelectionChange,
@@ -21,6 +22,7 @@ export function ElementsTab({
   selectedBlock: ComposedEditorBlock | null;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
+  activeSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onSelectionChange(selection: EditorSelection): void;
@@ -32,6 +34,7 @@ export function ElementsTab({
       selectedBlock={selectedBlock}
       referencePreviewCache={referencePreviewCache}
       workbookEnabled={workbookEnabled}
+      activeSourceId={activeSourceId}
       disabled={disabled}
       onModelChange={onModelChange}
       onSelectionChange={onSelectionChange}

@@ -9,7 +9,6 @@ import {
   questionBlueprintId as toQuestionBlueprintId,
   questionId as toQuestionId,
   questionSetId as toQuestionSetId,
-  workbookId as toWorkbookId,
   workbookSourceIdsUsedByDocument,
 } from "../domain/index.js";
 import type {
@@ -160,13 +159,11 @@ export async function hydrateQuestionBlueprintVersions(
 
 export function normalizeCanonicalBlueprintInput(input: {
   document: unknown;
-  workbookId: string | null;
-  workbookSources?: unknown;
+  workbookSources: unknown;
 }) {
   const document = questionBlueprintDocument(input.document);
   const workbookSources = normalizeWorkbookSources({
     document,
-    workbookId: input.workbookId,
     workbookSources: input.workbookSources,
   });
   return {
@@ -178,18 +175,14 @@ export function normalizeCanonicalBlueprintInput(input: {
 
 function normalizeWorkbookSources(input: {
   document: ReturnType<typeof questionBlueprintDocument>;
-  workbookId: string | null;
-  workbookSources?: unknown;
+  workbookSources: unknown;
 }): QuestionBlueprintWorkbookSource[] {
   const usedSourceIds = workbookSourceIdsUsedByDocument(input.document);
   if (usedSourceIds.size === 0) {
     return [];
   }
 
-  const sources =
-    input.workbookSources === undefined
-      ? legacyWorkbookSource(input.workbookId)
-      : questionBlueprintWorkbookSources(input.workbookSources);
+  const sources = questionBlueprintWorkbookSources(input.workbookSources);
   const sourcesById = new Map(
     sources.map((source) => [source.sourceId, source]),
   );
@@ -204,18 +197,4 @@ function normalizeWorkbookSources(input: {
     usedSources.push(source);
   }
   return usedSources;
-}
-
-function legacyWorkbookSource(
-  workbookId: string | null,
-): QuestionBlueprintWorkbookSource[] {
-  return workbookId === null
-    ? []
-    : [
-        {
-          sourceId: "source_1",
-          name: "Source 1",
-          workbookId: toWorkbookId(workbookId),
-        },
-      ];
 }

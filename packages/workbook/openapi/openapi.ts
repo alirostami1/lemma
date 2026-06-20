@@ -375,8 +375,20 @@ const createCalculationRequestSchema = named(
   {
     type: "object",
     additionalProperties: false,
-    required: ["requestedCount"],
+    required: ["workbookSources", "requestedCount"],
     properties: {
+      workbookSources: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["sourceId", "workbookId"],
+          properties: {
+            sourceId: { type: "string" },
+            workbookId: uuidV7StringSchemaObject(),
+          },
+        },
+      },
       requestedCount: {
         type: "integer",
         minimum: 1,
@@ -386,6 +398,25 @@ const createCalculationRequestSchema = named(
     },
   },
 );
+const retryCalculationRequestSchema = named("RetryWorkbookCalculationRequest", {
+  type: "object",
+  additionalProperties: false,
+  required: ["workbookSources"],
+  properties: {
+    workbookSources: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["sourceId", "workbookId"],
+        properties: {
+          sourceId: { type: "string" },
+          workbookId: uuidV7StringSchemaObject(),
+        },
+      },
+    },
+  },
+});
 const getSnapshotRangeBatchRequestSchema = named(
   "GetWorkbookSnapshotRangeBatchRequest",
   {
@@ -476,6 +507,7 @@ const schemas = [
   createWorkbookRequestSchema,
   updateWorkbookRequestSchema,
   createCalculationRequestSchema,
+  retryCalculationRequestSchema,
   getSnapshotRangeBatchRequestSchema,
   workbookResponseSchema,
   workbooksResponseSchema,
@@ -600,6 +632,7 @@ const paths: Paths = {
       "Retry workbook calculation",
       "201",
       calculationResponseSchema,
+      retryCalculationRequestSchema,
     ),
   },
   "/workbook-calculations/{workbookCalculationId}/snapshots": {

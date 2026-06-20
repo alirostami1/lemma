@@ -71,6 +71,7 @@ type WorkbookPickerDialogProps = {
   hasMoreSheets?: boolean;
   isLoadingMoreSheets?: boolean;
   fileName: string;
+  activeSourceId: string | null;
   open: boolean;
   onOpenChange(open: boolean): void;
   onLoadMoreSheets?(): void;
@@ -84,6 +85,7 @@ export function WorkbookPickerDialog({
   hasMoreSheets = false,
   isLoadingMoreSheets = false,
   fileName,
+  activeSourceId,
   open,
   onOpenChange,
   onLoadMoreSheets,
@@ -295,8 +297,9 @@ export function WorkbookPickerDialog({
       : placeholderRows;
   const selectionRange = rangeSelection.selectionRange;
   const previewSelectedRange =
-    activeSheet && selectionRange
+    activeSheet && selectionRange && activeSourceId !== null
       ? buildWorkbookRangeSelection(activeSheet.name, rows, selectionRange, {
+          sourceId: activeSourceId,
           columnStartIndex: activeCellWindow.startColumn - 1,
           rowStartIndex: activeCellWindow.startRow - 1,
         })
@@ -418,6 +421,12 @@ export function WorkbookPickerDialog({
     if (!selectedRange) {
       return;
     }
+    if (activeSourceId === null) {
+      setSelectedRangeErrorMessage(
+        "Select an active source before selecting this range.",
+      );
+      return;
+    }
 
     setSelectedRangeErrorMessage(null);
     setIsSelectingRange(true);
@@ -436,6 +445,7 @@ export function WorkbookPickerDialog({
           selectionRequirement,
         ),
         values: result.data.rows,
+        sourceId: activeSourceId,
       });
     } catch {
       setSelectedRangeErrorMessage("Selected range could not be loaded.");
@@ -607,7 +617,12 @@ export function WorkbookPickerDialog({
               </div>
               <WorkbookSelectionSummary
                 isSelectingRange={isSelectingRange}
-                selectedRangeErrorMessage={selectedRangeErrorMessage}
+                selectedRangeErrorMessage={
+                  selectedRangeErrorMessage ??
+                  (activeSourceId === null
+                    ? "Select an active source before selecting this range."
+                    : null)
+                }
                 selectedRange={selectedRange}
                 selectionValidation={selectionValidation}
                 onSelectRange={handleSelectRange}

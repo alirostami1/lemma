@@ -17,6 +17,7 @@ export function BlockList({
   disabled,
   referencePreviewCache,
   workbookEnabled,
+  activeSourceId,
   onModelChange,
   onSelectBlock,
   onSelectReference,
@@ -32,6 +33,7 @@ export function BlockList({
   disabled?: boolean;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
+  activeSourceId: string | null;
   onModelChange(model: ComposedEditorModel): void;
   onSelectBlock(blockId: string): void;
   onSelectReference(referenceId: string): void;
@@ -126,6 +128,7 @@ export function BlockList({
                     referencePreviewCache={referencePreviewCache}
                     model={model}
                     workbookEnabled={workbookEnabled}
+                    activeSourceId={activeSourceId}
                     onModelChange={onModelChange}
                     onSelectReference={onSelectReference}
                     onTableSelectionChange={onTableSelectionChange}

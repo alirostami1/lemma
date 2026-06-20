@@ -39,6 +39,7 @@ export function RichTextEditor({
   model,
   referencePreviewCache,
   workbookEnabled,
+  activeSourceId,
   disabled,
   onModelChange,
   onChange,
@@ -48,6 +49,7 @@ export function RichTextEditor({
   model: ComposedEditorModel;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
+  activeSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onChange(value: ComposedRichContent): void;
@@ -205,6 +207,7 @@ export function RichTextEditor({
             model={model}
             referencePreviewCache={referencePreviewCache}
             workbookEnabled={workbookEnabled}
+            activeSourceId={activeSourceId}
             disabled={disabled}
             open={pickerOpen}
             onOpenChange={setReferencePickerOpen}

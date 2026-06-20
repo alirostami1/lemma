@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@lemma/ui/components/select";
-import { type FormEvent, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import type {
   ComposedEditorModel,
   ComposedReferenceDraft,
@@ -29,7 +29,7 @@ import {
 export type ReferenceCreateFormProps = {
   model: ComposedEditorModel;
   workbookEnabled: boolean;
-  activeSourceId?: string | null;
+  activeSourceId: string | null;
   allowedSourceTypes?: ReferenceSourceDraft["type"][];
   initialSourceType?: ReferenceSourceDraft["type"];
   disabled?: boolean;
@@ -71,13 +71,17 @@ export function ReferenceCreateForm({
   });
   const [workbookRef, setWorkbookRef] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const hasExplicitActiveSource = activeSourceId !== undefined;
-  const isActiveSourceMissing =
-    hasExplicitActiveSource && activeSourceId === null;
+  const isActiveSourceMissing = activeSourceId === null;
   const singleAllowedSourceType =
     allowedSourceTypes && allowedSourceTypes.length === 1
       ? allowedSourceTypes[0]
       : null;
+
+  useEffect(() => {
+    if (activeSourceId === null) {
+      setSelectedWorkbookSourceId(null);
+    }
+  }, [activeSourceId]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -104,7 +108,7 @@ export function ReferenceCreateForm({
 
     if (source.type !== "literal" && source.sourceId.length === 0) {
       setError(
-        hasExplicitActiveSource
+        isActiveSourceMissing
           ? "Select an active workbook source before creating this reference."
           : "Select a workbook source in the workbook picker first.",
       );
@@ -180,21 +184,17 @@ export function ReferenceCreateForm({
                 ) : null}
               </SelectContent>
             </Select>
-            {sourceType !== "literal"
-              ? isActiveSourceMissing
-                ? (
-                  <p className="text-xs text-muted-foreground">
-                    Select an active source before referencing workbook cells.
-                  </p>
-                )
-                : !workbookEnabled
-                  ? (
-                    <p className="text-xs text-muted-foreground">
-                      Select a workbook to reference cells.
-                    </p>
-                  )
-                  : null
-              : null}
+            {sourceType !== "literal" ? (
+              isActiveSourceMissing ? (
+                <p className="text-xs text-muted-foreground">
+                  Select an active source before referencing workbook cells.
+                </p>
+              ) : !workbookEnabled ? (
+                <p className="text-xs text-muted-foreground">
+                  Select a workbook to reference cells.
+                </p>
+              ) : null
+            ) : null}
           </InspectorField>
         )}
 
@@ -224,7 +224,7 @@ export function ReferenceCreateForm({
               }}
               onChange={(event) => setWorkbookRef(event.currentTarget.value)}
               onWorkbookSelect={(selection) => {
-                setSelectedWorkbookSourceId(selection.sourceId ?? null);
+                setSelectedWorkbookSourceId(selection.sourceId);
                 setWorkbookRef(selection.reference);
               }}
             />
@@ -254,7 +254,7 @@ export function ReferenceCreateForm({
 function createSourceDraft(input: {
   sourceType: ReferenceSourceDraft["type"];
   literalValue: string;
-  workbookSourceId: string;
+  workbookSourceId: string | null;
   workbookRef: string;
 }): ReferenceSourceDraft | null {
   const { sourceType, literalValue, workbookSourceId, workbookRef } = input;
@@ -270,6 +270,10 @@ function createSourceDraft(input: {
     };
   }
 
+  if (workbookSourceId === null) {
+    return null;
+  }
+
   const ref = workbookRef.trim();
   if (!ref) {
     return null;
@@ -282,24 +286,16 @@ function createSourceDraft(input: {
   };
 }
 
-function getInitialWorkbookSourceId(activeSourceId: string | null | undefined) {
-  if (activeSourceId === undefined) {
-    return "source_1";
-  }
-
-  return activeSourceId ?? "";
-}
-
 function getWorkbookSourceId(input: {
   selectedWorkbookSourceId: string | null;
-  activeSourceId: string | null | undefined;
+  activeSourceId: string | null;
 }) {
   const { selectedWorkbookSourceId, activeSourceId } = input;
   if (selectedWorkbookSourceId) {
     return selectedWorkbookSourceId;
   }
 
-  return getInitialWorkbookSourceId(activeSourceId);
+  return activeSourceId;
 }
 
 function getInitialSourceType(

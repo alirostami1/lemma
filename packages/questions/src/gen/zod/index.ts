@@ -1342,10 +1342,6 @@ export const createQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemTwoPoints
 
 export const createQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
 
-export const createQuestionBlueprintBodyWorkbookIdRegExp = new RegExp(
-  "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-);
-
 export const createQuestionBlueprintBodyWorkbookSourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
@@ -1677,23 +1673,15 @@ export const CreateQuestionBlueprintBody = zod.strictObject({
       }),
     ),
   }),
-  workbookId: zod
-    .string()
-    .regex(createQuestionBlueprintBodyWorkbookIdRegExp)
-    .nullish(),
-  workbookSources: zod
-    .array(
-      zod.strictObject({
-        sourceId: zod.string().min(1),
-        name: zod.string().min(1),
-        workbookId: zod
-          .string()
-          .regex(
-            createQuestionBlueprintBodyWorkbookSourcesItemWorkbookIdRegExp,
-          ),
-      }),
-    )
-    .optional(),
+  workbookSources: zod.array(
+    zod.strictObject({
+      sourceId: zod.string().min(1),
+      name: zod.string().min(1),
+      workbookId: zod
+        .string()
+        .regex(createQuestionBlueprintBodyWorkbookSourcesItemWorkbookIdRegExp),
+    }),
+  ),
 });
 
 export const createQuestionBlueprint201ResponseQuestionBlueprintIdRegExp =
@@ -2473,10 +2461,6 @@ export const updateQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemTwoPoints
 
 export const updateQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
 
-export const updateQuestionBlueprintBodyWorkbookIdRegExp = new RegExp(
-  "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-);
-
 export const updateQuestionBlueprintBodyWorkbookSourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
@@ -2810,10 +2794,6 @@ export const UpdateQuestionBlueprintBody = zod.strictObject({
       ),
     })
     .optional(),
-  workbookId: zod
-    .string()
-    .regex(updateQuestionBlueprintBodyWorkbookIdRegExp)
-    .nullish(),
   workbookSources: zod
     .array(
       zod.strictObject({

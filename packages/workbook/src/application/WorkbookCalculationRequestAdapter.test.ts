@@ -43,6 +43,12 @@ const nextCalculationId = workbookCalculationId(
 );
 const nextEventId = toEventId("019e9315-6a87-715f-9861-8654df070c06");
 const lineage = rootOperationLineage("019e9315-6a87-715f-9861-8654df070c07");
+const workbookSources = [
+  {
+    sourceId: "019e9315-6a87-715f-9861-8654df070c10",
+    workbookId: targetWorkbookId,
+  },
+] as const;
 
 describe("WorkbookCalculationRequestAdapter", () => {
   it("returns an existing calculation for the same correlation id", async () => {
@@ -63,6 +69,7 @@ describe("WorkbookCalculationRequestAdapter", () => {
     const result = await harness.adapter.requestCalculation({
       createdByUserId,
       workbookId: targetWorkbookId,
+      workbookSources,
       requestedCount: 3,
       correlationId: existing.correlationId,
       lineage,
@@ -79,6 +86,7 @@ describe("WorkbookCalculationRequestAdapter", () => {
     const result = await harness.adapter.requestCalculation({
       createdByUserId,
       workbookId: targetWorkbookId,
+      workbookSources,
       requestedCount: 5,
       correlationId: "019e9315-6a87-715f-9861-8654df070c09",
       lineage,
@@ -94,7 +102,7 @@ describe("WorkbookCalculationRequestAdapter", () => {
     assert.deepEqual(harness.transaction.outboxEvents[0]?.payload, {
       workbookCalculationId: nextCalculationId,
       workbookId: targetWorkbookId,
-      workbookSources: [],
+      workbookSources: [...workbookSources],
       requestedCount: 5,
       correlationId: "019e9315-6a87-715f-9861-8654df070c09",
     } satisfies WorkbookCalculationRequestedPayload);

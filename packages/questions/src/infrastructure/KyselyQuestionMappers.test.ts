@@ -1,33 +1,51 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { InvalidQuestionBlueprintDocumentError } from "../domain/errors.js";
+import {
+  InvalidQuestionBlueprintDocumentError,
+  InvalidQuestionFieldError,
+} from "../domain/errors.js";
 import { mapQuestionBlueprintVersionRowToDomain } from "./KyselyQuestionMappers.js";
 
-type QuestionBlueprintVersionRow =
-  Parameters<typeof mapQuestionBlueprintVersionRowToDomain>[0];
+type QuestionBlueprintVersionRow = Parameters<
+  typeof mapQuestionBlueprintVersionRowToDomain
+>[0];
 
 describe("KyselyQuestionMappers", () => {
-  it("normalizes legacy missing sourceId to source_1 using legacy workbookId", () => {
+  it("rejects legacy rows with null workbookSources", () => {
     const versionRow = createLegacyVersionRow({
       workbookId: legacyWorkbookId,
       workbookSources: null,
-      document: legacyBlueprintDocumentWithoutSourceId(),
+      document: legacyBlueprintDocumentWithSourceId("source_2"),
     });
 
-    const version = mapQuestionBlueprintVersionRowToDomain(versionRow);
-
-    assert.equal(version.document.references[0]?.source.type, "workbook_cell");
-    assert.equal(
-      version.document.references[0]?.source.sourceId,
-      "source_1",
-    );
-    assert.deepEqual(version.workbookSources, [
-      {
-        sourceId: "source_1",
-        name: "Source 1",
-        workbookId: legacyWorkbookId,
+    assert.throws(
+      () => mapQuestionBlueprintVersionRowToDomain(versionRow),
+      (error: unknown) => {
+        return (
+          error instanceof InvalidQuestionFieldError &&
+          /workbook sources/.test(error.message)
+        );
       },
-    ]);
+    );
+  });
+
+  it("rejects legacy rows missing workbookSources", () => {
+    const versionRow = createLegacyVersionRow({
+      workbookId: legacyWorkbookId,
+      workbookSources: undefined,
+      document: legacyBlueprintDocumentWithSourceId("source_2"),
+    });
+
+    assert.throws(
+      () => mapQuestionBlueprintVersionRowToDomain(versionRow),
+      (error: unknown) => {
+        return (
+          error instanceof InvalidQuestionFieldError &&
+          /workbook sources/.test(error.message)
+        );
+      },
+      "Expected strict path to reject legacy rows without workbookSources",
+    );
   });
 
   it("rejects missing sourceId when workbook source metadata is explicitly provided", () => {
@@ -64,7 +82,10 @@ const legacyVersionCreatedAt = new Date("2026-06-18T00:00:00.000Z");
 
 function createLegacyVersionRow(overrides: {
   workbookId: string | null;
-  workbookSources: QuestionBlueprintVersionRow["workbookSources"];
+  workbookSources:
+    | QuestionBlueprintVersionRow["workbookSources"]
+    | null
+    | undefined;
   document: QuestionBlueprintVersionRow["document"];
 }): QuestionBlueprintVersionRow {
   return {
@@ -73,9 +94,30 @@ function createLegacyVersionRow(overrides: {
     versionNumber: 1,
     document: overrides.document,
     workbookId: overrides.workbookId,
-    workbookSources: overrides.workbookSources,
+    ...(overrides.workbookSources === undefined
+      ? {}
+      : { workbookSources: overrides.workbookSources }),
     createdByUserId: legacyBlueprintOwnerId,
     createdAt: legacyVersionCreatedAt,
+  } as QuestionBlueprintVersionRow;
+}
+
+function legacyBlueprintDocumentWithSourceId(sourceId: string) {
+  return {
+    schemaVersion: 1,
+    responseFields: [],
+    blocks: [],
+    references: [
+      {
+        id: "revenue",
+        source: {
+          schemaVersion: 1,
+          type: "workbook_cell",
+          sourceId,
+          ref: "Sheet1!A1",
+        },
+      },
+    ],
   };
 }
 

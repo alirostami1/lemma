@@ -9,6 +9,7 @@ import {
   createQuestion,
   createQuestionBlueprint,
   createQuestionBlueprintVersion,
+  InvalidQuestionFieldError,
   type QuestionBlueprint,
   questionBlueprintDescription,
   questionBlueprintDocument,
@@ -22,6 +23,8 @@ import {
   questionProducer,
   questionSolution,
   questionSourcePlan,
+  reconstituteQuestionBlueprint,
+  reconstituteQuestionBlueprintVersion,
   userId,
 } from "./index.js";
 
@@ -523,6 +526,110 @@ describe("composable question canonical model", () => {
     );
 
     assert.equal("document" in blueprint, false);
+  });
+
+  it("rejects reconstituted blueprints with missing workbookSources", () => {
+    assert.throws(
+      () =>
+        reconstituteQuestionBlueprint({
+          id: questionBlueprintId("019e9315-6a87-715f-9861-8654df071111"),
+          ownerUserId: userId("019e9315-6a87-715f-9861-8654df071112"),
+          createdByUserId: userId("019e9315-6a87-715f-9861-8654df071113"),
+          name: questionBlueprintName("Blueprint"),
+          description: questionBlueprintDescription(null),
+          visibility: questionBlueprintVisibility("private"),
+          workbookId: null,
+          currentVersionId: null,
+          status: "active",
+          archivedAt: null,
+          createdAt: new Date("2026-01-01T00:00:00.000Z"),
+          updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+          workbookSources: undefined as unknown,
+        }),
+      (error: unknown) =>
+        error instanceof InvalidQuestionFieldError &&
+        /workbook sources/.test(error.message),
+    );
+  });
+
+  it("rejects reconstituted blueprints with null workbookSources", () => {
+    assert.throws(
+      () =>
+        reconstituteQuestionBlueprint({
+          id: questionBlueprintId("019e9315-6a87-715f-9861-8654df071114"),
+          ownerUserId: userId("019e9315-6a87-715f-9861-8654df071115"),
+          createdByUserId: userId("019e9315-6a87-715f-9861-8654df071116"),
+          name: questionBlueprintName("Blueprint"),
+          description: questionBlueprintDescription(null),
+          visibility: questionBlueprintVisibility("private"),
+          workbookId: null,
+          workbookSources: null as unknown,
+          currentVersionId: null,
+          status: "active",
+          archivedAt: null,
+          createdAt: new Date("2026-01-01T00:00:00.000Z"),
+          updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+        }),
+      (error: unknown) =>
+        error instanceof InvalidQuestionFieldError &&
+        /workbook sources/.test(error.message),
+    );
+  });
+
+  it("rejects reconstituted blueprint versions with missing workbookSources", () => {
+    assert.throws(
+      () =>
+        reconstituteQuestionBlueprintVersion({
+          id: questionBlueprintVersionId(
+            "019e9315-6a87-715f-9861-8654df071117",
+          ),
+          questionBlueprintId: questionBlueprintId(
+            "019e9315-6a87-715f-9861-8654df071118",
+          ),
+          versionNumber: 1,
+          document: {
+            schemaVersion: 1,
+            references: [],
+            responseFields: [],
+            blocks: [],
+          },
+          workbookId: null,
+          createdByUserId: userId("019e9315-6a87-715f-9861-8654df071119"),
+          createdAt: new Date("2026-01-01T00:00:00.000Z"),
+          workbookSources: undefined as unknown,
+        }),
+      (error: unknown) =>
+        error instanceof InvalidQuestionFieldError &&
+        /workbook sources/.test(error.message),
+    );
+  });
+
+  it("rejects reconstituted blueprint versions with null workbookSources", () => {
+    assert.throws(
+      () =>
+        reconstituteQuestionBlueprintVersion({
+          id: questionBlueprintVersionId(
+            "019e9315-6a87-715f-9861-8654df071120",
+          ),
+          questionBlueprintId: questionBlueprintId(
+            "019e9315-6a87-715f-9861-8654df071121",
+          ),
+          versionNumber: 1,
+          document: {
+            schemaVersion: 1,
+            references: [],
+            responseFields: [],
+            blocks: [],
+          },
+          workbookId: null,
+          createdByUserId: userId("019e9315-6a87-715f-9861-8654df071122"),
+          workbookSources: null as unknown,
+          createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        }),
+      (error: unknown) =>
+        error instanceof InvalidQuestionFieldError &&
+        /workbook sources/.test(error.message),
+    );
   });
 
   it("rejects non-positive blueprint version numbers", () => {

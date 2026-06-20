@@ -21,6 +21,7 @@ describe("ReferencePickerPopover", () => {
         selectedReferenceId="reference_2"
         referencePreviewCache={createReferencePreviewCache()}
         workbookEnabled={true}
+        activeSourceId={null}
         onModelChange={() => {}}
         onSelectReference={onSelectReference}
         trigger={<button type="button">Choose reference</button>}
@@ -44,6 +45,7 @@ describe("ReferencePickerPopover", () => {
         model={createModel()}
         referencePreviewCache={createReferencePreviewCache()}
         workbookEnabled={true}
+        activeSourceId={null}
         onModelChange={onModelChange}
         onSelectReference={onSelectReference}
         trigger={<button type="button">Choose reference</button>}
@@ -79,7 +81,7 @@ describe("ReferencePickerPopover", () => {
     expect(screen.queryByLabelText("Reference id")).toBeNull();
   });
 
-  it("creates workbook cell and workbook range references", async () => {
+  it("blocks workbook reference creation when no active source is selected", async () => {
     const user = userEvent.setup();
     const onModelChange = vi.fn();
     const onSelectReference = vi.fn();
@@ -89,6 +91,8 @@ describe("ReferencePickerPopover", () => {
         model={createModel()}
         referencePreviewCache={createReferencePreviewCache()}
         workbookEnabled={true}
+        activeSourceId={null}
+        createSourceTypeDefault="workbook_cell"
         onModelChange={onModelChange}
         onSelectReference={onSelectReference}
         trigger={<button type="button">Choose reference</button>}
@@ -100,59 +104,14 @@ describe("ReferencePickerPopover", () => {
     fireEvent.change(screen.getByLabelText("Reference id"), {
       target: { value: "cell_ref" },
     });
-    await user.click(screen.getByRole("combobox", { name: "Source type" }));
-    await user.click(screen.getByRole("option", { name: "Workbook cell" }));
     await user.type(screen.getByLabelText("Source cell"), "'Sheet1'!A1");
     await user.click(
       screen.getByRole("button", { name: "Create and use reference" }),
     );
 
-    expect(onSelectReference).toHaveBeenCalledWith("cell_ref");
-    expect(onModelChange).toHaveBeenCalledWith(
-      expect.objectContaining({
-        references: expect.arrayContaining([
-          expect.objectContaining({
-            id: "reference_1",
-          }),
-          expect.objectContaining({
-            id: "cell_ref",
-            source: {
-              type: "workbook_cell",
-              sourceId: "source_1",
-              ref: "'Sheet1'!A1",
-            },
-          }),
-        ]),
-      }),
-    );
-
-    await user.click(screen.getByRole("button", { name: "Choose reference" }));
-    await user.click(screen.getByRole("tab", { name: "Create new" }));
-    fireEvent.change(screen.getByLabelText("Reference id"), {
-      target: { value: "range_ref" },
-    });
-    await user.click(screen.getByRole("combobox", { name: "Source type" }));
-    await user.click(screen.getByRole("option", { name: "Workbook range" }));
-    await user.type(screen.getByLabelText("Source range"), "'Sheet1'!A1:B2");
-    await user.click(
-      screen.getByRole("button", { name: "Create and use reference" }),
-    );
-
-    expect(onSelectReference).toHaveBeenCalledWith("range_ref");
-    expect(onModelChange).toHaveBeenCalledWith(
-      expect.objectContaining({
-        references: expect.arrayContaining([
-          expect.objectContaining({
-            id: "range_ref",
-            source: {
-              type: "workbook_range",
-              sourceId: "source_1",
-              ref: "'Sheet1'!A1:B2",
-            },
-          }),
-        ]),
-      }),
-    );
+    expect(screen.getByText("Select a workbook cell or range.")).toBeTruthy();
+    expect(onSelectReference).not.toHaveBeenCalled();
+    expect(onModelChange).not.toHaveBeenCalled();
   });
 
   it("uses activeSourceId when creating workbook cell reference manually", async () => {
@@ -200,7 +159,7 @@ describe("ReferencePickerPopover", () => {
     );
   });
 
-  it("uses explicitly selected workbook source id over typed workbook ref on create", async () => {
+  it("uses selected workbook source id over active source when picker selection changes", async () => {
     const user = userEvent.setup();
     const onModelChange = vi.fn();
 
@@ -209,6 +168,7 @@ describe("ReferencePickerPopover", () => {
         model={createModel()}
         referencePreviewCache={createReferencePreviewCache()}
         workbookEnabled={true}
+        activeSourceId="source_1"
         onModelChange={onModelChange}
         onSelectReference={() => {}}
         createSourceTypeDefault="workbook_cell"
@@ -228,7 +188,9 @@ describe("ReferencePickerPopover", () => {
     await user.clear(screen.getByLabelText("Reference id"));
     await user.type(screen.getByLabelText("Reference id"), "cell_ref_2");
     await user.type(screen.getByLabelText("Source cell"), "'Sheet1'!A1");
-    await user.click(screen.getByRole("button", { name: "Open workbook range picker" }));
+    await user.click(
+      screen.getByRole("button", { name: "Open workbook range picker" }),
+    );
     await user.click(
       screen.getByRole("button", { name: "Create and use reference" }),
     );
@@ -257,6 +219,7 @@ describe("ReferencePickerPopover", () => {
         model={createModel()}
         referencePreviewCache={createReferencePreviewCache()}
         workbookEnabled={false}
+        activeSourceId={null}
         onModelChange={() => {}}
         onSelectReference={() => {}}
         trigger={<button type="button">Choose reference</button>}
@@ -309,7 +272,7 @@ function renderReferencePicker(
   openWorkbookPicker: (request: {
     selectionRequirement?: object;
     onSelect: (selection: {
-      sourceId?: string;
+      sourceId: string;
       reference: string;
       values: string[][];
     }) => void;

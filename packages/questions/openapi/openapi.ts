@@ -1528,7 +1528,7 @@ const createQuestionBlueprintRequestSchema: Schema = {
   schema: {
     type: "object",
     additionalProperties: false,
-    required: ["name", "document"],
+    required: ["name", "document", "workbookSources"],
     properties: {
       name: {
         type: "string",
@@ -1544,7 +1544,6 @@ const createQuestionBlueprintRequestSchema: Schema = {
         enum: QUESTION_BLUEPRINT_VISIBILITY_ACCEPTED_VALUES as unknown as string[],
       },
       document: schemaRef(questionBlueprintDocumentSchema),
-      workbookId: nullableUuid,
       workbookSources: {
         type: "array",
         items: schemaRef(questionBlueprintWorkbookSourceSchema),
@@ -1573,7 +1572,6 @@ const updateQuestionBlueprintRequestSchema: Schema = {
         enum: QUESTION_BLUEPRINT_VISIBILITY_ACCEPTED_VALUES as unknown as string[],
       },
       document: schemaRef(questionBlueprintDocumentSchema),
-      workbookId: nullableUuid,
       workbookSources: {
         type: "array",
         items: schemaRef(questionBlueprintWorkbookSourceSchema),

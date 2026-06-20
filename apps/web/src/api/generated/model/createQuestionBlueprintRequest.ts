@@ -21,10 +21,5 @@ export interface CreateQuestionBlueprintRequest {
   description?: string | null;
   visibility?: CreateQuestionBlueprintRequestVisibility;
   document: QuestionBlueprintDocument;
-  /**
-   * @nullable
-   * @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
-   */
-  workbookId?: string | null;
-  workbookSources?: QuestionBlueprintWorkbookSource[];
+  workbookSources: QuestionBlueprintWorkbookSource[];
 }

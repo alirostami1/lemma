@@ -27,7 +27,7 @@ export type CreateQuestionBlueprintCommand = ListCommand & {
   visibility?: string;
   document: unknown;
   workbookId?: string | null;
-  workbookSources?: unknown;
+  workbookSources: unknown;
 };
 export type UpdateQuestionBlueprintCommand = ListCommand & {
   questionBlueprintId: string;

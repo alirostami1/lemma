@@ -18,6 +18,7 @@ export function BlockEditor({
   referencePreviewCache,
   model,
   workbookEnabled,
+  activeSourceId,
   onModelChange,
   onSelectReference,
   onTableSelectionChange,
@@ -28,6 +29,7 @@ export function BlockEditor({
   referencePreviewCache: ReferencePreviewCache;
   model: ComposedEditorModel;
   workbookEnabled: boolean;
+  activeSourceId: string | null;
   onModelChange(model: ComposedEditorModel): void;
   onSelectReference(referenceId: string): void;
   onTableSelectionChange(
@@ -44,6 +46,7 @@ export function BlockEditor({
         referencePreviewCache={referencePreviewCache}
         model={model}
         workbookEnabled={workbookEnabled}
+        activeSourceId={activeSourceId}
         onModelChange={onModelChange}
         onSelectReference={onSelectReference}
         onCreatedReference={({ nextModel, nextContent }) =>
@@ -70,6 +73,7 @@ export function BlockEditor({
           model={model}
           referencePreviewCache={referencePreviewCache}
           workbookEnabled={workbookEnabled}
+          activeSourceId={activeSourceId}
           disabled={disabled}
           onModelChange={onModelChange}
           onChange={(content) =>
@@ -135,6 +139,7 @@ function TextBlockEditor({
   referencePreviewCache,
   model,
   workbookEnabled,
+  activeSourceId,
   onModelChange,
   onSelectReference,
   onCreatedReference,
@@ -144,6 +149,7 @@ function TextBlockEditor({
   referencePreviewCache: ReferencePreviewCache;
   model: ComposedEditorModel;
   workbookEnabled: boolean;
+  activeSourceId: string | null;
   onModelChange(model: ComposedEditorModel): void;
   onSelectReference(referenceId: string): void;
   onCreatedReference(input: {
@@ -158,6 +164,7 @@ function TextBlockEditor({
         referencePreviewCache={referencePreviewCache}
         model={model}
         workbookEnabled={workbookEnabled}
+        activeSourceId={activeSourceId}
         disabled={disabled}
         onChange={(content) =>
           onModelChange(

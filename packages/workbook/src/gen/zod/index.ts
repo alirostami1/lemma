@@ -921,9 +921,23 @@ export const CreateWorkbookCalculationParams = zod.strictObject({
   workbookId: zod.string().regex(createWorkbookCalculationPathWorkbookIdRegExp),
 });
 
+export const createWorkbookCalculationBodyWorkbookSourcesItemWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
 export const createWorkbookCalculationBodyRequestedCountMax = 1000;
 
 export const CreateWorkbookCalculationBody = zod.strictObject({
+  workbookSources: zod.array(
+    zod.strictObject({
+      sourceId: zod.string(),
+      workbookId: zod
+        .string()
+        .regex(
+          createWorkbookCalculationBodyWorkbookSourcesItemWorkbookIdRegExp,
+        ),
+    }),
+  ),
   requestedCount: zod
     .number()
     .min(1)
@@ -1234,6 +1248,22 @@ export const RetryWorkbookCalculationParams = zod.strictObject({
   workbookCalculationId: zod
     .string()
     .regex(retryWorkbookCalculationPathWorkbookCalculationIdRegExp),
+});
+
+export const retryWorkbookCalculationBodyWorkbookSourcesItemWorkbookIdRegExp =
+  new RegExp(
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  );
+
+export const RetryWorkbookCalculationBody = zod.strictObject({
+  workbookSources: zod.array(
+    zod.strictObject({
+      sourceId: zod.string(),
+      workbookId: zod
+        .string()
+        .regex(retryWorkbookCalculationBodyWorkbookSourcesItemWorkbookIdRegExp),
+    }),
+  ),
 });
 
 export const retryWorkbookCalculation201ResponseWorkbookCalculationIdRegExp =

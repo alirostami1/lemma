@@ -18,6 +18,7 @@ export function ResponseBlockInspector({
   block,
   referencePreviewCache,
   workbookEnabled,
+  activeSourceId,
   disabled,
   onModelChange,
 }: {
@@ -25,6 +26,7 @@ export function ResponseBlockInspector({
   block: ComposedResponseEditorBlock;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
+  activeSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
 }) {
@@ -116,6 +118,7 @@ export function ResponseBlockInspector({
           referencePreviewCache={referencePreviewCache}
           valueType={responseField.type}
           workbookEnabled={workbookEnabled}
+          activeSourceId={activeSourceId}
           disabled={disabled}
           onModelChange={onModelChange}
           onChange={(correctValueSource) =>

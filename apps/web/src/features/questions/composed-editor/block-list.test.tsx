@@ -66,6 +66,7 @@ describe("BlockList", () => {
         selectedBlockId="text_1"
         referencePreviewCache={{}}
         workbookEnabled={false}
+        activeSourceId={null}
         onModelChange={() => {}}
         onSelectBlock={() => {}}
         onSelectReference={() => {}}
@@ -98,6 +99,7 @@ describe("BlockList", () => {
         selectedBlockId={firstBlock.id}
         referencePreviewCache={{}}
         workbookEnabled={false}
+        activeSourceId={null}
         onModelChange={() => {}}
         onSelectBlock={() => {}}
         onSelectReference={() => {}}
@@ -135,6 +137,7 @@ describe("BlockList", () => {
         selectedBlockId={null}
         referencePreviewCache={{}}
         workbookEnabled={false}
+        activeSourceId={null}
         onModelChange={() => {}}
         onSelectBlock={() => {}}
         onSelectReference={() => {}}
@@ -157,6 +160,7 @@ describe("BlockList", () => {
         selectedBlockId={firstBlock.id}
         referencePreviewCache={{}}
         workbookEnabled={false}
+        activeSourceId={null}
         onModelChange={() => {}}
         onSelectBlock={() => {}}
         onSelectReference={() => {}}

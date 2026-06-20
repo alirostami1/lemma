@@ -120,6 +120,7 @@ export function CorrectAnswerSettings({
   referencePreviewCache,
   valueType,
   workbookEnabled,
+  activeSourceId,
   disabled,
   onModelChange,
   onChange,
@@ -130,6 +131,7 @@ export function CorrectAnswerSettings({
   referencePreviewCache: ReferencePreviewCache;
   valueType?: "text" | "number" | "boolean";
   workbookEnabled: boolean;
+  activeSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onChange(value: ValueExpression): void;
@@ -145,6 +147,7 @@ export function CorrectAnswerSettings({
       referencePreviewCache={referencePreviewCache}
       valueType={valueType}
       workbookEnabled={workbookEnabled}
+      activeSourceId={activeSourceId}
       disabled={disabled}
       onModelChange={onModelChange}
       onChange={onChange}

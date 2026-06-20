@@ -20,7 +20,7 @@ export function StudioSourceBar({
   onRemoveSource(): void;
 }) {
   const sources = sourceCard.sources ?? [];
-  const activeSourceId = sourceCard.activeSourceId ?? null;
+  const activeSourceId = sourceCard.activeSourceId;
   const onActivateSourceId = sourceCard.onActivateSourceId;
   const icon =
     sourceCard.status === "required_missing" ||

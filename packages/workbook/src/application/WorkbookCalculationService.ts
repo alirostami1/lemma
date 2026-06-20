@@ -128,6 +128,7 @@ export class WorkbookCalculationService {
               workbookCalculationRequestedEvent({
                 id: this.deps.idGenerator.eventId(),
                 calculation: persisted,
+                workbookSources: command.workbookSources,
                 lineage: command.lineage,
                 occurredAt: persisted.createdAt,
               }),
@@ -188,6 +189,7 @@ export class WorkbookCalculationService {
         return this.requestWorkbookCalculation({
           currentUser: command.currentUser,
           workbookId: calculation.workbookId,
+          workbookSources: command.workbookSources,
           requestedCount: calculation.requestedCount,
           correlationId: calculation.correlationId,
           lineage: command.lineage,

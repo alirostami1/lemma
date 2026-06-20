@@ -24,7 +24,12 @@ describe("reference preview cache", () => {
     };
 
     expect(
-      resolveReferencePreviewValues({ model, workbookPreview: null, now }),
+      resolveReferencePreviewValues({
+        model,
+        workbookPreview: null,
+        activeSourceId: null,
+        now,
+      }),
     ).toEqual({
       revenue: {
         referenceId: "revenue",
@@ -57,6 +62,7 @@ describe("reference preview cache", () => {
       resolveReferencePreviewValues({
         model,
         workbookPreview: null,
+        activeSourceId: "source_1",
         workbookSelectionValuesByRef: {
           "'Sheet1'!A1:A1": [["90"]],
         },

@@ -26,6 +26,7 @@ type TextAuthoringContentProps = {
   referencePreviewCache: ReferencePreviewCache;
   model: ComposedEditorModel;
   workbookEnabled: boolean;
+  activeSourceId: string | null;
   disabled?: boolean;
   onChange(content: ComposedInlineContent[]): void;
   onModelChange(model: ComposedEditorModel): void;
@@ -42,6 +43,7 @@ export function TextAuthoringContent({
   referencePreviewCache,
   model,
   workbookEnabled,
+  activeSourceId,
   disabled,
   onChange,
   onModelChange,
@@ -148,6 +150,7 @@ export function TextAuthoringContent({
           model={model}
           referencePreviewCache={referencePreviewCache}
           workbookEnabled={workbookEnabled}
+          activeSourceId={activeSourceId}
           disabled={disabled}
           open={pickerOpen}
           onOpenChange={setReferencePickerOpen}

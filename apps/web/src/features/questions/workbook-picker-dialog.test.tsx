@@ -15,6 +15,7 @@ describe("workbook picker dialog", () => {
       <QueryClientProvider client={queryClient}>
         <WorkbookPickerDialog
           fileName="source.xlsx"
+          activeSourceId={null}
           open
           onOpenChange={() => {}}
           selectionRequirement={{}}
@@ -81,6 +82,7 @@ describe("workbook picker dialog", () => {
       <QueryClientProvider client={queryClient}>
         <WorkbookPickerDialog
           fileName="source.xlsx"
+          activeSourceId={null}
           open
           onOpenChange={() => {}}
           selectionRequirement={{}}
@@ -150,6 +152,7 @@ describe("workbook picker dialog", () => {
       <QueryClientProvider client={queryClient}>
         <WorkbookPickerDialog
           fileName="source.xlsx"
+          activeSourceId="source_1"
           open
           onOpenChange={() => {}}
           selectionRequirement={{}}

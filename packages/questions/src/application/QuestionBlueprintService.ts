@@ -9,6 +9,7 @@ import {
   createQuestionBlueprintVersion,
   createQuestionBlueprintVersionAssets,
   deleteQuestionBlueprint,
+  InvalidQuestionFieldError,
   questionBlueprintDescription,
   questionBlueprintName,
   questionBlueprintVisibility,
@@ -102,9 +103,18 @@ export class QuestionBlueprintService {
       ),
       "You cannot create this question blueprint.",
     );
+    if (command.workbookId !== undefined) {
+      throw new InvalidQuestionFieldError(
+        "workbookId is not accepted; use workbookSources",
+      );
+    }
+    if (command.workbookSources === undefined) {
+      throw new InvalidQuestionFieldError(
+        "workbookSources must be provided when creating question blueprint",
+      );
+    }
     const compiled = normalizeCanonicalBlueprintInput({
       document: command.document,
-      workbookId: command.workbookId ?? null,
       workbookSources: command.workbookSources,
     });
     const at = this.deps.clock.now();
@@ -250,8 +260,17 @@ export class QuestionBlueprintService {
       "You cannot update this question blueprint.",
     );
     const documentChanged = command.patch.document !== undefined;
-    const workbookChanged = command.patch.workbookId !== undefined;
     const workbookSourcesChanged = command.patch.workbookSources !== undefined;
+    if (command.patch.workbookId !== undefined) {
+      throw new InvalidQuestionFieldError(
+        "workbookId is not accepted; use workbookSources",
+      );
+    }
+    if (documentChanged && !workbookSourcesChanged) {
+      throw new InvalidQuestionFieldError(
+        "workbookSources must be provided when updating document",
+      );
+    }
     const at = this.deps.clock.now();
     const updatedMetadata = updateQuestionBlueprintMetadata(
       blueprint,
@@ -269,7 +288,7 @@ export class QuestionBlueprintService {
       },
       at,
     );
-    if (!documentChanged && !workbookChanged && !workbookSourcesChanged) {
+    if (!documentChanged && !workbookSourcesChanged) {
       return {
         questionBlueprint: await hydrateQuestionBlueprint(
           this.deps.questionsRepository,
@@ -289,10 +308,6 @@ export class QuestionBlueprintService {
     }
     const compiled = normalizeCanonicalBlueprintInput({
       document: command.patch.document ?? currentVersion.document,
-      workbookId:
-        command.patch.workbookId !== undefined
-          ? command.patch.workbookId
-          : currentVersion.workbookId,
       workbookSources:
         command.patch.workbookSources !== undefined
           ? command.patch.workbookSources

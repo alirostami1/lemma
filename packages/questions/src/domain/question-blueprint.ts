@@ -232,7 +232,9 @@ export function questionBlueprintWorkbookSources(
   input: unknown,
 ): QuestionBlueprintWorkbookSource[] {
   if (input === undefined || input === null) {
-    return [];
+    throw new InvalidQuestionFieldError(
+      "question blueprint workbook sources must be an array",
+    );
   }
   if (!Array.isArray(input)) {
     throw new InvalidQuestionFieldError(

@@ -159,6 +159,13 @@ export interface CreateWorkbookCalculationInput {
   workbookId: string;
   requestedCount: number;
   correlationId?: string | null;
+  workbookSources: WorkbookCalculationSourceInput[];
+}
+
+export interface WorkbookCalculationSourceInput {
+  sourceId: string;
+  workbookId: string;
+  name?: string;
 }
 
 export interface ListWorkbookSnapshotsInput {

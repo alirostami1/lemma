@@ -8,7 +8,6 @@ import {
   workbookCalculationId as toWorkbookCalculationId,
   workbookId as toWorkbookId,
   type WorkbookCalculation,
-  type WorkbookId,
   type WorkbookSnapshot,
 } from "../domain/index.js";
 import type { ProcessWorkbookCalculationCommand } from "./commands.js";
@@ -81,18 +80,13 @@ export class WorkbookCalculationProcessorService {
 
   private async calculateSnapshots(
     running: WorkbookCalculation,
-    workbookSources:
-      | readonly {
-          sourceId: string;
-          workbookId: string;
-        }[]
-      | undefined,
+    workbookSources: readonly {
+      sourceId: string;
+      workbookId: string;
+    }[],
     lineage: OperationLineage,
   ): Promise<{ snapshots: WorkbookSnapshot[]; finishedAt: Date }> {
-    const sources = normalizeCalculationSources({
-      primaryWorkbookId: running.workbookId,
-      workbookSources,
-    });
+    const sources = normalizeCalculationSources(workbookSources);
     const finishedAt = this.deps.clock.now();
     const snapshots: WorkbookSnapshot[] = [];
 
@@ -234,20 +228,13 @@ function sortSnapshotsByIndex(
   });
 }
 
-function normalizeCalculationSources(input: {
-  primaryWorkbookId: WorkbookId;
-  workbookSources:
-    | readonly {
-        sourceId: string;
-        workbookId: string;
-      }[]
-    | undefined;
-}): { workbookId: WorkbookId }[] {
-  if (!input.workbookSources || input.workbookSources.length === 0) {
-    return [{ workbookId: input.primaryWorkbookId }];
-  }
-
-  return input.workbookSources.map((source) => ({
+function normalizeCalculationSources(
+  workbookSources: readonly {
+    sourceId: string;
+    workbookId: string;
+  }[],
+): { workbookId: ReturnType<typeof toWorkbookId> }[] {
+  return workbookSources.map((source) => ({
     workbookId: toWorkbookId(source.workbookId),
   }));
 }

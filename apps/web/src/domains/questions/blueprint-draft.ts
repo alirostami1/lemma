@@ -10,7 +10,7 @@ export type BuildQuestionBlueprintDraftInput = {
   description: string;
   model: ComposedEditorModel;
   workbookId: string | null;
-  workbookSources?: QuestionBlueprintDraft["workbookSources"];
+  workbookSources: QuestionBlueprintDraft["workbookSources"];
 };
 
 export type BuildQuestionBlueprintDraftResult =

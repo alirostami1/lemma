@@ -34,7 +34,7 @@ export type ReferencePickerPopoverProps = {
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
   disabled?: boolean;
-  activeSourceId?: string | null;
+  activeSourceId: string | null;
   defaultMode?: "existing" | "create";
   allowedSourceTypes?: ReferenceSourceDraft["type"][];
   createSourceTypeDefault?: ReferenceSourceDraft["type"];
