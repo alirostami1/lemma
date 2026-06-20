@@ -23,6 +23,9 @@ import {
   reconstituteQuestionSet,
 } from "../domain/index.js";
 
+type QuestionBlueprintVersionDocument =
+  Selectable<QuestionBlueprintVersions>["document"];
+
 export function mapQuestionSetRowToDomain(
   row: Selectable<QuestionSets>,
 ): QuestionSet {
@@ -324,21 +327,24 @@ function analyzeLegacyWorkbookReferenceCompatibility(document: unknown): {
   };
 }
 
-function patchLegacyWorkbookReferenceSourceIds(value: unknown): unknown {
+function patchLegacyWorkbookReferenceSourceIds(
+  value: QuestionBlueprintVersionDocument,
+): QuestionBlueprintVersionDocument {
   if (Array.isArray(value)) {
     return value.map((item) => patchLegacyWorkbookReferenceSourceIds(item));
   }
 
-  if (!isPlainRecord(value)) {
+  if (!isJsonObject(value)) {
     return value;
   }
 
-  const patched = Object.fromEntries(
-    Object.entries(value).map(([key, entryValue]) => [
-      key,
-      patchLegacyWorkbookReferenceSourceIds(entryValue),
-    ]),
-  );
+  const patched: Record<string, QuestionBlueprintVersionDocument | undefined> = {};
+  for (const [key, entryValue] of Object.entries(value)) {
+    patched[key] =
+      entryValue === undefined
+        ? undefined
+        : patchLegacyWorkbookReferenceSourceIds(entryValue);
+  }
 
   if (
     isWorkbookReferenceRecord(patched) &&
@@ -377,6 +383,12 @@ function isWorkbookReferenceRecord(
     isPlainRecord(value) &&
     (value.type === "workbook_cell" || value.type === "workbook_range")
   );
+}
+
+function isJsonObject(
+  value: QuestionBlueprintVersionDocument,
+): value is Record<string, QuestionBlueprintVersionDocument | undefined> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {

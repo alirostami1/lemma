@@ -64,8 +64,8 @@ const legacyVersionCreatedAt = new Date("2026-06-18T00:00:00.000Z");
 
 function createLegacyVersionRow(overrides: {
   workbookId: string | null;
-  workbookSources: unknown;
-  document: unknown;
+  workbookSources: QuestionBlueprintVersionRow["workbookSources"];
+  document: QuestionBlueprintVersionRow["document"];
 }): QuestionBlueprintVersionRow {
   return {
     id: legacyVersionId,
