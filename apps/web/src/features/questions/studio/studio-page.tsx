@@ -57,6 +57,7 @@ export function StudioPage(input: StudioRouteSearch = {}) {
               referencePreviewCache={studio.editor.referencePreviewCache}
               workbookTools={{
                 hasWorkbookFile: studio.editor.canUseWorkbookTools,
+                activeSourceId: studio.source.activeSource?.sourceId ?? null,
               }}
               inspectorStickyOffset={inspectorStickyOffset}
             />

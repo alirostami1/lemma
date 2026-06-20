@@ -155,6 +155,100 @@ describe("ReferencePickerPopover", () => {
     );
   });
 
+  it("uses activeSourceId when creating workbook cell reference manually", async () => {
+    const user = userEvent.setup();
+    const onModelChange = vi.fn();
+    const onSelectReference = vi.fn();
+
+    renderReferencePicker(
+      <ReferencePickerPopover
+        model={createModel()}
+        referencePreviewCache={createReferencePreviewCache()}
+        workbookEnabled={true}
+        activeSourceId="source_2"
+        onModelChange={onModelChange}
+        onSelectReference={onSelectReference}
+        trigger={<button type="button">Choose reference</button>}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Choose reference" }));
+    await user.click(screen.getByRole("tab", { name: "Create new" }));
+    await user.clear(screen.getByLabelText("Reference id"));
+    await user.type(screen.getByLabelText("Reference id"), "cell_ref");
+    await user.click(screen.getByRole("combobox", { name: "Source type" }));
+    await user.click(screen.getByRole("option", { name: "Workbook cell" }));
+    await user.type(screen.getByLabelText("Source cell"), "'Sheet1'!A1");
+    await user.click(
+      screen.getByRole("button", { name: "Create and use reference" }),
+    );
+
+    expect(onSelectReference).toHaveBeenCalledWith("cell_ref");
+    expect(onModelChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        references: expect.arrayContaining([
+          expect.objectContaining({
+            id: "cell_ref",
+            source: {
+              type: "workbook_cell",
+              sourceId: "source_2",
+              ref: "'Sheet1'!A1",
+            },
+          }),
+        ]),
+      }),
+    );
+  });
+
+  it("uses explicitly selected workbook source id over typed workbook ref on create", async () => {
+    const user = userEvent.setup();
+    const onModelChange = vi.fn();
+
+    renderReferencePicker(
+      <ReferencePickerPopover
+        model={createModel()}
+        referencePreviewCache={createReferencePreviewCache()}
+        workbookEnabled={true}
+        onModelChange={onModelChange}
+        onSelectReference={() => {}}
+        createSourceTypeDefault="workbook_cell"
+        trigger={<button type="button">Choose reference</button>}
+      />,
+      ({ onSelect }) => {
+        onSelect({
+          sourceId: "source_2",
+          reference: "'Sheet2'!B2",
+          values: [],
+        });
+      },
+    );
+
+    await user.click(screen.getByRole("button", { name: "Choose reference" }));
+    await user.click(screen.getByRole("tab", { name: "Create new" }));
+    await user.clear(screen.getByLabelText("Reference id"));
+    await user.type(screen.getByLabelText("Reference id"), "cell_ref_2");
+    await user.type(screen.getByLabelText("Source cell"), "'Sheet1'!A1");
+    await user.click(screen.getByRole("button", { name: "Open workbook range picker" }));
+    await user.click(
+      screen.getByRole("button", { name: "Create and use reference" }),
+    );
+
+    expect(onModelChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        references: expect.arrayContaining([
+          expect.objectContaining({
+            id: "cell_ref_2",
+            source: {
+              type: "workbook_cell",
+              sourceId: "source_2",
+              ref: "'Sheet2'!B2",
+            },
+          }),
+        ]),
+      }),
+    );
+  });
+
   it("shows validation errors for invalid and duplicate ids", async () => {
     const user = userEvent.setup();
 
@@ -210,9 +304,19 @@ function createModel(): ComposedEditorModel {
   };
 }
 
-function renderReferencePicker(ui: ReactElement) {
+function renderReferencePicker(
+  ui: ReactElement,
+  openWorkbookPicker: (request: {
+    selectionRequirement?: object;
+    onSelect: (selection: {
+      sourceId?: string;
+      reference: string;
+      values: string[][];
+    }) => void;
+  }) => void = () => {},
+) {
   return render(
-    <WorkbookPickerProvider value={{ openWorkbookPicker: () => {} }}>
+    <WorkbookPickerProvider value={{ openWorkbookPicker }}>
       {ui}
     </WorkbookPickerProvider>,
   );

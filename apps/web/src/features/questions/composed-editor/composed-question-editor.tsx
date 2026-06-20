@@ -30,7 +30,7 @@ export function ComposedQuestionEditor({
 }: {
   model: ComposedEditorModel;
   onModelChange(model: ComposedEditorModel): void;
-  workbookTools?: { hasWorkbookFile: boolean };
+  workbookTools?: { hasWorkbookFile: boolean; activeSourceId?: string | null };
   referencePreviewCache?: ReferencePreviewCache;
   disabled?: boolean;
   inspectorStickyOffset?: number;
@@ -149,6 +149,7 @@ export function ComposedQuestionEditor({
           selection={selection}
           referencePreviewCache={referencePreviewCache}
           workbookEnabled={workbookEnabled}
+          activeSourceId={workbookTools?.activeSourceId}
           disabled={disabled}
           onModelChange={onModelChange}
           onSelectionChange={setSelection}

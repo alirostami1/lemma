@@ -34,6 +34,7 @@ export type ReferencePickerPopoverProps = {
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
   disabled?: boolean;
+  activeSourceId?: string | null;
   defaultMode?: "existing" | "create";
   allowedSourceTypes?: ReferenceSourceDraft["type"][];
   createSourceTypeDefault?: ReferenceSourceDraft["type"];
@@ -54,6 +55,7 @@ export function ReferencePickerPopover({
   referencePreviewCache,
   workbookEnabled,
   disabled,
+  activeSourceId,
   defaultMode = "existing",
   allowedSourceTypes,
   createSourceTypeDefault,
@@ -171,6 +173,7 @@ export function ReferencePickerPopover({
               <ReferenceCreateForm
                 model={model}
                 workbookEnabled={workbookEnabled}
+                activeSourceId={activeSourceId}
                 allowedSourceTypes={allowedSourceTypes}
                 initialSourceType={createSourceTypeDefault}
                 disabled={disabled}

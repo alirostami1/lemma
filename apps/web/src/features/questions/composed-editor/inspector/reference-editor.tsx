@@ -34,6 +34,7 @@ type ReferenceEditorProps = {
   referenceId: string;
   preview?: ReferencePreviewValue;
   workbookEnabled: boolean;
+  activeSourceId?: string | null;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onSelectionChange(selection: EditorSelection): void;
@@ -62,6 +63,7 @@ function ReferenceEditorFields({
   model,
   preview,
   workbookEnabled,
+  activeSourceId,
   disabled,
   onModelChange,
   onSelectionChange,
@@ -69,10 +71,15 @@ function ReferenceEditorFields({
 }: ReferenceEditorFieldsProps) {
   const [draftName, setDraftName] = useState(reference.id);
   const [nameError, setNameError] = useState<string | null>(null);
+  const [sourceError, setSourceError] = useState<string | null>(null);
+
+  const hasExplicitActiveSource = activeSourceId !== undefined;
+  const isActiveSourceMissing = hasExplicitActiveSource && activeSourceId === null;
 
   useEffect(() => {
     setDraftName(reference.id);
     setNameError(null);
+    setSourceError(null);
   }, [reference.id]);
 
   function commitName() {
@@ -163,7 +170,10 @@ function ReferenceEditorFields({
           />
         </InspectorField>
 
-        <InspectorField label="Source">
+        <InspectorField
+          label="Source"
+          error={sourceError ?? undefined}
+        >
           <Select
             value={sourceType}
             disabled={disabled}
@@ -171,9 +181,23 @@ function ReferenceEditorFields({
               if (!isReferenceSourceDraftType(value)) {
                 return;
               }
+              const nextSource = createNextReferenceSource(
+                reference.source,
+                value,
+                activeSourceId,
+              );
+              if (!nextSource) {
+                setSourceError(
+                  hasExplicitActiveSource
+                    ? "Select an active source before switching to workbook references."
+                    : "Select a workbook source before using workbook references.",
+                );
+                return;
+              }
+              setSourceError(null);
               updateReference((current) => ({
                 ...current,
-                source: createNextReferenceSource(current.source, value),
+                source: nextSource,
               }));
             }}
           >
@@ -216,7 +240,7 @@ function ReferenceEditorFields({
             <WorkbookInputGroup
               id={`${reference.id}-workbook`}
               value={reference.source.ref}
-              disabled={disabled || !workbookEnabled}
+              disabled={disabled || !workbookEnabled || isActiveSourceMissing}
               placeholder="Select a workbook source"
               workbookSelectionRequirement={{
                 selectionType:
@@ -244,14 +268,20 @@ function ReferenceEditorFields({
                         ...current,
                         source: {
                           type: current.source.type,
-                          sourceId: selection.sourceId ?? "source_1",
+                          sourceId:
+                            selection.sourceId ??
+                            (current.source.sourceId || getInitialWorkbookSourceId(activeSourceId)),
                           ref: selection.reference,
                         },
                       },
                 )
               }
             />
-            {!workbookEnabled ? (
+            {isActiveSourceMissing ? (
+              <p className="text-xs text-muted-foreground">
+                Select an active source before editing workbook references.
+              </p>
+            ) : !workbookEnabled ? (
               <p className="text-xs text-muted-foreground">
                 Select a workbook to reference cells.
               </p>
@@ -320,7 +350,8 @@ function getReferencePreviewText(
 function createNextReferenceSource(
   source: ReferenceSourceDraft,
   type: ReferenceSourceDraft["type"],
-): ReferenceSourceDraft {
+  activeSourceId: string | null | undefined,
+): ReferenceSourceDraft | null {
   if (type === "literal") {
     return source.type === "literal"
       ? { type: "literal", value: source.value }
@@ -333,5 +364,18 @@ function createNextReferenceSource(
       : { type, sourceId: source.sourceId, ref: "" };
   }
 
-  return { type, sourceId: "source_1", ref: "" };
+  const workbookSourceId = getInitialWorkbookSourceId(activeSourceId);
+  if (!workbookSourceId) {
+    return null;
+  }
+
+  return { type, sourceId: workbookSourceId, ref: "" };
+}
+
+function getInitialWorkbookSourceId(activeSourceId: string | null | undefined) {
+  if (activeSourceId === undefined) {
+    return "source_1";
+  }
+
+  return activeSourceId ?? "";
 }

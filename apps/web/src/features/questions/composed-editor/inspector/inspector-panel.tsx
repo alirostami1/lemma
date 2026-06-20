@@ -22,6 +22,7 @@ export function InspectorPanel({
   referencePreviewCache,
   workbookEnabled,
   disabled,
+  activeSourceId,
   onModelChange,
   onSelectionChange,
   stickyOffset = 80,
@@ -30,6 +31,7 @@ export function InspectorPanel({
   selection: EditorSelection;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
+  activeSourceId?: string | null;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onSelectionChange(selection: EditorSelection): void;
@@ -78,6 +80,7 @@ export function InspectorPanel({
                   selection={selection}
                   referencePreviewCache={referencePreviewCache}
                   workbookEnabled={workbookEnabled}
+                  activeSourceId={activeSourceId}
                   disabled={disabled}
                   onModelChange={onModelChange}
                   onSelectionChange={onSelectionChange}

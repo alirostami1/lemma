@@ -60,13 +60,20 @@ export function mapQuestionSetToUpdate(
 export function mapQuestionBlueprintRowToDomain(
   row: Selectable<QuestionBlueprints>,
 ): QuestionBlueprint {
-  return reconstituteQuestionBlueprint(row);
+  return reconstituteQuestionBlueprint(
+    withLegacyWorkbookSourceCompatibility(row),
+  );
 }
 
 export function mapQuestionBlueprintVersionRowToDomain(
   row: Selectable<QuestionBlueprintVersions>,
 ): QuestionBlueprintVersion {
-  return reconstituteQuestionBlueprintVersion(row);
+  return reconstituteQuestionBlueprintVersion(
+    withLegacyWorkbookSourceCompatibility({
+      ...row,
+      document: withLegacyWorkbookReferenceCompatibility(row),
+    }),
+  );
 }
 
 export function mapQuestionBlueprintVersionAssetRowToDomain(
@@ -223,4 +230,155 @@ export function mapQuestionGenerationRunToUpdate(
     finishedAt: run.finishedAt,
     updatedAt: run.updatedAt,
   };
+}
+
+const LEGACY_WORKBOOK_SOURCE_ID = "source_1";
+const LEGACY_WORKBOOK_SOURCE_NAME = "Source 1";
+
+function withLegacyWorkbookSourceCompatibility(
+  row: Selectable<QuestionBlueprints>,
+): Selectable<QuestionBlueprints>;
+function withLegacyWorkbookSourceCompatibility(
+  row: Selectable<QuestionBlueprintVersions>,
+): Selectable<QuestionBlueprintVersions>;
+function withLegacyWorkbookSourceCompatibility(
+  row: Selectable<QuestionBlueprints> | Selectable<QuestionBlueprintVersions>,
+): Selectable<QuestionBlueprints> | Selectable<QuestionBlueprintVersions> {
+  if (!isLegacySingleWorkbookRow(row)) {
+    return row;
+  }
+
+  const workbookSources: Selectable<QuestionBlueprints>["workbookSources"] = [
+    {
+      sourceId: LEGACY_WORKBOOK_SOURCE_ID,
+      name: LEGACY_WORKBOOK_SOURCE_NAME,
+      workbookId: row.workbookId,
+    },
+  ];
+
+  return {
+    ...row,
+    workbookSources,
+  };
+}
+
+function withLegacyWorkbookReferenceCompatibility(
+  row: Pick<Selectable<QuestionBlueprintVersions>, "document" | "workbookId" | "workbookSources">,
+): Selectable<QuestionBlueprintVersions>["document"] {
+  if (!isLegacySingleWorkbookRow(row)) {
+    return row.document;
+  }
+
+  const compatibility = analyzeLegacyWorkbookReferenceCompatibility(row.document);
+  if (!compatibility.shouldPatchReferences) {
+    return row.document;
+  }
+
+  return patchLegacyWorkbookReferenceSourceIds(row.document);
+}
+
+function isLegacySingleWorkbookRow(input: {
+  workbookId?: string | null;
+  workbookSources?: unknown;
+}): input is { workbookId: string; workbookSources?: unknown } {
+  return (
+    typeof input.workbookId === "string" &&
+    input.workbookId.length > 0 &&
+    !hasWorkbookSources(input.workbookSources)
+  );
+}
+
+function hasWorkbookSources(value: unknown): boolean {
+  return Array.isArray(value) && value.length > 0;
+}
+
+function analyzeLegacyWorkbookReferenceCompatibility(document: unknown): {
+  shouldPatchReferences: boolean;
+} {
+  let hasWorkbookReference = false;
+  let hasMissingWorkbookSourceId = false;
+  let hasNonLegacyWorkbookSourceId = false;
+
+  visitJsonValue(document, (value) => {
+    if (!isWorkbookReferenceRecord(value)) {
+      return;
+    }
+
+    hasWorkbookReference = true;
+
+    if (typeof value.sourceId !== "string" || value.sourceId.length === 0) {
+      hasMissingWorkbookSourceId = true;
+      return;
+    }
+
+    if (value.sourceId !== LEGACY_WORKBOOK_SOURCE_ID) {
+      hasNonLegacyWorkbookSourceId = true;
+    }
+  });
+
+  return {
+    shouldPatchReferences:
+      hasWorkbookReference &&
+      hasMissingWorkbookSourceId &&
+      !hasNonLegacyWorkbookSourceId,
+  };
+}
+
+function patchLegacyWorkbookReferenceSourceIds(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => patchLegacyWorkbookReferenceSourceIds(item));
+  }
+
+  if (!isPlainRecord(value)) {
+    return value;
+  }
+
+  const patched = Object.fromEntries(
+    Object.entries(value).map(([key, entryValue]) => [
+      key,
+      patchLegacyWorkbookReferenceSourceIds(entryValue),
+    ]),
+  );
+
+  if (
+    isWorkbookReferenceRecord(patched) &&
+    (typeof patched.sourceId !== "string" || patched.sourceId.length === 0)
+  ) {
+    return {
+      ...patched,
+      sourceId: LEGACY_WORKBOOK_SOURCE_ID,
+    };
+  }
+
+  return patched;
+}
+
+function visitJsonValue(
+  value: unknown,
+  visitor: (current: Record<string, unknown>) => void,
+): void {
+  if (Array.isArray(value)) {
+    value.forEach((item) => visitJsonValue(item, visitor));
+    return;
+  }
+
+  if (!isPlainRecord(value)) {
+    return;
+  }
+
+  visitor(value);
+  Object.values(value).forEach((entryValue) => visitJsonValue(entryValue, visitor));
+}
+
+function isWorkbookReferenceRecord(
+  value: unknown,
+): value is Record<string, unknown> & { type: "workbook_cell" | "workbook_range" } {
+  return (
+    isPlainRecord(value) &&
+    (value.type === "workbook_cell" || value.type === "workbook_range")
+  );
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

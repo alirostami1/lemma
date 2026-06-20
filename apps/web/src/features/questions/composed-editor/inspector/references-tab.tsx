@@ -19,6 +19,7 @@ export function ReferencesTab({
   referencePreviewCache,
   workbookEnabled,
   disabled,
+  activeSourceId,
   onModelChange,
   onSelectionChange,
 }: {
@@ -26,6 +27,7 @@ export function ReferencesTab({
   selection: EditorSelection;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
+  activeSourceId?: string | null;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onSelectionChange(selection: EditorSelection): void;
@@ -73,6 +75,7 @@ export function ReferencesTab({
           }
           referencePreviewCache={referencePreviewCache}
           workbookEnabled={workbookEnabled}
+          activeSourceId={activeSourceId}
           disabled={disabled}
           defaultMode="create"
           onModelChange={onModelChange}
@@ -152,6 +155,7 @@ export function ReferencesTab({
             referenceId={selectedReference.id}
             preview={referencePreviewCache[selectedReference.id]}
             workbookEnabled={workbookEnabled}
+            activeSourceId={activeSourceId}
             disabled={disabled}
             onModelChange={onModelChange}
             onSelectionChange={onSelectionChange}
