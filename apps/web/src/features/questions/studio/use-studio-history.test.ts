@@ -57,7 +57,7 @@ function createSnapshot(text: string): StudioHistorySnapshot {
     authoringModel: createModel(text),
     blueprintDescription: "",
     blueprintName: "Blueprint",
-    selectedWorkbookId: "",
+    sources: [],
   };
 }
 

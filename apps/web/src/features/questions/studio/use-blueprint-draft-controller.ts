@@ -7,6 +7,7 @@ import {
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import { createDefaultComposedEditorModel } from "#/domains/questions/authoring";
 import type { QuestionBlueprintAuthoring } from "#/domains/questions/model";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import { createLoadedBlueprintDraftSnapshotState } from "./blueprint-draft-snapshots";
 import { createDraftSnapshotKey } from "./studio-controller-helpers";
 import {
@@ -55,13 +56,13 @@ export type BlueprintDraftController = {
     blueprintId: string;
     blueprintName: string;
     blueprintVersionId?: string | null;
-    workbookId: string;
+    sources: QuestionBlueprintWorkbookSource[];
   }): void;
-  selectedWorkbookId: string;
+  sources: QuestionBlueprintWorkbookSource[];
   setAuthoringModel(model: ComposedEditorModel): void;
   setBlueprintDescription(description: string): void;
   setBlueprintName(name: string): void;
-  setSelectedWorkbookId(workbookId: string): void;
+  setSources(sources: QuestionBlueprintWorkbookSource[]): void;
   requestReset(): void;
   redo(): void;
   undo(): void;
@@ -126,8 +127,8 @@ export function useBlueprintDraftController({
     () =>
       initialLocalDraft?.authoringModel ?? createDefaultComposedEditorModel(),
   );
-  const [selectedWorkbookId, setSelectedWorkbookId] = useState(
-    initialLocalDraft?.selectedWorkbookId ?? "",
+  const [sources, setSources] = useState<QuestionBlueprintWorkbookSource[]>(
+    () => initialLocalDraft?.sources ?? [],
   );
   const [draftStorageKey, setDraftStorageKey] = useState(
     () =>
@@ -195,16 +196,10 @@ export function useBlueprintDraftController({
         blueprintId: loadedBlueprintId ?? "",
         blueprintName: blueprintName.trim(),
         description: blueprintDescription.trim(),
-        workbookId: selectedWorkbookId,
+        sources,
         authoringModel,
       }),
-    [
-      authoringModel,
-      blueprintDescription,
-      blueprintName,
-      loadedBlueprintId,
-      selectedWorkbookId,
-    ],
+    [authoringModel, blueprintDescription, blueprintName, loadedBlueprintId, sources],
   );
   const handleLocalDraftLoadFailed = useCallback(() => {
     setLocalDraftStatus("failed");
@@ -231,7 +226,7 @@ export function useBlueprintDraftController({
     loadedBlueprintKeyRef,
     loadedBlueprintVersionId,
     onLocalDraftLoadFailed: handleLocalDraftLoadFailed,
-    selectedWorkbookId,
+    sources,
   });
 
   const {
@@ -243,18 +238,18 @@ export function useBlueprintDraftController({
     setEditableAuthoringModel,
     setEditableBlueprintDescription,
     setEditableBlueprintName,
-    setEditableSelectedWorkbookId,
+    setEditableSources,
     undoHistory,
   } = useBlueprintDraftHistory({
     authoringModel,
     blueprintDescription,
     blueprintName,
-    selectedWorkbookId,
+    sources,
     setAuthoringModel,
     setBlueprintDescription,
     setBlueprintName,
     setHasUserEdited,
-    setSelectedWorkbookId,
+    setSources,
   });
 
   useEffect(() => {
@@ -298,7 +293,7 @@ export function useBlueprintDraftController({
     setBlueprintName(loadedBlueprint.name);
     setBlueprintDescription(loadedBlueprint.description ?? "");
     setAuthoringModel(nextAuthoringModel);
-    setSelectedWorkbookId(loadedBlueprint.workbookId ?? "");
+    setSources(loadedBlueprint.sources);
     setDraftStorageKey(nextDraftStorageKey);
     setLoadedBlueprintId(initialBlueprintId);
     setLoadedBlueprintVersionId(nextBlueprintVersionId);
@@ -344,7 +339,7 @@ export function useBlueprintDraftController({
     loadedBlueprint: activeLoadedBlueprintQuery.data?.questionBlueprint ?? null,
     loadedBlueprintId,
     loadedBlueprintVersionId,
-    selectedWorkbookId,
+    sources,
     setIsRecoveryResolved,
     setLastLocalSavedDraftKey,
     setLocalDraftError,
@@ -357,7 +352,7 @@ export function useBlueprintDraftController({
       authoringModel: snapshot.authoringModel,
       blueprintDescription: snapshot.blueprintDescription,
       blueprintName: snapshot.blueprintName,
-      selectedWorkbookId: snapshot.selectedWorkbookId,
+      sources: snapshot.sources,
     });
     setLoadedBlueprintId(snapshot.loadedBlueprintId);
     setLoadedBlueprintVersionId(snapshot.loadedBlueprintVersionId ?? null);
@@ -429,7 +424,7 @@ export function useBlueprintDraftController({
     setLocalDraftError,
     setLocalDraftStatus,
     setRecoverySnapshot,
-    setSelectedWorkbookId,
+    setSources,
   });
   const markSaved = useBlueprintDraftMarkSavedAction({
     authoringModel,
@@ -448,7 +443,7 @@ export function useBlueprintDraftController({
     setLoadedBlueprintVersionId,
     setLocalDraftError,
     setLocalDraftStatus,
-    setSelectedWorkbookId,
+    setSources,
   });
 
   const hasUnsavedChanges = hasUnsavedChangesFromKeys({
@@ -495,11 +490,11 @@ export function useBlueprintDraftController({
     restoredInitialLocalDraft: initialLocalDraft !== null,
     canRedo,
     canUndo,
-    selectedWorkbookId,
+    sources,
     setAuthoringModel: setEditableAuthoringModel,
     setBlueprintDescription: setEditableBlueprintDescription,
     setBlueprintName: setEditableBlueprintName,
-    setSelectedWorkbookId: setEditableSelectedWorkbookId,
+    setSources: setEditableSources,
     requestReset: () => setIsResetConfirmationOpen(true),
     redo: redoHistory,
     undo: undoHistory,

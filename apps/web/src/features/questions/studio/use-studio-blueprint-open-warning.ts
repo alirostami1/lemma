@@ -30,7 +30,7 @@ export function useStudioBlueprintOpenWarning({
   loadedBlueprintKeyRef,
   loadedBlueprintVersionId,
   onLocalDraftLoadFailed,
-  selectedWorkbookId,
+  sources,
   cancelledBlueprintOpenIdRef,
   confirmedBlueprintOpenIdsRef,
 }: {
@@ -49,7 +49,7 @@ export function useStudioBlueprintOpenWarning({
   loadedBlueprintKeyRef: MutableRef<string | null>;
   loadedBlueprintVersionId: string | null;
   onLocalDraftLoadFailed(): void;
-  selectedWorkbookId: string;
+  sources: { sourceId: string; name: string; workbookId: string }[];
   cancelledBlueprintOpenIdRef: MutableRef<string | null>;
   confirmedBlueprintOpenIdsRef: MutableRef<Set<string>>;
 }) {
@@ -84,7 +84,7 @@ export function useStudioBlueprintOpenWarning({
           draftKey: draftStorageKey,
           loadedBlueprintId,
           loadedBlueprintVersionId,
-          selectedWorkbookId,
+          sources,
           blueprintName,
           blueprintDescription,
           authoringModel,
@@ -129,7 +129,7 @@ export function useStudioBlueprintOpenWarning({
     loadedBlueprintKeyRef,
     loadedBlueprintVersionId,
     onLocalDraftLoadFailed,
-    selectedWorkbookId,
+    sources,
     warningSnapshot,
   ]);
 

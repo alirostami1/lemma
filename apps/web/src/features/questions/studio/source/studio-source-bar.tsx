@@ -4,26 +4,23 @@ import {
   FileSpreadsheet,
   Plus,
   Trash2,
-  Upload,
 } from "lucide-react";
 import type { StudioSourceViewState } from "./source-state";
 
 export function StudioSourceBar({
   sourceCard,
   onAddSource,
-  onChangeSource,
+  onPreviewSourceChange,
   onRemoveSource,
 }: {
   sourceCard: StudioSourceViewState;
   onAddSource(): void;
-  onChangeSource(): void;
-  onRemoveSource(): void;
+  onPreviewSourceChange(sourceId: string): void;
+  onRemoveSource(sourceId: string): void;
 }) {
   const sources = sourceCard.sources ?? [];
-  const activeSourceId = sourceCard.activeSourceId;
-  const onActivateSourceId = sourceCard.onActivateSourceId;
   const icon =
-    sourceCard.status === "required_missing" ||
+    sourceCard.status === "loading" ||
     sourceCard.status === "invalid" ||
     sourceCard.status === "error" ? (
       <AlertTriangle className="size-4 text-destructive" />
@@ -42,65 +39,59 @@ export function StudioSourceBar({
               {sourceCard.description}
             </p>
             {sources.length > 0 ? (
-              <div className="mt-1 flex flex-wrap gap-1">
-                {sources.map((source) => (
-                  <button
-                    type="button"
-                    key={source.sourceId}
-                    className={
-                      source.sourceId === activeSourceId
-                        ? "rounded border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary"
-                        : "rounded border bg-muted/40 px-1.5 py-0.5 text-[11px] text-muted-foreground hover:bg-muted"
-                    }
-                    disabled={
-                      !onActivateSourceId || source.sourceId === activeSourceId
-                    }
-                    onClick={() => onActivateSourceId?.(source.sourceId)}
-                    title={source.workbookName ?? source.sourceName}
-                  >
-                    {source.sourceName}
-                  </button>
-                ))}
+              <div className="mt-1 flex flex-wrap gap-2">
+                {sources.map((source) => {
+                  const selected = source.sourceId === sourceCard.previewSourceId;
+                  return (
+                    <div key={source.sourceId} className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        className={
+                          selected
+                            ? "grid rounded border border-primary/40 bg-primary/10 px-2 py-1 text-left text-[11px] font-medium text-primary"
+                            : "grid rounded border bg-muted/40 px-2 py-1 text-left text-[11px] text-muted-foreground hover:bg-muted"
+                        }
+                        title={source.name}
+                        onClick={() => onPreviewSourceChange(source.sourceId)}
+                      >
+                        <span className="truncate">{source.name}</span>
+                        {source.removeIssue ? (
+                          <span className="truncate text-[10px] text-destructive">
+                            {source.removeIssue}
+                          </span>
+                        ) : (
+                          <span className="truncate text-[10px] text-muted-foreground">
+                            {selected ? "Preview source" : "Attached source"}
+                          </span>
+                        )}
+                      </button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-xs"
+                        disabled={!source.canRemove}
+                        title={source.removeIssue ?? "Remove source"}
+                        onClick={() => onRemoveSource(source.sourceId)}
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
+                  );
+                })}
               </div>
             ) : null}
           </div>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
-          {sourceCard.status === "not_required_empty" ||
-          sourceCard.status === "required_missing" ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onAddSource}
-            >
-              <Plus />
-              Attach source
-            </Button>
-          ) : (
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={onChangeSource}
-              >
-                <Upload />
-                Attach source
-              </Button>
-              {sourceCard.canRemove ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={onRemoveSource}
-                >
-                  <Trash2 />
-                  Remove source
-                </Button>
-              ) : null}
-            </>
-          )}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onAddSource}
+          >
+            <Plus />
+            Add local source
+          </Button>
         </div>
       </div>
       {"issue" in sourceCard ? (

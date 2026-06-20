@@ -35,6 +35,7 @@ export type WorkbookRangeSelection = {
 };
 
 export type WorkbookPickerRequest = {
+  sourceId: string | null;
   selectionRequirement?: WorkbookSelectionRequirement;
   onSelect(selection: WorkbookRangeSelection): void;
 };
@@ -72,6 +73,7 @@ export function useWorkbookPicker() {
 }
 
 type WorkbookPickerProps = {
+  sourceId?: string | null;
   workbookSelectionRequirement?: WorkbookSelectionRequirement;
   onWorkbookSelect(selection: WorkbookRangeSelection): void;
 };
@@ -85,6 +87,7 @@ export function WorkbookInput({
   className,
   containerProps,
   disabled,
+  sourceId = null,
   workbookSelectionRequirement = {},
   onWorkbookSelect,
   ...props
@@ -95,6 +98,7 @@ export function WorkbookInput({
 
   function openWorkbook() {
     workbookPicker.openWorkbookPicker({
+      sourceId,
       selectionRequirement: workbookSelectionRequirement,
       onSelect: onWorkbookSelect,
     });
@@ -135,6 +139,7 @@ export function WorkbookInputGroup({
   className,
   disabled,
   inputGroupProps,
+  sourceId = null,
   workbookSelectionRequirement = {},
   onWorkbookSelect,
   ...props
@@ -144,6 +149,7 @@ export function WorkbookInputGroup({
   const workbookPicker = useWorkbookPicker();
   function openWorkbook() {
     workbookPicker.openWorkbookPicker({
+      sourceId,
       selectionRequirement: workbookSelectionRequirement,
       onSelect: onWorkbookSelect,
     });

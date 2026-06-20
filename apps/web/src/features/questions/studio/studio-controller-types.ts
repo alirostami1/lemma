@@ -1,5 +1,6 @@
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import type { QuestionGenerationRun } from "#/domains/questions/model";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import type {
   WorkbookPickerController,
@@ -64,6 +65,8 @@ export type StudioController = {
     authoringModel: ComposedEditorModel;
     referencePreviewCache: ReferencePreviewCache;
     canUseWorkbookTools: boolean;
+    previewSourceId: string | null;
+    sources: QuestionBlueprintWorkbookSource[];
     onAuthoringModelChange(model: ComposedEditorModel): void;
   };
   savedBlueprints: {

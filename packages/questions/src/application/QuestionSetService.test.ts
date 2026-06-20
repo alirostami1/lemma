@@ -87,7 +87,7 @@ describe("QuestionBlueprintService", () => {
       currentUser: currentUser(ownerUserId),
       name: "Practice",
       document: emptyBlueprintDocument,
-      workbookSources: [],
+      sources: [],
     });
 
     assert.equal(result.questionBlueprint.id, nextBlueprintId);
@@ -114,14 +114,35 @@ describe("QuestionBlueprintService", () => {
       currentUser: currentUser(ownerUserId),
       name: "Practice",
       document: workbookBlueprintDocument("source_1"),
-      workbookSources: [
-        { sourceId: "source_1", name: "Used", workbookId: sourceWorkbookId },
-        { sourceId: "source_2", name: "Unused", workbookId: otherWorkbookId },
+      sources: [
+        {
+          type: "workbook",
+          sourceId: "source_1",
+          name: "Used",
+          workbookId: sourceWorkbookId,
+        },
+        {
+          type: "workbook",
+          sourceId: "source_2",
+          name: "Unused",
+          workbookId: otherWorkbookId,
+        },
       ],
     });
 
-    assert.deepEqual(result.questionBlueprint.workbookSources, [
-      { sourceId: "source_1", name: "Used", workbookId: sourceWorkbookId },
+    assert.deepEqual(result.questionBlueprint.sources, [
+      {
+        type: "workbook",
+        sourceId: "source_1",
+        name: "Used",
+        workbookId: sourceWorkbookId,
+      },
+      {
+        type: "workbook",
+        sourceId: "source_2",
+        name: "Unused",
+        workbookId: otherWorkbookId,
+      },
     ]);
     assert.deepEqual(result.questionBlueprint.currentVersion.sourceAssets, [
       {
@@ -138,7 +159,7 @@ describe("QuestionBlueprintService", () => {
     );
   });
 
-  it("rejects create without explicit workbookSources", async () => {
+  it("rejects create without explicit sources", async () => {
     const repository = new FakeQuestionsRepository();
     const service = new QuestionBlueprintService({
       questionsRepository: repository,
@@ -156,7 +177,7 @@ describe("QuestionBlueprintService", () => {
       (error: unknown) => {
         return (
           error instanceof InvalidQuestionFieldError &&
-          /workbookSources/.test(error.message)
+          /sources must be provided/.test(error.message)
         );
       },
     );
@@ -183,26 +204,57 @@ describe("QuestionBlueprintService", () => {
       currentUser: currentUser(ownerUserId),
       name: "Practice",
       document: workbookBlueprintDocument("source_1"),
-      workbookSources: [
-        { sourceId: "source_1", name: "First", workbookId: sourceWorkbookId },
-        { sourceId: "source_2", name: "Second", workbookId: otherWorkbookId },
+      sources: [
+        {
+          type: "workbook",
+          sourceId: "source_1",
+          name: "First",
+          workbookId: sourceWorkbookId,
+        },
+        {
+          type: "workbook",
+          sourceId: "source_2",
+          name: "Second",
+          workbookId: otherWorkbookId,
+        },
       ],
     });
 
     const result = await service.updateQuestionBlueprint({
-      currentUser: currentUser(ownerUserId),
-      questionBlueprintId: nextBlueprintId,
-      patch: {
-        document: workbookBlueprintDocument("source_2"),
-        workbookSources: [
-          { sourceId: "source_1", name: "First", workbookId: sourceWorkbookId },
-          { sourceId: "source_2", name: "Second", workbookId: otherWorkbookId },
-        ],
-      },
-    });
+        currentUser: currentUser(ownerUserId),
+        questionBlueprintId: nextBlueprintId,
+        patch: {
+          document: workbookBlueprintDocument("source_2"),
+          sources: [
+            {
+              type: "workbook",
+              sourceId: "source_1",
+              name: "First",
+              workbookId: sourceWorkbookId,
+            },
+            {
+              type: "workbook",
+              sourceId: "source_2",
+              name: "Second",
+              workbookId: otherWorkbookId,
+            },
+          ],
+        },
+      });
 
-    assert.deepEqual(result.questionBlueprint.workbookSources, [
-      { sourceId: "source_2", name: "Second", workbookId: otherWorkbookId },
+    assert.deepEqual(result.questionBlueprint.sources, [
+      {
+        type: "workbook",
+        sourceId: "source_1",
+        name: "First",
+        workbookId: sourceWorkbookId,
+      },
+      {
+        type: "workbook",
+        sourceId: "source_2",
+        name: "Second",
+        workbookId: otherWorkbookId,
+      },
     ]);
     assert.deepEqual(
       repository.questionBlueprintVersionAssets.get(updatedBlueprintVersionId),
@@ -218,7 +270,7 @@ describe("QuestionBlueprintService", () => {
     );
   });
 
-  it("rejects document update without explicit workbookSources", async () => {
+  it("rejects document update without explicit sources", async () => {
     const repository = new FakeQuestionsRepository();
     const versionIds = [nextBlueprintVersionId, updatedBlueprintVersionId];
     const service = new QuestionBlueprintService({
@@ -240,8 +292,13 @@ describe("QuestionBlueprintService", () => {
       currentUser: currentUser(ownerUserId),
       name: "Practice",
       document: workbookBlueprintDocument("source_1"),
-      workbookSources: [
-        { sourceId: "source_1", name: "First", workbookId: sourceWorkbookId },
+      sources: [
+        {
+          type: "workbook",
+          sourceId: "source_1",
+          name: "First",
+          workbookId: sourceWorkbookId,
+        },
       ],
     });
 
@@ -251,13 +308,13 @@ describe("QuestionBlueprintService", () => {
           currentUser: currentUser(ownerUserId),
           questionBlueprintId: nextBlueprintId,
           patch: {
-            document: workbookBlueprintDocument("source_1"),
+            document: workbookBlueprintDocument("source_2"),
           },
         }),
       (error: unknown) => {
         return (
           error instanceof InvalidQuestionFieldError &&
-          /workbookSources/.test(error.message)
+          /not attached to this blueprint/.test(error.message)
         );
       },
     );

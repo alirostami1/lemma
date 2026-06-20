@@ -42,7 +42,7 @@ export function createDraftKeyFromSnapshot(snapshot: StudioDraftSnapshot) {
     blueprintId: snapshot.loadedBlueprintId ?? "",
     blueprintName: snapshot.blueprintName.trim(),
     description: snapshot.blueprintDescription.trim(),
-    workbookId: snapshot.selectedWorkbookId,
+    sources: snapshot.sources,
     authoringModel: snapshot.authoringModel,
   });
 }

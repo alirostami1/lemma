@@ -14,6 +14,7 @@ import {
   type WorkbookCalculation,
   type WorkbookSnapshot,
 } from "../domain/index.js";
+import type { WorkbookCalculationSource } from "./workbook-calculation-sources.js";
 
 export {
   WORKBOOK_CALCULATION_FAILED_EVENT,
@@ -40,10 +41,7 @@ export type WorkbookValidationFinishedPayload = JsonObject & {
 export type WorkbookCalculationRequestedPayload = JsonObject & {
   workbookCalculationId: string;
   workbookId: string;
-  workbookSources: {
-    sourceId: string;
-    workbookId: string;
-  }[];
+  sources: WorkbookCalculationSource[];
   requestedCount: number;
   correlationId: string | null;
 };
@@ -51,6 +49,7 @@ export type WorkbookCalculationRequestedPayload = JsonObject & {
 export type WorkbookCalculationFinishedPayload = JsonObject & {
   workbookCalculationId: string;
   workbookId: string;
+  sources: WorkbookCalculationSource[];
   correlationId: string | null;
   status: WorkbookCalculation["status"];
   requestedCount: number;
@@ -105,10 +104,7 @@ export function workbookValidationFinishedEvent(input: {
 export function workbookCalculationRequestedEvent(input: {
   id: string;
   calculation: WorkbookCalculation;
-  workbookSources: readonly {
-    sourceId: string;
-    workbookId: string;
-  }[];
+  sources: readonly WorkbookCalculationSource[];
   lineage: OperationLineage;
   occurredAt: Date;
 }): DomainEventEnvelope<WorkbookCalculationRequestedPayload> {
@@ -121,7 +117,7 @@ export function workbookCalculationRequestedEvent(input: {
     payload: {
       workbookCalculationId: input.calculation.id,
       workbookId: input.calculation.workbookId,
-      workbookSources: input.workbookSources.map((source) => ({ ...source })),
+      sources: input.sources.map((source) => ({ ...source })),
       requestedCount: input.calculation.requestedCount,
       correlationId: input.calculation.correlationId,
     },
@@ -131,6 +127,7 @@ export function workbookCalculationRequestedEvent(input: {
 export function workbookCalculationFinishedEvent(input: {
   id: string;
   calculation: WorkbookCalculation;
+  sources: readonly WorkbookCalculationSource[];
   snapshots?: readonly WorkbookSnapshot[];
   lineage: OperationLineage;
   occurredAt: Date;
@@ -147,6 +144,7 @@ export function workbookCalculationFinishedEvent(input: {
     payload: {
       workbookCalculationId: input.calculation.id,
       workbookId: input.calculation.workbookId,
+      sources: input.sources.map((source) => ({ ...source })),
       correlationId: input.calculation.correlationId,
       status: input.calculation.status,
       requestedCount: input.calculation.requestedCount,

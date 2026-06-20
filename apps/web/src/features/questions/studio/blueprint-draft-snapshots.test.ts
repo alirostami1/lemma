@@ -17,7 +17,7 @@ describe("blueprint draft snapshots", () => {
       lastRemoteSaveSnapshotKey: null,
       loadedBlueprintId: null,
       loadedBlueprintVersionId: null,
-      selectedWorkbookId: "",
+      sources: [],
     });
     expect(state.draftKey).toBeTruthy();
   });
@@ -30,7 +30,13 @@ describe("blueprint draft snapshots", () => {
       blueprintId: "blueprint-1",
       blueprintName: " Blueprint ",
       blueprintVersionId: "version-1",
-      workbookId: "workbook-1",
+      sources: [
+        {
+          sourceId: "source_1",
+          name: "Source 1",
+          workbookId: "workbook-1",
+        },
+      ],
     });
 
     expect(state.draftKey).toBe("blueprint:blueprint-1:version:version-1");
@@ -41,7 +47,13 @@ describe("blueprint draft snapshots", () => {
       draftKey: "blueprint:blueprint-1:version:version-1",
       loadedBlueprintId: "blueprint-1",
       loadedBlueprintVersionId: "version-1",
-      selectedWorkbookId: "workbook-1",
+      sources: [
+        {
+          sourceId: "source_1",
+          name: "Source 1",
+          workbookId: "workbook-1",
+        },
+      ],
     });
     expect(state.syncedSnapshot.lastRemoteSaveSnapshotKey).toBe(
       state.remoteSnapshotKey,

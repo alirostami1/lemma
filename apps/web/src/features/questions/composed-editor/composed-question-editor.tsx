@@ -1,6 +1,7 @@
 import { TooltipProvider } from "@lemma/ui/components/tooltip";
 import { useEffect, useState } from "react";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import type { TableEditorSelection } from "#/features/questions/table-block-editor";
 import { BlockList } from "./block-list";
@@ -23,14 +24,16 @@ import { InspectorPanel } from "./inspector";
 export function ComposedQuestionEditor({
   model,
   onModelChange,
-  workbookTools,
+  sources,
+  previewSourceId,
   referencePreviewCache = {},
   disabled,
   inspectorStickyOffset,
 }: {
   model: ComposedEditorModel;
   onModelChange(model: ComposedEditorModel): void;
-  workbookTools?: { hasWorkbookFile: boolean; activeSourceId: string | null };
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   referencePreviewCache?: ReferencePreviewCache;
   disabled?: boolean;
   inspectorStickyOffset?: number;
@@ -39,7 +42,7 @@ export function ComposedQuestionEditor({
     selectFirstBlockOrDocument(model),
   );
   const selectedBlockId = selectedBlockIdFromSelection(selection);
-  const workbookEnabled = !!workbookTools?.hasWorkbookFile;
+  const workbookEnabled = sources.length > 0;
 
   useEffect(() => {
     setSelection((current) => normalizeComposedEditorSelection(model, current));
@@ -134,7 +137,8 @@ export function ComposedQuestionEditor({
           disabled={disabled}
           referencePreviewCache={referencePreviewCache}
           workbookEnabled={workbookToolsEnabled}
-          activeSourceId={workbookTools?.activeSourceId ?? null}
+          sources={sources}
+          previewSourceId={previewSourceId}
           onModelChange={onModelChange}
           onSelectBlock={selectBlock}
           onSelectReference={selectReference}
@@ -150,7 +154,8 @@ export function ComposedQuestionEditor({
           selection={selection}
           referencePreviewCache={referencePreviewCache}
           workbookEnabled={workbookEnabled}
-          activeSourceId={workbookTools?.activeSourceId ?? null}
+          sources={sources}
+          previewSourceId={previewSourceId}
           disabled={disabled}
           onModelChange={onModelChange}
           onSelectionChange={setSelection}

@@ -921,23 +921,24 @@ export const CreateWorkbookCalculationParams = zod.strictObject({
   workbookId: zod.string().regex(createWorkbookCalculationPathWorkbookIdRegExp),
 });
 
-export const createWorkbookCalculationBodyWorkbookSourcesItemWorkbookIdRegExp =
+export const createWorkbookCalculationBodySourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
+
 export const createWorkbookCalculationBodyRequestedCountMax = 1000;
 
 export const CreateWorkbookCalculationBody = zod.strictObject({
-  workbookSources: zod.array(
-    zod.strictObject({
-      sourceId: zod.string(),
-      workbookId: zod
-        .string()
-        .regex(
-          createWorkbookCalculationBodyWorkbookSourcesItemWorkbookIdRegExp,
-        ),
-    }),
-  ),
+  sources: zod
+    .array(
+      zod.strictObject({
+        sourceId: zod.string(),
+        workbookId: zod
+          .string()
+          .regex(createWorkbookCalculationBodySourcesItemWorkbookIdRegExp),
+      }),
+    )
+    .min(1),
   requestedCount: zod
     .number()
     .min(1)
@@ -1250,20 +1251,22 @@ export const RetryWorkbookCalculationParams = zod.strictObject({
     .regex(retryWorkbookCalculationPathWorkbookCalculationIdRegExp),
 });
 
-export const retryWorkbookCalculationBodyWorkbookSourcesItemWorkbookIdRegExp =
+export const retryWorkbookCalculationBodySourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
 
 export const RetryWorkbookCalculationBody = zod.strictObject({
-  workbookSources: zod.array(
-    zod.strictObject({
-      sourceId: zod.string(),
-      workbookId: zod
-        .string()
-        .regex(retryWorkbookCalculationBodyWorkbookSourcesItemWorkbookIdRegExp),
-    }),
-  ),
+  sources: zod
+    .array(
+      zod.strictObject({
+        sourceId: zod.string(),
+        workbookId: zod
+          .string()
+          .regex(retryWorkbookCalculationBodySourcesItemWorkbookIdRegExp),
+      }),
+    )
+    .min(1),
 });
 
 export const retryWorkbookCalculation201ResponseWorkbookCalculationIdRegExp =

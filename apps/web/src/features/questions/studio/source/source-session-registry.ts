@@ -12,27 +12,16 @@ type SourceRecord = StudioSourceSessionSource;
 
 export type StudioSourceSessionRegistry = {
   sources: StudioSourceSessionSource[];
-  activeSource: StudioSourceSessionSource | null;
   attachWorkbook(workbook: Workbook): StudioSourceSessionSource;
-  activateSourceById(sourceId: string): void;
-  removeActiveSource(): void;
+  removeSource(sourceId: string): void;
   getSourceById(sourceId: string): StudioSourceSessionSource | null;
   getSourceByName(sourceName: string): StudioSourceSessionSource | null;
   getWorkbookName(workbookId: string | null): string | null;
 };
 
 export function useSourceSessionRegistry(input: {
-  activeWorkbook: Workbook | null;
   initialSources: StudioSourceSessionSource[];
-  selectedWorkbookId: string | null;
-  onSelectedWorkbookIdChange(workbookId: string | null): void;
 }): StudioSourceSessionRegistry {
-  const {
-    activeWorkbook,
-    initialSources,
-    onSelectedWorkbookIdChange,
-    selectedWorkbookId,
-  } = input;
   const nextSourceNumberRef = useRef(1);
   const [sources, setSources] = useState<SourceRecord[]>([]);
 
@@ -50,14 +39,10 @@ export function useSourceSessionRegistry(input: {
   const attachWorkbook = useCallback(
     (workbook: Workbook) => {
       const source = makeSource(workbook);
-      setSources((current) => [
-        ...current.filter((item) => item.workbookId !== workbook.id),
-        source,
-      ]);
-      onSelectedWorkbookIdChange(workbook.id);
+      setSources((current) => [...current, source]);
       return toPublicSource(source);
     },
-    [makeSource, onSelectedWorkbookIdChange],
+    [makeSource],
   );
 
   useEffect(() => {
@@ -83,57 +68,14 @@ export function useSourceSessionRegistry(input: {
     });
   }, [initialSources]);
 
-  useEffect(() => {
-    if (!selectedWorkbookId || !activeWorkbook) {
-      return;
-    }
-
-    setSources((current) => {
-      const existing = current.find(
-        (source) => source.workbookId === selectedWorkbookId,
-      );
-      if (!existing) {
-        return [...current, makeSource(activeWorkbook)];
-      }
-
-      if (existing.workbookName === activeWorkbook.name) {
-        return current;
-      }
-
-      return current.map((source) =>
-        source.sourceId === existing.sourceId
-          ? { ...source, workbookName: activeWorkbook.name }
-          : source,
-      );
-    });
-  }, [activeWorkbook, selectedWorkbookId, makeSource]);
-
   const publicSources = useMemo(() => sources.map(toPublicSource), [sources]);
-  const activeSource = useMemo(() => {
-    const source =
-      publicSources.find((item) => item.workbookId === selectedWorkbookId) ??
-      null;
-    return source;
-  }, [publicSources, selectedWorkbookId]);
 
   return {
     sources: publicSources,
-    activeSource,
     attachWorkbook,
-    activateSourceById: (sourceId) => {
-      const source = sources.find((item) => item.sourceId === sourceId);
-      if (source) {
-        onSelectedWorkbookIdChange(source.workbookId);
-      }
-    },
-    removeActiveSource: () => {
-      const activeWorkbookId = selectedWorkbookId;
-      const remaining = activeWorkbookId
-        ? sources.filter((source) => source.workbookId !== activeWorkbookId)
-        : sources;
-      setSources(remaining);
-      onSelectedWorkbookIdChange(
-        remaining[remaining.length - 1]?.workbookId ?? null,
+    removeSource: (sourceId) => {
+      setSources((current) =>
+        current.filter((source) => source.sourceId !== sourceId),
       );
     },
     getSourceById: (sourceId) =>

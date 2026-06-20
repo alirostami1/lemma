@@ -6,18 +6,24 @@ describe("saved blueprints view model", () => {
   it("maps source and timestamp metadata", () => {
     const result = buildSavedBlueprintsViewModel([
       createBlueprint({
-        workbookId: "workbook_1",
+        sources: [
+          {
+            sourceId: "source_1",
+            name: "Source 1",
+            workbookId: "workbook_1",
+          },
+        ],
       }),
       createBlueprint({
         id: "blueprint_2",
-        workbookId: null,
+        sources: [],
       }),
     ]);
 
-    expect(result[0]?.metadata).toContain("Source attached");
-    expect(result[1]?.metadata).toContain("No source");
+    expect(result[0]?.metadata).toContain("Sources attached");
+    expect(result[1]?.metadata).toContain("No sources");
     expect(result[0]?.metadata).toBe(
-      "Source attached | Updated Jun 10, 2026, 12:00 AM UTC | Created Jun 9, 2026, 12:00 AM UTC",
+      "Sources attached | Updated Jun 10, 2026, 12:00 AM UTC | Created Jun 9, 2026, 12:00 AM UTC",
     );
   });
 });
@@ -36,8 +42,7 @@ function createBlueprint(
       blocks: [],
       responseFields: [],
     },
-    workbookId: null,
-    workbookSources: [],
+    sources: [],
     visibility: "private",
     status: "active",
     archivedAt: null,

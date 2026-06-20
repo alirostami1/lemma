@@ -1,23 +1,24 @@
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 
 export function createDraftSnapshotKey({
   blueprintId,
   blueprintName,
   description,
-  workbookId,
+  sources,
   authoringModel,
 }: {
   blueprintId: string;
   blueprintName: string;
   description: string;
-  workbookId: string;
+  sources: QuestionBlueprintWorkbookSource[];
   authoringModel: ComposedEditorModel;
 }) {
   return JSON.stringify({
     blueprintId,
     blueprintName,
     description,
-    workbookId,
+    sources,
     authoringModel,
   });
 }

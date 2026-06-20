@@ -90,7 +90,7 @@ export interface QuestionsRepository {
   updateQuestionBlueprintCurrentVersion(input: {
     blueprintId: QuestionBlueprintId;
     currentVersionId: QuestionBlueprintVersionId;
-    workbookId: WorkbookId | null;
+    sources: QuestionBlueprint["sources"];
     updatedAt: Date;
   }): Promise<QuestionBlueprint | null>;
   updateQuestionBlueprintWithNewVersion(input: {
@@ -138,8 +138,7 @@ export interface QuestionsRepository {
 export interface WorkbookCalculationPort {
   requestCalculation(input: {
     createdByUserId: UserId;
-    workbookId: WorkbookId;
-    workbookSources: readonly {
+    sources: readonly {
       sourceId: string;
       workbookId: WorkbookId;
     }[];

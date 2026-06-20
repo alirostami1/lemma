@@ -60,6 +60,14 @@ const currentUser = createCurrentUser({ user: ownerUser, roles: [] });
 const workbookIdInput = "019e9315-6a87-715f-9861-8654df070c51";
 const workbookIdValue = toWorkbookId(workbookIdInput);
 const mismatchedWorkbookIdInput = "019e9315-6a87-715f-9861-8654df070c60";
+const blueprintSources = [
+  {
+    type: "workbook" as const,
+    sourceId: "source_1",
+    name: "Source 1",
+    workbookId: workbookIdValue,
+  },
+];
 const workbookSource = {
   type: "workbook_snapshot" as const,
   workbookId: workbookIdInput,
@@ -336,7 +344,7 @@ function createHarness(input: { targetQuestionSet?: QuestionSet | null } = {}) {
       name: questionBlueprintName("Saved blueprint"),
       description: questionBlueprintDescription(null),
       visibility: questionBlueprintVisibility("private"),
-      workbookId: workbookIdValue,
+      sources: blueprintSources,
     },
     at,
   );
@@ -358,7 +366,7 @@ function createHarness(input: { targetQuestionSet?: QuestionSet | null } = {}) {
       questionBlueprintId: baseBlueprint.id,
       versionNumber: 1,
       document,
-      workbookId: workbookIdValue,
+      sources: blueprintSources,
       createdByUserId: ownerUser.id,
     },
     at,
@@ -366,7 +374,7 @@ function createHarness(input: { targetQuestionSet?: QuestionSet | null } = {}) {
   const blueprint = {
     ...baseBlueprint,
     currentVersionId: blueprintVersion.id,
-    workbookId: blueprintVersion.workbookId,
+    sources: blueprintSources,
   } satisfies QuestionBlueprint;
 
   const questionsRepository = createQuestionsRepository(
@@ -516,13 +524,13 @@ function createQuestionsRepository(
     async updateQuestionBlueprintCurrentVersion(input: {
       blueprintId: QuestionBlueprint["id"];
       currentVersionId: QuestionBlueprintVersion["id"];
-      workbookId: QuestionBlueprint["workbookId"];
+      sources: QuestionBlueprint["sources"];
       updatedAt: Date;
     }): Promise<QuestionBlueprint | null> {
       return {
         ...blueprint,
         currentVersionId: input.currentVersionId,
-        workbookId: input.workbookId,
+        sources: input.sources,
         updatedAt: input.updatedAt,
       };
     },
@@ -534,7 +542,7 @@ function createQuestionsRepository(
       return {
         ...input.blueprint,
         currentVersionId: input.version.id,
-        workbookId: input.version.workbookId,
+        sources: input.version.sources,
       };
     },
     async updateQuestionBlueprintWithNewVersion(input: {
@@ -545,7 +553,7 @@ function createQuestionsRepository(
       return {
         ...input.blueprint,
         currentVersionId: input.version.id,
-        workbookId: input.version.workbookId,
+        sources: input.version.sources,
       };
     },
     async findQuestionById(_id: Question["id"]): Promise<Question | null> {

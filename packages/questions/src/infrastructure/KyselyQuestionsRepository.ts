@@ -151,7 +151,7 @@ export class KyselyQuestionsRepository implements QuestionsRepository {
   updateQuestionBlueprintCurrentVersion(input: {
     blueprintId: QuestionBlueprintId;
     currentVersionId: QuestionBlueprintVersionId;
-    workbookId: QuestionBlueprint["workbookId"];
+    sources: QuestionBlueprint["sources"];
     updatedAt: Date;
   }): Promise<QuestionBlueprint | null> {
     return this.blueprints.updateQuestionBlueprintCurrentVersion(input);

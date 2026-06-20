@@ -8,6 +8,7 @@ import {
   renameReferenceIdInComposedEditorModel,
   updateComposedBlock,
 } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { EditorSelection } from "../editor-selection";
 
 export type RenameReferenceResult =
@@ -233,4 +234,25 @@ export function getReferenceSourceLabel(reference: ComposedReferenceDraft) {
   }
 
   return "Source";
+}
+
+export function getSourceDisplayName(
+  source: QuestionBlueprintWorkbookSource,
+): string {
+  return source.name.trim().length > 0 ? source.name : source.workbookId;
+}
+
+export function getReferenceSourceSummary(
+  reference: ComposedReferenceDraft,
+  sources: QuestionBlueprintWorkbookSource[],
+): string {
+  if (reference.source.type === "literal") {
+    return "Literal value";
+  }
+
+  const source = sources.find(
+    (candidate) => candidate.sourceId === reference.source.sourceId,
+  );
+  const sourceLabel = source ? getSourceDisplayName(source) : "Missing source";
+  return `${sourceLabel} · ${getReferenceSourceLabel(reference)}`;
 }

@@ -1,45 +1,35 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
-import { getBlueprintSourceRequirement } from "#/domains/questions/source-requirements";
+import { getUsedWorkbookSourceCountsFromComposedEditorModel } from "#/domains/questions/authoring";
 import {
   useCreateWorkbookCalculation,
-  useValidateWorkbook,
   useWorkbookQuery,
 } from "#/domains/workbooks/hooks";
 import type { Workbook } from "#/domains/workbooks/model";
-import { notifySourceUploaded } from "#/features/notifications";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import {
   type SelectedWorkbookPreviewController,
   useSelectedWorkbookPreview,
 } from "../use-selected-workbook-preview";
 import {
-  type StudioSourceSessionSource,
-  useSourceSessionRegistry,
-} from "./source-session-registry";
-import {
   getStudioSourceViewState,
+  isLocalWorkbookSource,
   type StudioSourceViewState,
 } from "./source-state";
 
 export type SourceController = {
   sourceCard: StudioSourceViewState;
-  sources: StudioSourceSessionSource[];
-  activeSource: StudioSourceSessionSource | null;
-  uploadDialog: {
-    open: boolean;
-    onOpenChange(open: boolean): void;
-    onCreated(workbook: Workbook): void | Promise<void>;
-  };
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   actions: {
     addSource(): void;
-    changeSource(): void;
-    removeSource(): void;
+    removeSource(sourceId: string): void;
+    setPreviewSourceId(sourceId: string | null): void;
   };
-  getWorkbookName(workbookId: string | null): string | null;
-  getSourceById(sourceId: string): StudioSourceSessionSource | null;
-  getSourceByName(sourceName: string): StudioSourceSessionSource | null;
-  selectedWorkbook: Workbook | null;
-  sourceRequirement: ReturnType<typeof getBlueprintSourceRequirement>;
+  getSourceById(sourceId: string): QuestionBlueprintWorkbookSource | null;
+  getSourceByName(sourceName: string): QuestionBlueprintWorkbookSource | null;
+  previewSourceWorkbook: Workbook | null;
+  isPreviewSourceLoading: boolean;
   workbookPreviewController: SelectedWorkbookPreviewController;
 };
 
@@ -49,24 +39,45 @@ const SOURCE_PREVIEW_REQUESTED_COUNT = 1;
 export function useSourceController(input: {
   loadWorkbookPickerPreview: boolean;
   model: ComposedEditorModel;
-  initialSources?: StudioSourceSessionSource[];
-  selectedWorkbookId: string | null;
-  isVersionBoundSource: boolean;
-  onSelectedWorkbookIdChange(workbookId: string | null): void;
+  sources: QuestionBlueprintWorkbookSource[];
+  onSourcesChange(sources: QuestionBlueprintWorkbookSource[]): void;
 }): SourceController {
-  const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [sourcePreparation, setSourcePreparation] = useState<{
-    workbookId: string;
-    calculationRequested: boolean;
-  } | null>(null);
+  const [previewSourceId, setPreviewSourceId] = useState<string | null>(
+    () => input.sources[0]?.sourceId ?? null,
+  );
   const [sourcePreparationError, setSourcePreparationError] = useState<
     string | null
   >(null);
-  const requestedPreviewCalculationWorkbookIdsRef = useRef(new Set<string>());
-  const selectedWorkbookQuery = useWorkbookQuery(
-    input.selectedWorkbookId ?? "",
+  const [sourcePreparation, setSourcePreparation] = useState<{
+    sourceId: string;
+    calculationRequested: boolean;
+  } | null>(null);
+  const requestedPreviewCalculationSourceIdsRef = useRef(new Set<string>());
+  const nextSourceNumberRef = useRef(getNextSourceNumber(input.sources));
+  const { mutateAsync: createWorkbookCalculationAsync } =
+    useCreateWorkbookCalculation();
+  const sourceUsageCounts = useMemo(
+    () =>
+      Object.fromEntries(
+        getUsedWorkbookSourceCountsFromComposedEditorModel(input.model),
+      ),
+    [input.model],
+  );
+  const previewSource = useMemo(
+    () =>
+      previewSourceId
+        ? input.sources.find((source) => source.sourceId === previewSourceId) ??
+          null
+        : null,
+    [input.sources, previewSourceId],
+  );
+  const previewSourceIsLocal = previewSource
+    ? isLocalWorkbookSource(previewSource.workbookId)
+    : false;
+  const previewSourceWorkbookQuery = useWorkbookQuery(
+    previewSource?.workbookId ?? "",
     {
-      enabled: Boolean(input.selectedWorkbookId),
+      enabled: Boolean(previewSource) && !previewSourceIsLocal,
       refetchInterval: (query) => {
         const workbook = query.state.data;
         return workbook?.status === "pending_validation"
@@ -75,67 +86,94 @@ export function useSourceController(input: {
       },
     },
   );
-  const { mutateAsync: validateWorkbookAsync } = useValidateWorkbook();
-  const { mutateAsync: createWorkbookCalculationAsync } =
-    useCreateWorkbookCalculation();
-  const sourceRequirement = useMemo(
-    () => getBlueprintSourceRequirement(input.model),
-    [input.model],
-  );
-  const selectedWorkbook = selectedWorkbookQuery.data ?? null;
-  const sourceRegistry = useSourceSessionRegistry({
-    activeWorkbook: selectedWorkbook,
-    initialSources: input.initialSources ?? [],
-    selectedWorkbookId: input.selectedWorkbookId,
-    onSelectedWorkbookIdChange: input.onSelectedWorkbookIdChange,
-  });
+  const previewSourceWorkbook = previewSourceWorkbookQuery.data ?? null;
+  const previewSourceWorkbookQueryIsLoading = previewSource
+    ? previewSourceWorkbookQuery.isLoading
+    : false;
+  const previewSourceWorkbookQueryIsError = previewSource
+    ? previewSourceWorkbookQuery.isError
+    : false;
   const workbookPreviewController = useSelectedWorkbookPreview({
     loadPickerPreview: input.loadWorkbookPickerPreview,
-    selectedWorkbook: selectedWorkbook
+    selectedWorkbook: previewSourceWorkbook
       ? {
-          id: selectedWorkbook.id,
-          originalName: selectedWorkbook.originalName,
-          status: selectedWorkbook.status,
+          id: previewSourceWorkbook.id,
+          originalName: previewSourceWorkbook.originalName,
+          status: previewSourceWorkbook.status,
         }
       : null,
   });
-  const isSelectedWorkbookLoading = input.selectedWorkbookId
-    ? !selectedWorkbook && selectedWorkbookQuery.isLoading
+  const isSelectedWorkbookLoading = previewSource
+    ? previewSourceWorkbookQueryIsLoading && !previewSourceIsLocal
     : false;
+  const previewSourceStatusError =
+    sourcePreparationError ??
+    (previewSourceWorkbookQueryIsError && !previewSourceIsLocal
+      ? "Source could not be loaded."
+      : null);
 
-  const sourceCard = getStudioSourceViewState({
-    sourceRequirement,
-    selectedWorkbookId: input.selectedWorkbookId,
-    selectedWorkbook,
-    isWorkbooksLoading: isSelectedWorkbookLoading,
-    previewStatus: sourcePreparationError
-      ? "error"
-      : workbookPreviewController.previewStatus,
-    previewError:
-      sourcePreparationError ?? workbookPreviewController.workbookPreviewError,
-    isVersionBoundSource: input.isVersionBoundSource,
-  });
+  const sourceCard = useMemo(
+    () =>
+      getStudioSourceViewState({
+        sources: input.sources,
+        previewSourceId,
+        previewSourceWorkbook,
+        isPreviewSourceLoading: isSelectedWorkbookLoading,
+        previewStatus: previewSourceStatusError
+          ? "error"
+          : workbookPreviewController.previewStatus,
+        previewError:
+          previewSourceStatusError ??
+          workbookPreviewController.workbookPreviewError,
+        sourceUsageCounts,
+      }),
+    [
+      input.sources,
+      isSelectedWorkbookLoading,
+      previewSourceId,
+      previewSourceStatusError,
+      previewSourceWorkbook,
+      sourceUsageCounts,
+      workbookPreviewController.previewStatus,
+      workbookPreviewController.workbookPreviewError,
+    ],
+  );
+
+  useEffect(() => {
+    nextSourceNumberRef.current = Math.max(
+      nextSourceNumberRef.current,
+      getNextSourceNumber(input.sources),
+    );
+  }, [input.sources]);
 
   const requestPreviewCalculation = useCallback(
-    (workbookId: string, activeSource: StudioSourceSessionSource | null) => {
-      if (!activeSource || activeSource.workbookId !== workbookId) {
+    (source: QuestionBlueprintWorkbookSource | null) => {
+      if (!source) {
         return false;
       }
 
-      if (requestedPreviewCalculationWorkbookIdsRef.current.has(workbookId)) {
+      if (
+        sourcePreparation?.sourceId === source.sourceId &&
+        sourcePreparation.calculationRequested
+      ) {
         return false;
       }
 
-      requestedPreviewCalculationWorkbookIdsRef.current.add(workbookId);
+      if (requestedPreviewCalculationSourceIdsRef.current.has(source.sourceId)) {
+        return false;
+      }
+
+      requestedPreviewCalculationSourceIdsRef.current.add(source.sourceId);
 
       void createWorkbookCalculationAsync({
-        workbookId,
+        workbookId: source.workbookId,
         requestedCount: SOURCE_PREVIEW_REQUESTED_COUNT,
-        correlationId: `studio-source-preview:${workbookId}`,
-        workbookSources: [
+        correlationId: `studio-source-preview:${source.sourceId}`,
+        sources: [
           {
-            sourceId: activeSource.sourceId,
-            workbookId: activeSource.workbookId,
+            sourceId: source.sourceId,
+            workbookId: source.workbookId,
+            name: source.name,
           },
         ],
       })
@@ -144,13 +182,13 @@ export function useSourceController(input: {
         })
         .finally(() => {
           setSourcePreparation((current) =>
-            current?.workbookId === workbookId ? null : current,
+            current?.sourceId === source.sourceId ? null : current,
           );
         });
 
       return true;
     },
-    [createWorkbookCalculationAsync],
+    [createWorkbookCalculationAsync, sourcePreparation],
   );
 
   useEffect(() => {
@@ -159,22 +197,21 @@ export function useSourceController(input: {
     }
 
     if (
-      !selectedWorkbook ||
-      selectedWorkbook.id !== sourcePreparation.workbookId ||
-      selectedWorkbook.status === "pending_validation"
+      !previewSource ||
+      previewSource.sourceId !== sourcePreparation.sourceId ||
+      previewSourceWorkbook?.status === "pending_validation"
     ) {
       return;
     }
 
-    if (selectedWorkbook.status !== "valid") {
+    if (previewSourceWorkbook?.status !== "valid") {
       setSourcePreparation(null);
       return;
     }
 
-    const workbookId = selectedWorkbook.id;
-    if (requestPreviewCalculation(workbookId, sourceRegistry.activeSource)) {
+    if (requestPreviewCalculation(previewSource)) {
       setSourcePreparation({
-        workbookId,
+        sourceId: previewSource.sourceId,
         calculationRequested: true,
       });
       return;
@@ -182,79 +219,123 @@ export function useSourceController(input: {
 
     setSourcePreparation(null);
   }, [
+    previewSource,
+    previewSourceWorkbook,
     requestPreviewCalculation,
-    selectedWorkbook,
     sourcePreparation,
-    sourceRegistry.activeSource,
   ]);
 
   useEffect(() => {
     if (
-      !selectedWorkbook ||
-      selectedWorkbook.status !== "valid" ||
+      !previewSource ||
+      previewSourceWorkbook?.status !== "valid" ||
       !workbookPreviewController.needsWorkbookPreviewCalculation
     ) {
       return;
     }
 
-    requestPreviewCalculation(selectedWorkbook.id, sourceRegistry.activeSource);
+    requestPreviewCalculation(previewSource);
   }, [
+    previewSource,
+    previewSourceWorkbook,
     requestPreviewCalculation,
-    selectedWorkbook,
-    sourceRegistry.activeSource,
     workbookPreviewController.needsWorkbookPreviewCalculation,
   ]);
 
-  function openUpload() {
+  useEffect(() => {
+    if (!previewSource || previewSourceStatusError) {
+      return;
+    }
+
+    if (!sourcePreparation?.calculationRequested) {
+      return;
+    }
+
+    if (previewSource.sourceId !== sourcePreparation.sourceId) {
+      setSourcePreparation(null);
+    }
+  }, [previewSource, previewSourceStatusError, sourcePreparation]);
+
+  useEffect(() => {
+    if (input.sources.length === 0) {
+      if (previewSourceId !== null) {
+        setPreviewSourceId(null);
+      }
+      return;
+    }
+
+    if (
+      !previewSourceId ||
+      !input.sources.some((source) => source.sourceId === previewSourceId)
+    ) {
+      setPreviewSourceId(input.sources[0]?.sourceId ?? null);
+    }
+  }, [input.sources, previewSourceId]);
+
+  const addSource = useCallback(() => {
     setSourcePreparationError(null);
-    setIsUploadOpen(true);
-  }
+    const source = createLocalSource(nextSourceNumberRef.current);
+    nextSourceNumberRef.current += 1;
+    input.onSourcesChange([...input.sources, source]);
+    setPreviewSourceId(source.sourceId);
+  }, [input]);
+
+  const removeSource = useCallback(
+    (sourceId: string) => {
+      if ((sourceUsageCounts[sourceId] ?? 0) > 0) {
+        return;
+      }
+      setSourcePreparation(null);
+      setSourcePreparationError(null);
+      requestedPreviewCalculationSourceIdsRef.current.delete(sourceId);
+      input.onSourcesChange(
+        input.sources.filter((source) => source.sourceId !== sourceId),
+      );
+      setPreviewSourceId((current) => (current === sourceId ? null : current));
+    },
+    [input, sourceUsageCounts],
+  );
 
   return {
-    sourceCard: {
-      ...sourceCard,
-      sources: sourceRegistry.sources,
-      activeSourceId: sourceRegistry.activeSource?.sourceId ?? null,
-      onActivateSourceId: sourceRegistry.activateSourceById,
-    },
-    sources: sourceRegistry.sources,
-    activeSource: sourceRegistry.activeSource,
-    uploadDialog: {
-      open: isUploadOpen,
-      onOpenChange: setIsUploadOpen,
-      onCreated: async (workbook) => {
-        setSourcePreparationError(null);
-        const validatingWorkbook = await validateWorkbookAsync({
-          workbookId: workbook.id,
-        });
-
-        notifySourceUploaded({
-          context: "studio",
-          sourceName: validatingWorkbook.name,
-        });
-        setSourcePreparation({
-          workbookId: validatingWorkbook.id,
-          calculationRequested: false,
-        });
-        sourceRegistry.attachWorkbook(validatingWorkbook);
-        setIsUploadOpen(false);
-      },
-    },
+    sourceCard,
+    sources: input.sources,
+    previewSourceId,
     actions: {
-      addSource: openUpload,
-      changeSource: openUpload,
-      removeSource: () => {
-        setSourcePreparation(null);
-        setSourcePreparationError(null);
-        requestedPreviewCalculationWorkbookIdsRef.current.clear();
-        sourceRegistry.removeActiveSource();
-      },
+      addSource,
+      removeSource,
+      setPreviewSourceId,
     },
-    getWorkbookName: sourceRegistry.getWorkbookName,
-    getSourceById: sourceRegistry.getSourceById,
-    getSourceByName: sourceRegistry.getSourceByName,
-    selectedWorkbook,
-    sourceRequirement,
+    getSourceById: (sourceId) =>
+      input.sources.find((source) => source.sourceId === sourceId) ?? null,
+    getSourceByName: (sourceName) =>
+      input.sources.find((source) => source.name === sourceName) ?? null,
+    previewSourceWorkbook,
+    isPreviewSourceLoading: isSelectedWorkbookLoading,
     workbookPreviewController,
   };
+}
+
+function createLocalSource(sourceNumber: number): QuestionBlueprintWorkbookSource {
+  return {
+    sourceId: `source_${sourceNumber}`,
+    name: `Source ${sourceNumber}`,
+    workbookId: createLocalWorkbookId(sourceNumber),
+  };
+}
+
+function createLocalWorkbookId(sourceNumber: number) {
+  return `local:source_${sourceNumber}`;
+}
+
+function getNextSourceNumber(sources: QuestionBlueprintWorkbookSource[]) {
+  return (
+    sources.reduce((max, source) => {
+      const match = source.sourceId.match(/^source_(\d+)$/u);
+      if (!match) {
+        return max;
+      }
+
+      return Math.max(max, Number(match[1] ?? 0));
+    }, 0) + 1
+  );
 }

@@ -12,6 +12,7 @@ import type {
   ComposedEditorModel,
   ComposedInlineContent,
 } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import {
   formatInlineBlueprint,
   parseInlineBlueprint,
@@ -26,7 +27,8 @@ type TextAuthoringContentProps = {
   referencePreviewCache: ReferencePreviewCache;
   model: ComposedEditorModel;
   workbookEnabled: boolean;
-  activeSourceId: string | null;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   disabled?: boolean;
   onChange(content: ComposedInlineContent[]): void;
   onModelChange(model: ComposedEditorModel): void;
@@ -43,7 +45,8 @@ export function TextAuthoringContent({
   referencePreviewCache,
   model,
   workbookEnabled,
-  activeSourceId,
+  sources,
+  previewSourceId,
   disabled,
   onChange,
   onModelChange,
@@ -150,7 +153,8 @@ export function TextAuthoringContent({
           model={model}
           referencePreviewCache={referencePreviewCache}
           workbookEnabled={workbookEnabled}
-          activeSourceId={activeSourceId}
+          sources={sources}
+          previewSourceId={previewSourceId}
           disabled={disabled}
           open={pickerOpen}
           onOpenChange={setReferencePickerOpen}

@@ -963,12 +963,7 @@ export const listQuestionBlueprints200ResponseQuestionBlueprintsItemDescriptionM
 
 export const listQuestionBlueprints200ResponseQuestionBlueprintsItemDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
 
-export const listQuestionBlueprints200ResponseQuestionBlueprintsItemWorkbookIdRegExp =
-  new RegExp(
-    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-  );
-
-export const listQuestionBlueprints200ResponseQuestionBlueprintsItemWorkbookSourcesItemWorkbookIdRegExp =
+export const listQuestionBlueprints200ResponseQuestionBlueprintsItemSourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
@@ -982,12 +977,7 @@ export const listQuestionBlueprints200ResponseQuestionBlueprintsItemCurrentVersi
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
 
-export const listQuestionBlueprints200ResponseQuestionBlueprintsItemCurrentVersionWorkbookIdRegExp =
-  new RegExp(
-    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-  );
-
-export const listQuestionBlueprints200ResponseQuestionBlueprintsItemCurrentVersionWorkbookSourcesItemWorkbookIdRegExp =
+export const listQuestionBlueprints200ResponseQuestionBlueprintsItemCurrentVersionSourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
@@ -1198,23 +1188,25 @@ export const ListQuestionBlueprints200Response = zod.strictObject({
           }),
         ),
       }),
-      workbookId: zod
-        .string()
-        .regex(
-          listQuestionBlueprints200ResponseQuestionBlueprintsItemWorkbookIdRegExp,
+      sources: zod
+        .array(
+          zod.strictObject({
+            type: zod.enum(["workbook"]),
+            sourceId: zod
+              .string()
+              .min(1)
+              .describe("Blueprint-local source identifier."),
+            name: zod.string().min(1),
+            workbookId: zod
+              .string()
+              .regex(
+                listQuestionBlueprints200ResponseQuestionBlueprintsItemSourcesItemWorkbookIdRegExp,
+              ),
+          }),
         )
-        .nullable(),
-      workbookSources: zod.array(
-        zod.strictObject({
-          sourceId: zod.string().min(1),
-          name: zod.string().min(1),
-          workbookId: zod
-            .string()
-            .regex(
-              listQuestionBlueprints200ResponseQuestionBlueprintsItemWorkbookSourcesItemWorkbookIdRegExp,
-            ),
-        }),
-      ),
+        .describe(
+          "Blueprint-local source entries used by the current version.",
+        ),
       currentVersionId: zod
         .string()
         .regex(
@@ -1228,20 +1220,18 @@ export const ListQuestionBlueprints200Response = zod.strictObject({
             listQuestionBlueprints200ResponseQuestionBlueprintsItemCurrentVersionIdRegExpOne,
           ),
         versionNumber: zod.number().min(1),
-        workbookId: zod
-          .string()
-          .regex(
-            listQuestionBlueprints200ResponseQuestionBlueprintsItemCurrentVersionWorkbookIdRegExp,
-          )
-          .nullable(),
-        workbookSources: zod.array(
+        sources: zod.array(
           zod.strictObject({
-            sourceId: zod.string().min(1),
+            type: zod.enum(["workbook"]),
+            sourceId: zod
+              .string()
+              .min(1)
+              .describe("Blueprint-local source identifier."),
             name: zod.string().min(1),
             workbookId: zod
               .string()
               .regex(
-                listQuestionBlueprints200ResponseQuestionBlueprintsItemCurrentVersionWorkbookSourcesItemWorkbookIdRegExp,
+                listQuestionBlueprints200ResponseQuestionBlueprintsItemCurrentVersionSourcesItemWorkbookIdRegExp,
               ),
           }),
         ),
@@ -1342,7 +1332,7 @@ export const createQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemTwoPoints
 
 export const createQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
 
-export const createQuestionBlueprintBodyWorkbookSourcesItemWorkbookIdRegExp =
+export const createQuestionBlueprintBodySourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
@@ -1666,20 +1656,27 @@ export const CreateQuestionBlueprintBody = zod.strictObject({
           zod.strictObject({
             schemaVersion: zod.literal(1),
             type: zod.enum(["workbook_cell", "workbook_range"]),
-            sourceId: zod.string().min(1),
+            sourceId: zod
+              .string()
+              .min(1)
+              .describe("Blueprint-local workbook source identifier."),
             ref: zod.string(),
           }),
         ]),
       }),
     ),
   }),
-  workbookSources: zod.array(
+  sources: zod.array(
     zod.strictObject({
-      sourceId: zod.string().min(1),
+      type: zod.enum(["workbook"]),
+      sourceId: zod
+        .string()
+        .min(1)
+        .describe("Blueprint-local source identifier."),
       name: zod.string().min(1),
       workbookId: zod
         .string()
-        .regex(createQuestionBlueprintBodyWorkbookSourcesItemWorkbookIdRegExp),
+        .regex(createQuestionBlueprintBodySourcesItemWorkbookIdRegExp),
     }),
   ),
 });
@@ -1702,12 +1699,7 @@ export const createQuestionBlueprint201ResponseQuestionBlueprintDescriptionMax =
 
 export const createQuestionBlueprint201ResponseQuestionBlueprintDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
 
-export const createQuestionBlueprint201ResponseQuestionBlueprintWorkbookIdRegExp =
-  new RegExp(
-    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-  );
-
-export const createQuestionBlueprint201ResponseQuestionBlueprintWorkbookSourcesItemWorkbookIdRegExp =
+export const createQuestionBlueprint201ResponseQuestionBlueprintSourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
@@ -1721,12 +1713,7 @@ export const createQuestionBlueprint201ResponseQuestionBlueprintCurrentVersionId
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
 
-export const createQuestionBlueprint201ResponseQuestionBlueprintCurrentVersionWorkbookIdRegExp =
-  new RegExp(
-    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-  );
-
-export const createQuestionBlueprint201ResponseQuestionBlueprintCurrentVersionWorkbookSourcesItemWorkbookIdRegExp =
+export const createQuestionBlueprint201ResponseQuestionBlueprintCurrentVersionSourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
@@ -1934,23 +1921,23 @@ export const CreateQuestionBlueprint201Response = zod.strictObject({
         }),
       ),
     }),
-    workbookId: zod
-      .string()
-      .regex(
-        createQuestionBlueprint201ResponseQuestionBlueprintWorkbookIdRegExp,
+    sources: zod
+      .array(
+        zod.strictObject({
+          type: zod.enum(["workbook"]),
+          sourceId: zod
+            .string()
+            .min(1)
+            .describe("Blueprint-local source identifier."),
+          name: zod.string().min(1),
+          workbookId: zod
+            .string()
+            .regex(
+              createQuestionBlueprint201ResponseQuestionBlueprintSourcesItemWorkbookIdRegExp,
+            ),
+        }),
       )
-      .nullable(),
-    workbookSources: zod.array(
-      zod.strictObject({
-        sourceId: zod.string().min(1),
-        name: zod.string().min(1),
-        workbookId: zod
-          .string()
-          .regex(
-            createQuestionBlueprint201ResponseQuestionBlueprintWorkbookSourcesItemWorkbookIdRegExp,
-          ),
-      }),
-    ),
+      .describe("Blueprint-local source entries used by the current version."),
     currentVersionId: zod
       .string()
       .regex(
@@ -1964,20 +1951,18 @@ export const CreateQuestionBlueprint201Response = zod.strictObject({
           createQuestionBlueprint201ResponseQuestionBlueprintCurrentVersionIdRegExpOne,
         ),
       versionNumber: zod.number().min(1),
-      workbookId: zod
-        .string()
-        .regex(
-          createQuestionBlueprint201ResponseQuestionBlueprintCurrentVersionWorkbookIdRegExp,
-        )
-        .nullable(),
-      workbookSources: zod.array(
+      sources: zod.array(
         zod.strictObject({
-          sourceId: zod.string().min(1),
+          type: zod.enum(["workbook"]),
+          sourceId: zod
+            .string()
+            .min(1)
+            .describe("Blueprint-local source identifier."),
           name: zod.string().min(1),
           workbookId: zod
             .string()
             .regex(
-              createQuestionBlueprint201ResponseQuestionBlueprintCurrentVersionWorkbookSourcesItemWorkbookIdRegExp,
+              createQuestionBlueprint201ResponseQuestionBlueprintCurrentVersionSourcesItemWorkbookIdRegExp,
             ),
         }),
       ),
@@ -2081,12 +2066,7 @@ export const getQuestionBlueprint200ResponseQuestionBlueprintDescriptionMax = 10
 
 export const getQuestionBlueprint200ResponseQuestionBlueprintDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
 
-export const getQuestionBlueprint200ResponseQuestionBlueprintWorkbookIdRegExp =
-  new RegExp(
-    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-  );
-
-export const getQuestionBlueprint200ResponseQuestionBlueprintWorkbookSourcesItemWorkbookIdRegExp =
+export const getQuestionBlueprint200ResponseQuestionBlueprintSourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
@@ -2100,12 +2080,7 @@ export const getQuestionBlueprint200ResponseQuestionBlueprintCurrentVersionIdReg
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
 
-export const getQuestionBlueprint200ResponseQuestionBlueprintCurrentVersionWorkbookIdRegExp =
-  new RegExp(
-    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-  );
-
-export const getQuestionBlueprint200ResponseQuestionBlueprintCurrentVersionWorkbookSourcesItemWorkbookIdRegExp =
+export const getQuestionBlueprint200ResponseQuestionBlueprintCurrentVersionSourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
@@ -2311,21 +2286,23 @@ export const GetQuestionBlueprint200Response = zod.strictObject({
         }),
       ),
     }),
-    workbookId: zod
-      .string()
-      .regex(getQuestionBlueprint200ResponseQuestionBlueprintWorkbookIdRegExp)
-      .nullable(),
-    workbookSources: zod.array(
-      zod.strictObject({
-        sourceId: zod.string().min(1),
-        name: zod.string().min(1),
-        workbookId: zod
-          .string()
-          .regex(
-            getQuestionBlueprint200ResponseQuestionBlueprintWorkbookSourcesItemWorkbookIdRegExp,
-          ),
-      }),
-    ),
+    sources: zod
+      .array(
+        zod.strictObject({
+          type: zod.enum(["workbook"]),
+          sourceId: zod
+            .string()
+            .min(1)
+            .describe("Blueprint-local source identifier."),
+          name: zod.string().min(1),
+          workbookId: zod
+            .string()
+            .regex(
+              getQuestionBlueprint200ResponseQuestionBlueprintSourcesItemWorkbookIdRegExp,
+            ),
+        }),
+      )
+      .describe("Blueprint-local source entries used by the current version."),
     currentVersionId: zod
       .string()
       .regex(
@@ -2339,20 +2316,18 @@ export const GetQuestionBlueprint200Response = zod.strictObject({
           getQuestionBlueprint200ResponseQuestionBlueprintCurrentVersionIdRegExpOne,
         ),
       versionNumber: zod.number().min(1),
-      workbookId: zod
-        .string()
-        .regex(
-          getQuestionBlueprint200ResponseQuestionBlueprintCurrentVersionWorkbookIdRegExp,
-        )
-        .nullable(),
-      workbookSources: zod.array(
+      sources: zod.array(
         zod.strictObject({
-          sourceId: zod.string().min(1),
+          type: zod.enum(["workbook"]),
+          sourceId: zod
+            .string()
+            .min(1)
+            .describe("Blueprint-local source identifier."),
           name: zod.string().min(1),
           workbookId: zod
             .string()
             .regex(
-              getQuestionBlueprint200ResponseQuestionBlueprintCurrentVersionWorkbookSourcesItemWorkbookIdRegExp,
+              getQuestionBlueprint200ResponseQuestionBlueprintCurrentVersionSourcesItemWorkbookIdRegExp,
             ),
         }),
       ),
@@ -2461,7 +2436,7 @@ export const updateQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemTwoPoints
 
 export const updateQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
 
-export const updateQuestionBlueprintBodyWorkbookSourcesItemWorkbookIdRegExp =
+export const updateQuestionBlueprintBodySourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
@@ -2786,7 +2761,10 @@ export const UpdateQuestionBlueprintBody = zod.strictObject({
             zod.strictObject({
               schemaVersion: zod.literal(1),
               type: zod.enum(["workbook_cell", "workbook_range"]),
-              sourceId: zod.string().min(1),
+              sourceId: zod
+                .string()
+                .min(1)
+                .describe("Blueprint-local workbook source identifier."),
               ref: zod.string(),
             }),
           ]),
@@ -2794,16 +2772,18 @@ export const UpdateQuestionBlueprintBody = zod.strictObject({
       ),
     })
     .optional(),
-  workbookSources: zod
+  sources: zod
     .array(
       zod.strictObject({
-        sourceId: zod.string().min(1),
+        type: zod.enum(["workbook"]),
+        sourceId: zod
+          .string()
+          .min(1)
+          .describe("Blueprint-local source identifier."),
         name: zod.string().min(1),
         workbookId: zod
           .string()
-          .regex(
-            updateQuestionBlueprintBodyWorkbookSourcesItemWorkbookIdRegExp,
-          ),
+          .regex(updateQuestionBlueprintBodySourcesItemWorkbookIdRegExp),
       }),
     )
     .optional(),
@@ -2828,12 +2808,7 @@ export const updateQuestionBlueprint200ResponseQuestionBlueprintDescriptionMax =
 
 export const updateQuestionBlueprint200ResponseQuestionBlueprintDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
 
-export const updateQuestionBlueprint200ResponseQuestionBlueprintWorkbookIdRegExp =
-  new RegExp(
-    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-  );
-
-export const updateQuestionBlueprint200ResponseQuestionBlueprintWorkbookSourcesItemWorkbookIdRegExp =
+export const updateQuestionBlueprint200ResponseQuestionBlueprintSourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
@@ -2847,12 +2822,7 @@ export const updateQuestionBlueprint200ResponseQuestionBlueprintCurrentVersionId
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
 
-export const updateQuestionBlueprint200ResponseQuestionBlueprintCurrentVersionWorkbookIdRegExp =
-  new RegExp(
-    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-  );
-
-export const updateQuestionBlueprint200ResponseQuestionBlueprintCurrentVersionWorkbookSourcesItemWorkbookIdRegExp =
+export const updateQuestionBlueprint200ResponseQuestionBlueprintCurrentVersionSourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
@@ -3060,23 +3030,23 @@ export const UpdateQuestionBlueprint200Response = zod.strictObject({
         }),
       ),
     }),
-    workbookId: zod
-      .string()
-      .regex(
-        updateQuestionBlueprint200ResponseQuestionBlueprintWorkbookIdRegExp,
+    sources: zod
+      .array(
+        zod.strictObject({
+          type: zod.enum(["workbook"]),
+          sourceId: zod
+            .string()
+            .min(1)
+            .describe("Blueprint-local source identifier."),
+          name: zod.string().min(1),
+          workbookId: zod
+            .string()
+            .regex(
+              updateQuestionBlueprint200ResponseQuestionBlueprintSourcesItemWorkbookIdRegExp,
+            ),
+        }),
       )
-      .nullable(),
-    workbookSources: zod.array(
-      zod.strictObject({
-        sourceId: zod.string().min(1),
-        name: zod.string().min(1),
-        workbookId: zod
-          .string()
-          .regex(
-            updateQuestionBlueprint200ResponseQuestionBlueprintWorkbookSourcesItemWorkbookIdRegExp,
-          ),
-      }),
-    ),
+      .describe("Blueprint-local source entries used by the current version."),
     currentVersionId: zod
       .string()
       .regex(
@@ -3090,20 +3060,18 @@ export const UpdateQuestionBlueprint200Response = zod.strictObject({
           updateQuestionBlueprint200ResponseQuestionBlueprintCurrentVersionIdRegExpOne,
         ),
       versionNumber: zod.number().min(1),
-      workbookId: zod
-        .string()
-        .regex(
-          updateQuestionBlueprint200ResponseQuestionBlueprintCurrentVersionWorkbookIdRegExp,
-        )
-        .nullable(),
-      workbookSources: zod.array(
+      sources: zod.array(
         zod.strictObject({
-          sourceId: zod.string().min(1),
+          type: zod.enum(["workbook"]),
+          sourceId: zod
+            .string()
+            .min(1)
+            .describe("Blueprint-local source identifier."),
           name: zod.string().min(1),
           workbookId: zod
             .string()
             .regex(
-              updateQuestionBlueprint200ResponseQuestionBlueprintCurrentVersionWorkbookSourcesItemWorkbookIdRegExp,
+              updateQuestionBlueprint200ResponseQuestionBlueprintCurrentVersionSourcesItemWorkbookIdRegExp,
             ),
         }),
       ),
@@ -3285,12 +3253,7 @@ export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBl
 
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
 
-export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintWorkbookIdRegExp =
-  new RegExp(
-    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-  );
-
-export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintWorkbookSourcesItemWorkbookIdRegExp =
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
@@ -3304,10 +3267,6 @@ export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintCurrentVer
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
 
-export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintCurrentVersionWorkbookIdRegExp =
-  new RegExp(
-    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-  );
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintCurrentVersionSourceAssetsItemQuestionBlueprintVersionIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
@@ -3318,7 +3277,7 @@ export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintCurrentVer
   );
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintCurrentVersionSourceAssetsItemPositionMin = 0;
 
-export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintCurrentVersionWorkbookSourcesItemWorkbookIdRegExp =
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintCurrentVersionSourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
@@ -3336,10 +3295,6 @@ export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVe
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
 
-export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionWorkbookIdRegExp =
-  new RegExp(
-    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-  );
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionSourceAssetsItemQuestionBlueprintVersionIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
@@ -3350,7 +3305,7 @@ export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVe
   );
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionSourceAssetsItemPositionMin = 0;
 
-export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionWorkbookSourcesItemWorkbookIdRegExp =
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionSourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
@@ -3363,10 +3318,6 @@ export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsIt
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
 
-export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemWorkbookIdRegExp =
-  new RegExp(
-    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-  );
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemSourceAssetsItemQuestionBlueprintVersionIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
@@ -3377,7 +3328,7 @@ export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsIt
   );
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemSourceAssetsItemPositionMin = 0;
 
-export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemWorkbookSourcesItemWorkbookIdRegExp =
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemSourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
@@ -3723,30 +3674,33 @@ export const GetQuestionBlueprintAuthoring200Response = zod.strictObject({
             zod.strictObject({
               schemaVersion: zod.literal(1),
               type: zod.enum(["workbook_cell", "workbook_range"]),
-              sourceId: zod.string().min(1),
+              sourceId: zod
+                .string()
+                .min(1)
+                .describe("Blueprint-local workbook source identifier."),
               ref: zod.string(),
             }),
           ]),
         }),
       ),
     }),
-    workbookId: zod
-      .string()
-      .regex(
-        getQuestionBlueprintAuthoring200ResponseQuestionBlueprintWorkbookIdRegExp,
+    sources: zod
+      .array(
+        zod.strictObject({
+          type: zod.enum(["workbook"]),
+          sourceId: zod
+            .string()
+            .min(1)
+            .describe("Blueprint-local source identifier."),
+          name: zod.string().min(1),
+          workbookId: zod
+            .string()
+            .regex(
+              getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSourcesItemWorkbookIdRegExp,
+            ),
+        }),
       )
-      .nullable(),
-    workbookSources: zod.array(
-      zod.strictObject({
-        sourceId: zod.string().min(1),
-        name: zod.string().min(1),
-        workbookId: zod
-          .string()
-          .regex(
-            getQuestionBlueprintAuthoring200ResponseQuestionBlueprintWorkbookSourcesItemWorkbookIdRegExp,
-          ),
-      }),
-    ),
+      .describe("Blueprint-local source entries used by the current version."),
     currentVersionId: zod
       .string()
       .regex(
@@ -3760,12 +3714,6 @@ export const GetQuestionBlueprintAuthoring200Response = zod.strictObject({
           getQuestionBlueprintAuthoring200ResponseQuestionBlueprintCurrentVersionIdRegExpOne,
         ),
       versionNumber: zod.number().min(1),
-      workbookId: zod
-        .string()
-        .regex(
-          getQuestionBlueprintAuthoring200ResponseQuestionBlueprintCurrentVersionWorkbookIdRegExp,
-        )
-        .nullable(),
       sourceAssets: zod.array(
         zod.strictObject({
           questionBlueprintVersionId: zod
@@ -3787,17 +3735,25 @@ export const GetQuestionBlueprintAuthoring200Response = zod.strictObject({
           createdAt: zod.iso.datetime({ offset: true }),
         }),
       ),
-      workbookSources: zod.array(
-        zod.strictObject({
-          sourceId: zod.string().min(1),
-          name: zod.string().min(1),
-          workbookId: zod
-            .string()
-            .regex(
-              getQuestionBlueprintAuthoring200ResponseQuestionBlueprintCurrentVersionWorkbookSourcesItemWorkbookIdRegExp,
-            ),
-        }),
-      ),
+      sources: zod
+        .array(
+          zod.strictObject({
+            type: zod.enum(["workbook"]),
+            sourceId: zod
+              .string()
+              .min(1)
+              .describe("Blueprint-local source identifier."),
+            name: zod.string().min(1),
+            workbookId: zod
+              .string()
+              .regex(
+                getQuestionBlueprintAuthoring200ResponseQuestionBlueprintCurrentVersionSourcesItemWorkbookIdRegExp,
+              ),
+          }),
+        )
+        .describe(
+          "Blueprint-local source entries used by the current version.",
+        ),
       createdByUserId: zod
         .string()
         .regex(
@@ -3818,12 +3774,6 @@ export const GetQuestionBlueprintAuthoring200Response = zod.strictObject({
           getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionIdRegExpOne,
         ),
       versionNumber: zod.number().min(1),
-      workbookId: zod
-        .string()
-        .regex(
-          getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionWorkbookIdRegExp,
-        )
-        .nullable(),
       sourceAssets: zod.array(
         zod.strictObject({
           questionBlueprintVersionId: zod
@@ -3845,17 +3795,25 @@ export const GetQuestionBlueprintAuthoring200Response = zod.strictObject({
           createdAt: zod.iso.datetime({ offset: true }),
         }),
       ),
-      workbookSources: zod.array(
-        zod.strictObject({
-          sourceId: zod.string().min(1),
-          name: zod.string().min(1),
-          workbookId: zod
-            .string()
-            .regex(
-              getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionWorkbookSourcesItemWorkbookIdRegExp,
-            ),
-        }),
-      ),
+      sources: zod
+        .array(
+          zod.strictObject({
+            type: zod.enum(["workbook"]),
+            sourceId: zod
+              .string()
+              .min(1)
+              .describe("Blueprint-local source identifier."),
+            name: zod.string().min(1),
+            workbookId: zod
+              .string()
+              .regex(
+                getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSelectedVersionSourcesItemWorkbookIdRegExp,
+              ),
+          }),
+        )
+        .describe(
+          "Blueprint-local source entries used by the current version.",
+        ),
       createdByUserId: zod
         .string()
         .regex(
@@ -3871,12 +3829,6 @@ export const GetQuestionBlueprintAuthoring200Response = zod.strictObject({
             getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemIdRegExp,
           ),
         versionNumber: zod.number().min(1),
-        workbookId: zod
-          .string()
-          .regex(
-            getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemWorkbookIdRegExp,
-          )
-          .nullable(),
         sourceAssets: zod.array(
           zod.strictObject({
             questionBlueprintVersionId: zod
@@ -3898,17 +3850,25 @@ export const GetQuestionBlueprintAuthoring200Response = zod.strictObject({
             createdAt: zod.iso.datetime({ offset: true }),
           }),
         ),
-        workbookSources: zod.array(
-          zod.strictObject({
-            sourceId: zod.string().min(1),
-            name: zod.string().min(1),
-            workbookId: zod
-              .string()
-              .regex(
-                getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemWorkbookSourcesItemWorkbookIdRegExp,
-              ),
-          }),
-        ),
+        sources: zod
+          .array(
+            zod.strictObject({
+              type: zod.enum(["workbook"]),
+              sourceId: zod
+                .string()
+                .min(1)
+                .describe("Blueprint-local source identifier."),
+              name: zod.string().min(1),
+              workbookId: zod
+                .string()
+                .regex(
+                  getQuestionBlueprintAuthoring200ResponseQuestionBlueprintVersionsItemSourcesItemWorkbookIdRegExp,
+                ),
+            }),
+          )
+          .describe(
+            "Blueprint-local source entries used by the current version.",
+          ),
         createdByUserId: zod
           .string()
           .regex(
@@ -3999,10 +3959,6 @@ export const listQuestionBlueprintVersions200ResponseVersionsItemIdRegExp =
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
 
-export const listQuestionBlueprintVersions200ResponseVersionsItemWorkbookIdRegExp =
-  new RegExp(
-    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-  );
 export const listQuestionBlueprintVersions200ResponseVersionsItemSourceAssetsItemQuestionBlueprintVersionIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
@@ -4013,7 +3969,7 @@ export const listQuestionBlueprintVersions200ResponseVersionsItemSourceAssetsIte
   );
 export const listQuestionBlueprintVersions200ResponseVersionsItemSourceAssetsItemPositionMin = 0;
 
-export const listQuestionBlueprintVersions200ResponseVersionsItemWorkbookSourcesItemWorkbookIdRegExp =
+export const listQuestionBlueprintVersions200ResponseVersionsItemSourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
@@ -4029,12 +3985,6 @@ export const ListQuestionBlueprintVersions200Response = zod.strictObject({
         .string()
         .regex(listQuestionBlueprintVersions200ResponseVersionsItemIdRegExp),
       versionNumber: zod.number().min(1),
-      workbookId: zod
-        .string()
-        .regex(
-          listQuestionBlueprintVersions200ResponseVersionsItemWorkbookIdRegExp,
-        )
-        .nullable(),
       sourceAssets: zod.array(
         zod.strictObject({
           questionBlueprintVersionId: zod
@@ -4056,17 +4006,25 @@ export const ListQuestionBlueprintVersions200Response = zod.strictObject({
           createdAt: zod.iso.datetime({ offset: true }),
         }),
       ),
-      workbookSources: zod.array(
-        zod.strictObject({
-          sourceId: zod.string().min(1),
-          name: zod.string().min(1),
-          workbookId: zod
-            .string()
-            .regex(
-              listQuestionBlueprintVersions200ResponseVersionsItemWorkbookSourcesItemWorkbookIdRegExp,
-            ),
-        }),
-      ),
+      sources: zod
+        .array(
+          zod.strictObject({
+            type: zod.enum(["workbook"]),
+            sourceId: zod
+              .string()
+              .min(1)
+              .describe("Blueprint-local source identifier."),
+            name: zod.string().min(1),
+            workbookId: zod
+              .string()
+              .regex(
+                listQuestionBlueprintVersions200ResponseVersionsItemSourcesItemWorkbookIdRegExp,
+              ),
+          }),
+        )
+        .describe(
+          "Blueprint-local source entries used by the current version.",
+        ),
       createdByUserId: zod
         .string()
         .regex(
@@ -4189,12 +4147,7 @@ export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDoc
 
 export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
 
-export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintWorkbookIdRegExp =
-  new RegExp(
-    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-  );
-
-export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintWorkbookSourcesItemWorkbookIdRegExp =
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
@@ -4208,10 +4161,6 @@ export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCur
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
 
-export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionWorkbookIdRegExp =
-  new RegExp(
-    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-  );
 export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionSourceAssetsItemQuestionBlueprintVersionIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
@@ -4222,7 +4171,7 @@ export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCur
   );
 export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionSourceAssetsItemPositionMin = 0;
 
-export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionWorkbookSourcesItemWorkbookIdRegExp =
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionSourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
@@ -4240,10 +4189,6 @@ export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSel
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
 
-export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionWorkbookIdRegExp =
-  new RegExp(
-    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-  );
 export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionSourceAssetsItemQuestionBlueprintVersionIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
@@ -4254,7 +4199,7 @@ export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSel
   );
 export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionSourceAssetsItemPositionMin = 0;
 
-export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionWorkbookSourcesItemWorkbookIdRegExp =
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionSourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
@@ -4267,10 +4212,6 @@ export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVer
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
 
-export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemWorkbookIdRegExp =
-  new RegExp(
-    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-  );
 export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemSourceAssetsItemQuestionBlueprintVersionIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
@@ -4281,7 +4222,7 @@ export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVer
   );
 export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemSourceAssetsItemPositionMin = 0;
 
-export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemWorkbookSourcesItemWorkbookIdRegExp =
+export const getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemSourcesItemWorkbookIdRegExp =
   new RegExp(
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
   );
@@ -4632,30 +4573,35 @@ export const GetQuestionBlueprintVersionAuthoring200Response = zod.strictObject(
               zod.strictObject({
                 schemaVersion: zod.literal(1),
                 type: zod.enum(["workbook_cell", "workbook_range"]),
-                sourceId: zod.string().min(1),
+                sourceId: zod
+                  .string()
+                  .min(1)
+                  .describe("Blueprint-local workbook source identifier."),
                 ref: zod.string(),
               }),
             ]),
           }),
         ),
       }),
-      workbookId: zod
-        .string()
-        .regex(
-          getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintWorkbookIdRegExp,
+      sources: zod
+        .array(
+          zod.strictObject({
+            type: zod.enum(["workbook"]),
+            sourceId: zod
+              .string()
+              .min(1)
+              .describe("Blueprint-local source identifier."),
+            name: zod.string().min(1),
+            workbookId: zod
+              .string()
+              .regex(
+                getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSourcesItemWorkbookIdRegExp,
+              ),
+          }),
         )
-        .nullable(),
-      workbookSources: zod.array(
-        zod.strictObject({
-          sourceId: zod.string().min(1),
-          name: zod.string().min(1),
-          workbookId: zod
-            .string()
-            .regex(
-              getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintWorkbookSourcesItemWorkbookIdRegExp,
-            ),
-        }),
-      ),
+        .describe(
+          "Blueprint-local source entries used by the current version.",
+        ),
       currentVersionId: zod
         .string()
         .regex(
@@ -4669,12 +4615,6 @@ export const GetQuestionBlueprintVersionAuthoring200Response = zod.strictObject(
             getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionIdRegExpOne,
           ),
         versionNumber: zod.number().min(1),
-        workbookId: zod
-          .string()
-          .regex(
-            getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionWorkbookIdRegExp,
-          )
-          .nullable(),
         sourceAssets: zod.array(
           zod.strictObject({
             questionBlueprintVersionId: zod
@@ -4696,17 +4636,25 @@ export const GetQuestionBlueprintVersionAuthoring200Response = zod.strictObject(
             createdAt: zod.iso.datetime({ offset: true }),
           }),
         ),
-        workbookSources: zod.array(
-          zod.strictObject({
-            sourceId: zod.string().min(1),
-            name: zod.string().min(1),
-            workbookId: zod
-              .string()
-              .regex(
-                getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionWorkbookSourcesItemWorkbookIdRegExp,
-              ),
-          }),
-        ),
+        sources: zod
+          .array(
+            zod.strictObject({
+              type: zod.enum(["workbook"]),
+              sourceId: zod
+                .string()
+                .min(1)
+                .describe("Blueprint-local source identifier."),
+              name: zod.string().min(1),
+              workbookId: zod
+                .string()
+                .regex(
+                  getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintCurrentVersionSourcesItemWorkbookIdRegExp,
+                ),
+            }),
+          )
+          .describe(
+            "Blueprint-local source entries used by the current version.",
+          ),
         createdByUserId: zod
           .string()
           .regex(
@@ -4727,12 +4675,6 @@ export const GetQuestionBlueprintVersionAuthoring200Response = zod.strictObject(
             getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionIdRegExpOne,
           ),
         versionNumber: zod.number().min(1),
-        workbookId: zod
-          .string()
-          .regex(
-            getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionWorkbookIdRegExp,
-          )
-          .nullable(),
         sourceAssets: zod.array(
           zod.strictObject({
             questionBlueprintVersionId: zod
@@ -4754,17 +4696,25 @@ export const GetQuestionBlueprintVersionAuthoring200Response = zod.strictObject(
             createdAt: zod.iso.datetime({ offset: true }),
           }),
         ),
-        workbookSources: zod.array(
-          zod.strictObject({
-            sourceId: zod.string().min(1),
-            name: zod.string().min(1),
-            workbookId: zod
-              .string()
-              .regex(
-                getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionWorkbookSourcesItemWorkbookIdRegExp,
-              ),
-          }),
-        ),
+        sources: zod
+          .array(
+            zod.strictObject({
+              type: zod.enum(["workbook"]),
+              sourceId: zod
+                .string()
+                .min(1)
+                .describe("Blueprint-local source identifier."),
+              name: zod.string().min(1),
+              workbookId: zod
+                .string()
+                .regex(
+                  getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintSelectedVersionSourcesItemWorkbookIdRegExp,
+                ),
+            }),
+          )
+          .describe(
+            "Blueprint-local source entries used by the current version.",
+          ),
         createdByUserId: zod
           .string()
           .regex(
@@ -4780,12 +4730,6 @@ export const GetQuestionBlueprintVersionAuthoring200Response = zod.strictObject(
               getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemIdRegExp,
             ),
           versionNumber: zod.number().min(1),
-          workbookId: zod
-            .string()
-            .regex(
-              getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemWorkbookIdRegExp,
-            )
-            .nullable(),
           sourceAssets: zod.array(
             zod.strictObject({
               questionBlueprintVersionId: zod
@@ -4807,17 +4751,25 @@ export const GetQuestionBlueprintVersionAuthoring200Response = zod.strictObject(
               createdAt: zod.iso.datetime({ offset: true }),
             }),
           ),
-          workbookSources: zod.array(
-            zod.strictObject({
-              sourceId: zod.string().min(1),
-              name: zod.string().min(1),
-              workbookId: zod
-                .string()
-                .regex(
-                  getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemWorkbookSourcesItemWorkbookIdRegExp,
-                ),
-            }),
-          ),
+          sources: zod
+            .array(
+              zod.strictObject({
+                type: zod.enum(["workbook"]),
+                sourceId: zod
+                  .string()
+                  .min(1)
+                  .describe("Blueprint-local source identifier."),
+                name: zod.string().min(1),
+                workbookId: zod
+                  .string()
+                  .regex(
+                    getQuestionBlueprintVersionAuthoring200ResponseQuestionBlueprintVersionsItemSourcesItemWorkbookIdRegExp,
+                  ),
+              }),
+            )
+            .describe(
+              "Blueprint-local source entries used by the current version.",
+            ),
           createdByUserId: zod
             .string()
             .regex(

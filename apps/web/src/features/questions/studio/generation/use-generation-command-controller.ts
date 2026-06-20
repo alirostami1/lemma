@@ -12,14 +12,12 @@ import type {
 import { getGenerateCountIssue } from "./generation-error-state";
 
 type UseGenerationCommandControllerInput = {
-  getWorkbookName(workbookId: string | null): string | null;
   getQuestionSetName(questionSetId: string | null): string | null;
   onGenerationErrorChange(message: string | null): void;
   onRunStarted(run: QuestionGenerationRun, context: ActiveRunContext): void;
 };
 
 export function useGenerationCommandController({
-  getWorkbookName,
   getQuestionSetName,
   onGenerationErrorChange,
   onRunStarted,
@@ -54,7 +52,7 @@ export function useGenerationCommandController({
           targetQuestionSetId: dialogInput.targetQuestionSetId,
           blueprintId: dialogSource.blueprintId,
           blueprintVersionId: dialogSource.blueprintVersionId,
-          sourceWorkbookId: dialogSource.workbookId,
+          sourceWorkbookId: dialogSource.sources[0]?.workbookId ?? null,
         }),
       );
 
@@ -92,8 +90,7 @@ export function useGenerationCommandController({
       blueprintId: blueprint.id,
       blueprintVersionId: blueprint.currentVersionId,
       name: blueprint.name,
-      workbookId: blueprint.workbookId,
-      workbookName: getWorkbookName(blueprint.workbookId),
+      sources: blueprint.sources,
     });
     setIsDialogOpen(true);
   }

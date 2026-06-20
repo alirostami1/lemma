@@ -6,6 +6,7 @@ import {
   type ComposedTextEditorBlock,
   updateComposedBlock,
 } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import type { TableEditorSelection } from "#/features/questions/table-block-editor";
 import { TableBlockEditor } from "#/features/questions/table-block-editor";
@@ -18,7 +19,8 @@ export function BlockEditor({
   referencePreviewCache,
   model,
   workbookEnabled,
-  activeSourceId,
+  sources,
+  previewSourceId,
   onModelChange,
   onSelectReference,
   onTableSelectionChange,
@@ -29,7 +31,8 @@ export function BlockEditor({
   referencePreviewCache: ReferencePreviewCache;
   model: ComposedEditorModel;
   workbookEnabled: boolean;
-  activeSourceId: string | null;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   onModelChange(model: ComposedEditorModel): void;
   onSelectReference(referenceId: string): void;
   onTableSelectionChange(
@@ -46,7 +49,8 @@ export function BlockEditor({
         referencePreviewCache={referencePreviewCache}
         model={model}
         workbookEnabled={workbookEnabled}
-        activeSourceId={activeSourceId}
+        sources={sources}
+        previewSourceId={previewSourceId}
         onModelChange={onModelChange}
         onSelectReference={onSelectReference}
         onCreatedReference={({ nextModel, nextContent }) =>
@@ -73,7 +77,8 @@ export function BlockEditor({
           model={model}
           referencePreviewCache={referencePreviewCache}
           workbookEnabled={workbookEnabled}
-          activeSourceId={activeSourceId}
+          sources={sources}
+          previewSourceId={previewSourceId}
           disabled={disabled}
           onModelChange={onModelChange}
           onChange={(content) =>
@@ -139,7 +144,8 @@ function TextBlockEditor({
   referencePreviewCache,
   model,
   workbookEnabled,
-  activeSourceId,
+  sources,
+  previewSourceId,
   onModelChange,
   onSelectReference,
   onCreatedReference,
@@ -149,7 +155,8 @@ function TextBlockEditor({
   referencePreviewCache: ReferencePreviewCache;
   model: ComposedEditorModel;
   workbookEnabled: boolean;
-  activeSourceId: string | null;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   onModelChange(model: ComposedEditorModel): void;
   onSelectReference(referenceId: string): void;
   onCreatedReference(input: {
@@ -164,7 +171,8 @@ function TextBlockEditor({
         referencePreviewCache={referencePreviewCache}
         model={model}
         workbookEnabled={workbookEnabled}
-        activeSourceId={activeSourceId}
+        sources={sources}
+        previewSourceId={previewSourceId}
         disabled={disabled}
         onChange={(content) =>
           onModelChange(

@@ -116,7 +116,11 @@ export class QuestionGenerationService {
           version,
           explicitSource,
         });
-        await sourceResolver.assertAccess(command.currentUser, source);
+        await sourceResolver.assertAccess({
+          currentUser: command.currentUser,
+          version,
+          source,
+        });
 
         const targetQuestionSetId = toQuestionSetId(
           command.targetQuestionSetId,

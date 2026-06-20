@@ -36,8 +36,7 @@ export type QuestionBlueprint = Timestamped & {
   name: QuestionBlueprintName;
   description: QuestionBlueprintDescription | null;
   visibility: QuestionBlueprintVisibility;
-  workbookId: WorkbookId | null;
-  workbookSources: QuestionBlueprintWorkbookSource[];
+  sources: QuestionBlueprintSource[];
   currentVersionId: QuestionBlueprintVersionId | null;
   status: QuestionBlueprintStatus;
   archivedAt: Date | null;
@@ -48,8 +47,7 @@ export type QuestionBlueprintVersion = {
   questionBlueprintId: QuestionBlueprintId;
   versionNumber: number;
   document: QuestionBlueprintDocument;
-  workbookId: WorkbookId | null;
-  workbookSources: QuestionBlueprintWorkbookSource[];
+  sources: QuestionBlueprintSource[];
   createdByUserId: UserId;
   createdAt: Date;
 };
@@ -65,20 +63,28 @@ export type QuestionBlueprintVersionAsset = {
 export function createQuestionBlueprintVersionAssets(
   input: {
     questionBlueprintVersionId: QuestionBlueprintVersionId;
-    workbookIds: readonly WorkbookId[];
+    sources: readonly QuestionBlueprintSource[];
   },
   at: Date,
 ): QuestionBlueprintVersionAsset[] {
-  return input.workbookIds.map((id, index) => ({
-    questionBlueprintVersionId: input.questionBlueprintVersionId,
-    workbookId: id,
-    kind: "workbook",
-    position: index,
-    createdAt: at,
-  }));
+  return input.sources.flatMap((source, index) => {
+    if (source.type !== "workbook") {
+      return [];
+    }
+    return [
+      {
+        questionBlueprintVersionId: input.questionBlueprintVersionId,
+        workbookId: source.workbookId,
+        kind: "workbook" as const,
+        position: index,
+        createdAt: at,
+      },
+    ];
+  });
 }
 
-export type QuestionBlueprintWorkbookSource = {
+export type QuestionBlueprintSource = {
+  type: "workbook";
   sourceId: string;
   name: string;
   workbookId: WorkbookId;
@@ -91,8 +97,7 @@ export function createQuestionBlueprint(
     createdByUserId: UserId;
     name: QuestionBlueprintName;
     description: QuestionBlueprintDescription | null;
-    workbookId?: WorkbookId | null;
-    workbookSources?: QuestionBlueprintWorkbookSource[];
+    sources: QuestionBlueprintSource[];
     visibility?: QuestionBlueprintVisibility;
   },
   at: Date,
@@ -104,8 +109,7 @@ export function createQuestionBlueprint(
     name: input.name,
     description: input.description,
     visibility: input.visibility ?? "private",
-    workbookId: input.workbookId ?? null,
-    workbookSources: input.workbookSources ?? [],
+    sources: input.sources,
     currentVersionId: null,
     status: "active",
     archivedAt: null,
@@ -120,8 +124,7 @@ export function createQuestionBlueprintVersion(
     questionBlueprintId: QuestionBlueprintId;
     versionNumber: number;
     document: QuestionBlueprintDocument;
-    workbookId?: string | null;
-    workbookSources?: QuestionBlueprintWorkbookSource[];
+    sources: QuestionBlueprintSource[];
     createdByUserId: UserId;
   },
   at: Date,
@@ -132,11 +135,7 @@ export function createQuestionBlueprintVersion(
     questionBlueprintId: input.questionBlueprintId,
     versionNumber: input.versionNumber,
     document: input.document,
-    workbookId:
-      input.workbookId === undefined || input.workbookId === null
-        ? null
-        : workbookId(input.workbookId),
-    workbookSources: input.workbookSources ?? [],
+    sources: input.sources,
     createdByUserId: input.createdByUserId,
     createdAt: at,
   };
@@ -149,8 +148,7 @@ export function reconstituteQuestionBlueprint(input: {
   name: string;
   description: string | null;
   visibility?: string;
-  workbookId: string | null;
-  workbookSources?: unknown;
+  sources: unknown;
   currentVersionId: string | null;
   status: string;
   archivedAt: Date | null;
@@ -164,8 +162,7 @@ export function reconstituteQuestionBlueprint(input: {
     name: questionBlueprintName(input.name),
     description: questionBlueprintDescription(input.description),
     visibility: questionBlueprintVisibility(input.visibility ?? "private"),
-    workbookId: input.workbookId === null ? null : workbookId(input.workbookId),
-    workbookSources: questionBlueprintWorkbookSources(input.workbookSources),
+    sources: questionBlueprintSourcesOrEmpty(input.sources),
     currentVersionId:
       input.currentVersionId === null
         ? null
@@ -182,8 +179,7 @@ export function reconstituteQuestionBlueprintVersion(input: {
   questionBlueprintId: string;
   versionNumber: number;
   document: unknown;
-  workbookId: string | null;
-  workbookSources?: unknown;
+  sources: unknown;
   createdByUserId: string;
   createdAt: Date;
 }): QuestionBlueprintVersion {
@@ -193,8 +189,7 @@ export function reconstituteQuestionBlueprintVersion(input: {
     questionBlueprintId: questionBlueprintId(input.questionBlueprintId),
     versionNumber: input.versionNumber,
     document: questionBlueprintDocument(input.document),
-    workbookId: input.workbookId === null ? null : workbookId(input.workbookId),
-    workbookSources: questionBlueprintWorkbookSources(input.workbookSources),
+    sources: questionBlueprintSourcesOrEmpty(input.sources),
     createdByUserId: userId(input.createdByUserId),
     createdAt: input.createdAt,
   };
@@ -228,70 +223,106 @@ export function reconstituteQuestionBlueprintVersionAsset(input: {
   };
 }
 
-export function questionBlueprintWorkbookSources(
+export function questionBlueprintSources(
   input: unknown,
-): QuestionBlueprintWorkbookSource[] {
+): QuestionBlueprintSource[] {
   if (input === undefined || input === null) {
     throw new InvalidQuestionFieldError(
-      "question blueprint workbook sources must be an array",
+      "question blueprint sources must be an array",
     );
   }
   if (!Array.isArray(input)) {
-    throw new InvalidQuestionFieldError(
-      "question blueprint workbook sources must be an array",
-    );
+    throw new InvalidQuestionFieldError("question blueprint sources must be an array");
   }
   const sourceIds = new Set<string>();
   return input.map((source) => {
     if (typeof source !== "object" || source === null) {
-      throw new InvalidQuestionFieldError(
-        "question blueprint workbook source must be an object",
-      );
+      throw new InvalidQuestionFieldError("question blueprint source must be an object");
     }
     const record = source as Record<string, unknown>;
-    const sourceId = questionBlueprintWorkbookSourceId(record.sourceId);
+    if (record.type !== "workbook") {
+      throw new InvalidQuestionFieldError(
+        "question blueprint source type is invalid",
+      );
+    }
+    const sourceId = questionBlueprintSourceId(record.sourceId);
     if (sourceIds.has(sourceId)) {
       throw new InvalidQuestionFieldError(
-        "question blueprint workbook source ids must be unique",
+        "question blueprint source ids must be unique",
       );
     }
     sourceIds.add(sourceId);
     return {
+      type: "workbook" as const,
       sourceId,
-      name: questionBlueprintWorkbookSourceName(record.name),
+      name: questionBlueprintSourceName(record.name),
       workbookId: workbookId(record.workbookId),
     };
   });
 }
 
-export function questionBlueprintWorkbookSourceId(value: unknown): string {
+export function questionBlueprintSourcesOrEmpty(
+  input: unknown,
+): QuestionBlueprintSource[] {
+  if (input === undefined || input === null) {
+    // Legacy rows may not have persisted blueprint-local sources yet.
+    return [];
+  }
+  return questionBlueprintSources(input);
+}
+
+export function questionBlueprintSourceId(value: unknown): string {
   if (typeof value !== "string" || !/^[A-Za-z][A-Za-z0-9_-]*$/u.test(value)) {
     throw new InvalidQuestionFieldError(
-      "question blueprint workbook source id must start with a letter and contain only letters, numbers, underscores, or hyphens",
+      "question blueprint source id must start with a letter and contain only letters, numbers, underscores, or hyphens",
     );
   }
   return value;
 }
 
-export function questionBlueprintWorkbookSourceName(value: unknown): string {
+export function questionBlueprintSourceName(value: unknown): string {
   if (typeof value !== "string" || value.trim().length === 0) {
     throw new InvalidQuestionFieldError(
-      "question blueprint workbook source name must be a non-empty string",
+      "question blueprint source name must be a non-empty string",
     );
   }
   return value.trim();
 }
 
-export function workbookSourceIdsUsedByDocument(
+export function questionBlueprintSourceIdsUsedByDocument(
   document: QuestionBlueprintDocument,
-): Set<string> {
+): string[] {
   const sourceIds = new Set<string>();
+  const orderedSourceIds: string[] = [];
   for (const reference of document.references) {
     if (isWorkbookReferenceSource(reference.source)) {
-      sourceIds.add(reference.source.sourceId);
+      if (!sourceIds.has(reference.source.sourceId)) {
+        sourceIds.add(reference.source.sourceId);
+        orderedSourceIds.push(reference.source.sourceId);
+      }
     }
   }
-  return sourceIds;
+  return orderedSourceIds;
+}
+
+export function questionBlueprintSourcesReferencedByDocument(
+  document: QuestionBlueprintDocument,
+  sources: readonly QuestionBlueprintSource[],
+): QuestionBlueprintSource[] {
+  const sourceIds = questionBlueprintSourceIdsUsedByDocument(document);
+  if (sourceIds.length === 0) {
+    return [];
+  }
+  const sourcesById = new Map(sources.map((source) => [source.sourceId, source]));
+  return sourceIds.map((sourceId) => {
+    const source = sourcesById.get(sourceId);
+    if (!source) {
+      throw new InvalidQuestionFieldError(
+        `question blueprint source ${sourceId} is not attached to this blueprint`,
+      );
+    }
+    return source;
+  });
 }
 
 function isWorkbookReferenceSource(

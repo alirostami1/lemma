@@ -10,6 +10,7 @@ import {
   questionId as toQuestionId,
   type WorkbookSnapshotId,
 } from "../domain/index.js";
+import { questionBlueprintSourcesReferencedByDocument } from "../domain/index.js";
 import { CanonicalQuestionMaterializer } from "./CanonicalQuestionMaterializer.js";
 import { WorkbookQuestionSourceError } from "./errors.js";
 import type { Clock, IdGenerator, QuestionValueResolverPort } from "./ports.js";
@@ -36,10 +37,12 @@ export class QuestionGenerationRunMaterializer {
   }): Promise<MaterializedQuestionGenerationRun> {
     const { run, version, workbookSnapshotIds } = input;
     const requiresWorkbook = blueprintRequiresWorkbookSource(version.document);
-    const workbookSourceCount = Math.max(version.workbookSources.length, 1);
-    const requiredSnapshotCount = run.source?.workbookSnapshotId
-      ? run.requestedCount
-      : run.requestedCount * workbookSourceCount;
+    const referencedSources = questionBlueprintSourcesReferencedByDocument(
+      version.document,
+      version.sources,
+    );
+    const workbookSourceCount = Math.max(referencedSources.length, 1);
+    const requiredSnapshotCount = run.requestedCount * workbookSourceCount;
     if (requiresWorkbook && workbookSnapshotIds.length === 0) {
       throw new WorkbookQuestionSourceError(
         "generation run has no workbook snapshot",
@@ -47,7 +50,6 @@ export class QuestionGenerationRunMaterializer {
     }
     if (
       requiresWorkbook &&
-      !run.source?.workbookSnapshotId &&
       workbookSnapshotIds.length < requiredSnapshotCount
     ) {
       throw new WorkbookQuestionSourceError(
@@ -64,9 +66,9 @@ export class QuestionGenerationRunMaterializer {
         ? index
         : index * workbookSourceCount;
       const workbookSnapshotId =
-        workbookSnapshotIds[snapshotOffset] ?? workbookSnapshotIds[0] ?? null;
+        workbookSnapshotIds[snapshotOffset] ?? null;
       const workbookSnapshotIdsBySourceId = buildSnapshotIdsBySourceId({
-        version,
+        sources: referencedSources,
         workbookSnapshotIds,
         snapshotOffset,
       });
@@ -119,16 +121,16 @@ export class QuestionGenerationRunMaterializer {
 }
 
 function buildSnapshotIdsBySourceId(input: {
-  version: QuestionBlueprintVersion;
+  sources: QuestionBlueprintVersion["sources"];
   workbookSnapshotIds: readonly WorkbookSnapshotId[];
   snapshotOffset: number;
 }): ReadonlyMap<string, WorkbookSnapshotId> | undefined {
-  if (input.version.workbookSources.length === 0) {
+  if (input.sources.length === 0) {
     return undefined;
   }
 
   const snapshotIdsBySourceId = new Map<string, WorkbookSnapshotId>();
-  input.version.workbookSources.forEach((source, sourceIndex) => {
+  input.sources.forEach((source, sourceIndex) => {
     const workbookSnapshotId =
       input.workbookSnapshotIds[input.snapshotOffset + sourceIndex];
     if (workbookSnapshotId) {

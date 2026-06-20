@@ -1,4 +1,5 @@
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import { reorderComposedBlocks } from "#/domains/questions/authoring";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import type { TableEditorSelection } from "#/features/questions/table-block-editor";
@@ -17,7 +18,8 @@ export function BlockList({
   disabled,
   referencePreviewCache,
   workbookEnabled,
-  activeSourceId,
+  sources,
+  previewSourceId,
   onModelChange,
   onSelectBlock,
   onSelectReference,
@@ -33,7 +35,8 @@ export function BlockList({
   disabled?: boolean;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
-  activeSourceId: string | null;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   onModelChange(model: ComposedEditorModel): void;
   onSelectBlock(blockId: string): void;
   onSelectReference(referenceId: string): void;
@@ -128,7 +131,8 @@ export function BlockList({
                     referencePreviewCache={referencePreviewCache}
                     model={model}
                     workbookEnabled={workbookEnabled}
-                    activeSourceId={activeSourceId}
+                    sources={sources}
+                    previewSourceId={previewSourceId}
                     onModelChange={onModelChange}
                     onSelectReference={onSelectReference}
                     onTableSelectionChange={onTableSelectionChange}

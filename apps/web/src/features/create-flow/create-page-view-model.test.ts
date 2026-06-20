@@ -9,7 +9,11 @@ function blueprint(
   input?: {
     status?: "active" | "archived" | "deleted";
     visibility?: "private" | "shared" | "system";
-    workbookId?: string | null;
+    sources?: Array<{
+      sourceId: string;
+      name: string;
+      workbookId: string;
+    }>;
   },
 ) {
   return {
@@ -17,7 +21,7 @@ function blueprint(
     name: `Blueprint ${id}`,
     status: input?.status ?? "active",
     visibility: input?.visibility ?? "private",
-    workbookId: input?.workbookId ?? null,
+    sources: input?.sources ?? [],
   };
 }
 
@@ -47,6 +51,17 @@ describe("create page view model", () => {
     const blueprintItem = buildBlueprintListItems([
       blueprint("blueprint-1"),
     ])[0];
+    const sourcedBlueprintItem = buildBlueprintListItems([
+      blueprint("blueprint-2", {
+        sources: [
+          {
+            sourceId: "source-1",
+            name: "Workbook 1",
+            workbookId: "workbook-1",
+          },
+        ],
+      }),
+    ])[0];
 
     expect(viewModel.savedBlueprints.emptyMessage).toBe(
       "No saved blueprints yet.",
@@ -54,5 +69,7 @@ describe("create page view model", () => {
     expect(blueprintItem?.action.search).toEqual({
       blueprintId: "blueprint-1",
     });
+    expect(blueprintItem?.description).toBe("No sources attached");
+    expect(sourcedBlueprintItem?.description).toBe("Sources attached");
   });
 });

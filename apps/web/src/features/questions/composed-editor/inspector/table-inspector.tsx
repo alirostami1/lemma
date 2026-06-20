@@ -7,6 +7,7 @@ import type {
   ReferenceSourceDraft,
   TableEditorModel,
 } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import {
   addTableColumn,
@@ -27,7 +28,8 @@ export function TableInspector({
   editorModel,
   referencePreviewCache,
   workbookEnabled,
-  activeSourceId,
+  sources,
+  previewSourceId,
   disabled,
   onModelChange,
   onEditorModelChange,
@@ -38,7 +40,8 @@ export function TableInspector({
   editorModel: ComposedEditorModel;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
-  activeSourceId: string | null;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: TableEditorModel): void;
   onEditorModelChange(model: ComposedEditorModel): void;
@@ -105,7 +108,8 @@ export function TableInspector({
           selectedReferenceId={selectedRangeReferenceId ?? undefined}
           referencePreviewCache={referencePreviewCache}
           workbookEnabled={workbookEnabled}
-          activeSourceId={activeSourceId}
+          sources={sources}
+          previewSourceId={previewSourceId}
           disabled={disabled}
           allowedSourceTypes={["workbook_range"]}
           createSourceTypeDefault="workbook_range"

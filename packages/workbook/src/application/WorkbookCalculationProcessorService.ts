@@ -20,6 +20,10 @@ import type {
   WorkbookRepository,
   WorkbookTransactionPort,
 } from "./ports.js";
+import {
+  normalizeWorkbookCalculationSources,
+  type WorkbookCalculationSource,
+} from "./workbook-calculation-sources.js";
 import { workbookCalculationFinishedEvent } from "./workbook-events.js";
 import { withWorkbookTempFile } from "./workbook-temp-file.js";
 
@@ -60,18 +64,20 @@ export class WorkbookCalculationProcessorService {
     try {
       const calculated = await this.calculateSnapshots(
         running,
-        command.workbookSources,
+        command.sources,
         command.lineage,
       );
       await this.succeedRunningCalculation({
         running,
         snapshots: calculated.snapshots,
+        sources: calculated.sources,
         finishedAt: calculated.finishedAt,
         lineage: command.lineage,
       });
     } catch (error) {
       await this.failRunningCalculation({
         running,
+        sources: command.sources,
         error,
         lineage: command.lineage,
       });
@@ -80,19 +86,23 @@ export class WorkbookCalculationProcessorService {
 
   private async calculateSnapshots(
     running: WorkbookCalculation,
-    workbookSources: readonly {
-      sourceId: string;
-      workbookId: string;
-    }[],
+    sources: readonly WorkbookCalculationSource[],
     lineage: OperationLineage,
-  ): Promise<{ snapshots: WorkbookSnapshot[]; finishedAt: Date }> {
-    const sources = normalizeCalculationSources(workbookSources);
+  ): Promise<{
+    snapshots: WorkbookSnapshot[];
+    finishedAt: Date;
+    sources: readonly WorkbookCalculationSource[];
+  }> {
+    const normalizedSources = normalizeWorkbookCalculationSources(
+      sources,
+      "sources",
+    );
     const finishedAt = this.deps.clock.now();
     const snapshots: WorkbookSnapshot[] = [];
 
-    for (const [sourceIndex, source] of sources.entries()) {
+    for (const [sourceIndex, source] of normalizedSources.entries()) {
       const workbook = await this.deps.workbookRepository.findWorkbookById(
-        source.workbookId,
+        toWorkbookId(source.workbookId),
       );
 
       if (!workbook) {
@@ -124,7 +134,7 @@ export class WorkbookCalculationProcessorService {
               id: this.deps.idGenerator.workbookSnapshotId(),
               workbookId: workbook.id,
               calculationId: running.id,
-              snapshotIndex: questionIndex * sources.length + sourceIndex,
+              snapshotIndex: questionIndex * normalizedSources.length + sourceIndex,
               values: snapshotValues,
             },
             finishedAt,
@@ -135,6 +145,7 @@ export class WorkbookCalculationProcessorService {
 
     return {
       finishedAt,
+      sources: normalizedSources,
       snapshots: snapshots.sort((left, right) => {
         return left.snapshotIndex - right.snapshotIndex;
       }),
@@ -144,6 +155,7 @@ export class WorkbookCalculationProcessorService {
   private async succeedRunningCalculation(input: {
     running: WorkbookCalculation;
     snapshots: readonly WorkbookSnapshot[];
+    sources: readonly WorkbookCalculationSource[];
     finishedAt: Date;
     lineage: OperationLineage;
   }): Promise<void> {
@@ -159,6 +171,7 @@ export class WorkbookCalculationProcessorService {
         await outboxRepository.appendEvents([
           this.finishedCalculationEvent({
             calculation: result.calculation,
+            sources: input.sources,
             snapshots: sortSnapshotsByIndex(result.snapshots),
             lineage: input.lineage,
           }),
@@ -169,6 +182,7 @@ export class WorkbookCalculationProcessorService {
 
   private async failRunningCalculation(input: {
     running: WorkbookCalculation;
+    sources: readonly WorkbookCalculationSource[];
     error: unknown;
     lineage: OperationLineage;
   }): Promise<void> {
@@ -186,6 +200,7 @@ export class WorkbookCalculationProcessorService {
         await outboxRepository.appendEvents([
           this.finishedCalculationEvent({
             calculation: updated,
+            sources: input.sources,
             lineage: input.lineage,
           }),
         ]);
@@ -195,12 +210,14 @@ export class WorkbookCalculationProcessorService {
 
   private finishedCalculationEvent(input: {
     calculation: WorkbookCalculation;
+    sources: readonly WorkbookCalculationSource[];
     snapshots?: readonly WorkbookSnapshot[];
     lineage: OperationLineage;
   }) {
     return workbookCalculationFinishedEvent({
       id: this.deps.idGenerator.eventId(),
       calculation: input.calculation,
+      sources: input.sources,
       snapshots: input.snapshots,
       lineage: input.lineage,
       occurredAt: input.calculation.updatedAt,
@@ -226,15 +243,4 @@ function sortSnapshotsByIndex(
   return [...snapshots].sort((left, right) => {
     return left.snapshotIndex - right.snapshotIndex;
   });
-}
-
-function normalizeCalculationSources(
-  workbookSources: readonly {
-    sourceId: string;
-    workbookId: string;
-  }[],
-): { workbookId: ReturnType<typeof toWorkbookId> }[] {
-  return workbookSources.map((source) => ({
-    workbookId: toWorkbookId(source.workbookId),
-  }));
 }

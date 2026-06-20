@@ -1,168 +1,156 @@
-import type { BlueprintSourceRequirement } from "#/domains/questions/source-requirements";
 import type { Workbook } from "#/domains/workbooks/model";
 import { getWorkbookSourceStatus } from "#/domains/workbooks/source-status";
-import type { StudioSourceSessionSource } from "./source-session-registry";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 
-type StudioSourceViewStateBase = {
-  sources?: StudioSourceSessionSource[];
-  activeSourceId: string | null;
-  onActivateSourceId?(sourceId: string): void;
+export type StudioSourceViewState = {
+  status: "empty" | "loading" | "ready" | "invalid" | "error";
+  title: string;
+  description: string;
+  issue?: string;
+  previewSourceId: string | null;
+  sources: StudioSourceViewStateSource[];
 };
 
-export type StudioSourceViewState =
-  | (StudioSourceViewStateBase & {
-      status: "not_required_empty";
-      title: string;
-      description: string;
-      canRemove: false;
-    })
-  | (StudioSourceViewStateBase & {
-      status: "required_missing";
-      title: string;
-      description: string;
-      issue: string;
-      canRemove: false;
-    })
-  | (StudioSourceViewStateBase & {
-      status: "loading";
-      title: string;
-      description: string;
-      canRemove: true;
-    })
-  | (StudioSourceViewStateBase & {
-      status: "ready";
-      title: string;
-      description: string;
-      canRemove: true;
-    })
-  | (StudioSourceViewStateBase & {
-      status: "invalid";
-      title: string;
-      description: string;
-      issue: string;
-      canRemove: true;
-    })
-  | (StudioSourceViewStateBase & {
-      status: "error";
-      title: string;
-      description: string;
-      issue: string;
-      canRemove: true;
-    });
+export type StudioSourceViewStateSource = QuestionBlueprintWorkbookSource & {
+  isPreview: boolean;
+  canRemove: boolean;
+  removeIssue?: string;
+};
+
+export function isLocalWorkbookSource(workbookId: string) {
+  return workbookId.startsWith("local:");
+}
 
 export function getStudioSourceViewState(input: {
-  sourceRequirement: BlueprintSourceRequirement;
-  selectedWorkbookId: string | null;
-  selectedWorkbook: Workbook | null;
-  isWorkbooksLoading: boolean;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
+  previewSourceWorkbook: Workbook | null;
+  isPreviewSourceLoading: boolean;
   previewStatus: "idle" | "loading" | "ready" | "error";
   previewError: string | null;
-  isVersionBoundSource?: boolean;
+  sourceUsageCounts: Record<string, number>;
 }): StudioSourceViewState {
-  const requiresSource = input.sourceRequirement.status === "required";
-
-  if (!input.selectedWorkbookId) {
-    if (requiresSource) {
-      return {
-        status: "required_missing",
-        activeSourceId: null,
-        title: "Source required",
-        description: "Workbook-backed references need a source attached.",
-        issue: "Attach a source to resolve workbook-backed references.",
-        canRemove: false,
-      };
-    }
-
+  const sources = input.sources.map((source) => {
+    const usageCount = input.sourceUsageCounts[source.sourceId] ?? 0;
     return {
-      status: "not_required_empty",
-      activeSourceId: null,
-      title: "No source attached",
-      description:
-        "Attach a source inside this blueprint if it needs workbook-backed references.",
-      canRemove: false,
+      ...source,
+      isPreview: source.sourceId === input.previewSourceId,
+      canRemove: usageCount === 0,
+      removeIssue:
+        usageCount > 0
+          ? `Used by ${usageCount} reference${usageCount === 1 ? "" : "s"}.`
+          : undefined,
+    };
+  });
+
+  if (sources.length === 0) {
+    return {
+      status: "empty",
+      title: "No sources attached",
+      description: "Attach a source to this blueprint.",
+      previewSourceId: null,
+      sources,
     };
   }
 
-  if (!input.selectedWorkbook) {
-    if (input.isWorkbooksLoading) {
+  const previewSource =
+    sources.find((source) => source.sourceId === input.previewSourceId) ??
+    sources[0] ??
+    null;
+
+  if (!previewSource) {
+    return {
+      status: "empty",
+      title: "No sources attached",
+      description: "Attach a source to this blueprint.",
+      previewSourceId: null,
+      sources,
+    };
+  }
+
+  const previewSourceWorkbookStatus = input.previewSourceWorkbook
+    ? getWorkbookSourceStatus(input.previewSourceWorkbook)
+    : null;
+
+  if (input.isPreviewSourceLoading) {
+    return {
+      status: "loading",
+      title: previewSource.name,
+      description: "Loading attached source.",
+      previewSourceId: previewSource.sourceId,
+      sources,
+    };
+  }
+
+  if (!input.previewSourceWorkbook) {
+    if (isLocalWorkbookSource(previewSource.workbookId)) {
       return {
-        status: "loading",
-        activeSourceId: null,
-        title: "Loading source",
-        description: "Loading attached source.",
-        canRemove: true,
+        status: "ready",
+        title: previewSource.name,
+        description: "Local source.",
+        previewSourceId: previewSource.sourceId,
+        sources,
       };
     }
 
     return {
       status: "error",
-      activeSourceId: null,
-      title:
-        input.isVersionBoundSource === true
-          ? "Version source not found"
-          : "Source not found",
-      description:
-        input.isVersionBoundSource === true
-          ? "This blueprint version's saved source could not be found."
-          : "Attached source could not be found.",
-      issue:
-        input.isVersionBoundSource === true
-          ? "Reattach the source and save a new blueprint version."
-          : "Replace the source or remove it from this blueprint.",
-      canRemove: true,
+      title: previewSource.name,
+      description: "Attached source could not be found.",
+      issue: "Replace the source or remove it from this blueprint.",
+      previewSourceId: previewSource.sourceId,
+      sources,
     };
   }
 
-  const workbookSourceStatus = getWorkbookSourceStatus(input.selectedWorkbook);
-
-  if (workbookSourceStatus === "pending_validation") {
+  if (previewSourceWorkbookStatus === "pending_validation") {
     return {
       status: "loading",
-      activeSourceId: null,
-      title: input.selectedWorkbook.name,
+      title: previewSource.name,
       description: "Validating source.",
-      canRemove: true,
+      previewSourceId: previewSource.sourceId,
+      sources,
     };
   }
 
-  if (workbookSourceStatus !== "ready") {
+  if (previewSourceWorkbookStatus && previewSourceWorkbookStatus !== "ready") {
     return {
       status: "invalid",
-      activeSourceId: null,
-      title: input.selectedWorkbook.name,
+      title: previewSource.name,
       description: "This source is not ready yet.",
-      issue: getWorkbookIssue(input.selectedWorkbook),
-      canRemove: true,
+      issue: getWorkbookIssue(input.previewSourceWorkbook),
+      previewSourceId: previewSource.sourceId,
+      sources,
     };
   }
 
   if (input.previewStatus === "loading") {
     return {
       status: "loading",
-      activeSourceId: null,
-      title: input.selectedWorkbook.name,
+      title: previewSource.name,
       description: "Loading source preview.",
-      canRemove: true,
+      previewSourceId: previewSource.sourceId,
+      sources,
     };
   }
 
   if (input.previewStatus === "error" || input.previewError) {
     return {
       status: "error",
-      activeSourceId: null,
-      title: input.selectedWorkbook.name,
+      title: previewSource.name,
       description: "Source preview could not be loaded.",
       issue: input.previewError ?? "Source preview could not be loaded.",
-      canRemove: true,
+      previewSourceId: previewSource.sourceId,
+      sources,
     };
   }
 
   return {
     status: "ready",
-    activeSourceId: null,
-    title: input.selectedWorkbook.name,
+    title: previewSource.name,
     description: "Ready source.",
-    canRemove: true,
+    previewSourceId: previewSource.sourceId,
+    sources,
   };
 }
 

@@ -3,6 +3,7 @@ import type {
   ComposedEditorModel,
   ComposedTableEditorBlock,
 } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import type { EditorSelection } from "../editor-selection";
 import { BlockInspector } from "./block-inspector";
@@ -19,7 +20,8 @@ export function SelectedElementInspector({
   selectedBlock,
   referencePreviewCache,
   workbookEnabled,
-  activeSourceId,
+  sources,
+  previewSourceId,
   disabled,
   onModelChange,
   onSelectionChange,
@@ -29,7 +31,8 @@ export function SelectedElementInspector({
   selectedBlock: ComposedEditorBlock | null;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
-  activeSourceId: string | null;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onSelectionChange(selection: EditorSelection): void;
@@ -55,7 +58,8 @@ export function SelectedElementInspector({
           selection={selection}
           referencePreviewCache={referencePreviewCache}
           workbookEnabled={workbookEnabled}
-          activeSourceId={activeSourceId}
+          sources={sources}
+          previewSourceId={previewSourceId}
           disabled={disabled}
           onModelChange={onModelChange}
           onSelectionChange={onSelectionChange}
@@ -70,7 +74,8 @@ export function SelectedElementInspector({
           block={selectedBlock}
           referencePreviewCache={referencePreviewCache}
           workbookEnabled={workbookEnabled}
-          activeSourceId={activeSourceId}
+          sources={sources}
+          previewSourceId={previewSourceId}
           disabled={disabled}
           onModelChange={onModelChange}
         />
@@ -93,7 +98,8 @@ function TableSelectionInspector({
   selection,
   referencePreviewCache,
   workbookEnabled,
-  activeSourceId,
+  sources,
+  previewSourceId,
   disabled,
   onModelChange,
   onSelectionChange,
@@ -103,7 +109,8 @@ function TableSelectionInspector({
   selection: EditorSelection;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
-  activeSourceId: string | null;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onSelectionChange(selection: EditorSelection): void;
@@ -156,7 +163,8 @@ function TableSelectionInspector({
           editorModel={model}
           referencePreviewCache={referencePreviewCache}
           workbookEnabled={workbookEnabled}
-          activeSourceId={activeSourceId}
+          sources={sources}
+          previewSourceId={previewSourceId}
           disabled={disabled}
           onModelChange={updateTable}
           onEditorModelChange={onModelChange}
@@ -182,7 +190,8 @@ function TableSelectionInspector({
           editorModel={model}
           referencePreviewCache={referencePreviewCache}
           workbookEnabled={workbookEnabled}
-          activeSourceId={activeSourceId}
+          sources={sources}
+          previewSourceId={previewSourceId}
           disabled={disabled}
           onModelChange={updateTable}
           onEditorModelChange={onModelChange}
@@ -208,7 +217,8 @@ function TableSelectionInspector({
           editorModel={model}
           referencePreviewCache={referencePreviewCache}
           workbookEnabled={workbookEnabled}
-          activeSourceId={activeSourceId}
+          sources={sources}
+          previewSourceId={previewSourceId}
           disabled={disabled}
           onModelChange={updateTable}
           onEditorModelChange={onModelChange}
@@ -221,7 +231,8 @@ function TableSelectionInspector({
           editorModel={model}
           referencePreviewCache={referencePreviewCache}
           workbookEnabled={workbookEnabled}
-          activeSourceId={activeSourceId}
+          sources={sources}
+          previewSourceId={previewSourceId}
           disabled={disabled}
           onModelChange={updateTable}
           onEditorModelChange={onModelChange}
@@ -237,7 +248,8 @@ function TableSelectionInspector({
       editorModel={model}
       referencePreviewCache={referencePreviewCache}
       workbookEnabled={workbookEnabled}
-      activeSourceId={activeSourceId}
+      sources={sources}
+      previewSourceId={previewSourceId}
       disabled={disabled}
       onModelChange={updateTable}
       onEditorModelChange={onModelChange}

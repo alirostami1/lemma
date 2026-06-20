@@ -43,7 +43,7 @@ const nextCalculationId = workbookCalculationId(
 );
 const nextEventId = toEventId("019e9315-6a87-715f-9861-8654df070c06");
 const lineage = rootOperationLineage("019e9315-6a87-715f-9861-8654df070c07");
-const workbookSources = [
+const sources = [
   {
     sourceId: "019e9315-6a87-715f-9861-8654df070c10",
     workbookId: targetWorkbookId,
@@ -69,7 +69,7 @@ describe("WorkbookCalculationRequestAdapter", () => {
     const result = await harness.adapter.requestCalculation({
       createdByUserId,
       workbookId: targetWorkbookId,
-      workbookSources,
+      sources,
       requestedCount: 3,
       correlationId: existing.correlationId,
       lineage,
@@ -86,7 +86,7 @@ describe("WorkbookCalculationRequestAdapter", () => {
     const result = await harness.adapter.requestCalculation({
       createdByUserId,
       workbookId: targetWorkbookId,
-      workbookSources,
+      sources,
       requestedCount: 5,
       correlationId: "019e9315-6a87-715f-9861-8654df070c09",
       lineage,
@@ -102,10 +102,37 @@ describe("WorkbookCalculationRequestAdapter", () => {
     assert.deepEqual(harness.transaction.outboxEvents[0]?.payload, {
       workbookCalculationId: nextCalculationId,
       workbookId: targetWorkbookId,
-      workbookSources: [...workbookSources],
+      sources: [...sources],
       requestedCount: 5,
       correlationId: "019e9315-6a87-715f-9861-8654df070c09",
     } satisfies WorkbookCalculationRequestedPayload);
+  });
+
+  it("rejects duplicate workbook source ids", async () => {
+    const harness = createHarness();
+
+    await assert.rejects(
+      () =>
+        harness.adapter.requestCalculation({
+          createdByUserId,
+          workbookId: targetWorkbookId,
+          sources: [
+            sources[0]!,
+            {
+              sourceId: sources[0]!.sourceId,
+              workbookId: workbookId("019e9315-6a87-715f-9861-8654df070c13"),
+            },
+          ],
+          requestedCount: 5,
+          correlationId: "019e9315-6a87-715f-9861-8654df070c0a",
+          lineage,
+        }),
+      (error: unknown) =>
+        error instanceof Error &&
+        error.message === "sources sourceIds must be unique.",
+    );
+    assert.equal(harness.repository.createdCalculations.length, 0);
+    assert.equal(harness.transaction.outboxEvents.length, 0);
   });
 });
 

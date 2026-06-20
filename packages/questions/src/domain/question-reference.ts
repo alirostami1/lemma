@@ -44,6 +44,22 @@ export function questionReferenceSource(
   failWith: (message: string) => never,
   workbookSourceIds?: ReadonlySet<string>,
 ): QuestionReferenceSource {
+  return questionReferenceSourceStrict(input, failWith, workbookSourceIds);
+}
+
+export function questionReferenceSourceFromStore(
+  input: unknown,
+  failWith: (message: string) => never,
+  workbookSourceIds?: ReadonlySet<string>,
+): QuestionReferenceSource {
+  return questionReferenceSourceLegacy(input, failWith, workbookSourceIds);
+}
+
+function questionReferenceSourceStrict(
+  input: unknown,
+  failWith: (message: string) => never,
+  workbookSourceIds?: ReadonlySet<string>,
+): QuestionReferenceSource {
   assertPlainRecord(
     input,
     "question reference source must be an object",
@@ -78,6 +94,56 @@ export function questionReferenceSource(
       schemaVersion: 1,
       type: input.type,
       sourceId: input.sourceId,
+      ref: input.ref,
+    };
+  }
+  failWith("question reference source type is invalid");
+}
+
+function questionReferenceSourceLegacy(
+  input: unknown,
+  failWith: (message: string) => never,
+  workbookSourceIds?: ReadonlySet<string>,
+): QuestionReferenceSource {
+  assertPlainRecord(
+    input,
+    "question reference source must be an object",
+    failWith,
+  );
+  assertSchemaVersion(input, failWith);
+  if (input.type === "literal") {
+    assertJsonValue(input.value, "value", failWith);
+    return { schemaVersion: 1, type: "literal", value: input.value };
+  }
+  if (input.type === "workbook_cell" || input.type === "workbook_range") {
+    // Legacy stored rows may carry an empty workbook source id.
+    const sourceId =
+      typeof input.sourceId === "string" ? input.sourceId : "";
+    if (sourceId.length > 0) {
+      assertQuestionReferenceSourceId(sourceId, "sourceId", failWith);
+      if (workbookSourceIds && !workbookSourceIds.has(sourceId)) {
+        failWith("workbook reference sourceId must reference a workbook source");
+      }
+    }
+    assertNonEmptyString(input.ref, "ref", failWith);
+    if (
+      !rawWorkbookRefPattern.test(input.ref) &&
+      !sheetQualifiedWorkbookRefPattern.test(input.ref)
+    ) {
+      failWith(
+        "workbook reference ref must be a raw or sheet-qualified cell or range reference",
+      );
+    }
+    if (input.type === "workbook_cell" && input.ref.includes(":")) {
+      failWith("workbook_cell ref must not be a range");
+    }
+    if (input.type === "workbook_range" && !input.ref.includes(":")) {
+      failWith("workbook_range ref must be a range");
+    }
+    return {
+      schemaVersion: 1,
+      type: input.type,
+      sourceId,
       ref: input.ref,
     };
   }

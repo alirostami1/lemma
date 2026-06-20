@@ -32,7 +32,7 @@ import {
 } from "./question-producer.js";
 import {
   type QuestionSourcePlan,
-  questionSourcePlan,
+  questionSourcePlanFromStore,
 } from "./question-source.js";
 import { type QuestionStatus, questionStatus } from "./question-values.js";
 
@@ -109,7 +109,7 @@ export function reconstituteQuestion(input: {
     generationRunId: questionGenerationRunId(input.generationRunId),
     body,
     solution: questionSolution(input.solution, body.responseFields),
-    sourcePlan: questionSourcePlan(input.sourcePlan),
+    sourcePlan: questionSourcePlanFromStore(input.sourcePlan),
     producer: questionProducer(input.producer),
     source: input.source ? workbookQuestionSource(input.source) : null,
     status: questionStatus(input.status),

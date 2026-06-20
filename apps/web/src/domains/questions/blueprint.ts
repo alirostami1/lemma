@@ -16,8 +16,7 @@ export interface QuestionBlueprintDraft {
   description?: string | null;
   visibility?: QuestionBlueprintVisibility;
   document: QuestionBlueprintDocument;
-  workbookId?: string | null;
-  workbookSources: QuestionBlueprintDraftWorkbookSource[];
+  sources: QuestionBlueprintDraftWorkbookSource[];
 }
 
 export interface WorkbookQuestionGenerationSourceDraft {
@@ -76,8 +75,7 @@ export function toCreateQuestionBlueprintInput(
     description: draft.description,
     visibility: draft.visibility,
     document: draft.document,
-    workbookId: draft.workbookId,
-    workbookSources: draft.workbookSources,
+    sources: draft.sources,
   };
 }
 
@@ -90,8 +88,7 @@ export function toUpdateQuestionBlueprintInput(
     description: draft.description,
     visibility: draft.visibility,
     document: draft.document,
-    workbookId: draft.workbookId,
-    workbookSources: draft.workbookSources,
+    sources: draft.sources,
   };
 }
 

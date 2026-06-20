@@ -21,6 +21,7 @@ import {
   WORKBOOK_VALIDATION_REQUESTED_EVENT,
   WORKBOOK_VALIDATION_SUCCEEDED_EVENT,
 } from "@lemma/workbook/domain";
+import { normalizeWorkbookCalculationSources } from "@lemma/workbook/application";
 import {
   type EventConsumer,
   type EventConsumerResult,
@@ -216,11 +217,11 @@ export class OutboxPollingDispatcher {
     event: OutboxEvent,
   ): Promise<EventConsumerResult> {
     const workbookCalculationId = getWorkbookCalculationIdFromEvent(event);
-    const workbookSources = getWorkbookCalculationSourcesFromEvent(event);
+    const sources = getWorkbookCalculationSourcesFromEvent(event);
     await this.deps.jobDispatcher.enqueueWorkbookCalculation({
       jobId: event.id,
       workbookCalculationId,
-      workbookSources,
+      sources,
       lineage: childOperationLineage(event.lineage, event.id),
       retryLimit: this.deps.config.queueRetryLimit,
       retryDelaySeconds: this.deps.config.queueRetryDelaySeconds,
@@ -319,7 +320,7 @@ function getWorkbookCalculationIdFromEvent(event: OutboxEvent): string {
   const value = event.payload.workbookCalculationId;
   if (typeof value !== "string" || value.length === 0) {
     throw new Error(
-      "workbook_calculation.requested.v1 payload is missing workbookCalculationId.",
+      "workbook_calculation.requested.v2 payload is missing workbookCalculationId.",
     );
   }
   return value;
@@ -332,28 +333,31 @@ function getWorkbookCalculationSourcesFromEvent(event: OutboxEvent): {
   if (event.eventType !== WORKBOOK_CALCULATION_REQUESTED_EVENT) {
     throw new Error(`Unsupported outbox event type: ${event.eventType}`);
   }
-  const sources = event.payload.workbookSources;
+  const sources = event.payload.sources;
   if (!Array.isArray(sources)) {
     throw new Error(
-      "workbook_calculation.requested.v1 payload is missing workbookSources.",
+      "workbook_calculation.requested.v2 payload is missing sources.",
     );
   }
-  return sources.map((source) => {
-    const record = source as Record<string, unknown>;
-    if (
-      typeof source !== "object" ||
-      source === null ||
-      typeof record.sourceId !== "string" ||
-      record.sourceId.length === 0 ||
-      typeof record.workbookId !== "string" ||
-      record.workbookId.length === 0
-    ) {
-      throw new Error(
-        "workbook_calculation.requested.v1 payload contains an invalid workbookSources entry.",
-      );
-    }
-    return { sourceId: record.sourceId, workbookId: record.workbookId };
-  });
+  return normalizeWorkbookCalculationSources(
+    sources.map((source) => {
+      const record = source as Record<string, unknown>;
+      if (
+        typeof source !== "object" ||
+        source === null ||
+        typeof record.sourceId !== "string" ||
+        record.sourceId.length === 0 ||
+        typeof record.workbookId !== "string" ||
+        record.workbookId.length === 0
+      ) {
+        throw new Error(
+          "workbook_calculation.requested.v2 payload contains an invalid sources entry.",
+        );
+      }
+      return { sourceId: record.sourceId, workbookId: record.workbookId };
+    }),
+    "sources",
+  );
 }
 
 function getWorkbookCalculationResultFromEvent(event: OutboxEvent): {

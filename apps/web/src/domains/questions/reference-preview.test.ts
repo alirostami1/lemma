@@ -27,7 +27,7 @@ describe("reference preview cache", () => {
       resolveReferencePreviewValues({
         model,
         workbookPreview: null,
-        activeSourceId: null,
+        previewSourceId: null,
         now,
       }),
     ).toEqual({
@@ -62,9 +62,9 @@ describe("reference preview cache", () => {
       resolveReferencePreviewValues({
         model,
         workbookPreview: null,
-        activeSourceId: "source_1",
-        workbookSelectionValuesByRef: {
-          "'Sheet1'!A1:A1": [["90"]],
+        previewSourceId: "source_1",
+        workbookSelectionValuesBySourceAndRef: {
+          "source_1::'Sheet1'!A1:A1": [["90"]],
         },
         now,
       }),

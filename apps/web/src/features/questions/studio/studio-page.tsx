@@ -8,7 +8,6 @@ import { GenerateQuestionsDialog } from "./generation/generate-questions-dialog"
 import { SaveBlueprintDialog } from "./save-blueprint-dialog";
 import { SavedBlueprintsDialog } from "./saved-blueprints-dialog";
 import { StudioSourceBar } from "./source/studio-source-bar";
-import { WorkbookUploadInline } from "./source/workbook-upload-inline";
 import { StudioCommandBar } from "./studio-command-bar";
 import {
   StudioBlueprintOpenWarningDialog,
@@ -44,7 +43,7 @@ export function StudioPage(input: StudioRouteSearch = {}) {
           <StudioSourceBar
             sourceCard={studio.source.sourceCard}
             onAddSource={studio.source.actions.addSource}
-            onChangeSource={studio.source.actions.changeSource}
+            onPreviewSourceChange={studio.source.actions.setPreviewSourceId}
             onRemoveSource={studio.source.actions.removeSource}
           />
         </div>
@@ -55,10 +54,8 @@ export function StudioPage(input: StudioRouteSearch = {}) {
               model={studio.editor.authoringModel}
               onModelChange={studio.editor.onAuthoringModelChange}
               referencePreviewCache={studio.editor.referencePreviewCache}
-              workbookTools={{
-                hasWorkbookFile: studio.editor.canUseWorkbookTools,
-                activeSourceId: studio.source.activeSource?.sourceId ?? null,
-              }}
+              sources={studio.editor.sources}
+              previewSourceId={studio.editor.previewSourceId}
               inspectorStickyOffset={inspectorStickyOffset}
             />
           </div>
@@ -70,15 +67,13 @@ export function StudioPage(input: StudioRouteSearch = {}) {
         <SaveBlueprintDialog {...studio.saveDialog} />
         <GenerateQuestionsDialog {...studio.generateDialog} />
         <SavedBlueprintsDialog {...studio.savedBlueprints} />
-        <WorkbookUploadInline
-          open={studio.source.uploadDialog.open}
-          onOpenChange={studio.source.uploadDialog.onOpenChange}
-          onCreated={studio.source.uploadDialog.onCreated}
-        />
         <WorkbookPickerDialog
           workbookSnapshotId={studio.workbookPicker.workbookSnapshotId}
           workbookSheets={studio.workbookPicker.workbookSheets}
-          activeSourceId={studio.source.activeSource?.sourceId ?? null}
+          previewSourceId={
+            studio.workbookPicker.request?.sourceId ??
+            studio.source.previewSourceId
+          }
           hasMoreSheets={studio.workbookPicker.hasMoreWorkbookSheets}
           isLoadingMoreSheets={
             studio.workbookPicker.isLoadingMoreWorkbookSheets

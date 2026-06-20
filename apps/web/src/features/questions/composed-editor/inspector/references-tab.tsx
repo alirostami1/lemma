@@ -4,12 +4,13 @@ import { cn } from "@lemma/ui/lib/utils";
 import { Pencil, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import type { EditorSelection } from "../editor-selection";
 import { ReferenceEditor } from "./reference-editor";
 import {
   getReferenceDisplayName,
-  getReferenceSourceLabel,
+  getReferenceSourceSummary,
 } from "./reference-inspector-helpers";
 import { ReferencePickerPopover } from "./reference-picker-popover";
 
@@ -18,8 +19,9 @@ export function ReferencesTab({
   selection,
   referencePreviewCache,
   workbookEnabled,
+  sources,
+  previewSourceId,
   disabled,
-  activeSourceId,
   onModelChange,
   onSelectionChange,
 }: {
@@ -27,7 +29,8 @@ export function ReferencesTab({
   selection: EditorSelection;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
-  activeSourceId: string | null;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onSelectionChange(selection: EditorSelection): void;
@@ -75,7 +78,8 @@ export function ReferencesTab({
           }
           referencePreviewCache={referencePreviewCache}
           workbookEnabled={workbookEnabled}
-          activeSourceId={activeSourceId}
+          sources={sources}
+          previewSourceId={previewSourceId}
           disabled={disabled}
           defaultMode="create"
           onModelChange={onModelChange}
@@ -123,7 +127,7 @@ export function ReferencesTab({
                     {getReferenceDisplayName(reference)}
                   </span>
                   <span className="truncate text-xs text-muted-foreground">
-                    {getReferenceSourceLabel(reference)}
+                    {getReferenceSourceSummary(reference, sources)}
                     {preview?.status === "resolved"
                       ? ` | ${preview.displayValue}`
                       : ""}
@@ -155,7 +159,8 @@ export function ReferencesTab({
             referenceId={selectedReference.id}
             preview={referencePreviewCache[selectedReference.id]}
             workbookEnabled={workbookEnabled}
-            activeSourceId={activeSourceId}
+            sources={sources}
+            previewSourceId={previewSourceId}
             disabled={disabled}
             onModelChange={onModelChange}
             onSelectionChange={onSelectionChange}

@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import {
   createResetStudioDraftSnapshotState,
   createSavedBlueprintDraftSnapshotState,
@@ -42,7 +43,7 @@ export function useBlueprintDraftResetAction(input: {
   setLocalDraftError(error: string | null): void;
   setLocalDraftStatus: DraftStatusSetter;
   setRecoverySnapshot(snapshot: null): void;
-  setSelectedWorkbookId(workbookId: string): void;
+  setSources(sources: QuestionBlueprintWorkbookSource[]): void;
 }) {
   return useCallback(() => {
     const {
@@ -59,7 +60,7 @@ export function useBlueprintDraftResetAction(input: {
     input.setBlueprintName(nextSnapshot.blueprintName);
     input.setBlueprintDescription(nextSnapshot.blueprintDescription);
     input.setAuthoringModel(nextAuthoringModel);
-    input.setSelectedWorkbookId("");
+    input.setSources([]);
     input.setLoadedBlueprintId(null);
     input.setLoadedBlueprintVersionId(null);
     input.setDraftStorageKey(nextDraftStorageKey);
@@ -106,7 +107,7 @@ export function useBlueprintDraftMarkSavedAction(input: {
   setLoadedBlueprintVersionId(id: string | null): void;
   setLocalDraftError(error: string | null): void;
   setLocalDraftStatus: DraftStatusSetter;
-  setSelectedWorkbookId(workbookId: string): void;
+  setSources(sources: QuestionBlueprintWorkbookSource[]): void;
 }) {
   return useCallback(
     ({
@@ -115,14 +116,14 @@ export function useBlueprintDraftMarkSavedAction(input: {
       blueprintId,
       blueprintName: nextBlueprintName,
       blueprintVersionId,
-      workbookId,
+      sources,
     }: {
       authoringModel?: ComposedEditorModel;
       blueprintDescription: string;
       blueprintId: string;
       blueprintName: string;
       blueprintVersionId?: string | null;
-      workbookId: string;
+      sources: QuestionBlueprintWorkbookSource[];
     }) => {
       const savedAuthoringModel = nextAuthoringModel ?? input.authoringModel;
       const {
@@ -135,11 +136,11 @@ export function useBlueprintDraftMarkSavedAction(input: {
         blueprintId,
         blueprintName: nextBlueprintName,
         blueprintVersionId,
-        workbookId,
+        sources,
       });
       input.setBlueprintName(nextBlueprintName);
       input.setBlueprintDescription(nextBlueprintDescription);
-      input.setSelectedWorkbookId(workbookId);
+      input.setSources(sources);
       input.setLoadedBlueprintId(blueprintId);
       input.setLoadedBlueprintVersionId(blueprintVersionId ?? null);
       input.setDraftStorageKey(nextDraftKey);

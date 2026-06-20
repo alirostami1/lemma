@@ -8,7 +8,7 @@
 export * from "./badRequestResponse.js";
 export * from "./conflictResponse.js";
 export * from "./createWorkbookCalculationRequest.js";
-export * from "./createWorkbookCalculationRequestWorkbookSourcesItem.js";
+export * from "./createWorkbookCalculationRequestSourcesItem.js";
 export * from "./createWorkbookRequest.js";
 export * from "./errorResponse.js";
 export * from "./errorResponseError.js";
@@ -25,7 +25,7 @@ export * from "./listWorkbooksStatus.js";
 export * from "./notFoundResponse.js";
 export * from "./resolveWorkbookSnapshotValueParams.js";
 export * from "./retryWorkbookCalculationRequest.js";
-export * from "./retryWorkbookCalculationRequestWorkbookSourcesItem.js";
+export * from "./retryWorkbookCalculationRequestSourcesItem.js";
 export * from "./unauthorizedResponse.js";
 export * from "./updateWorkbookRequest.js";
 export * from "./updateWorkbookRequestStatus.js";

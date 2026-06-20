@@ -1,15 +1,13 @@
 import {
-  InvalidQuestionFieldError,
   type QuestionBlueprint,
   type QuestionBlueprintVersion,
-  type QuestionBlueprintWorkbookSource,
   type QuestionSet,
   questionBlueprintDocument,
-  questionBlueprintWorkbookSources,
+  questionBlueprintSources,
+  questionBlueprintSourcesReferencedByDocument,
   questionBlueprintId as toQuestionBlueprintId,
   questionId as toQuestionId,
   questionSetId as toQuestionSetId,
-  workbookSourceIdsUsedByDocument,
 } from "../domain/index.js";
 import type {
   HydratedQuestionBlueprint,
@@ -159,42 +157,10 @@ export async function hydrateQuestionBlueprintVersions(
 
 export function normalizeCanonicalBlueprintInput(input: {
   document: unknown;
-  workbookSources: unknown;
+  sources: unknown;
 }) {
   const document = questionBlueprintDocument(input.document);
-  const workbookSources = normalizeWorkbookSources({
-    document,
-    workbookSources: input.workbookSources,
-  });
-  return {
-    document,
-    workbookId: workbookSources[0]?.workbookId ?? null,
-    workbookSources,
-  };
-}
-
-function normalizeWorkbookSources(input: {
-  document: ReturnType<typeof questionBlueprintDocument>;
-  workbookSources: unknown;
-}): QuestionBlueprintWorkbookSource[] {
-  const usedSourceIds = workbookSourceIdsUsedByDocument(input.document);
-  if (usedSourceIds.size === 0) {
-    return [];
-  }
-
-  const sources = questionBlueprintWorkbookSources(input.workbookSources);
-  const sourcesById = new Map(
-    sources.map((source) => [source.sourceId, source]),
-  );
-  const usedSources: QuestionBlueprintWorkbookSource[] = [];
-  for (const sourceId of usedSourceIds) {
-    const source = sourcesById.get(sourceId);
-    if (!source) {
-      throw new InvalidQuestionFieldError(
-        `workbook reference source ${sourceId} is not attached to this blueprint`,
-      );
-    }
-    usedSources.push(source);
-  }
-  return usedSources;
+  const sources = questionBlueprintSources(input.sources);
+  questionBlueprintSourcesReferencedByDocument(document, sources);
+  return { document, sources };
 }

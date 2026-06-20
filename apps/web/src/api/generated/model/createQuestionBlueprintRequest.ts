@@ -6,7 +6,7 @@
  */
 import type { CreateQuestionBlueprintRequestVisibility } from "./createQuestionBlueprintRequestVisibility.ts";
 import type { QuestionBlueprintDocument } from "./questionBlueprintDocument.ts";
-import type { QuestionBlueprintWorkbookSource } from "./questionBlueprintWorkbookSource.ts";
+import type { QuestionBlueprintSource } from "./questionBlueprintSource.ts";
 
 export interface CreateQuestionBlueprintRequest {
   /**
@@ -21,5 +21,5 @@ export interface CreateQuestionBlueprintRequest {
   description?: string | null;
   visibility?: CreateQuestionBlueprintRequestVisibility;
   document: QuestionBlueprintDocument;
-  workbookSources: QuestionBlueprintWorkbookSource[];
+  sources: QuestionBlueprintSource[];
 }

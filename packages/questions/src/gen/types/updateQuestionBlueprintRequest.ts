@@ -5,7 +5,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { QuestionBlueprintDocument } from "./questionBlueprintDocument.js";
-import type { QuestionBlueprintWorkbookSource } from "./questionBlueprintWorkbookSource.js";
+import type { QuestionBlueprintSource } from "./questionBlueprintSource.js";
 import type { UpdateQuestionBlueprintRequestStatus } from "./updateQuestionBlueprintRequestStatus.js";
 import type { UpdateQuestionBlueprintRequestVisibility } from "./updateQuestionBlueprintRequestVisibility.js";
 
@@ -22,6 +22,6 @@ export interface UpdateQuestionBlueprintRequest {
   description?: string | null;
   visibility?: UpdateQuestionBlueprintRequestVisibility;
   document?: QuestionBlueprintDocument;
-  workbookSources?: QuestionBlueprintWorkbookSource[];
+  sources?: QuestionBlueprintSource[];
   status?: UpdateQuestionBlueprintRequestStatus;
 }

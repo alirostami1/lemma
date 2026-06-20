@@ -7,6 +7,7 @@ import {
   workbookSnapshotId as toWorkbookSnapshotId,
   type WorkbookSnapshotId,
 } from "../domain/index.js";
+import { questionBlueprintSourcesReferencedByDocument } from "../domain/index.js";
 import {
   QuestionGenerationRunNotFoundError,
   WorkbookQuestionSourceError,
@@ -49,6 +50,10 @@ export class QuestionGenerationMaterializationInputResolver {
   }): Promise<QuestionGenerationMaterializationInputResult> {
     const { run, version } = input;
     const requiresWorkbook = blueprintRequiresWorkbookSource(version.document);
+    const referencedSources = questionBlueprintSourcesReferencedByDocument(
+      version.document,
+      version.sources,
+    );
     if (!requiresWorkbook) {
       return { status: "materialization_ready", workbookSnapshotIds: [] };
     }
@@ -81,11 +86,15 @@ export class QuestionGenerationMaterializationInputResolver {
     }
 
     if (!run.source.workbookCalculationId) {
+      if (referencedSources.length === 0) {
+        throw new WorkbookQuestionSourceError(
+          "generation run has no referenced workbook source",
+        );
+      }
       const requested =
         await this.deps.workbookCalculationPort.requestCalculation({
           createdByUserId: run.createdByUserId,
-          workbookId: run.source.workbookId,
-          workbookSources: version.workbookSources.map((source) => ({
+          sources: referencedSources.map((source) => ({
             sourceId: source.sourceId,
             workbookId: source.workbookId,
           })),

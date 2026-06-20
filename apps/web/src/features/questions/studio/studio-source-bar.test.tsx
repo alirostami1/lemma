@@ -11,11 +11,12 @@ describe("StudioSourceBar", () => {
           status: "loading",
           title: "Loading source",
           description: "Loading attached source.",
-          activeSourceId: null,
           canRemove: true,
+          previewSourceId: null,
+          sources: [],
         }}
         onAddSource={() => {}}
-        onChangeSource={() => {}}
+        onPreviewSourceChange={() => {}}
         onRemoveSource={() => {}}
       />,
     );

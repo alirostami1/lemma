@@ -10,7 +10,7 @@ import type { WorkbookCalculationService } from "@lemma/workbook/application";
 import { registerWorkbookCalculationWorker } from "./workbook-worker.js";
 
 describe("registerWorkbookCalculationWorker", () => {
-  it("rejects workbook calculation jobs missing workbookSources", async () => {
+  it("rejects workbook calculation jobs missing sources", async () => {
     const service = new FakeWorkbookCalculationService();
     const queue = new FakeJobQueue();
     await registerWorkbookCalculationWorker({
@@ -33,7 +33,7 @@ describe("registerWorkbookCalculationWorker", () => {
         ]),
       (error: unknown) =>
         error instanceof Error &&
-        error.message === "Workbook calculate job payload is invalid.",
+        error.message === "sources must be an array.",
     );
     assert.equal(service.calls, 0);
   });

@@ -2,8 +2,9 @@ import { useMemo } from "react";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import {
   type ReferencePreviewCache,
+  createWorkbookSelectionCacheKey,
   resolveReferencePreviewValues,
-  type WorkbookSelectionValuesByRef,
+  type WorkbookSelectionValuesBySourceAndRef,
 } from "#/domains/questions/reference-preview";
 import type { WorkbookPreview } from "#/domains/questions/workbook-preview";
 import { normalizeWorkbookRef } from "#/domains/questions/workbook-reference";
@@ -18,30 +19,42 @@ export type ReferencePreviewController = {
 
 type UseReferencePreviewControllerInput = {
   model: ComposedEditorModel;
-  activeSourceId: string | null;
+  previewSourceId: string | null;
   workbookSnapshotId?: string | null;
-  workbookSelectionValuesByRef?: WorkbookSelectionValuesByRef;
+  workbookSelectionValuesBySourceAndRef?: WorkbookSelectionValuesBySourceAndRef;
   workbookPreview: WorkbookPreview | null;
 };
 
 export function useReferencePreviewController({
   model,
-  activeSourceId,
+  previewSourceId,
   workbookSnapshotId,
-  workbookSelectionValuesByRef,
+  workbookSelectionValuesBySourceAndRef,
   workbookPreview,
 }: UseReferencePreviewControllerInput): ReferencePreviewController {
   const workbookReferenceRefs = useMemo(
-    () => getWorkbookReferenceRefs(model, activeSourceId),
-    [activeSourceId, model],
+    () => getWorkbookReferenceRefs(model, previewSourceId),
+    [model, previewSourceId],
   );
   const missingWorkbookReferenceRefs = useMemo(() => {
     const missingRefs = new Set<string>();
 
     for (const { ref, normalizedRef } of workbookReferenceRefs) {
       if (
-        hasWorkbookSelectionValue(workbookSelectionValuesByRef, ref) ||
-        hasWorkbookSelectionValue(workbookSelectionValuesByRef, normalizedRef)
+        hasWorkbookSelectionValue(
+          workbookSelectionValuesBySourceAndRef,
+          createWorkbookSelectionCacheKey(
+            previewSourceId ?? "",
+            ref,
+          ),
+        ) ||
+        hasWorkbookSelectionValue(
+          workbookSelectionValuesBySourceAndRef,
+          createWorkbookSelectionCacheKey(
+            previewSourceId ?? "",
+            normalizedRef,
+          ),
+        )
       ) {
         continue;
       }
@@ -50,7 +63,11 @@ export function useReferencePreviewController({
     }
 
     return Array.from(missingRefs);
-  }, [workbookReferenceRefs, workbookSelectionValuesByRef]);
+  }, [
+    previewSourceId,
+    workbookReferenceRefs,
+    workbookSelectionValuesBySourceAndRef,
+  ]);
   const workbookReferenceRefBatches = useMemo(
     () =>
       chunkArray(
@@ -73,48 +90,58 @@ export function useReferencePreviewController({
       enabled: Boolean(workbookSnapshotId),
     },
   );
-  const fetchedWorkbookSelectionValuesByRef = useMemo(() => {
-    const valuesByRef: WorkbookSelectionValuesByRef = {};
+  const fetchedWorkbookSelectionValuesBySourceAndRef = useMemo(() => {
+    const valuesByRef: WorkbookSelectionValuesBySourceAndRef = {};
 
     for (const item of workbookReferenceRangeBatch.ranges) {
       if (item.status !== "ok") {
         continue;
       }
 
-      valuesByRef[item.ref] = item.range.rows;
-      valuesByRef[item.range.ref] = item.range.rows;
+      valuesByRef[createWorkbookSelectionCacheKey(previewSourceId ?? "", item.ref)] =
+        item.range.rows;
+      valuesByRef[
+        createWorkbookSelectionCacheKey(previewSourceId ?? "", item.range.ref)
+      ] = item.range.rows;
 
       const normalizedRef =
         normalizeWorkbookRef(item.range.ref) ?? normalizeWorkbookRef(item.ref);
       if (normalizedRef) {
-        valuesByRef[normalizedRef] = item.range.rows;
+        valuesByRef[
+          createWorkbookSelectionCacheKey(previewSourceId ?? "", normalizedRef)
+        ] = item.range.rows;
 
         for (const referenceRef of workbookReferenceRefs) {
           if (referenceRef.normalizedRef === normalizedRef) {
-            valuesByRef[referenceRef.ref] = item.range.rows;
+            valuesByRef[
+              createWorkbookSelectionCacheKey(
+                previewSourceId ?? "",
+                referenceRef.ref,
+              )
+            ] = item.range.rows;
           }
         }
       }
     }
 
     return valuesByRef;
-  }, [workbookReferenceRangeBatch.ranges, workbookReferenceRefs]);
+  }, [previewSourceId, workbookReferenceRangeBatch.ranges, workbookReferenceRefs]);
   const referencePreviewCache = useMemo(
     () =>
       resolveReferencePreviewValues({
         model,
-        activeSourceId,
-        workbookSelectionValuesByRef: {
-          ...fetchedWorkbookSelectionValuesByRef,
-          ...workbookSelectionValuesByRef,
+        previewSourceId,
+        workbookSelectionValuesBySourceAndRef: {
+          ...fetchedWorkbookSelectionValuesBySourceAndRef,
+          ...workbookSelectionValuesBySourceAndRef,
         },
         workbookPreview,
       }),
     [
-      activeSourceId,
-      fetchedWorkbookSelectionValuesByRef,
+      fetchedWorkbookSelectionValuesBySourceAndRef,
       model,
-      workbookSelectionValuesByRef,
+      previewSourceId,
+      workbookSelectionValuesBySourceAndRef,
       workbookPreview,
     ],
   );
@@ -131,7 +158,7 @@ type WorkbookReferenceRef = {
 
 function getWorkbookReferenceRefs(
   model: ComposedEditorModel,
-  activeSourceId: string | null,
+  previewSourceId: string | null,
 ) {
   const refsByOriginalRef = new Map<string, WorkbookReferenceRef>();
 
@@ -143,8 +170,8 @@ function getWorkbookReferenceRefs(
       continue;
     }
     if (
-      activeSourceId !== null &&
-      reference.source.sourceId !== activeSourceId
+      previewSourceId !== null &&
+      reference.source.sourceId !== previewSourceId
     ) {
       continue;
     }
@@ -162,7 +189,7 @@ function getWorkbookReferenceRefs(
 }
 
 function hasWorkbookSelectionValue(
-  valuesByRef: WorkbookSelectionValuesByRef | undefined,
+  valuesByRef: WorkbookSelectionValuesBySourceAndRef | undefined,
   ref: string,
 ) {
   return Object.hasOwn(valuesByRef ?? {}, ref);

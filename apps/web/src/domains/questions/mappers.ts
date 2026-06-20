@@ -53,17 +53,23 @@ export function mapQuestionBlueprint(
   const currentVersion = {
     id: dto.currentVersion.id,
     versionNumber: dto.currentVersion.versionNumber,
-    workbookId: dto.currentVersion.workbookId,
-    workbookSources: dto.currentVersion.workbookSources,
+    sources: dto.currentVersion.sources,
     createdByUserId: dto.currentVersion.createdByUserId,
     createdAt: new Date(dto.currentVersion.createdAt),
   };
   return {
-    ...dto,
+    id: dto.id,
+    ownerUserId: dto.ownerUserId,
+    createdByUserId: dto.createdByUserId,
+    name: dto.name,
+    description: dto.description,
     document: dto.document,
+    sources: dto.sources,
     currentVersionId: currentVersion.id,
     currentVersionNumber: currentVersion.versionNumber,
     currentVersion,
+    visibility: dto.visibility,
+    status: dto.status,
     archivedAt: dto.archivedAt ? new Date(dto.archivedAt) : null,
     createdAt: new Date(dto.createdAt),
     updatedAt: new Date(dto.updatedAt),
@@ -76,8 +82,13 @@ export function mapQuestionBlueprintAuthoring(
   const currentVersion = mapQuestionBlueprintVersion(dto.currentVersion);
   const selectedVersion = mapQuestionBlueprintVersion(dto.selectedVersion);
   return {
-    ...dto,
+    id: dto.id,
+    ownerUserId: dto.ownerUserId,
+    createdByUserId: dto.createdByUserId,
+    name: dto.name,
+    description: dto.description,
     document: dto.document,
+    sources: dto.sources,
     currentVersionId: currentVersion.id,
     currentVersionNumber: currentVersion.versionNumber,
     currentVersion,
@@ -85,6 +96,8 @@ export function mapQuestionBlueprintAuthoring(
     selectedVersionNumber: selectedVersion.versionNumber,
     selectedVersion,
     versions: dto.versions.map(mapQuestionBlueprintVersion),
+    visibility: dto.visibility,
+    status: dto.status,
     archivedAt: dto.archivedAt ? new Date(dto.archivedAt) : null,
     createdAt: new Date(dto.createdAt),
     updatedAt: new Date(dto.updatedAt),
@@ -221,8 +234,7 @@ function mapQuestionBlueprintVersion(
   return {
     id: dto.id,
     versionNumber: dto.versionNumber,
-    workbookId: dto.workbookId,
-    workbookSources: dto.workbookSources,
+    sources: dto.sources,
     sourceAssets: dto.sourceAssets.map((asset) => ({
       ...asset,
       createdAt: new Date(asset.createdAt),

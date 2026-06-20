@@ -21,7 +21,8 @@ describe("ReferencePickerPopover", () => {
         selectedReferenceId="reference_2"
         referencePreviewCache={createReferencePreviewCache()}
         workbookEnabled={true}
-        activeSourceId={null}
+        sources={createSources()}
+        previewSourceId={null}
         onModelChange={() => {}}
         onSelectReference={onSelectReference}
         trigger={<button type="button">Choose reference</button>}
@@ -45,7 +46,8 @@ describe("ReferencePickerPopover", () => {
         model={createModel()}
         referencePreviewCache={createReferencePreviewCache()}
         workbookEnabled={true}
-        activeSourceId={null}
+        sources={createSources()}
+        previewSourceId={null}
         onModelChange={onModelChange}
         onSelectReference={onSelectReference}
         trigger={<button type="button">Choose reference</button>}
@@ -81,7 +83,7 @@ describe("ReferencePickerPopover", () => {
     expect(screen.queryByLabelText("Reference id")).toBeNull();
   });
 
-  it("blocks workbook reference creation when no active source is selected", async () => {
+  it("blocks workbook reference creation when no preview source is selected", async () => {
     const user = userEvent.setup();
     const onModelChange = vi.fn();
     const onSelectReference = vi.fn();
@@ -91,7 +93,8 @@ describe("ReferencePickerPopover", () => {
         model={createModel()}
         referencePreviewCache={createReferencePreviewCache()}
         workbookEnabled={true}
-        activeSourceId={null}
+        sources={createSources()}
+        previewSourceId={null}
         createSourceTypeDefault="workbook_cell"
         onModelChange={onModelChange}
         onSelectReference={onSelectReference}
@@ -114,7 +117,7 @@ describe("ReferencePickerPopover", () => {
     expect(onModelChange).not.toHaveBeenCalled();
   });
 
-  it("uses activeSourceId when creating workbook cell reference manually", async () => {
+  it("uses the selected workbook source when creating workbook cell reference manually", async () => {
     const user = userEvent.setup();
     const onModelChange = vi.fn();
     const onSelectReference = vi.fn();
@@ -124,7 +127,8 @@ describe("ReferencePickerPopover", () => {
         model={createModel()}
         referencePreviewCache={createReferencePreviewCache()}
         workbookEnabled={true}
-        activeSourceId="source_2"
+        sources={createSources()}
+        previewSourceId="source_2"
         onModelChange={onModelChange}
         onSelectReference={onSelectReference}
         trigger={<button type="button">Choose reference</button>}
@@ -159,7 +163,7 @@ describe("ReferencePickerPopover", () => {
     );
   });
 
-  it("uses selected workbook source id over active source when picker selection changes", async () => {
+  it("uses selected workbook source id over preview source when picker selection changes", async () => {
     const user = userEvent.setup();
     const onModelChange = vi.fn();
 
@@ -168,7 +172,8 @@ describe("ReferencePickerPopover", () => {
         model={createModel()}
         referencePreviewCache={createReferencePreviewCache()}
         workbookEnabled={true}
-        activeSourceId="source_1"
+        sources={createSources()}
+        previewSourceId="source_1"
         onModelChange={onModelChange}
         onSelectReference={() => {}}
         createSourceTypeDefault="workbook_cell"
@@ -219,7 +224,8 @@ describe("ReferencePickerPopover", () => {
         model={createModel()}
         referencePreviewCache={createReferencePreviewCache()}
         workbookEnabled={false}
-        activeSourceId={null}
+        sources={[]}
+        previewSourceId={null}
         onModelChange={() => {}}
         onSelectReference={() => {}}
         trigger={<button type="button">Choose reference</button>}
@@ -302,4 +308,19 @@ function createReferencePreviewCache(): ReferencePreviewCache {
       updatedAt: 1,
     },
   };
+}
+
+function createSources() {
+  return [
+    {
+      sourceId: "source_1",
+      name: "Source 1",
+      workbookId: "workbook-1",
+    },
+    {
+      sourceId: "source_2",
+      name: "Source 2",
+      workbookId: "workbook-2",
+    },
+  ];
 }

@@ -6,9 +6,9 @@
  */
 import type { PublicQuestionBlueprintDocument } from "./publicQuestionBlueprintDocument.js";
 import type { QuestionBlueprintCurrentVersion } from "./questionBlueprintCurrentVersion.js";
+import type { QuestionBlueprintSource } from "./questionBlueprintSource.js";
 import type { QuestionBlueprintStatus } from "./questionBlueprintStatus.js";
 import type { QuestionBlueprintVisibility } from "./questionBlueprintVisibility.js";
-import type { QuestionBlueprintWorkbookSource } from "./questionBlueprintWorkbookSource.js";
 
 export interface QuestionBlueprint {
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
@@ -28,12 +28,8 @@ export interface QuestionBlueprint {
    */
   description: string | null;
   document: PublicQuestionBlueprintDocument;
-  /**
-   * @nullable
-   * @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
-   */
-  workbookId: string | null;
-  workbookSources: QuestionBlueprintWorkbookSource[];
+  /** Blueprint-local source entries used by the current version. */
+  sources: QuestionBlueprintSource[];
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
   currentVersionId: string;
   /** @minimum 1 */

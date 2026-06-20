@@ -12,6 +12,7 @@ import type {
   TableGrading,
   ValueExpression,
 } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import {
   InspectorField,
@@ -120,7 +121,8 @@ export function CorrectAnswerSettings({
   referencePreviewCache,
   valueType,
   workbookEnabled,
-  activeSourceId,
+  sources,
+  previewSourceId,
   disabled,
   onModelChange,
   onChange,
@@ -131,7 +133,8 @@ export function CorrectAnswerSettings({
   referencePreviewCache: ReferencePreviewCache;
   valueType?: "text" | "number" | "boolean";
   workbookEnabled: boolean;
-  activeSourceId: string | null;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onChange(value: ValueExpression): void;
@@ -147,7 +150,8 @@ export function CorrectAnswerSettings({
       referencePreviewCache={referencePreviewCache}
       valueType={valueType}
       workbookEnabled={workbookEnabled}
-      activeSourceId={activeSourceId}
+      sources={sources}
+      previewSourceId={previewSourceId}
       disabled={disabled}
       onModelChange={onModelChange}
       onChange={onChange}

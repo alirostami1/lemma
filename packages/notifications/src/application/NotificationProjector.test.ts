@@ -93,7 +93,7 @@ function createWorkbookCalculationOutboxEvent(): OutboxEvent {
   return outboxEventFromEnvelope(
     domainEventEnvelope({
       id: "019e9315-6a87-715f-9861-8654df070e06",
-      type: "workbook_calculation.succeeded.v1",
+      type: "workbook_calculation.succeeded.v2",
       schemaVersion: 1,
       aggregate: {
         type: "workbook_calculation",

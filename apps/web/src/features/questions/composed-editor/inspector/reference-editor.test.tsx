@@ -22,7 +22,7 @@ describe("ReferenceEditor", () => {
       <ReferenceEditor
         model={createModel()}
         referenceId="revenue"
-        activeSourceId={null}
+        previewSourceId={null}
         workbookEnabled={false}
         onModelChange={() => {}}
         onSelectionChange={() => {}}
@@ -44,7 +44,7 @@ describe("ReferenceEditor", () => {
         model={createWorkbookModel()}
         referenceId="revenue"
         workbookEnabled={true}
-        activeSourceId="source_2"
+        previewSourceId="source_2"
         onModelChange={onModelChange}
         onSelectionChange={() => {}}
       />,
@@ -79,7 +79,7 @@ describe("ReferenceEditor", () => {
         model={createWorkbookModel()}
         referenceId="revenue"
         workbookEnabled={true}
-        activeSourceId="source_2"
+        previewSourceId="source_2"
         onModelChange={onModelChange}
         onSelectionChange={() => {}}
       />,
@@ -131,7 +131,7 @@ describe("ReferenceEditor", () => {
     );
   });
 
-  it("requires an active source when switching a literal reference to workbook references", async () => {
+  it("requires a source when switching a literal reference to workbook references", async () => {
     const user = userEvent.setup();
     const onModelChange = vi.fn();
 
@@ -140,7 +140,7 @@ describe("ReferenceEditor", () => {
         model={createModel()}
         referenceId="revenue"
         workbookEnabled={true}
-        activeSourceId={null}
+        previewSourceId={null}
         onModelChange={onModelChange}
         onSelectionChange={() => {}}
       />,
@@ -151,7 +151,7 @@ describe("ReferenceEditor", () => {
 
     expect(
       screen.getByText(
-        "Select an active source before switching to workbook references.",
+        "Select a source before using workbook references.",
       ),
     ).toBeTruthy();
     expect(onModelChange).not.toHaveBeenCalled();

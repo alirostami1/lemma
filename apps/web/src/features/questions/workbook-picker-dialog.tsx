@@ -71,7 +71,7 @@ type WorkbookPickerDialogProps = {
   hasMoreSheets?: boolean;
   isLoadingMoreSheets?: boolean;
   fileName: string;
-  activeSourceId: string | null;
+  previewSourceId: string | null;
   open: boolean;
   onOpenChange(open: boolean): void;
   onLoadMoreSheets?(): void;
@@ -85,7 +85,7 @@ export function WorkbookPickerDialog({
   hasMoreSheets = false,
   isLoadingMoreSheets = false,
   fileName,
-  activeSourceId,
+  previewSourceId,
   open,
   onOpenChange,
   onLoadMoreSheets,
@@ -297,9 +297,9 @@ export function WorkbookPickerDialog({
       : placeholderRows;
   const selectionRange = rangeSelection.selectionRange;
   const previewSelectedRange =
-    activeSheet && selectionRange && activeSourceId !== null
+    activeSheet && selectionRange && previewSourceId !== null
       ? buildWorkbookRangeSelection(activeSheet.name, rows, selectionRange, {
-          sourceId: activeSourceId,
+          sourceId: previewSourceId,
           columnStartIndex: activeCellWindow.startColumn - 1,
           rowStartIndex: activeCellWindow.startRow - 1,
         })
@@ -421,9 +421,9 @@ export function WorkbookPickerDialog({
     if (!selectedRange) {
       return;
     }
-    if (activeSourceId === null) {
+    if (previewSourceId === null) {
       setSelectedRangeErrorMessage(
-        "Select an active source before selecting this range.",
+        "Select a preview source before selecting this range.",
       );
       return;
     }
@@ -445,7 +445,7 @@ export function WorkbookPickerDialog({
           selectionRequirement,
         ),
         values: result.data.rows,
-        sourceId: activeSourceId,
+        sourceId: previewSourceId,
       });
     } catch {
       setSelectedRangeErrorMessage("Selected range could not be loaded.");
@@ -474,7 +474,7 @@ export function WorkbookPickerDialog({
             </div>
           ) : !hasSource ? (
             <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
-              {fileName ? "Loading source..." : "No source selected."}
+              {fileName ? "Loading source..." : "No preview source selected."}
             </div>
           ) : cellsQuery.isError && !activeSheetCells ? (
             <div className="flex flex-1 items-center justify-center p-8 text-sm text-destructive">
@@ -619,8 +619,8 @@ export function WorkbookPickerDialog({
                 isSelectingRange={isSelectingRange}
                 selectedRangeErrorMessage={
                   selectedRangeErrorMessage ??
-                  (activeSourceId === null
-                    ? "Select an active source before selecting this range."
+                  (previewSourceId === null
+                    ? "Select a preview source before selecting this range."
                     : null)
                 }
                 selectedRange={selectedRange}

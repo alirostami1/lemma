@@ -55,7 +55,7 @@ describe("ValueExpressionInput", () => {
         model={createModel()}
         referencePreviewCache={{}}
         workbookEnabled={false}
-        activeSourceId={null}
+        previewSourceId={null}
         onModelChange={() => {}}
         onChange={() => {}}
       />,
@@ -79,7 +79,7 @@ describe("ValueExpressionInput", () => {
         model={createModel()}
         referencePreviewCache={{}}
         workbookEnabled={true}
-        activeSourceId={null}
+        previewSourceId={null}
         onModelChange={onModelChange}
         onChange={onChange}
       />,
@@ -122,7 +122,7 @@ describe("ValueExpressionInput", () => {
         model={createModel()}
         referencePreviewCache={{}}
         workbookEnabled={false}
-        activeSourceId={null}
+        previewSourceId={null}
         onModelChange={() => {}}
         onChange={() => {}}
       />,

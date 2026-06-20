@@ -375,10 +375,11 @@ const createCalculationRequestSchema = named(
   {
     type: "object",
     additionalProperties: false,
-    required: ["workbookSources", "requestedCount"],
+    required: ["sources", "requestedCount"],
     properties: {
-      workbookSources: {
+      sources: {
         type: "array",
+        minItems: 1,
         items: {
           type: "object",
           additionalProperties: false,
@@ -401,10 +402,11 @@ const createCalculationRequestSchema = named(
 const retryCalculationRequestSchema = named("RetryWorkbookCalculationRequest", {
   type: "object",
   additionalProperties: false,
-  required: ["workbookSources"],
+  required: ["sources"],
   properties: {
-    workbookSources: {
+    sources: {
       type: "array",
+      minItems: 1,
       items: {
         type: "object",
         additionalProperties: false,

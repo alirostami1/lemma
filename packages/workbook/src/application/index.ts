@@ -83,6 +83,10 @@ export { WorkbookAccessAdapter } from "./WorkbookAccessAdapter.js";
 export { WorkbookCalculationProcessorService } from "./WorkbookCalculationProcessorService.js";
 export { WorkbookCalculationRequestAdapter } from "./WorkbookCalculationRequestAdapter.js";
 export { WorkbookCalculationService } from "./WorkbookCalculationService.js";
+export {
+  normalizeWorkbookCalculationSources,
+  type WorkbookCalculationSource,
+} from "./workbook-calculation-sources.js";
 export { mapWorkbookFileProviderErrors } from "./WorkbookFileProviderErrorMapper.js";
 export { WorkbookService } from "./WorkbookService.js";
 export { WorkbookSnapshotService } from "./WorkbookSnapshotService.js";

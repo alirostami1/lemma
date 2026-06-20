@@ -16,7 +16,7 @@ export function buildSavedBlueprintsViewModel(
     title: blueprint.name,
     description: blueprint.description,
     metadata: [
-      blueprint.workbookId ? "Source attached" : "No source",
+      blueprint.sources.length > 0 ? "Sources attached" : "No sources",
       `Updated ${formatStableDateTime(blueprint.updatedAt)}`,
       `Created ${formatStableDateTime(blueprint.createdAt)}`,
     ].join(" | "),

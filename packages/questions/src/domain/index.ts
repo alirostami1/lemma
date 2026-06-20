@@ -60,7 +60,7 @@ export type {
   QuestionBlueprint,
   QuestionBlueprintVersion,
   QuestionBlueprintVersionAsset,
-  QuestionBlueprintWorkbookSource,
+  QuestionBlueprintSource,
 } from "./question-blueprint.js";
 export {
   archiveQuestionBlueprint,
@@ -68,12 +68,13 @@ export {
   createQuestionBlueprintVersion,
   createQuestionBlueprintVersionAssets,
   deleteQuestionBlueprint,
-  questionBlueprintWorkbookSources,
+  questionBlueprintSourceIdsUsedByDocument,
+  questionBlueprintSources,
+  questionBlueprintSourcesReferencedByDocument,
   reconstituteQuestionBlueprint,
   reconstituteQuestionBlueprintVersion,
   reconstituteQuestionBlueprintVersionAsset,
   updateQuestionBlueprintMetadata,
-  workbookSourceIdsUsedByDocument,
 } from "./question-blueprint.js";
 export type {
   QuestionBlueprintBlock,

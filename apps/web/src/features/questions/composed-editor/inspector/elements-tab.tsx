@@ -2,6 +2,7 @@ import type {
   ComposedEditorBlock,
   ComposedEditorModel,
 } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import type { EditorSelection } from "../editor-selection";
 import { SelectedElementInspector } from "./selected-element-inspector";
@@ -12,7 +13,8 @@ export function ElementsTab({
   selectedBlock,
   referencePreviewCache,
   workbookEnabled,
-  activeSourceId,
+  sources,
+  previewSourceId,
   disabled,
   onModelChange,
   onSelectionChange,
@@ -22,7 +24,8 @@ export function ElementsTab({
   selectedBlock: ComposedEditorBlock | null;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
-  activeSourceId: string | null;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onSelectionChange(selection: EditorSelection): void;
@@ -34,7 +37,8 @@ export function ElementsTab({
       selectedBlock={selectedBlock}
       referencePreviewCache={referencePreviewCache}
       workbookEnabled={workbookEnabled}
-      activeSourceId={activeSourceId}
+      sources={sources}
+      previewSourceId={previewSourceId}
       disabled={disabled}
       onModelChange={onModelChange}
       onSelectionChange={onSelectionChange}

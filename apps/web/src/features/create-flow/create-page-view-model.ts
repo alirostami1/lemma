@@ -48,7 +48,7 @@ export type CreatePageViewModel = {
 
 type BlueprintListSource = Pick<
   QuestionBlueprint,
-  "id" | "name" | "status" | "visibility" | "workbookId"
+  "id" | "name" | "status" | "visibility" | "sources"
 >;
 
 export function buildCreatePageViewModel(input: {
@@ -92,9 +92,10 @@ export function buildBlueprintListItems(
     .map((blueprint) => ({
       id: blueprint.id,
       title: blueprint.name,
-      description: blueprint.workbookId
-        ? "Source attached"
-        : "No source attached",
+      description:
+        blueprint.sources.length > 0
+          ? "Sources attached"
+          : "No sources attached",
       action: {
         type: "saved_blueprint",
         label: "Open blueprint",

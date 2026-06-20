@@ -8,6 +8,7 @@ import {
 import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import { getComposedEditorSelectedBlock } from "../composed-editor-operations";
 import type { EditorSelection } from "../editor-selection";
@@ -21,8 +22,9 @@ export function InspectorPanel({
   selection,
   referencePreviewCache,
   workbookEnabled,
+  sources,
+  previewSourceId,
   disabled,
-  activeSourceId,
   onModelChange,
   onSelectionChange,
   stickyOffset = 80,
@@ -31,7 +33,8 @@ export function InspectorPanel({
   selection: EditorSelection;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
-  activeSourceId: string | null;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onSelectionChange(selection: EditorSelection): void;
@@ -80,7 +83,8 @@ export function InspectorPanel({
                   selection={selection}
                   referencePreviewCache={referencePreviewCache}
                   workbookEnabled={workbookEnabled}
-                  activeSourceId={activeSourceId}
+                  sources={sources}
+                  previewSourceId={previewSourceId}
                   disabled={disabled}
                   onModelChange={onModelChange}
                   onSelectionChange={onSelectionChange}
@@ -98,7 +102,8 @@ export function InspectorPanel({
                   selectedBlock={selectedBlock}
                   referencePreviewCache={referencePreviewCache}
                   workbookEnabled={workbookEnabled}
-                  activeSourceId={activeSourceId}
+                  sources={sources}
+                  previewSourceId={previewSourceId}
                   disabled={disabled}
                   onModelChange={onModelChange}
                   onSelectionChange={onSelectionChange}

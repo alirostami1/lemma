@@ -66,7 +66,7 @@ function props(
       blueprintId: "blueprint-1",
       blueprintVersionId: "version-1",
       name: "Blueprint",
-      workbookId: null,
+      sources: [],
     },
     questionSets: [],
     questionSetsLoading: false,

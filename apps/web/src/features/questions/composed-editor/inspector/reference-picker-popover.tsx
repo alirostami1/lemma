@@ -20,12 +20,13 @@ import type {
   ComposedEditorModel,
   ReferenceSourceDraft,
 } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import { ReferenceCreateForm } from "./reference-create-form";
 import {
   addReferenceToModel,
   getReferenceDisplayName,
-  getReferenceSourceLabel,
+  getReferenceSourceSummary,
 } from "./reference-inspector-helpers";
 
 export type ReferencePickerPopoverProps = {
@@ -33,8 +34,9 @@ export type ReferencePickerPopoverProps = {
   selectedReferenceId?: string;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   disabled?: boolean;
-  activeSourceId: string | null;
   defaultMode?: "existing" | "create";
   allowedSourceTypes?: ReferenceSourceDraft["type"][];
   createSourceTypeDefault?: ReferenceSourceDraft["type"];
@@ -54,8 +56,9 @@ export function ReferencePickerPopover({
   selectedReferenceId,
   referencePreviewCache,
   workbookEnabled,
+  sources,
+  previewSourceId,
   disabled,
-  activeSourceId,
   defaultMode = "existing",
   allowedSourceTypes,
   createSourceTypeDefault,
@@ -149,11 +152,11 @@ export function ReferencePickerPopover({
                         }}
                       >
                         <span className="grid min-w-0 gap-0.5">
-                          <span className="truncate font-medium">
+                        <span className="truncate font-medium">
                             {getReferenceDisplayName(reference)}
                           </span>
                           <span className="truncate text-xs font-normal opacity-80">
-                            {getReferenceSourceLabel(reference)}
+                            {getReferenceSourceSummary(reference, sources)}
                             {" | "}
                             {preview?.status === "resolved"
                               ? preview.displayValue
@@ -173,7 +176,8 @@ export function ReferencePickerPopover({
               <ReferenceCreateForm
                 model={model}
                 workbookEnabled={workbookEnabled}
-                activeSourceId={activeSourceId}
+                sources={sources}
+                previewSourceId={previewSourceId}
                 allowedSourceTypes={allowedSourceTypes}
                 initialSourceType={createSourceTypeDefault}
                 disabled={disabled}

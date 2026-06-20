@@ -35,20 +35,19 @@ export function createLoadedBlueprintDraftSnapshotState(input: {
     loadedBlueprintVersionId: input.blueprint.selectedVersionId ?? null,
   });
   const blueprintVersionId = input.blueprint.selectedVersionId ?? null;
-  const selectedWorkbookId = input.blueprint.workbookId ?? "";
   const blueprintDescription = input.blueprint.description ?? "";
   const remoteSnapshotKey = createDraftSnapshotKey({
     blueprintId: input.blueprintId,
     blueprintName: input.blueprint.name.trim(),
     description: blueprintDescription,
-    workbookId: selectedWorkbookId,
+    sources: input.blueprint.sources,
     authoringModel,
   });
   const syncedSnapshot = createStudioDraftSnapshot({
     draftKey: draftStorageKey,
     loadedBlueprintId: input.blueprintId,
     loadedBlueprintVersionId: blueprintVersionId,
-    selectedWorkbookId,
+    sources: input.blueprint.sources,
     blueprintName: input.blueprint.name,
     blueprintDescription,
     authoringModel,
@@ -76,7 +75,7 @@ export function createResetStudioDraftSnapshotState() {
     draftKey: draftStorageKey,
     loadedBlueprintId: null,
     loadedBlueprintVersionId: null,
-    selectedWorkbookId: "",
+    sources: [],
     blueprintName: "Question blueprint",
     blueprintDescription: "",
     authoringModel,
@@ -97,13 +96,13 @@ export function createSavedBlueprintDraftSnapshotState(input: {
   blueprintId: string;
   blueprintName: string;
   blueprintVersionId?: string | null;
-  workbookId: string;
+  sources: QuestionBlueprintAuthoring["sources"];
 }) {
   const remoteSnapshotKey = createDraftSnapshotKey({
     blueprintId: input.blueprintId,
     blueprintName: input.blueprintName.trim(),
     description: input.blueprintDescription,
-    workbookId: input.workbookId,
+    sources: input.sources,
     authoringModel: input.authoringModel,
   });
   const draftKey = createStudioDraftKey({
@@ -114,7 +113,7 @@ export function createSavedBlueprintDraftSnapshotState(input: {
     draftKey,
     loadedBlueprintId: input.blueprintId,
     loadedBlueprintVersionId: input.blueprintVersionId ?? null,
-    selectedWorkbookId: input.workbookId,
+    sources: input.sources,
     blueprintName: input.blueprintName,
     blueprintDescription: input.blueprintDescription,
     authoringModel: input.authoringModel,

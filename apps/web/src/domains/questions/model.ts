@@ -42,9 +42,8 @@ export interface QuestionProducer {
 export interface QuestionBlueprintVersion {
   id: string;
   versionNumber: number;
-  workbookId: string | null;
   sourceAssets: QuestionBlueprintVersionAsset[];
-  workbookSources: QuestionBlueprintWorkbookSource[];
+  sources: QuestionBlueprintWorkbookSource[];
   createdByUserId: string;
   createdAt: Date;
 }
@@ -52,8 +51,7 @@ export interface QuestionBlueprintVersion {
 export interface QuestionBlueprintCurrentVersion {
   id: string;
   versionNumber: number;
-  workbookId: string | null;
-  workbookSources: QuestionBlueprintWorkbookSource[];
+  sources: QuestionBlueprintWorkbookSource[];
   createdByUserId: string;
   createdAt: Date;
 }
@@ -90,8 +88,7 @@ export interface QuestionBlueprint {
   name: string;
   description: string | null;
   document: PublicQuestionBlueprintDocument;
-  workbookId: string | null;
-  workbookSources: QuestionBlueprintWorkbookSource[];
+  sources: QuestionBlueprintWorkbookSource[];
   currentVersionId?: string;
   currentVersionNumber?: number;
   currentVersion?: QuestionBlueprintCurrentVersion;
@@ -109,8 +106,7 @@ export interface QuestionBlueprintAuthoring {
   name: string;
   description: string | null;
   document: AuthoringQuestionBlueprintDocument;
-  workbookId: string | null;
-  workbookSources: QuestionBlueprintWorkbookSource[];
+  sources: QuestionBlueprintWorkbookSource[];
   currentVersionId?: string;
   currentVersionNumber?: number;
   currentVersion?: QuestionBlueprintVersion;
@@ -211,8 +207,7 @@ export interface CreateQuestionBlueprintInput {
   description?: string | null;
   visibility?: QuestionBlueprintVisibility;
   document: AuthoringQuestionBlueprintDocument;
-  workbookId?: string | null;
-  workbookSources: QuestionBlueprintWorkbookSource[];
+  sources: QuestionBlueprintWorkbookSource[];
 }
 
 export interface UpdateQuestionBlueprintInput {
@@ -221,8 +216,7 @@ export interface UpdateQuestionBlueprintInput {
   description?: string | null;
   visibility?: QuestionBlueprintVisibility;
   document?: AuthoringQuestionBlueprintDocument;
-  workbookId?: string | null;
-  workbookSources: QuestionBlueprintWorkbookSource[];
+  sources: QuestionBlueprintWorkbookSource[];
   status?: QuestionBlueprintStatus;
 }
 

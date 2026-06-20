@@ -21,7 +21,6 @@ function blueprint(
     description: null,
     document: { schemaVersion: 1, blocks: [], responseFields: [] },
     workbookId: null,
-    workbookSources: [],
     visibility: input?.visibility ?? "private",
     status: input?.status ?? "active",
     archivedAt: null,

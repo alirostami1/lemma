@@ -97,7 +97,7 @@ export class JobDispatcher {
   async enqueueWorkbookCalculation(input: {
     jobId: string;
     workbookCalculationId: string;
-    workbookSources: readonly {
+    sources: readonly {
       sourceId: string;
       workbookId: string;
     }[];
@@ -111,7 +111,7 @@ export class JobDispatcher {
         name: WORKBOOK_CALCULATE_JOB,
         data: workbookCalculateJobData({
           workbookCalculationId: input.workbookCalculationId,
-          workbookSources: input.workbookSources,
+          sources: input.sources,
           lineage: input.lineage,
         }),
         retryLimit: input.retryLimit,

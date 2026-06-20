@@ -13,6 +13,7 @@ import type {
   ComposedEditorModel,
   ValueExpression,
 } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import {
   coerceLiteralExpressionValue,
   formatAnswerInputValue,
@@ -32,7 +33,8 @@ type ValueExpressionInputProps = {
   referencePreviewCache: ReferencePreviewCache;
   valueType?: "text" | "number" | "boolean";
   workbookEnabled: boolean;
-  activeSourceId: string | null;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onChange(value: ValueExpression): void;
@@ -48,7 +50,8 @@ export function ValueExpressionInput({
   referencePreviewCache,
   valueType,
   workbookEnabled,
-  activeSourceId,
+  sources,
+  previewSourceId,
   disabled,
   onModelChange,
   onChange,
@@ -145,14 +148,15 @@ export function ValueExpressionInput({
               </p>
             ) : null}
             <ReferencePickerPopover
-              model={model}
-              selectedReferenceId={value.referenceId || undefined}
-              referencePreviewCache={referencePreviewCache}
-              workbookEnabled={workbookEnabled}
-              activeSourceId={activeSourceId}
-              disabled={disabled}
-              onModelChange={onModelChange}
-              onSelectReference={(referenceId) =>
+            model={model}
+            selectedReferenceId={value.referenceId || undefined}
+            referencePreviewCache={referencePreviewCache}
+            workbookEnabled={workbookEnabled}
+            sources={sources}
+            previewSourceId={previewSourceId}
+            disabled={disabled}
+            onModelChange={onModelChange}
+            onSelectReference={(referenceId) =>
                 onChange({ type: "reference", referenceId })
               }
               onCreateAndSelectReference={onCreatedReference}

@@ -20,15 +20,13 @@ const otherWorkbookIdInput = "019e9315-6a87-715f-9861-8654df070c52";
 const createdByUserId = toUserId("019e9315-6a87-715f-9861-8654df070c50");
 
 describe("QuestionGenerationSourceResolver", () => {
-  it("derives a workbook source from the selected blueprint version", () => {
+  it("returns no workbook source without an explicit source", () => {
     const resolver = createResolver();
     const version = createVersion({ workbookId });
 
     const source = resolver.resolve({ version, explicitSource: null });
 
-    assert.equal(source?.workbookId, workbookId);
-    assert.equal(source?.workbookSnapshotId, null);
-    assert.equal(source?.workbookCalculationId, null);
+    assert.equal(source, null);
   });
 
   it("rejects an explicit workbook source that differs from the version workbook", () => {
@@ -100,7 +98,16 @@ function createVersion(input: { workbookId: WorkbookId | null }) {
           },
         ],
       }),
-      workbookId: input.workbookId,
+      sources: input.workbookId
+        ? [
+            {
+              type: "workbook" as const,
+              sourceId: "source_1",
+              name: "Source 1",
+              workbookId: input.workbookId,
+            },
+          ]
+        : [],
       createdByUserId,
     },
     new Date("2026-01-01T00:00:00.000Z"),

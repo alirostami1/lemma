@@ -57,6 +57,14 @@ const versionId = questionBlueprintVersionId(
   "019e9315-6a87-715f-9861-8654df070d05",
 );
 const workbookIdValue = workbookId("019e9315-6a87-715f-9861-8654df070d06");
+const blueprintSources = [
+  {
+    type: "workbook" as const,
+    sourceId: "source_1",
+    name: "Source 1",
+    workbookId: workbookIdValue,
+  },
+];
 const calculationId = workbookCalculationId(
   "019e9315-6a87-715f-9861-8654df070d07",
 );
@@ -377,6 +385,7 @@ function createBlueprintVersion() {
         ],
       }),
       createdByUserId: ownerUserId,
+      sources: blueprintSources,
     },
     at,
   );
@@ -409,14 +418,7 @@ function createQuestionsRepository(input: {
     status: "active",
     visibility: questionBlueprintVisibility("private"),
     currentVersionId: versionId,
-    workbookId: workbookIdValue,
-    workbookSources: [
-      {
-        sourceId: "source_1",
-        name: "Source 1",
-        workbookId: workbookIdValue,
-      },
-    ],
+    sources: blueprintSources,
     archivedAt: null,
     createdAt: at,
     updatedAt: at,

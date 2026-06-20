@@ -3,6 +3,7 @@ import {
   type BlueprintReadinessIssue,
   getBlueprintReadinessIssues,
 } from "#/domains/questions/blueprint-readiness";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 
 export type StudioReadinessIssue = {
   id: string;
@@ -18,8 +19,7 @@ export type StudioReadinessIssue = {
 
 export type StudioReadinessContext = {
   questionName: string;
-  hasWorkbookSelection: boolean;
-  hasWorkbookPreview: boolean;
+  attachedSources: QuestionBlueprintWorkbookSource[];
 };
 
 export type StudioReadiness = {
@@ -36,8 +36,7 @@ export function getStudioReadiness(
 ): StudioReadiness {
   const issues = getBlueprintReadinessIssues({
     model,
-    hasWorkbookSelection: context.hasWorkbookSelection,
-    hasWorkbookPreview: context.hasWorkbookPreview,
+    attachedSources: context.attachedSources,
     name: context.questionName,
   }).map(mapBlueprintReadinessIssue);
 
@@ -120,8 +119,7 @@ function mapBlueprintReadinessIssue(
       return {
         id: `reference_source_missing_${issue.target?.referenceId ?? "unknown"}`,
         severity: "error",
-        message:
-          "A workbook-backed reference needs a valid source cell or range.",
+        message: "A workbook-backed reference needs an attached source.",
         target: issue.target,
       };
     case "missing_text_reference":
@@ -172,14 +170,8 @@ function mapBlueprintReadinessIssue(
       return {
         id: "source_not_ready",
         severity: "error",
-        message: "Select a workbook to reference cells.",
-        actionLabel: "Select workbook",
-      };
-    case "missing_source_preview":
-      return {
-        id: "source_preview_pending",
-        severity: "info",
-        message: "Source preview is still loading.",
+        message: "Attach a source before saving this blueprint.",
+        actionLabel: "Attach source",
       };
   }
 }

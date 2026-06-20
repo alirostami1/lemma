@@ -12,13 +12,7 @@ import { useGenerationCommandController } from "./generation/use-generation-comm
 import { useGenerationRetryController } from "./generation/use-generation-retry-controller";
 import { useGenerationStatusController } from "./generation/use-generation-status-controller";
 
-type UseGenerateQuestionsControllerInput = {
-  getWorkbookName(workbookId: string | null): string | null;
-};
-
-export function useGenerateQuestionsController({
-  getWorkbookName,
-}: UseGenerateQuestionsControllerInput): GenerateQuestionsController {
+export function useGenerateQuestionsController(): GenerateQuestionsController {
   const navigate = useNavigate();
   const getQuestionSetName = useQuestionSetNameLookup();
   const [generationError, setGenerationError] = useState<string | null>(null);
@@ -44,7 +38,6 @@ export function useGenerateQuestionsController({
   }
 
   const command = useGenerationCommandController({
-    getWorkbookName,
     getQuestionSetName,
     onGenerationErrorChange: setGenerationError,
     onRunStarted: (run, context) => {

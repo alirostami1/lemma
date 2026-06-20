@@ -1,9 +1,10 @@
 import type { CurrentUser } from "@lemma/identity/application";
 import {
   type QuestionBlueprintVersion,
+  type WorkbookQuestionSource,
   workbookId as toWorkbookId,
-  workbookQuestionSource,
 } from "../domain/index.js";
+import { questionBlueprintSourcesReferencedByDocument } from "../domain/index.js";
 import {
   ForbiddenQuestionActionError,
   InvalidQuestionBlueprintError,
@@ -11,9 +12,7 @@ import {
 import type { WorkbookAccessPort } from "./ports.js";
 import { blueprintRequiresWorkbookSource } from "./question-blueprint-analysis.js";
 
-export type GenerationWorkbookSource = ReturnType<
-  typeof workbookQuestionSource
->;
+export type GenerationWorkbookSource = WorkbookQuestionSource;
 
 export class QuestionGenerationSourceResolver {
   constructor(
@@ -26,18 +25,7 @@ export class QuestionGenerationSourceResolver {
     version: QuestionBlueprintVersion;
     explicitSource: GenerationWorkbookSource | null;
   }): GenerationWorkbookSource | null {
-    if (input.explicitSource !== null) {
-      return input.explicitSource;
-    }
-
-    const workbookId =
-      input.version.workbookSources[0]?.workbookId ?? input.version.workbookId;
-    return workbookId
-      ? workbookQuestionSource({
-          type: "workbook_snapshot",
-          workbookId,
-        })
-      : null;
+    return input.explicitSource;
   }
 
   assertExplicitSourceIsAllowed(input: {
@@ -47,16 +35,15 @@ export class QuestionGenerationSourceResolver {
     if (input.explicitSource === null) {
       return;
     }
-    const allowedWorkbookIds = new Set(
-      input.version.workbookSources.length > 0
-        ? input.version.workbookSources.map((source) => source.workbookId)
-        : input.version.workbookId
-          ? [input.version.workbookId]
-          : [],
-    );
-    if (!allowedWorkbookIds.has(input.explicitSource.workbookId)) {
+    const referencedSources = this.referencedSources(input.version);
+    if (
+      referencedSources.length > 0 &&
+      !referencedSources.some(
+        (source) => source.workbookId === input.explicitSource.workbookId,
+      )
+    ) {
       throw new InvalidQuestionBlueprintError(
-        "explicit workbook source must match a blueprint workbook source",
+        "explicit workbook source must match one of the blueprint's referenced workbook sources",
       );
     }
   }
@@ -75,20 +62,35 @@ export class QuestionGenerationSourceResolver {
     }
   }
 
-  async assertAccess(
-    currentUser: CurrentUser,
-    source: GenerationWorkbookSource | null,
-  ): Promise<void> {
-    if (
-      source &&
-      !(await this.deps.workbookAccessPort.canUserAccessWorkbook({
-        currentUser,
-        workbookId: toWorkbookId(source.workbookId),
-      }))
-    ) {
-      throw new ForbiddenQuestionActionError(
-        "You cannot access this workbook.",
-      );
+  async assertAccess(input: {
+    currentUser: CurrentUser;
+    version: QuestionBlueprintVersion;
+    source: GenerationWorkbookSource | null;
+  }): Promise<void> {
+    const workbookIds = new Set(
+      this.referencedSources(input.version).map((source) => source.workbookId),
+    );
+    if (input.source) {
+      workbookIds.add(input.source.workbookId);
     }
+    for (const workbookId of workbookIds) {
+      if (
+        !(await this.deps.workbookAccessPort.canUserAccessWorkbook({
+          currentUser: input.currentUser,
+          workbookId: toWorkbookId(workbookId),
+        }))
+      ) {
+        throw new ForbiddenQuestionActionError(
+          "You cannot access this workbook.",
+        );
+      }
+    }
+  }
+
+  private referencedSources(version: QuestionBlueprintVersion) {
+    return questionBlueprintSourcesReferencedByDocument(
+      version.document,
+      version.sources,
+    );
   }
 }

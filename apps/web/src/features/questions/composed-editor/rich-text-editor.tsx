@@ -30,6 +30,7 @@ import {
   richContentToMarkdown,
   toggleMarkdownFormat,
 } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import { ReferencePickerPopover } from "./inspector/reference-picker-popover";
 import { insertReferenceSyntaxAtSelection } from "./reference-insertion-controller";
@@ -39,7 +40,8 @@ export function RichTextEditor({
   model,
   referencePreviewCache,
   workbookEnabled,
-  activeSourceId,
+  sources,
+  previewSourceId,
   disabled,
   onModelChange,
   onChange,
@@ -49,7 +51,8 @@ export function RichTextEditor({
   model: ComposedEditorModel;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
-  activeSourceId: string | null;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onChange(value: ComposedRichContent): void;
@@ -207,7 +210,8 @@ export function RichTextEditor({
             model={model}
             referencePreviewCache={referencePreviewCache}
             workbookEnabled={workbookEnabled}
-            activeSourceId={activeSourceId}
+            sources={sources}
+            previewSourceId={previewSourceId}
             disabled={disabled}
             open={pickerOpen}
             onOpenChange={setReferencePickerOpen}

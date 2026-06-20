@@ -53,6 +53,7 @@ import type {
   WorkbookRepository,
   WorkbookTransactionPort,
 } from "./ports.js";
+import { normalizeWorkbookCalculationSources } from "./workbook-calculation-sources.js";
 import { WorkbookCalculationListService } from "./WorkbookCalculationListService.js";
 import { WorkbookCalculationProcessorService } from "./WorkbookCalculationProcessorService.js";
 import { WorkbookSnapshotService } from "./WorkbookSnapshotService.js";
@@ -97,6 +98,10 @@ export class WorkbookCalculationService {
       "request_workbook_calculation",
       command.lineage,
       async () => {
+        const sources = normalizeWorkbookCalculationSources(
+          command.sources,
+          "sources",
+        );
         const workbook = await this.deps.workbookRepository.findWorkbookById(
           toWorkbookId(command.workbookId),
         );
@@ -128,7 +133,7 @@ export class WorkbookCalculationService {
               workbookCalculationRequestedEvent({
                 id: this.deps.idGenerator.eventId(),
                 calculation: persisted,
-                workbookSources: command.workbookSources,
+                sources,
                 lineage: command.lineage,
                 occurredAt: persisted.createdAt,
               }),
@@ -189,7 +194,7 @@ export class WorkbookCalculationService {
         return this.requestWorkbookCalculation({
           currentUser: command.currentUser,
           workbookId: calculation.workbookId,
-          workbookSources: command.workbookSources,
+          sources: command.sources,
           requestedCount: calculation.requestedCount,
           correlationId: calculation.correlationId,
           lineage: command.lineage,

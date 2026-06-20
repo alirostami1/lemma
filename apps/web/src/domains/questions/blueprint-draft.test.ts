@@ -30,8 +30,7 @@ describe("buildQuestionBlueprintDraft", () => {
       name: "Blueprint",
       description: "",
       model,
-      workbookId: null,
-      workbookSources: [],
+      sources: [],
     });
 
     expect(result).toMatchObject({
@@ -180,8 +179,13 @@ describe("buildQuestionBlueprintDraft", () => {
       name: " Revenue blueprint ",
       description: "  ",
       model,
-      workbookId: "workbook_1",
-      workbookSources: [],
+      sources: [
+        {
+          sourceId: "source_1",
+          name: "Source 1",
+          workbookId: "workbook_1",
+        },
+      ],
     });
 
     expect(result).toEqual({
@@ -189,8 +193,13 @@ describe("buildQuestionBlueprintDraft", () => {
       value: {
         name: "Revenue blueprint",
         description: null,
-        workbookId: "workbook_1",
-        workbookSources: [],
+        sources: [
+          {
+            sourceId: "source_1",
+            name: "Source 1",
+            workbookId: "workbook_1",
+          },
+        ],
         document: {
           schemaVersion: 1,
           references: [

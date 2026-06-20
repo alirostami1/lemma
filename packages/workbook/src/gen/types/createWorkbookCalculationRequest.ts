@@ -4,10 +4,11 @@
  * Lemma Workbook API
  * OpenAPI spec version: 0.1.0
  */
-import type { CreateWorkbookCalculationRequestWorkbookSourcesItem } from "./createWorkbookCalculationRequestWorkbookSourcesItem.js";
+import type { CreateWorkbookCalculationRequestSourcesItem } from "./createWorkbookCalculationRequestSourcesItem.js";
 
 export interface CreateWorkbookCalculationRequest {
-  workbookSources: CreateWorkbookCalculationRequestWorkbookSourcesItem[];
+  /** @minItems 1 */
+  sources: CreateWorkbookCalculationRequestSourcesItem[];
   /**
    * @minimum 1
    * @maximum 1000

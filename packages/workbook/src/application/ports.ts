@@ -18,6 +18,7 @@ import type {
   WorkbookSparseValues,
   WorkbookStatus,
 } from "../domain/index.js";
+import type { WorkbookCalculationSource } from "./workbook-calculation-sources.js";
 
 export interface WorkbookRepository {
   listWorkbooksByOwnerUserId(input: {
@@ -160,13 +161,10 @@ export interface WorkbookCalculationPort {
   requestCalculation(input: {
     createdByUserId: UserId;
     workbookId: WorkbookId;
-    workbookSources: readonly {
-      sourceId: string;
-      workbookId: WorkbookId;
-    }[];
     requestedCount: number;
     correlationId?: string | null;
     lineage: OperationLineage;
+    sources: readonly WorkbookCalculationSource[];
   }): Promise<{ workbookCalculationId: WorkbookCalculationId }>;
 }
 

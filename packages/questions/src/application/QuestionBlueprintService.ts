@@ -1,8 +1,6 @@
 import type {
   QuestionBlueprint,
   QuestionBlueprintVersion,
-  QuestionBlueprintWorkbookSource,
-  WorkbookId,
 } from "../domain/index.js";
 import {
   createQuestionBlueprint,
@@ -103,19 +101,14 @@ export class QuestionBlueprintService {
       ),
       "You cannot create this question blueprint.",
     );
-    if (command.workbookId !== undefined) {
+    if (command.sources === undefined) {
       throw new InvalidQuestionFieldError(
-        "workbookId is not accepted; use workbookSources",
-      );
-    }
-    if (command.workbookSources === undefined) {
-      throw new InvalidQuestionFieldError(
-        "workbookSources must be provided when creating question blueprint",
+        "sources must be provided when creating question blueprint",
       );
     }
     const compiled = normalizeCanonicalBlueprintInput({
       document: command.document,
-      workbookSources: command.workbookSources,
+      sources: command.sources,
     });
     const at = this.deps.clock.now();
     const blueprint = createQuestionBlueprint(
@@ -125,8 +118,7 @@ export class QuestionBlueprintService {
         createdByUserId: toUserId(command.currentUser.user.id),
         name: questionBlueprintName(command.name),
         description: questionBlueprintDescription(command.description ?? null),
-        workbookId: compiled.workbookId,
-        workbookSources: compiled.workbookSources,
+        sources: compiled.sources,
         visibility: questionBlueprintVisibility(
           command.visibility ?? "private",
         ),
@@ -141,8 +133,7 @@ export class QuestionBlueprintService {
         questionBlueprintId: blueprint.id,
         versionNumber: 1,
         document: compiled.document,
-        workbookId: compiled.workbookId,
-        workbookSources: compiled.workbookSources,
+        sources: compiled.sources,
         createdByUserId: blueprint.createdByUserId,
       },
       at,
@@ -150,7 +141,7 @@ export class QuestionBlueprintService {
     const assets = createQuestionBlueprintVersionAssets(
       {
         questionBlueprintVersionId: version.id,
-        workbookIds: sourceAssetWorkbookIds(compiled.workbookSources),
+        sources: compiled.sources,
       },
       at,
     );
@@ -260,17 +251,7 @@ export class QuestionBlueprintService {
       "You cannot update this question blueprint.",
     );
     const documentChanged = command.patch.document !== undefined;
-    const workbookSourcesChanged = command.patch.workbookSources !== undefined;
-    if (command.patch.workbookId !== undefined) {
-      throw new InvalidQuestionFieldError(
-        "workbookId is not accepted; use workbookSources",
-      );
-    }
-    if (documentChanged && !workbookSourcesChanged) {
-      throw new InvalidQuestionFieldError(
-        "workbookSources must be provided when updating document",
-      );
-    }
+    const sourcesChanged = command.patch.sources !== undefined;
     const at = this.deps.clock.now();
     const updatedMetadata = updateQuestionBlueprintMetadata(
       blueprint,
@@ -288,7 +269,7 @@ export class QuestionBlueprintService {
       },
       at,
     );
-    if (!documentChanged && !workbookSourcesChanged) {
+    if (!documentChanged && !sourcesChanged) {
       return {
         questionBlueprint: await hydrateQuestionBlueprint(
           this.deps.questionsRepository,
@@ -308,10 +289,10 @@ export class QuestionBlueprintService {
     }
     const compiled = normalizeCanonicalBlueprintInput({
       document: command.patch.document ?? currentVersion.document,
-      workbookSources:
-        command.patch.workbookSources !== undefined
-          ? command.patch.workbookSources
-          : currentVersion.workbookSources,
+      sources:
+        command.patch.sources !== undefined
+          ? command.patch.sources
+          : currentVersion.sources,
     });
     const versions =
       await this.deps.questionsRepository.listQuestionBlueprintVersions({
@@ -330,8 +311,7 @@ export class QuestionBlueprintService {
         questionBlueprintId: blueprint.id,
         versionNumber: nextVersionNumber,
         document: compiled.document,
-        workbookId: compiled.workbookId,
-        workbookSources: compiled.workbookSources,
+        sources: compiled.sources,
         createdByUserId: toUserId(command.currentUser.user.id),
       },
       at,
@@ -339,7 +319,7 @@ export class QuestionBlueprintService {
     const assets = createQuestionBlueprintVersionAssets(
       {
         questionBlueprintVersionId: version.id,
-        workbookIds: sourceAssetWorkbookIds(compiled.workbookSources),
+        sources: compiled.sources,
       },
       at,
     );
@@ -348,8 +328,7 @@ export class QuestionBlueprintService {
         {
           blueprint: {
             ...updatedMetadata,
-            workbookId: compiled.workbookId,
-            workbookSources: compiled.workbookSources,
+            sources: compiled.sources,
             currentVersionId: version.id,
           },
           version,
@@ -414,10 +393,4 @@ export class QuestionBlueprintService {
       versions,
     };
   }
-}
-
-function sourceAssetWorkbookIds(
-  workbookSources: readonly QuestionBlueprintWorkbookSource[],
-): WorkbookId[] {
-  return workbookSources.map((source) => source.workbookId);
 }

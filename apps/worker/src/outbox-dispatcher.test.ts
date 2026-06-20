@@ -23,7 +23,7 @@ const lineage = {
 };
 
 describe("OutboxPollingDispatcher", () => {
-  it("marks workbook calculation requested events with missing workbookSources as failed", async () => {
+  it("marks workbook calculation requested events with missing sources as failed", async () => {
     const outboxService = new FakeOutboxService([
       createWorkbookCalculationRequestedEventWithoutSources(),
     ]);
@@ -52,7 +52,7 @@ describe("OutboxPollingDispatcher", () => {
     assert.equal(outboxService.failedCalls.length, 1);
     assert.equal(
       outboxService.failedCalls[0]?.errorMessage.includes(
-        "workbook_calculation.requested.v1 payload is missing workbookSources.",
+        "workbook_calculation.requested.v2 payload is missing sources.",
       ),
       true,
     );
@@ -75,7 +75,7 @@ function createWorkbookCalculationRequestedEventWithoutSources(): OutboxEvent {
     occurredAt: at,
     payload: {
       workbookCalculationId: "019e9315-6a87-715f-9861-8654df090005",
-      // workbookSources intentionally omitted
+      // sources intentionally omitted
     },
   });
   return outboxEventFromEnvelope(envelope);
@@ -189,7 +189,7 @@ class FakeJobDispatcher {
   async enqueueWorkbookCalculation(input: {
     jobId: string;
     workbookCalculationId: string;
-    workbookSources: {
+    sources: {
       sourceId: string;
       workbookId: string;
     }[];

@@ -19,17 +19,20 @@ import {
   formatAnswerInputValue,
   isReferenceSourceDraftType,
 } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import { WorkbookInputGroup } from "#/features/questions/table-block-editor";
 import { InspectorField } from "./inspector-field";
 import {
   createUniqueReferenceDraft,
   getReferenceIdIssue,
+  getSourceDisplayName,
 } from "./reference-inspector-helpers";
 
 export type ReferenceCreateFormProps = {
   model: ComposedEditorModel;
   workbookEnabled: boolean;
-  activeSourceId: string | null;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   allowedSourceTypes?: ReferenceSourceDraft["type"][];
   initialSourceType?: ReferenceSourceDraft["type"];
   disabled?: boolean;
@@ -43,7 +46,8 @@ export type ReferenceCreateFormProps = {
 export function ReferenceCreateForm({
   model,
   workbookEnabled,
-  activeSourceId,
+  sources,
+  previewSourceId,
   allowedSourceTypes,
   initialSourceType = "literal",
   disabled,
@@ -64,24 +68,30 @@ export function ReferenceCreateForm({
   const [literalValue, setLiteralValue] = useState("");
   const [selectedWorkbookSourceId, setSelectedWorkbookSourceId] = useState<
     string | null
-  >(null);
-  const resolvedWorkbookSourceId = getWorkbookSourceId({
-    selectedWorkbookSourceId,
-    activeSourceId,
-  });
+  >(() => getDefaultWorkbookSourceId(sources, previewSourceId));
   const [workbookRef, setWorkbookRef] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const isActiveSourceMissing = activeSourceId === null;
   const singleAllowedSourceType =
     allowedSourceTypes && allowedSourceTypes.length === 1
       ? allowedSourceTypes[0]
       : null;
 
   useEffect(() => {
-    if (activeSourceId === null) {
-      setSelectedWorkbookSourceId(null);
+    if (sourceType === "literal") {
+      return;
     }
-  }, [activeSourceId]);
+
+    const nextSourceId = getResolvedWorkbookSourceId({
+      selectedWorkbookSourceId,
+      sources,
+      previewSourceId,
+    });
+    if (nextSourceId === selectedWorkbookSourceId) {
+      return;
+    }
+
+    setSelectedWorkbookSourceId(nextSourceId);
+  }, [previewSourceId, selectedWorkbookSourceId, sourceType, sources]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -94,10 +104,15 @@ export function ReferenceCreateForm({
     }
 
     const normalizedId = referenceId.trim().replace(/^\./u, "").trim();
+    const workbookSourceId = getResolvedWorkbookSourceId({
+      selectedWorkbookSourceId,
+      sources,
+      previewSourceId,
+    });
     const source = createSourceDraft({
       sourceType,
       literalValue,
-      workbookSourceId: resolvedWorkbookSourceId,
+      workbookSourceId,
       workbookRef,
     });
 
@@ -108,9 +123,9 @@ export function ReferenceCreateForm({
 
     if (source.type !== "literal" && source.sourceId.length === 0) {
       setError(
-        isActiveSourceMissing
-          ? "Select an active workbook source before creating this reference."
-          : "Select a workbook source in the workbook picker first.",
+        sources.length === 0
+          ? "Attach a source before creating workbook references."
+          : "Select a source before creating workbook references.",
       );
       return;
     }
@@ -123,9 +138,15 @@ export function ReferenceCreateForm({
     setReferenceId(createUniqueReferenceDraft(model).id);
     setSourceType(getInitialSourceType(allowedSourceTypes, initialSourceType));
     setLiteralValue("");
-    setSelectedWorkbookSourceId(null);
+    setSelectedWorkbookSourceId(getDefaultWorkbookSourceId(sources, previewSourceId));
     setWorkbookRef("");
   }
+
+  const workbookSourceId = getResolvedWorkbookSourceId({
+    selectedWorkbookSourceId,
+    sources,
+    previewSourceId,
+  });
 
   return (
     <form className="grid gap-4" onSubmit={handleSubmit}>
@@ -167,33 +188,21 @@ export function ReferenceCreateForm({
                   <SelectItem value="literal">Literal value</SelectItem>
                 ) : null}
                 {isAllowedSourceType(allowedSourceTypes, "workbook_cell") ? (
-                  <SelectItem
-                    value="workbook_cell"
-                    disabled={!workbookEnabled || isActiveSourceMissing}
-                  >
+                  <SelectItem value="workbook_cell" disabled={!workbookEnabled}>
                     Workbook cell
                   </SelectItem>
                 ) : null}
                 {isAllowedSourceType(allowedSourceTypes, "workbook_range") ? (
-                  <SelectItem
-                    value="workbook_range"
-                    disabled={!workbookEnabled || isActiveSourceMissing}
-                  >
+                  <SelectItem value="workbook_range" disabled={!workbookEnabled}>
                     Workbook range
                   </SelectItem>
                 ) : null}
               </SelectContent>
             </Select>
-            {sourceType !== "literal" ? (
-              isActiveSourceMissing ? (
-                <p className="text-xs text-muted-foreground">
-                  Select an active source before referencing workbook cells.
-                </p>
-              ) : !workbookEnabled ? (
-                <p className="text-xs text-muted-foreground">
-                  Select a workbook to reference cells.
-                </p>
-              ) : null
+            {sourceType !== "literal" && !workbookEnabled ? (
+              <p className="text-xs text-muted-foreground">
+                Attach a source first.
+              </p>
             ) : null}
           </InspectorField>
         )}
@@ -208,27 +217,57 @@ export function ReferenceCreateForm({
             />
           </InspectorField>
         ) : (
-          <InspectorField
-            label={
-              sourceType === "workbook_range" ? "Source range" : "Source cell"
-            }
-          >
-            <WorkbookInputGroup
-              id="reference-workbook"
-              value={workbookRef}
-              disabled={disabled || !workbookEnabled || isActiveSourceMissing}
-              placeholder="Select a workbook source"
-              workbookSelectionRequirement={{
-                selectionType:
-                  sourceType === "workbook_range" ? "range" : "cell",
-              }}
-              onChange={(event) => setWorkbookRef(event.currentTarget.value)}
-              onWorkbookSelect={(selection) => {
-                setSelectedWorkbookSourceId(selection.sourceId);
-                setWorkbookRef(selection.reference);
-              }}
-            />
-          </InspectorField>
+          <>
+            <InspectorField label="Source">
+              <Select
+                value={workbookSourceId ?? ""}
+                disabled={disabled || sources.length === 0}
+                onValueChange={(value) => setSelectedWorkbookSourceId(value)}
+              >
+                <SelectTrigger aria-label="Source">
+                  <SelectValue placeholder="Select source" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sources.map((source) => (
+                    <SelectItem key={source.sourceId} value={source.sourceId}>
+                      {getSourceDisplayName(source)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </InspectorField>
+            <InspectorField
+              label={
+                sourceType === "workbook_range" ? "Source range" : "Source cell"
+              }
+            >
+              <WorkbookInputGroup
+                id="reference-workbook"
+                sourceId={workbookSourceId}
+                value={workbookRef}
+                disabled={disabled || !workbookEnabled || workbookSourceId === null}
+                placeholder={
+                  sourceType === "workbook_range"
+                    ? "Select a workbook range"
+                    : "Select a workbook cell"
+                }
+                workbookSelectionRequirement={{
+                  selectionType:
+                    sourceType === "workbook_range" ? "range" : "cell",
+                }}
+                onChange={(event) => setWorkbookRef(event.currentTarget.value)}
+                onWorkbookSelect={(selection) => {
+                  setSelectedWorkbookSourceId(selection.sourceId);
+                  setWorkbookRef(selection.reference);
+                }}
+              />
+              {workbookSourceId === null ? (
+                <p className="text-xs text-muted-foreground">
+                  Select a source first.
+                </p>
+              ) : null}
+            </InspectorField>
+          </>
         )}
       </FieldGroup>
 
@@ -251,66 +290,70 @@ export function ReferenceCreateForm({
   );
 }
 
-function createSourceDraft(input: {
+function getDefaultWorkbookSourceId(
+  sources: QuestionBlueprintWorkbookSource[],
+  previewSourceId: string | null,
+) {
+  if (
+    previewSourceId !== null &&
+    sources.some((source) => source.sourceId === previewSourceId)
+  ) {
+    return previewSourceId;
+  }
+
+  return sources[0]?.sourceId ?? null;
+}
+
+function getResolvedWorkbookSourceId(input: {
+  selectedWorkbookSourceId: string | null;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
+}) {
+  if (
+    input.selectedWorkbookSourceId &&
+    input.sources.some((source) => source.sourceId === input.selectedWorkbookSourceId)
+  ) {
+    return input.selectedWorkbookSourceId;
+  }
+
+  return getDefaultWorkbookSourceId(input.sources, input.previewSourceId);
+}
+
+function createSourceDraft({
+  sourceType,
+  literalValue,
+  workbookSourceId,
+  workbookRef,
+}: {
   sourceType: ReferenceSourceDraft["type"];
   literalValue: string;
   workbookSourceId: string | null;
   workbookRef: string;
-}): ReferenceSourceDraft | null {
-  const { sourceType, literalValue, workbookSourceId, workbookRef } = input;
+}): ComposedReferenceDraft["source"] | null {
   if (sourceType === "literal") {
-    const normalizedLiteralValue =
-      literalValue.trim().length === 0
-        ? ""
-        : coerceLiteralExpressionValue(literalValue);
-
-    return {
-      type: "literal",
-      value: normalizedLiteralValue,
-    };
+    return { type: "literal", value: coerceLiteralExpressionValue(literalValue) };
   }
 
-  if (workbookSourceId === null) {
-    return null;
-  }
-
-  const ref = workbookRef.trim();
-  if (!ref) {
+  if (!workbookSourceId || workbookRef.trim().length === 0) {
     return null;
   }
 
   return {
     type: sourceType,
     sourceId: workbookSourceId,
-    ref,
+    ref: workbookRef,
   };
-}
-
-function getWorkbookSourceId(input: {
-  selectedWorkbookSourceId: string | null;
-  activeSourceId: string | null;
-}) {
-  const { selectedWorkbookSourceId, activeSourceId } = input;
-  if (selectedWorkbookSourceId) {
-    return selectedWorkbookSourceId;
-  }
-
-  return activeSourceId;
 }
 
 function getInitialSourceType(
   allowedSourceTypes: ReferenceSourceDraft["type"][] | undefined,
   initialSourceType: ReferenceSourceDraft["type"],
-): ReferenceSourceDraft["type"] {
-  if (!allowedSourceTypes || allowedSourceTypes.length === 0) {
+) {
+  if (!allowedSourceTypes || allowedSourceTypes.includes(initialSourceType)) {
     return initialSourceType;
   }
 
-  if (allowedSourceTypes.includes(initialSourceType)) {
-    return initialSourceType;
-  }
-
-  return allowedSourceTypes[0] ?? initialSourceType;
+  return allowedSourceTypes[0] ?? "literal";
 }
 
 function isAllowedSourceType(

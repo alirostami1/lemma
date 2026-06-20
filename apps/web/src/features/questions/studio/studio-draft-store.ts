@@ -1,8 +1,9 @@
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 
 const STORAGE_PREFIX = "lemma:studio-draft:v1:";
 const STORAGE_INDEX_KEY = "lemma:studio-draft:index:v1";
-const SNAPSHOT_SCHEMA_VERSION = 1;
+const SNAPSHOT_SCHEMA_VERSION = 2;
 const MAX_DRAFTS = 20;
 const MAX_DRAFT_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 
@@ -12,11 +13,11 @@ export type StudioDraftKeyInput = {
 };
 
 export type StudioDraftSnapshot = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   draftKey: string;
   loadedBlueprintId: string | null;
   loadedBlueprintVersionId?: string | null;
-  selectedWorkbookId: string;
+  sources: QuestionBlueprintWorkbookSource[];
   blueprintName: string;
   blueprintDescription: string;
   authoringModel: ComposedEditorModel;
@@ -125,7 +126,7 @@ export function createStudioDraftSnapshot(input: {
   draftKey: string;
   loadedBlueprintId: string | null;
   loadedBlueprintVersionId?: string | null;
-  selectedWorkbookId: string;
+  sources: QuestionBlueprintWorkbookSource[];
   blueprintName: string;
   blueprintDescription: string;
   authoringModel: ComposedEditorModel;
@@ -137,7 +138,7 @@ export function createStudioDraftSnapshot(input: {
     draftKey: input.draftKey,
     loadedBlueprintId: input.loadedBlueprintId,
     loadedBlueprintVersionId: input.loadedBlueprintVersionId ?? null,
-    selectedWorkbookId: input.selectedWorkbookId,
+    sources: input.sources,
     blueprintName: input.blueprintName,
     blueprintDescription: input.blueprintDescription,
     authoringModel: input.authoringModel,
@@ -175,7 +176,8 @@ function isStudioDraftSnapshot(value: unknown): value is StudioDraftSnapshot {
     (typeof candidate.loadedBlueprintVersionId === "string" ||
       typeof candidate.loadedBlueprintVersionId === "undefined" ||
       candidate.loadedBlueprintVersionId === null) &&
-    typeof candidate.selectedWorkbookId === "string" &&
+    Array.isArray(candidate.sources) &&
+    candidate.sources.every(isQuestionBlueprintWorkbookSource) &&
     typeof candidate.blueprintName === "string" &&
     typeof candidate.blueprintDescription === "string" &&
     isComposedEditorModel(candidate.authoringModel) &&
@@ -193,6 +195,18 @@ function isComposedEditorModel(value: unknown): value is ComposedEditorModel {
     Array.isArray(candidate.blocks) &&
     Array.isArray(candidate.responseFields) &&
     Array.isArray(candidate.references)
+  );
+}
+
+function isQuestionBlueprintWorkbookSource(
+  value: unknown,
+): value is QuestionBlueprintWorkbookSource {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<QuestionBlueprintWorkbookSource>;
+  return (
+    typeof candidate.sourceId === "string" &&
+    typeof candidate.name === "string" &&
+    typeof candidate.workbookId === "string"
   );
 }
 

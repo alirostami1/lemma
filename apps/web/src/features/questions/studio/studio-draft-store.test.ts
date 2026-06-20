@@ -23,7 +23,13 @@ describe("studio draft store", () => {
       }),
       loadedBlueprintId: "blueprint_1",
       loadedBlueprintVersionId: "version_1",
-      selectedWorkbookId: "workbook_1",
+      sources: [
+        {
+          sourceId: "source_1",
+          name: "Source 1",
+          workbookId: "workbook_1",
+        },
+      ],
       blueprintName: "Blueprint",
       blueprintDescription: "Description",
       authoringModel: createModel(),
@@ -61,7 +67,13 @@ describe("studio draft store", () => {
     const first = createStudioDraftSnapshot({
       draftKey: "new:first",
       loadedBlueprintId: null,
-      selectedWorkbookId: "workbook_1",
+      sources: [
+        {
+          sourceId: "source_1",
+          name: "Source 1",
+          workbookId: "workbook_1",
+        },
+      ],
       blueprintName: "First",
       blueprintDescription: "",
       authoringModel: createModel(),
@@ -71,7 +83,13 @@ describe("studio draft store", () => {
     const latest = createStudioDraftSnapshot({
       draftKey: "new:latest",
       loadedBlueprintId: null,
-      selectedWorkbookId: "workbook_2",
+      sources: [
+        {
+          sourceId: "source_2",
+          name: "Source 2",
+          workbookId: "workbook_2",
+        },
+      ],
       blueprintName: "Latest",
       blueprintDescription: "",
       authoringModel: createModel(),

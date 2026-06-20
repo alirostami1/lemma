@@ -156,15 +156,15 @@ function baseStudioStateInput(): Parameters<typeof getStudioState>[0] {
 function createSnapshot(
   input: Partial<StudioDraftSnapshot>,
 ): StudioDraftSnapshot {
-  return {
-    schemaVersion: 1,
-    draftKey: "blueprint:blueprint-1",
-    loadedBlueprintId: "blueprint-1",
-    loadedBlueprintVersionId: "version-1",
-    selectedWorkbookId: "",
-    blueprintName: "Blueprint",
-    blueprintDescription: "",
-    authoringModel: {
+    return {
+      schemaVersion: 1,
+      draftKey: "blueprint:blueprint-1",
+      loadedBlueprintId: "blueprint-1",
+      loadedBlueprintVersionId: "version-1",
+      sources: [],
+      blueprintName: "Blueprint",
+      blueprintDescription: "",
+      authoringModel: {
       schemaVersion: 1,
       blocks: [],
       responseFields: [],

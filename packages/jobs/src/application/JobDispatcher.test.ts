@@ -86,7 +86,7 @@ describe("JobDispatcher", () => {
     const jobId = await dispatcher.enqueueWorkbookCalculation({
       jobId: "019e9315-6a87-715f-9861-8654df070c74",
       workbookCalculationId: "019e9315-6a87-715f-9861-8654df070c75",
-      workbookSources: [
+      sources: [
         {
           sourceId: "019e9315-6a87-715f-9861-8654df070c78",
           workbookId: "019e9315-6a87-715f-9861-8654df070c79",
@@ -104,7 +104,7 @@ describe("JobDispatcher", () => {
         name: WORKBOOK_CALCULATE_JOB,
         data: {
           workbookCalculationId: "019e9315-6a87-715f-9861-8654df070c75",
-          workbookSources: [
+          sources: [
             {
               sourceId: "019e9315-6a87-715f-9861-8654df070c78",
               workbookId: "019e9315-6a87-715f-9861-8654df070c79",

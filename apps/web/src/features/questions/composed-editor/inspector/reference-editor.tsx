@@ -20,6 +20,7 @@ import {
   formatAnswerInputValue,
   isReferenceSourceDraftType,
 } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewValue } from "#/domains/questions/reference-preview";
 import { WorkbookInputGroup } from "#/features/questions/table-block-editor";
 import type { EditorSelection } from "../editor-selection";
@@ -34,7 +35,8 @@ type ReferenceEditorProps = {
   referenceId: string;
   preview?: ReferencePreviewValue;
   workbookEnabled: boolean;
-  activeSourceId: string | null;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onSelectionChange(selection: EditorSelection): void;
@@ -63,7 +65,8 @@ function ReferenceEditorFields({
   model,
   preview,
   workbookEnabled,
-  activeSourceId,
+  sources,
+  previewSourceId,
   disabled,
   onModelChange,
   onSelectionChange,
@@ -72,8 +75,6 @@ function ReferenceEditorFields({
   const [draftName, setDraftName] = useState(reference.id);
   const [nameError, setNameError] = useState<string | null>(null);
   const [sourceError, setSourceError] = useState<string | null>(null);
-
-  const isActiveSourceMissing = activeSourceId === null;
 
   useEffect(() => {
     setDraftName(reference.id);
@@ -129,6 +130,10 @@ function ReferenceEditorFields({
       ? formatAnswerInputValue(reference.source.value)
       : "";
   const previewStatus = preview?.status ?? "missing_source";
+  const selectedWorkbookSourceId = getSelectedWorkbookSourceId(
+    reference.source,
+    sources,
+  );
 
   return (
     <div className="grid gap-4">
@@ -180,13 +185,14 @@ function ReferenceEditorFields({
               const nextSource = createNextReferenceSource(
                 reference.source,
                 value,
-                activeSourceId,
+                sources,
+                previewSourceId,
               );
               if (!nextSource) {
                 setSourceError(
-                  isActiveSourceMissing
-                    ? "Select an active source before switching to workbook references."
-                    : "Select a workbook source before using workbook references.",
+                  sources.length === 0
+                    ? "Attach a source before using workbook references."
+                    : "Select a source before using workbook references.",
                 );
                 return;
               }
@@ -228,59 +234,98 @@ function ReferenceEditorFields({
             />
           </InspectorField>
         ) : (
-          <InspectorField
-            label={
-              sourceType === "workbook_range" ? "Source range" : "Source cell"
-            }
-          >
-            <WorkbookInputGroup
-              id={`${reference.id}-workbook`}
-              value={reference.source.ref}
-              disabled={disabled || !workbookEnabled || isActiveSourceMissing}
-              placeholder="Select a workbook source"
-              workbookSelectionRequirement={{
-                selectionType:
-                  sourceType === "workbook_range" ? "range" : "cell",
-              }}
-              onChange={(event) =>
-                updateReference((current) =>
-                  current.source.type === "literal"
-                    ? current
-                    : {
-                        ...current,
-                        source: {
-                          type: current.source.type,
-                          sourceId: current.source.sourceId,
-                          ref: event.currentTarget.value,
-                        },
+          <>
+            <InspectorField label="Workbook source">
+              <Select
+                value={selectedWorkbookSourceId ?? ""}
+                disabled={disabled || !workbookEnabled || sources.length === 0}
+                onValueChange={(value) =>
+                  updateReference((current) => {
+                    if (
+                      current.source.type !== "workbook_cell" &&
+                      current.source.type !== "workbook_range"
+                    ) {
+                      return current;
+                    }
+
+                    return {
+                      ...current,
+                      source: {
+                        ...current.source,
+                        sourceId: value,
                       },
-                )
+                    };
+                  })
+                }
+              >
+                <SelectTrigger aria-label="Workbook source">
+                  <SelectValue placeholder="Select source" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sources.map((source) => (
+                    <SelectItem key={source.sourceId} value={source.sourceId}>
+                      {getSourceDisplayName(source)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </InspectorField>
+
+            <InspectorField
+              label={
+                sourceType === "workbook_range" ? "Source range" : "Source cell"
               }
-              onWorkbookSelect={(selection) =>
-                updateReference((current) =>
-                  current.source.type === "literal"
-                    ? current
-                    : {
-                        ...current,
-                        source: {
-                          type: current.source.type,
-                          sourceId: selection.sourceId,
-                          ref: selection.reference,
+            >
+              <WorkbookInputGroup
+                id={`${reference.id}-workbook`}
+                sourceId={selectedWorkbookSourceId}
+                value={reference.source.ref}
+                disabled={
+                  disabled ||
+                  !workbookEnabled ||
+                  selectedWorkbookSourceId === null
+                }
+                placeholder="Select a workbook source"
+                workbookSelectionRequirement={{
+                  selectionType:
+                    sourceType === "workbook_range" ? "range" : "cell",
+                }}
+                onChange={(event) =>
+                  updateReference((current) =>
+                    current.source.type === "literal"
+                      ? current
+                      : {
+                          ...current,
+                          source: {
+                            type: current.source.type,
+                            sourceId: current.source.sourceId,
+                            ref: event.currentTarget.value,
+                          },
                         },
-                      },
-                )
-              }
-            />
-            {isActiveSourceMissing ? (
-              <p className="text-xs text-muted-foreground">
-                Select an active source before editing workbook references.
-              </p>
-            ) : !workbookEnabled ? (
-              <p className="text-xs text-muted-foreground">
-                Select a workbook to reference cells.
-              </p>
-            ) : null}
-          </InspectorField>
+                  )
+                }
+                onWorkbookSelect={(selection) =>
+                  updateReference((current) =>
+                    current.source.type === "literal"
+                      ? current
+                      : {
+                          ...current,
+                          source: {
+                            type: current.source.type,
+                            sourceId: selection.sourceId,
+                            ref: selection.reference,
+                          },
+                        },
+                  )
+                }
+              />
+              {selectedWorkbookSourceId === null ? (
+                <p className="text-xs text-muted-foreground">
+                  Select a source first.
+                </p>
+              ) : null}
+            </InspectorField>
+          </>
         )}
 
         <ReferencePreviewSummary
@@ -344,7 +389,8 @@ function getReferencePreviewText(
 function createNextReferenceSource(
   source: ReferenceSourceDraft,
   type: ReferenceSourceDraft["type"],
-  activeSourceId: string | null,
+  sources: QuestionBlueprintWorkbookSource[],
+  previewSourceId: string | null,
 ): ReferenceSourceDraft | null {
   if (type === "literal") {
     return source.type === "literal"
@@ -353,14 +399,56 @@ function createNextReferenceSource(
   }
 
   if (source.type === "workbook_cell" || source.type === "workbook_range") {
+    const sourceId =
+      getSelectedWorkbookSourceId(source, sources) ??
+      getDefaultWorkbookSourceId(sources, previewSourceId);
+    if (!sourceId) {
+      return null;
+    }
+
     return source.type === type
       ? { type: source.type, sourceId: source.sourceId, ref: source.ref }
-      : { type, sourceId: source.sourceId, ref: "" };
+      : {
+          type,
+          sourceId,
+          ref: source.ref,
+        };
   }
 
-  if (activeSourceId === null) {
+  const sourceId = getDefaultWorkbookSourceId(sources, previewSourceId);
+  if (!sourceId) {
     return null;
   }
 
-  return { type, sourceId: activeSourceId, ref: "" };
+  return { type, sourceId, ref: "" };
+}
+
+function getSelectedWorkbookSourceId(
+  source: ReferenceSourceDraft,
+  sources: QuestionBlueprintWorkbookSource[],
+) {
+  if (
+    source.type !== "workbook_cell" &&
+    source.type !== "workbook_range"
+  ) {
+    return null;
+  }
+
+  return sources.some((candidate) => candidate.sourceId === source.sourceId)
+    ? source.sourceId
+    : null;
+}
+
+function getDefaultWorkbookSourceId(
+  sources: QuestionBlueprintWorkbookSource[],
+  previewSourceId: string | null,
+) {
+  if (
+    previewSourceId !== null &&
+    sources.some((source) => source.sourceId === previewSourceId)
+  ) {
+    return previewSourceId;
+  }
+
+  return sources[0]?.sourceId ?? null;
 }

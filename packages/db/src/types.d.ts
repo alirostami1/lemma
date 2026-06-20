@@ -88,10 +88,9 @@ export interface QuestionBlueprints {
   name: string;
   ownerUserId: string;
   status: Generated<string>;
+  sources: Generated<Json>;
   updatedAt: Generated<Timestamp>;
   visibility: Generated<string>;
-  workbookId: string | null;
-  workbookSources: Generated<Json>;
 }
 
 export interface QuestionBlueprintVersionAssets {
@@ -108,9 +107,8 @@ export interface QuestionBlueprintVersions {
   document: Json;
   id: Generated<string>;
   questionBlueprintId: string;
+  sources: Generated<Json>;
   versionNumber: number;
-  workbookId: string | null;
-  workbookSources: Generated<Json>;
 }
 
 export interface QuestionGenerationRuns {

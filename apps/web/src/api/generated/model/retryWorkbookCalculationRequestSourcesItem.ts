@@ -5,11 +5,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface QuestionBlueprintWorkbookSource {
-  /** @minLength 1 */
+export type RetryWorkbookCalculationRequestSourcesItem = {
   sourceId: string;
-  /** @minLength 1 */
-  name: string;
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
   workbookId: string;
-}
+};

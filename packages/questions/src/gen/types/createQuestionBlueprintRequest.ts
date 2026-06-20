@@ -6,7 +6,7 @@
  */
 import type { CreateQuestionBlueprintRequestVisibility } from "./createQuestionBlueprintRequestVisibility.js";
 import type { QuestionBlueprintDocument } from "./questionBlueprintDocument.js";
-import type { QuestionBlueprintWorkbookSource } from "./questionBlueprintWorkbookSource.js";
+import type { QuestionBlueprintSource } from "./questionBlueprintSource.js";
 
 export interface CreateQuestionBlueprintRequest {
   /**
@@ -21,5 +21,5 @@ export interface CreateQuestionBlueprintRequest {
   description?: string | null;
   visibility?: CreateQuestionBlueprintRequestVisibility;
   document: QuestionBlueprintDocument;
-  workbookSources: QuestionBlueprintWorkbookSource[];
+  sources: QuestionBlueprintSource[];
 }

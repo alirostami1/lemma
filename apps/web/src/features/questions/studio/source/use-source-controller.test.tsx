@@ -1,29 +1,34 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import { useSourceController } from "./use-source-controller";
 
 const mockCreateWorkbookCalculationAsync = vi.fn();
-const mockUseSourceSessionRegistry = vi.fn();
-
-vi.mock("#/domains/questions/source-requirements", () => ({
-  getBlueprintSourceRequirement: vi.fn(() => ({
-    status: "required",
-    workbookRefs: ["Sheet1!A1"],
-  })),
-}));
+const mockOnSourcesChange = vi.fn();
 
 vi.mock("#/domains/workbooks/hooks", () => ({
-  useWorkbookQuery: vi.fn(() => ({
-    data: {
-      id: "workbook-1",
-      name: "Workbook 1",
-      originalName: "source.xlsx",
-      status: "valid",
-    },
+  useWorkbookQuery: vi.fn((workbookId: string, options?: { enabled?: boolean }) => ({
+    data:
+      options?.enabled !== false && !workbookId.startsWith("local:")
+        ? {
+            id: "workbook-1",
+            ownerUserId: "user-1",
+            createdByUserId: "user-1",
+            name: "Workbook 1",
+            fileId: "file-1",
+            checksumSha256: "checksum-1",
+            originalName: "source.xlsx",
+            engine: "cached",
+            engineVersion: null,
+            status: "valid",
+            inspection: null,
+            validationError: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }
+        : undefined,
     isLoading: false,
-  })),
-  useValidateWorkbook: vi.fn(() => ({
-    mutateAsync: vi.fn(),
+    isError: false,
   })),
   useCreateWorkbookCalculation: vi.fn(() => ({
     mutateAsync: mockCreateWorkbookCalculationAsync,
@@ -45,50 +50,28 @@ vi.mock("../use-selected-workbook-preview", () => ({
   })),
 }));
 
-vi.mock("./source-session-registry", () => ({
-  useSourceSessionRegistry: () => mockUseSourceSessionRegistry(),
-}));
-
 describe("useSourceController", () => {
   beforeEach(() => {
     mockCreateWorkbookCalculationAsync.mockReset();
     mockCreateWorkbookCalculationAsync.mockResolvedValue({
       id: "calculation-1",
     });
-    mockUseSourceSessionRegistry.mockReset();
+    mockOnSourcesChange.mockReset();
   });
 
-  it("sends active workbook source when requesting preview calculation", async () => {
-    mockUseSourceSessionRegistry.mockReturnValue({
-      sources: [
-        {
-          sourceId: "source_9",
-          sourceName: "Current Source",
-          workbookId: "workbook-1",
-          workbookName: "Workbook 1",
-        },
-      ],
-      activeSource: {
-        sourceId: "source_9",
-        sourceName: "Current Source",
-        workbookId: "workbook-1",
-        workbookName: "Workbook 1",
-      },
-      attachWorkbook: vi.fn(),
-      activateSourceById: vi.fn(),
-      removeActiveSource: vi.fn(),
-      getSourceById: vi.fn(),
-      getSourceByName: vi.fn(),
-      getWorkbookName: vi.fn(),
-    });
-
+  it("sends the selected source when requesting preview calculation", async () => {
     renderHook(() =>
       useSourceController({
         loadWorkbookPickerPreview: false,
-        model: {} as never,
-        selectedWorkbookId: "workbook-1",
-        isVersionBoundSource: false,
-        onSelectedWorkbookIdChange: vi.fn(),
+        model: createModel(),
+        sources: [
+          {
+            sourceId: "source_9",
+            name: "Current Source",
+            workbookId: "workbook-1",
+          },
+        ],
+        onSourcesChange: mockOnSourcesChange,
       }),
     );
 
@@ -96,43 +79,88 @@ describe("useSourceController", () => {
       expect(mockCreateWorkbookCalculationAsync).toHaveBeenCalledWith({
         workbookId: "workbook-1",
         requestedCount: 1,
-        correlationId: "studio-source-preview:workbook-1",
-        workbookSources: [
+        correlationId: "studio-source-preview:source_9",
+        sources: [
           {
             sourceId: "source_9",
             workbookId: "workbook-1",
+            name: "Current Source",
           },
         ],
       });
     });
   });
 
-  it("does not request preview calculation without active source", async () => {
-    mockUseSourceSessionRegistry.mockReturnValue({
-      sources: [],
-      activeSource: null,
-      attachWorkbook: vi.fn(),
-      activateSourceById: vi.fn(),
-      removeActiveSource: vi.fn(),
-      getSourceById: vi.fn(),
-      getSourceByName: vi.fn(),
-      getWorkbookName: vi.fn(),
+  it("adds a local source without server calls", () => {
+    const { result } = renderHook(() =>
+      useSourceController({
+        loadWorkbookPickerPreview: false,
+        model: createModel(),
+        sources: [],
+        onSourcesChange: mockOnSourcesChange,
+      }),
+    );
+
+    act(() => {
+      result.current.actions.addSource();
     });
 
+    expect(mockOnSourcesChange).toHaveBeenCalledWith([
+      {
+        sourceId: "source_1",
+        name: "Source 1",
+        workbookId: "local:source_1",
+      },
+    ]);
+    expect(mockCreateWorkbookCalculationAsync).not.toHaveBeenCalled();
+  });
+
+  it("does not request preview calculation without sources", async () => {
     renderHook(() =>
       useSourceController({
         loadWorkbookPickerPreview: false,
-        model: {} as never,
-        selectedWorkbookId: "workbook-1",
-        isVersionBoundSource: false,
-        onSelectedWorkbookIdChange: vi.fn(),
+        model: createModel(),
+        sources: [],
+        onSourcesChange: mockOnSourcesChange,
       }),
     );
 
     await waitFor(() => {
-      expect(mockUseSourceSessionRegistry).toHaveBeenCalled();
+      expect(mockOnSourcesChange).not.toHaveBeenCalled();
     });
 
     expect(mockCreateWorkbookCalculationAsync).not.toHaveBeenCalled();
   });
+
+  it("removes a source from the draft when it is unused", () => {
+    const { result } = renderHook(() =>
+      useSourceController({
+        loadWorkbookPickerPreview: false,
+        model: createModel(),
+        sources: [
+          {
+            sourceId: "source_1",
+            name: "Source 1",
+            workbookId: "local:source_1",
+          },
+        ],
+        onSourcesChange: mockOnSourcesChange,
+      }),
+    );
+
+    act(() => {
+      result.current.actions.removeSource("source_1");
+    });
+
+    expect(mockOnSourcesChange).toHaveBeenCalledWith([]);
+  });
 });
+
+function createModel(): ComposedEditorModel {
+  return {
+    schemaVersion: 1,
+    blocks: [],
+    responseFields: [],
+    references: [],
+  };
+}

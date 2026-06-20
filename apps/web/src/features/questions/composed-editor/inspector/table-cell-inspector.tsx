@@ -12,6 +12,7 @@ import type {
   TableEditorModel,
   TableResponseField,
 } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import {
   makeContentCell,
@@ -43,7 +44,8 @@ export function TableCellInspector({
   editorModel,
   referencePreviewCache,
   workbookEnabled,
-  activeSourceId,
+  sources,
+  previewSourceId,
   disabled,
   onModelChange,
   onEditorModelChange,
@@ -54,7 +56,8 @@ export function TableCellInspector({
   editorModel: ComposedEditorModel;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
-  activeSourceId: string | null;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: TableEditorModel): void;
   onEditorModelChange(model: ComposedEditorModel): void;
@@ -107,7 +110,8 @@ export function TableCellInspector({
             editorModel={editorModel}
             referencePreviewCache={referencePreviewCache}
             workbookEnabled={workbookEnabled}
-            activeSourceId={activeSourceId}
+            sources={sources}
+            previewSourceId={previewSourceId}
             disabled={disabled}
             onModelChange={onModelChange}
             onEditorModelChange={onEditorModelChange}
@@ -122,7 +126,8 @@ export function TableCellInspector({
           responseField={responseField}
           referencePreviewCache={referencePreviewCache}
           workbookEnabled={workbookEnabled}
-          activeSourceId={activeSourceId}
+          sources={sources}
+          previewSourceId={previewSourceId}
           disabled={disabled}
           onModelChange={onModelChange}
           onEditorModelChange={onEditorModelChange}
@@ -139,7 +144,8 @@ function ContentCellSettings({
   editorModel,
   referencePreviewCache,
   workbookEnabled,
-  activeSourceId,
+  sources,
+  previewSourceId,
   disabled,
   onModelChange,
   onEditorModelChange,
@@ -150,7 +156,8 @@ function ContentCellSettings({
   editorModel: ComposedEditorModel;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
-  activeSourceId: string | null;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: TableEditorModel): void;
   onEditorModelChange(model: ComposedEditorModel): void;
@@ -161,7 +168,8 @@ function ContentCellSettings({
       referencePreviewCache={referencePreviewCache}
       model={editorModel}
       workbookEnabled={workbookEnabled}
-      activeSourceId={activeSourceId}
+      sources={sources}
+      previewSourceId={previewSourceId}
       disabled={disabled}
       onChange={(content) =>
         onModelChange(updateContentCellContent(model, cell.id, content))
@@ -190,7 +198,8 @@ function AnswerCellSettings({
   responseField,
   referencePreviewCache,
   workbookEnabled,
-  activeSourceId,
+  sources,
+  previewSourceId,
   disabled,
   onModelChange,
   onEditorModelChange,
@@ -202,7 +211,8 @@ function AnswerCellSettings({
   responseField: TableResponseField | null | undefined;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
-  activeSourceId: string | null;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: TableEditorModel): void;
   onEditorModelChange(model: ComposedEditorModel): void;
@@ -300,7 +310,8 @@ function AnswerCellSettings({
               referencePreviewCache={referencePreviewCache}
               valueType={responseField.type}
               workbookEnabled={workbookEnabled}
-              activeSourceId={activeSourceId}
+              sources={sources}
+              previewSourceId={previewSourceId}
               disabled={disabled}
               onModelChange={onEditorModelChange}
               onChange={(valueSource) =>

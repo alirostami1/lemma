@@ -5,11 +5,11 @@ import {
 } from "#/domains/questions";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import {
-  type QuestionBlueprintDraftWorkbookSource,
   toCreateQuestionBlueprintInput,
   toUpdateQuestionBlueprintInput,
 } from "#/domains/questions/blueprint";
 import { buildQuestionBlueprintDraft } from "#/domains/questions/blueprint-draft";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import {
   notifyBlueprintSaved,
   notifyBlueprintSaveFailed,
@@ -29,15 +29,14 @@ type UseSaveBlueprintControllerInput = {
   blueprintName: string;
   hasUnsavedChanges: boolean;
   loadedBlueprintId: string | null;
-  workbookSources: QuestionBlueprintDraftWorkbookSource[];
+  sources: QuestionBlueprintWorkbookSource[];
   onSaved(input: {
     blueprintDescription: string;
     blueprintId: string;
     blueprintName: string;
     blueprintVersionId?: string | null;
-    workbookId: string;
+    sources: QuestionBlueprintWorkbookSource[];
   }): void;
-  selectedWorkbookId: string;
   readiness: StudioReadiness;
 };
 
@@ -65,8 +64,7 @@ export function useSaveBlueprintController({
   hasUnsavedChanges,
   loadedBlueprintId,
   onSaved,
-  selectedWorkbookId,
-  workbookSources,
+  sources,
   readiness,
 }: UseSaveBlueprintControllerInput): SaveBlueprintController {
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
@@ -108,8 +106,7 @@ export function useSaveBlueprintController({
       description: blueprintDescription,
       model: authoringModel,
       name: nameOverride ?? blueprintName,
-      workbookId: selectedWorkbookId || null,
-      workbookSources,
+      sources,
     });
     if (!draft.ok) {
       if (draft.code === "missing_name") {
@@ -142,7 +139,7 @@ export function useSaveBlueprintController({
         blueprintId: savedBlueprint.id,
         blueprintName: savedBlueprint.name,
         blueprintVersionId: savedBlueprint.currentVersionId ?? null,
-        workbookId: savedBlueprint.workbookId ?? "",
+        sources: savedBlueprint.sources,
       });
       notifyBlueprintSaved();
       return true;

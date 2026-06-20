@@ -9,7 +9,6 @@ import {
   createQuestion,
   createQuestionBlueprint,
   createQuestionBlueprintVersion,
-  InvalidQuestionFieldError,
   type QuestionBlueprint,
   questionBlueprintDescription,
   questionBlueprintDocument,
@@ -336,7 +335,7 @@ describe("composable question canonical model", () => {
         name: questionBlueprintName("Revenue"),
         description: questionBlueprintDescription(null),
         visibility: questionBlueprintVisibility("private"),
-        workbookId: null,
+        sources: [],
       },
       at,
     );
@@ -346,7 +345,7 @@ describe("composable question canonical model", () => {
         questionBlueprintId: baseBlueprint.id,
         versionNumber: 1,
         document,
-        workbookId: null,
+        sources: [],
         createdByUserId: ownerUserId,
       },
       at,
@@ -384,6 +383,8 @@ describe("composable question canonical model", () => {
     assert.ok(authoringSecondBlock);
     assert.equal("references" in publicDocument, false);
     assert.equal("correctValueSource" in publicSecondBlock, false);
+    assert.deepEqual(publicBlueprint.sources, []);
+    assert.deepEqual(publicBlueprint.currentVersion.sources, []);
     assert.equal(authoringDocument.references.length, 1);
     assert.equal("correctValueSource" in authoringSecondBlock, true);
   });
@@ -528,108 +529,88 @@ describe("composable question canonical model", () => {
     assert.equal("document" in blueprint, false);
   });
 
-  it("rejects reconstituted blueprints with missing workbookSources", () => {
-    assert.throws(
-      () =>
-        reconstituteQuestionBlueprint({
-          id: questionBlueprintId("019e9315-6a87-715f-9861-8654df071111"),
-          ownerUserId: userId("019e9315-6a87-715f-9861-8654df071112"),
-          createdByUserId: userId("019e9315-6a87-715f-9861-8654df071113"),
-          name: questionBlueprintName("Blueprint"),
-          description: questionBlueprintDescription(null),
-          visibility: questionBlueprintVisibility("private"),
-          workbookId: null,
-          currentVersionId: null,
-          status: "active",
-          archivedAt: null,
-          createdAt: new Date("2026-01-01T00:00:00.000Z"),
-          updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-          workbookSources: undefined as unknown,
-        }),
-      (error: unknown) =>
-        error instanceof InvalidQuestionFieldError &&
-        /workbook sources/.test(error.message),
-    );
+  it("normalizes reconstituted blueprints with missing sources", () => {
+    const blueprint = reconstituteQuestionBlueprint({
+      id: questionBlueprintId("019e9315-6a87-715f-9861-8654df071111"),
+      ownerUserId: userId("019e9315-6a87-715f-9861-8654df071112"),
+      createdByUserId: userId("019e9315-6a87-715f-9861-8654df071113"),
+      name: questionBlueprintName("Blueprint"),
+      description: questionBlueprintDescription(null),
+      visibility: questionBlueprintVisibility("private"),
+      currentVersionId: null,
+      status: "active",
+      archivedAt: null,
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      sources: undefined as unknown,
+    });
+
+    assert.deepEqual(blueprint.sources, []);
   });
 
-  it("rejects reconstituted blueprints with null workbookSources", () => {
-    assert.throws(
-      () =>
-        reconstituteQuestionBlueprint({
-          id: questionBlueprintId("019e9315-6a87-715f-9861-8654df071114"),
-          ownerUserId: userId("019e9315-6a87-715f-9861-8654df071115"),
-          createdByUserId: userId("019e9315-6a87-715f-9861-8654df071116"),
-          name: questionBlueprintName("Blueprint"),
-          description: questionBlueprintDescription(null),
-          visibility: questionBlueprintVisibility("private"),
-          workbookId: null,
-          workbookSources: null as unknown,
-          currentVersionId: null,
-          status: "active",
-          archivedAt: null,
-          createdAt: new Date("2026-01-01T00:00:00.000Z"),
-          updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-        }),
-      (error: unknown) =>
-        error instanceof InvalidQuestionFieldError &&
-        /workbook sources/.test(error.message),
-    );
+  it("normalizes reconstituted blueprints with null sources", () => {
+    const blueprint = reconstituteQuestionBlueprint({
+      id: questionBlueprintId("019e9315-6a87-715f-9861-8654df071114"),
+      ownerUserId: userId("019e9315-6a87-715f-9861-8654df071115"),
+      createdByUserId: userId("019e9315-6a87-715f-9861-8654df071116"),
+      name: questionBlueprintName("Blueprint"),
+      description: questionBlueprintDescription(null),
+      visibility: questionBlueprintVisibility("private"),
+      sources: null as unknown,
+      currentVersionId: null,
+      status: "active",
+      archivedAt: null,
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+    });
+
+    assert.deepEqual(blueprint.sources, []);
   });
 
-  it("rejects reconstituted blueprint versions with missing workbookSources", () => {
-    assert.throws(
-      () =>
-        reconstituteQuestionBlueprintVersion({
-          id: questionBlueprintVersionId(
-            "019e9315-6a87-715f-9861-8654df071117",
-          ),
-          questionBlueprintId: questionBlueprintId(
-            "019e9315-6a87-715f-9861-8654df071118",
-          ),
-          versionNumber: 1,
-          document: {
-            schemaVersion: 1,
-            references: [],
-            responseFields: [],
-            blocks: [],
-          },
-          workbookId: null,
-          createdByUserId: userId("019e9315-6a87-715f-9861-8654df071119"),
-          createdAt: new Date("2026-01-01T00:00:00.000Z"),
-          workbookSources: undefined as unknown,
-        }),
-      (error: unknown) =>
-        error instanceof InvalidQuestionFieldError &&
-        /workbook sources/.test(error.message),
-    );
+  it("normalizes reconstituted blueprint versions with missing sources", () => {
+    const version = reconstituteQuestionBlueprintVersion({
+      id: questionBlueprintVersionId(
+        "019e9315-6a87-715f-9861-8654df071117",
+      ),
+      questionBlueprintId: questionBlueprintId(
+        "019e9315-6a87-715f-9861-8654df071118",
+      ),
+      versionNumber: 1,
+      document: {
+        schemaVersion: 1,
+        references: [],
+        responseFields: [],
+        blocks: [],
+      },
+      createdByUserId: userId("019e9315-6a87-715f-9861-8654df071119"),
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      sources: undefined as unknown,
+    });
+
+    assert.deepEqual(version.sources, []);
   });
 
-  it("rejects reconstituted blueprint versions with null workbookSources", () => {
-    assert.throws(
-      () =>
-        reconstituteQuestionBlueprintVersion({
-          id: questionBlueprintVersionId(
-            "019e9315-6a87-715f-9861-8654df071120",
-          ),
-          questionBlueprintId: questionBlueprintId(
-            "019e9315-6a87-715f-9861-8654df071121",
-          ),
-          versionNumber: 1,
-          document: {
-            schemaVersion: 1,
-            references: [],
-            responseFields: [],
-            blocks: [],
-          },
-          workbookId: null,
-          createdByUserId: userId("019e9315-6a87-715f-9861-8654df071122"),
-          workbookSources: null as unknown,
-          createdAt: new Date("2026-01-01T00:00:00.000Z"),
-        }),
-      (error: unknown) =>
-        error instanceof InvalidQuestionFieldError &&
-        /workbook sources/.test(error.message),
-    );
+  it("normalizes reconstituted blueprint versions with null sources", () => {
+    const version = reconstituteQuestionBlueprintVersion({
+      id: questionBlueprintVersionId(
+        "019e9315-6a87-715f-9861-8654df071120",
+      ),
+      questionBlueprintId: questionBlueprintId(
+        "019e9315-6a87-715f-9861-8654df071121",
+      ),
+      versionNumber: 1,
+      document: {
+        schemaVersion: 1,
+        references: [],
+        responseFields: [],
+        blocks: [],
+      },
+      createdByUserId: userId("019e9315-6a87-715f-9861-8654df071122"),
+      sources: null as unknown,
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    });
+
+    assert.deepEqual(version.sources, []);
   });
 
   it("rejects non-positive blueprint version numbers", () => {
@@ -650,7 +631,7 @@ describe("composable question canonical model", () => {
               responseFields: [],
               blocks: [],
             }),
-            workbookId: null,
+            sources: [],
             createdByUserId: userId("019e9315-6a87-715f-9861-8654df070c75"),
           },
           new Date("2026-01-01T00:00:00.000Z"),

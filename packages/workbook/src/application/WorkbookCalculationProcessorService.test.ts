@@ -28,6 +28,7 @@ import type {
   WorkbookTransactionPort,
 } from "./ports.js";
 import { WorkbookCalculationProcessorService } from "./WorkbookCalculationProcessorService.js";
+import { WORKBOOK_CALCULATION_FAILED_EVENT } from "./workbook-events.js";
 
 const at = new Date("2026-06-15T00:00:00.000Z");
 const ownerUserId = userId("019e9315-6a87-715f-9861-8654df070c20");
@@ -39,7 +40,7 @@ const calculationId = workbookCalculationId(
 const lineage = rootOperationLineage("019e9315-6a87-715f-9861-8654df070c24");
 
 describe("WorkbookCalculationProcessorService", () => {
-  it("does not fall back to the calculation workbook when workbookSources is empty", async () => {
+  it("rejects empty source collections without falling back to the calculation workbook", async () => {
     const repository = new FakeWorkbookRepository();
     const transaction = new FakeWorkbookTransaction(repository);
     const calculator = new FakeWorkbookCalculator();
@@ -70,13 +71,16 @@ describe("WorkbookCalculationProcessorService", () => {
 
     await service.processWorkbookCalculation({
       workbookCalculationId: calculationId,
-      workbookSources: [],
+      sources: [],
       lineage,
     });
 
     assert.deepEqual(repository.findWorkbookByIdCalls, []);
     assert.equal(calculator.calculateBatchCalls, 0);
     assert.deepEqual(repository.completedSnapshots, []);
+    assert.equal(transaction.outboxEvents.length, 1);
+    assert.equal(transaction.outboxEvents[0]?.type, WORKBOOK_CALCULATION_FAILED_EVENT);
+    assert.deepEqual(transaction.outboxEvents[0]?.payload.sources, []);
   });
 });
 

@@ -28,20 +28,27 @@ export type LiteralPreviewValue = {
 };
 
 export type ReferencePreviewCache = Record<string, ReferencePreviewValue>;
-export type WorkbookSelectionValuesByRef = Record<string, string[][]>;
+export type WorkbookSelectionValuesBySourceAndRef = Record<string, string[][]>;
 
 export type { WorkbookPreviewForReferences };
 
+export function createWorkbookSelectionCacheKey(
+  sourceId: string,
+  ref: string,
+) {
+  return `${sourceId}::${ref}`;
+}
+
 export function resolveReferencePreviewValues({
   model,
-  activeSourceId,
-  workbookSelectionValuesByRef = {},
+  previewSourceId,
+  workbookSelectionValuesBySourceAndRef = {},
   workbookPreview,
   now = Date.now(),
 }: {
   model: ComposedEditorModel;
-  activeSourceId: string | null;
-  workbookSelectionValuesByRef?: WorkbookSelectionValuesByRef;
+  previewSourceId: string | null;
+  workbookSelectionValuesBySourceAndRef?: WorkbookSelectionValuesBySourceAndRef;
   workbookPreview: WorkbookPreviewForReferences | null;
   now?: number;
 }): ReferencePreviewCache {
@@ -51,8 +58,8 @@ export function resolveReferencePreviewValues({
     cache[reference.id] = resolveReferenceSourcePreview({
       referenceId: reference.id,
       source: reference.source,
-      activeSourceId,
-      workbookSelectionValuesByRef,
+      previewSourceId,
+      workbookSelectionValuesBySourceAndRef,
       workbookPreview,
       now,
     });
@@ -157,15 +164,15 @@ export function resolveValueExpressionPreview({
 function resolveReferenceSourcePreview({
   referenceId,
   source,
-  activeSourceId,
-  workbookSelectionValuesByRef,
+  previewSourceId,
+  workbookSelectionValuesBySourceAndRef,
   workbookPreview,
   now,
 }: {
   referenceId: string;
   source: ReferenceSourceDraft;
-  activeSourceId: string | null;
-  workbookSelectionValuesByRef: WorkbookSelectionValuesByRef;
+  previewSourceId: string | null;
+  workbookSelectionValuesBySourceAndRef: WorkbookSelectionValuesBySourceAndRef;
   workbookPreview: WorkbookPreviewForReferences | null;
   now: number;
 }): ReferencePreviewValue {
@@ -179,19 +186,16 @@ function resolveReferenceSourcePreview({
     };
   }
   if (source.type === "workbook_cell" || source.type === "workbook_range") {
-    if (activeSourceId !== null && source.sourceId !== activeSourceId) {
-      return {
-        referenceId,
-        status: "missing_source",
-        displayValue: formatReferenceFallback(referenceId),
-        updatedAt: now,
-      };
-    }
-
     const normalizedRef = normalizeWorkbookRef(source.ref);
     const selectedValues =
-      workbookSelectionValuesByRef[source.ref] ??
-      (normalizedRef ? workbookSelectionValuesByRef[normalizedRef] : undefined);
+      workbookSelectionValuesBySourceAndRef[
+        createWorkbookSelectionCacheKey(source.sourceId, source.ref)
+      ] ??
+      (normalizedRef
+        ? workbookSelectionValuesBySourceAndRef[
+            createWorkbookSelectionCacheKey(source.sourceId, normalizedRef)
+          ]
+        : undefined);
     if (selectedValues) {
       const rawValue =
         source.type === "workbook_cell"
@@ -210,7 +214,7 @@ function resolveReferenceSourcePreview({
       };
     }
 
-    if (!workbookPreview) {
+    if (previewSourceId !== source.sourceId || !workbookPreview) {
       return {
         referenceId,
         status: "missing_source",

@@ -131,7 +131,7 @@ function renderTableCellInspector(input: {
         editorModel={editorModel}
         referencePreviewCache={input.referencePreviewCache ?? {}}
         workbookEnabled={input.workbookEnabled ?? false}
-        activeSourceId={null}
+        previewSourceId={null}
         onModelChange={(nextModel) => {
           handleModelChange(nextModel);
           setModel(nextModel);

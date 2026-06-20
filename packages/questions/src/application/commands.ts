@@ -26,8 +26,7 @@ export type CreateQuestionBlueprintCommand = ListCommand & {
   description?: string | null;
   visibility?: string;
   document: unknown;
-  workbookId?: string | null;
-  workbookSources: unknown;
+  sources: unknown;
 };
 export type UpdateQuestionBlueprintCommand = ListCommand & {
   questionBlueprintId: string;
@@ -36,8 +35,7 @@ export type UpdateQuestionBlueprintCommand = ListCommand & {
     description?: string | null;
     visibility?: string;
     document?: unknown;
-    workbookId?: string | null;
-    workbookSources?: unknown;
+    sources?: unknown;
     status?: string;
   };
 };

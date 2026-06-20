@@ -104,7 +104,10 @@ export async function createWorkbookCalculation({
   ...input
 }: CreateWorkbookCalculationInput): Promise<WorkbookCalculation> {
   return mapWorkbookCalculationResponse(
-    await createWorkbookCalculationGenerated(workbookId, input),
+    await createWorkbookCalculationGenerated(workbookId, {
+      ...input,
+      sources: input.sources,
+    }),
   );
 }
 

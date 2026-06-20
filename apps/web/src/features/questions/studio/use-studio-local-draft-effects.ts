@@ -30,7 +30,7 @@ export function useStudioLocalDraftEffects({
   loadedBlueprint,
   loadedBlueprintId,
   loadedBlueprintVersionId,
-  selectedWorkbookId,
+  sources,
   setIsRecoveryResolved,
   setLastLocalSavedDraftKey,
   setLocalDraftError,
@@ -51,7 +51,7 @@ export function useStudioLocalDraftEffects({
   loadedBlueprint: QuestionBlueprintAuthoring | null;
   loadedBlueprintId: string | null;
   loadedBlueprintVersionId: string | null;
-  selectedWorkbookId: string;
+  sources: QuestionBlueprintAuthoring["sources"];
   setIsRecoveryResolved(value: boolean): void;
   setLastLocalSavedDraftKey(value: string | null): void;
   setLocalDraftError(value: string | null): void;
@@ -136,7 +136,7 @@ export function useStudioLocalDraftEffects({
         draftKey: draftStorageKey,
         loadedBlueprintId,
         loadedBlueprintVersionId,
-        selectedWorkbookId,
+        sources,
         blueprintName,
         blueprintDescription,
         authoringModel,
@@ -168,7 +168,7 @@ export function useStudioLocalDraftEffects({
     lastSavedDraftKey,
     loadedBlueprintId,
     loadedBlueprintVersionId,
-    selectedWorkbookId,
+    sources,
     setLastLocalSavedDraftKey,
     setLocalDraftError,
     setLocalDraftStatus,

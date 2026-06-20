@@ -101,21 +101,30 @@ const questionReferenceSourceSchema: Schema = {
         properties: {
           schemaVersion: { type: "number", enum: [1] },
           type: { enum: ["workbook_cell", "workbook_range"] },
-          sourceId: { type: "string", minLength: 1 },
+          sourceId: {
+            type: "string",
+            minLength: 1,
+            description: "Blueprint-local workbook source identifier.",
+          },
           ref: { type: "string" },
         },
       },
     ],
   },
 };
-const questionBlueprintWorkbookSourceSchema: Schema = {
-  name: "QuestionBlueprintWorkbookSource",
+const questionBlueprintSourceSchema: Schema = {
+  name: "QuestionBlueprintSource",
   schema: {
     type: "object",
     additionalProperties: false,
-    required: ["sourceId", "name", "workbookId"],
+    required: ["type", "sourceId", "name", "workbookId"],
     properties: {
-      sourceId: { type: "string", minLength: 1 },
+      type: { type: "string", enum: ["workbook"] },
+      sourceId: {
+        type: "string",
+        minLength: 1,
+        description: "Blueprint-local source identifier.",
+      },
       name: { type: "string", minLength: 1 },
       workbookId: uuid,
     },
@@ -1057,8 +1066,7 @@ const questionBlueprintSchema: Schema = {
       "name",
       "description",
       "document",
-      "workbookId",
-      "workbookSources",
+      "sources",
       "currentVersionId",
       "currentVersionNumber",
       "currentVersion",
@@ -1082,10 +1090,10 @@ const questionBlueprintSchema: Schema = {
         maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
       },
       document: schemaRef(publicQuestionBlueprintDocumentSchema),
-      workbookId: nullableUuid,
-      workbookSources: {
+      sources: {
         type: "array",
-        items: schemaRef(questionBlueprintWorkbookSourceSchema),
+        description: "Blueprint-local source entries used by the current version.",
+        items: schemaRef(questionBlueprintSourceSchema),
       },
       currentVersionId: uuid,
       currentVersionNumber: { type: "integer", minimum: 1 },
@@ -1094,18 +1102,16 @@ const questionBlueprintSchema: Schema = {
         required: [
           "id",
           "versionNumber",
-          "workbookId",
-          "workbookSources",
+          "sources",
           "createdByUserId",
           "createdAt",
         ],
         properties: {
           id: uuid,
           versionNumber: { type: "integer", minimum: 1 },
-          workbookId: nullableUuid,
-          workbookSources: {
+          sources: {
             type: "array",
-            items: schemaRef(questionBlueprintWorkbookSourceSchema),
+            items: schemaRef(questionBlueprintSourceSchema),
           },
           createdByUserId: uuid,
           createdAt: dateTime,
@@ -1154,23 +1160,22 @@ const questionBlueprintVersionSchema: Schema = {
     required: [
       "id",
       "versionNumber",
-      "workbookId",
       "sourceAssets",
-      "workbookSources",
+      "sources",
       "createdByUserId",
       "createdAt",
     ],
     properties: {
       id: uuid,
       versionNumber: { type: "integer", minimum: 1 },
-      workbookId: nullableUuid,
       sourceAssets: {
         type: "array",
         items: schemaRef(questionBlueprintVersionAssetSchema),
       },
-      workbookSources: {
+      sources: {
         type: "array",
-        items: schemaRef(questionBlueprintWorkbookSourceSchema),
+        description: "Blueprint-local source entries used by the current version.",
+        items: schemaRef(questionBlueprintSourceSchema),
       },
       createdByUserId: uuid,
       createdAt: dateTime,
@@ -1189,8 +1194,7 @@ const questionBlueprintAuthoringSchema: Schema = {
       "name",
       "description",
       "document",
-      "workbookId",
-      "workbookSources",
+      "sources",
       "currentVersionId",
       "currentVersionNumber",
       "currentVersion",
@@ -1218,10 +1222,10 @@ const questionBlueprintAuthoringSchema: Schema = {
         maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
       },
       document: schemaRef(questionBlueprintDocumentSchema),
-      workbookId: nullableUuid,
-      workbookSources: {
+      sources: {
         type: "array",
-        items: schemaRef(questionBlueprintWorkbookSourceSchema),
+        description: "Blueprint-local source entries used by the current version.",
+        items: schemaRef(questionBlueprintSourceSchema),
       },
       currentVersionId: uuid,
       currentVersionNumber: { type: "integer", minimum: 1 },
@@ -1528,7 +1532,7 @@ const createQuestionBlueprintRequestSchema: Schema = {
   schema: {
     type: "object",
     additionalProperties: false,
-    required: ["name", "document", "workbookSources"],
+    required: ["name", "document", "sources"],
     properties: {
       name: {
         type: "string",
@@ -1544,9 +1548,9 @@ const createQuestionBlueprintRequestSchema: Schema = {
         enum: QUESTION_BLUEPRINT_VISIBILITY_ACCEPTED_VALUES as unknown as string[],
       },
       document: schemaRef(questionBlueprintDocumentSchema),
-      workbookSources: {
+      sources: {
         type: "array",
-        items: schemaRef(questionBlueprintWorkbookSourceSchema),
+        items: schemaRef(questionBlueprintSourceSchema),
       },
     },
   },
@@ -1572,9 +1576,9 @@ const updateQuestionBlueprintRequestSchema: Schema = {
         enum: QUESTION_BLUEPRINT_VISIBILITY_ACCEPTED_VALUES as unknown as string[],
       },
       document: schemaRef(questionBlueprintDocumentSchema),
-      workbookSources: {
+      sources: {
         type: "array",
-        items: schemaRef(questionBlueprintWorkbookSourceSchema),
+        items: schemaRef(questionBlueprintSourceSchema),
       },
       status: {
         type: "string",
@@ -1675,7 +1679,7 @@ export const tags: readonly Tag[] = Object.freeze([questionTag]);
 export const schemas = Object.freeze([
   questionValueExpressionSchema,
   questionReferenceSourceSchema,
-  questionBlueprintWorkbookSourceSchema,
+  questionBlueprintSourceSchema,
   blueprintInlineTextSchema,
   blueprintInlineReferenceSchema,
   blueprintInlineContentSchema,

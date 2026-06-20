@@ -57,11 +57,11 @@ export const presentQuestionBlueprint = (
       currentVersionId: currentVersion.id,
       currentVersionNumber: currentVersion.versionNumber,
       document: toLearnerQuestionBlueprintDocumentDto(currentVersion.document),
+      sources: [],
       currentVersion: {
         id: currentVersion.id,
         versionNumber: currentVersion.versionNumber,
-        workbookId: currentVersion.workbookId,
-        workbookSources: currentVersion.workbookSources,
+        sources: [],
         createdByUserId: currentVersion.createdByUserId,
         createdAt: presentDate(currentVersion.createdAt),
       },
@@ -85,7 +85,7 @@ export const presentQuestionBlueprintAuthoring = (
       selectedVersionId: selectedVersion.id,
       selectedVersionNumber: selectedVersion.versionNumber,
       document: selectedVersion.document,
-      workbookId: selectedVersion.workbookId,
+      sources: selectedVersion.sources,
       currentVersion: toQuestionBlueprintVersionDto(currentVersion),
       selectedVersion: toQuestionBlueprintVersionDto(selectedVersion),
       versions: result.questionBlueprint.versions.map(
@@ -246,8 +246,7 @@ function toQuestionBlueprintVersionDto(
   return {
     id: version.id,
     versionNumber: version.versionNumber,
-    workbookId: version.workbookId,
-    workbookSources: version.workbookSources,
+    sources: version.sources,
     sourceAssets: version.sourceAssets.map((asset) => ({
       questionBlueprintVersionId: asset.questionBlueprintVersionId,
       workbookId: asset.workbookId,

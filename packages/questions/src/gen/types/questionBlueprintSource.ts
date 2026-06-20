@@ -4,9 +4,14 @@
  * Lemma Questions API
  * OpenAPI spec version: 0.1.0
  */
+import type { QuestionBlueprintSourceType } from "./questionBlueprintSourceType.js";
 
-export interface QuestionBlueprintWorkbookSource {
-  /** @minLength 1 */
+export interface QuestionBlueprintSource {
+  type: QuestionBlueprintSourceType;
+  /**
+   * Blueprint-local source identifier.
+   * @minLength 1
+   */
   sourceId: string;
   /** @minLength 1 */
   name: string;

@@ -4,8 +4,9 @@
  * Lemma Workbook API
  * OpenAPI spec version: 0.1.0
  */
-import type { RetryWorkbookCalculationRequestWorkbookSourcesItem } from "./retryWorkbookCalculationRequestWorkbookSourcesItem.js";
+import type { RetryWorkbookCalculationRequestSourcesItem } from "./retryWorkbookCalculationRequestSourcesItem.js";
 
 export interface RetryWorkbookCalculationRequest {
-  workbookSources: RetryWorkbookCalculationRequestWorkbookSourcesItem[];
+  /** @minItems 1 */
+  sources: RetryWorkbookCalculationRequestSourcesItem[];
 }

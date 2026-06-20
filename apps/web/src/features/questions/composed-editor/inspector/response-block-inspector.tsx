@@ -5,6 +5,7 @@ import {
   updateComposedBlock,
   updateComposedResponseField,
 } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import {
   AnswerFieldSettings,
@@ -18,7 +19,8 @@ export function ResponseBlockInspector({
   block,
   referencePreviewCache,
   workbookEnabled,
-  activeSourceId,
+  sources,
+  previewSourceId,
   disabled,
   onModelChange,
 }: {
@@ -26,7 +28,8 @@ export function ResponseBlockInspector({
   block: ComposedResponseEditorBlock;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
-  activeSourceId: string | null;
+  sources: QuestionBlueprintWorkbookSource[];
+  previewSourceId: string | null;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
 }) {
@@ -118,7 +121,8 @@ export function ResponseBlockInspector({
           referencePreviewCache={referencePreviewCache}
           valueType={responseField.type}
           workbookEnabled={workbookEnabled}
-          activeSourceId={activeSourceId}
+          sources={sources}
+          previewSourceId={previewSourceId}
           disabled={disabled}
           onModelChange={onModelChange}
           onChange={(correctValueSource) =>
