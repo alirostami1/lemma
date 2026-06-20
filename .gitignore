@@ -39,8 +39,5 @@ yarn-error.log*
 .DS_Store
 *.pem
 
-.codex/*
-!.codex/agents/
-!.codex/agents/*.toml
-!.codex/config.toml
+.codex
 .agents
