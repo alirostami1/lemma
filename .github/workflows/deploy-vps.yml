@@ -71,7 +71,7 @@ jobs:
             dockerfile: infra/caddy/Dockerfile
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.3
       - name: Setup Buildx
         uses: docker/setup-buildx-action@v4
       - name: Login to GHCR
@@ -107,7 +107,7 @@ jobs:
     environment: vps
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.3
       - name: Show deploy plan
         run: |
           echo "environment: vps"
@@ -116,7 +116,7 @@ jobs:
           echo "compose: infra/production/compose.yml"
           echo "playbook: infra/ansible/playbooks/deploy.yml"
       - name: Install SSH key
-        uses: webfactory/ssh-agent@v0.9.1
+        uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
       - name: Install deploy tooling
