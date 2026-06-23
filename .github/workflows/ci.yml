@@ -112,7 +112,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Check types
-        run: pnpm check-types
+        run: pnpm check:types
       - name: Check formatting and lint
         run: pnpm check
       - name: Test

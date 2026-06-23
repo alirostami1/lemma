@@ -1,7 +1,7 @@
 import {
+  type InfiniteData,
   type UseMutationOptions,
   type UseQueryOptions,
-  type InfiniteData,
   useInfiniteQuery,
   useMutation,
   useQueries,

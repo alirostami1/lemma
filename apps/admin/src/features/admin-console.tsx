@@ -44,32 +44,32 @@ export function AdminConsole() {
   return (
     <PageContainer variant="resource">
       <PageHeader
-        title="Admin"
-        description="Users, roles, notification delivery, and operational recovery."
         actions={
           <Button
-            type="button"
-            variant="outline"
             disabled={isRefreshing}
             onClick={refreshAll}
+            type="button"
+            variant="outline"
           >
             <RefreshCw />
             Refresh
           </Button>
         }
+        description="Users, roles, notification delivery, and operational recovery."
+        title="Admin"
       />
 
       <OverviewStrip
-        overview={overview.overview}
-        userCount={users.users.length}
-        roleCount={users.roles.length}
-        notificationCount={notifications.events.length}
         isLoading={
           overview.isLoading || users.isLoading || users.rolesListLoading
         }
+        notificationCount={notifications.events.length}
+        overview={overview.overview}
+        roleCount={users.roles.length}
+        userCount={users.users.length}
       />
 
-      <Tabs defaultValue="users" className="gap-4">
+      <Tabs className="gap-4" defaultValue="users">
         <TabsList className="flex-wrap">
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="roles">Roles</TabsTrigger>
@@ -79,70 +79,68 @@ export function AdminConsole() {
 
         <TabsContent value="users">
           <UsersPanel
-            users={users.users}
-            roles={users.roles}
-            selectedUser={users.selectedUser}
-            selectedRoles={users.selectedRoles}
-            search={users.search}
-            status={users.status}
-            isLoading={users.isLoading}
-            rolesLoading={users.rolesLoading}
             errorMessage={users.errorMessage}
-            rolesErrorMessage={users.rolesErrorMessage}
+            isLoading={users.isLoading}
             isMutating={users.isMutating}
-            onSearchChange={users.setSearch}
-            onStatusChange={users.setStatus}
-            onSelectUser={users.selectUser}
             onEditUser={users.editUser}
             onGrantRole={users.openGrantRole}
-            onSetStatus={users.setUserStatus}
-            onRevokeRole={users.revokeRole}
             onRetry={users.retryUsers}
+            onRevokeRole={users.revokeRole}
+            onSearchChange={users.setSearch}
+            onSelectUser={users.selectUser}
+            onSetStatus={users.setUserStatus}
+            onStatusChange={users.setStatus}
+            roles={users.roles}
+            rolesErrorMessage={users.rolesErrorMessage}
+            rolesLoading={users.rolesLoading}
+            search={users.search}
+            selectedRoles={users.selectedRoles}
+            selectedUser={users.selectedUser}
+            status={users.status}
+            users={users.users}
           />
         </TabsContent>
 
         <TabsContent value="roles">
           <RolesPanel
-            roles={users.roles}
-            isLoading={users.rolesListLoading}
             errorMessage={users.rolesListErrorMessage}
+            isLoading={users.rolesListLoading}
             onRetry={users.retryRoles}
+            roles={users.roles}
           />
         </TabsContent>
 
         <TabsContent value="notifications">
           <NotificationsPanel
+            errorMessage={notifications.errorMessage}
             events={notifications.events}
             failedEvents={notifications.failedEvents}
-            status={notifications.status}
-            reviewState={notifications.reviewState}
             isLoading={notifications.isLoading}
-            errorMessage={notifications.errorMessage}
             isMutating={notifications.isMutating}
-            onStatusChange={notifications.setStatus}
-            onReviewStateChange={notifications.setReviewState}
-            onRetry={notifications.refresh}
-            onReplay={notifications.replay}
-            onReview={notifications.review}
             onIgnore={notifications.ignore}
+            onReplay={notifications.replay}
+            onRetry={notifications.refresh}
+            onReview={notifications.review}
+            onReviewStateChange={notifications.setReviewState}
+            onStatusChange={notifications.setStatus}
+            reviewState={notifications.reviewState}
+            status={notifications.status}
           />
         </TabsContent>
 
         <TabsContent value="queue">
           <QueuePanel
-            jobs={queue.jobs}
-            state={queue.state}
-            isLoading={queue.isLoading}
             errorMessage={queue.errorMessage}
-            onStateChange={queue.setState}
+            isLoading={queue.isLoading}
+            jobs={queue.jobs}
             onRetry={queue.refresh}
+            onStateChange={queue.setState}
+            state={queue.state}
           />
         </TabsContent>
       </Tabs>
 
       <EditUserDialog
-        user={users.editingUser}
-        open={users.editingUser !== null}
         isSaving={users.isSavingUser}
         onOpenChange={(open) => {
           if (!open) {
@@ -150,21 +148,23 @@ export function AdminConsole() {
           }
         }}
         onSave={users.saveUser}
+        open={users.editingUser !== null}
+        user={users.editingUser}
       />
 
       <GrantRoleDialog
-        user={users.grantingUser}
-        roles={users.roles}
-        userRoles={users.grantingUserRoles}
-        open={users.grantingUser !== null}
-        rolesLoading={users.grantRolesLoading}
         isSaving={users.isGrantingRole}
+        onGrant={users.grantUserRole}
         onOpenChange={(open) => {
           if (!open) {
             users.closeGrantRole();
           }
         }}
-        onGrant={users.grantUserRole}
+        open={users.grantingUser !== null}
+        roles={users.roles}
+        rolesLoading={users.grantRolesLoading}
+        user={users.grantingUser}
+        userRoles={users.grantingUserRoles}
       />
     </PageContainer>
   );

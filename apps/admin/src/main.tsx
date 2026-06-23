@@ -16,7 +16,7 @@ function Root() {
         <OidcInitializationGate>
           <App />
         </OidcInitializationGate>
-        <Toaster richColors closeButton />
+        <Toaster closeButton richColors />
       </QueryClientProvider>
     </StrictMode>
   );

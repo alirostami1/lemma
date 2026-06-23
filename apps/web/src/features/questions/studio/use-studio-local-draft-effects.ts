@@ -191,8 +191,7 @@ export function useStudioLocalDraftEffects({
       (source) => source.backing.kind === "local_file",
     );
     const hasUnsavedServerDraft =
-      serverDraftId !== null &&
-      currentDraftKey !== lastRemoteSaveSnapshotKey;
+      serverDraftId !== null && currentDraftKey !== lastRemoteSaveSnapshotKey;
     const hasUnsavedLocalDraft =
       serverDraftId === null && lastLocalSavedDraftKey !== currentDraftKey;
     const hasUnsafeAssets = sources.some(

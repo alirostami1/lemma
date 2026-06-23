@@ -304,7 +304,9 @@ describe("studio-source-model", () => {
     ]);
 
     expect(
-      restored.backing.kind === "restoring_local_file" ? restored.backing.workbookId : null,
+      restored.backing.kind === "restoring_local_file"
+        ? restored.backing.workbookId
+        : null,
     ).toBeNull();
     expect(
       restoring.backing.kind === "restoring_local_file"

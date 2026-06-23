@@ -6,14 +6,15 @@
     "#/*": "./src/*"
   },
   "scripts": {
+    "build": "vite build",
+    "check": "biome check",
     "check:types": "tsc --noEmit",
+    "check:write": "biome check --write",
+    "dev": "vite dev --port 3003 --clearScreen false",
     "format": "biome format",
     "format:write": "biome format --write",
     "lint": "biome lint",
     "lint:write": "biome lint --write",
-    "check": "biome check",
-    "dev": "vite dev --port 3003 --clearScreen false",
-    "build": "vite build",
     "preview": "vite preview --port 3003",
     "test": "vitest run"
   },

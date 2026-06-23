@@ -12,7 +12,9 @@ import type {
 import type { useSaveBlueprintController } from "./use-save-blueprint-controller";
 import { useStudioController } from "./use-studio-controller";
 
-type UseSaveBlueprintControllerInput = Parameters<typeof useSaveBlueprintController>[0];
+type UseSaveBlueprintControllerInput = Parameters<
+  typeof useSaveBlueprintController
+>[0];
 
 const navigateMock = vi.hoisted(() => vi.fn());
 const draftControllerArgs = vi.hoisted(() => ({

@@ -88,15 +88,15 @@ export function UsersPanel({
             <div className="flex flex-col gap-2 sm:flex-row">
               <Input
                 className="h-8 sm:w-72"
+                onChange={(event) => onSearchChange(event.currentTarget.value)}
                 placeholder="Search users"
                 value={search}
-                onChange={(event) => onSearchChange(event.currentTarget.value)}
               />
               <Select
-                value={status}
                 onValueChange={(value) =>
                   onStatusChange(value as UserStatusFilter)
                 }
+                value={status}
               >
                 <SelectTrigger className="w-full sm:w-36">
                   <SelectValue />
@@ -132,9 +132,9 @@ export function UsersPanel({
               <TableBody>
                 {users.map((user) => (
                   <TableRow
-                    key={user.id}
-                    data-selected={selectedUser?.id === user.id}
                     className="cursor-pointer data-[selected=true]:bg-muted/60"
+                    data-selected={selectedUser?.id === user.id}
+                    key={user.id}
                     onClick={() => onSelectUser(user.id)}
                   >
                     <TableCell>
@@ -152,28 +152,28 @@ export function UsersPanel({
                     <TableCell>
                       <div className="flex justify-end gap-1">
                         <Button
-                          type="button"
-                          size="icon-sm"
-                          variant="outline"
                           aria-label="Edit user"
                           disabled={isMutating}
                           onClick={(event) => {
                             event.stopPropagation();
                             onEditUser(user);
                           }}
+                          size="icon-sm"
+                          type="button"
+                          variant="outline"
                         >
                           <Pencil />
                         </Button>
                         <Button
-                          type="button"
-                          size="icon-sm"
-                          variant="outline"
                           aria-label="Grant role"
                           disabled={isMutating || user.status === "deleted"}
                           onClick={(event) => {
                             event.stopPropagation();
                             onGrantRole(user);
                           }}
+                          size="icon-sm"
+                          type="button"
+                          variant="outline"
                         >
                           <ShieldPlus />
                         </Button>
@@ -188,15 +188,15 @@ export function UsersPanel({
       </Card>
 
       <UserDetailPanel
-        user={selectedUser}
-        roles={roles}
-        userRoles={selectedRoles}
-        isLoading={rolesLoading}
         errorMessage={rolesErrorMessage}
+        isLoading={rolesLoading}
         isMutating={isMutating}
         onGrantRole={onGrantRole}
-        onSetStatus={onSetStatus}
         onRevokeRole={onRevokeRole}
+        onSetStatus={onSetStatus}
+        roles={roles}
+        user={selectedUser}
+        userRoles={selectedRoles}
       />
     </div>
   );
@@ -248,42 +248,42 @@ function UserDetailPanel({
         <div className="flex flex-wrap gap-2">
           {user.status !== "active" ? (
             <Button
-              type="button"
-              size="sm"
-              variant="outline"
               disabled={isMutating || user.status === "deleted"}
               onClick={() => onSetStatus(user.id, "active")}
+              size="sm"
+              type="button"
+              variant="outline"
             >
               <UserCheck />
               Activate
             </Button>
           ) : (
             <Button
-              type="button"
-              size="sm"
-              variant="outline"
               disabled={isMutating}
               onClick={() => onSetStatus(user.id, "disabled")}
+              size="sm"
+              type="button"
+              variant="outline"
             >
               <UserMinus />
               Disable
             </Button>
           )}
           <Button
-            type="button"
-            size="sm"
-            variant="outline"
             disabled={isMutating || user.status === "deleted"}
             onClick={() => onSetStatus(user.id, "deleted")}
+            size="sm"
+            type="button"
+            variant="outline"
           >
             <Trash2 />
             Delete
           </Button>
           <Button
-            type="button"
-            size="sm"
             disabled={isMutating || user.status === "deleted"}
             onClick={() => onGrantRole(user)}
+            size="sm"
+            type="button"
           >
             <ShieldPlus />
             Grant role
@@ -304,8 +304,8 @@ function UserDetailPanel({
               );
               return (
                 <div
-                  key={role.roleId}
                   className="flex items-start justify-between gap-3 rounded-lg border p-3"
+                  key={role.roleId}
                 >
                   <div className="grid gap-1">
                     <div className="font-medium">
@@ -316,11 +316,11 @@ function UserDetailPanel({
                     </div>
                   </div>
                   <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
                     disabled={isMutating}
                     onClick={() => onRevokeRole(user.id, role.roleId)}
+                    size="sm"
+                    type="button"
+                    variant="outline"
                   >
                     Revoke
                   </Button>

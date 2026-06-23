@@ -1,7 +1,7 @@
 import {
+  type InfiniteData,
   type UseMutationOptions,
   type UseQueryOptions,
-  type InfiniteData,
   useInfiniteQuery,
   useMutation,
   useQuery,
@@ -51,12 +51,12 @@ import type {
   QuestionBlueprintDraftSummariesPage,
   QuestionBlueprintResult,
   QuestionBlueprintsPage,
-  QuestionsPage,
   QuestionGenerationRunResult,
   QuestionGradeResult,
   QuestionResult,
   QuestionSetResult,
   QuestionSetsPage,
+  QuestionsPage,
   RetryQuestionGenerationRunInput,
   UpdateQuestionBlueprintDraftInput,
   UpdateQuestionBlueprintInput,
@@ -166,7 +166,8 @@ export function useQuestionSetsInfiniteQuery(
     string | undefined
   >({
     queryKey: questionKeys.questionSetInfiniteList(input),
-    queryFn: ({ pageParam }) => listQuestionSets({ ...input, cursor: pageParam }),
+    queryFn: ({ pageParam }) =>
+      listQuestionSets({ ...input, cursor: pageParam }),
     getNextPageParam: (page) => page.nextCursor ?? undefined,
     initialPageParam: undefined as string | undefined,
     ...options,

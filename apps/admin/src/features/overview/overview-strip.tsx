@@ -38,24 +38,21 @@ export function OverviewStrip({
   return (
     <div className="grid gap-3 lg:grid-cols-4">
       <MetricCard
+        detail={`${roleCount} roles configured`}
         icon={<Users />}
         label="Users loaded"
         value={userCount}
-        detail={`${roleCount} roles configured`}
       />
       <MetricCard
-        icon={<Bell />}
-        label="Recent events"
-        value={notificationCount}
         detail={`${overview?.outbox.publishedCount ?? 0} published, ${
           overview?.outbox.failedCount ?? 0
         } failed`}
+        icon={<Bell />}
+        label="Recent events"
         tone={(overview?.outbox.failedCount ?? 0) > 0 ? "bad" : "good"}
+        value={notificationCount}
       />
       <MetricCard
-        icon={<RotateCcw />}
-        label="Queue failed"
-        value={overview?.queue.failedCount ?? 0}
         detail={
           overview?.queue.available === false
             ? "Queue unavailable"
@@ -63,13 +60,16 @@ export function OverviewStrip({
                 overview?.queue.pendingCount ?? 0
               } pending`
         }
+        icon={<RotateCcw />}
+        label="Queue failed"
         tone={(overview?.queue.failedCount ?? 0) > 0 ? "bad" : "good"}
+        value={overview?.queue.failedCount ?? 0}
       />
       <MetricCard
+        detail={formatAge(overview?.outbox.oldestPendingCreatedAt ?? null)}
         icon={<CheckCircle2 />}
         label="Outbox pending"
         value={overview?.outbox.pendingCount ?? 0}
-        detail={formatAge(overview?.outbox.oldestPendingCreatedAt ?? null)}
       />
     </div>
   );

@@ -31,7 +31,7 @@ export function EditUserDialog({
   }, [user]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit user</DialogTitle>
@@ -43,22 +43,22 @@ export function EditUserDialog({
           </label>
           <Input
             id="admin-user-name"
-            value={displayName}
             onChange={(event) => setDisplayName(event.currentTarget.value)}
+            value={displayName}
           />
         </div>
         <DialogFooter>
           <Button
+            onClick={() => onOpenChange(false)}
             type="button"
             variant="outline"
-            onClick={() => onOpenChange(false)}
           >
             Cancel
           </Button>
           <Button
-            type="button"
             disabled={isSaving || displayName.trim().length === 0}
             onClick={() => onSave(displayName.trim())}
+            type="button"
           >
             Save
           </Button>

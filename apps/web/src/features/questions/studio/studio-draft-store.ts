@@ -316,8 +316,7 @@ function isSerializableStudioSource(
         ? typeof backing.originalName === "string" &&
           typeof backing.byteSize === "number" &&
           typeof backing.lastModified === "number" &&
-          (backing.parseStatus === "parsed" ||
-            backing.parseStatus === "failed")
+          (backing.parseStatus === "parsed" || backing.parseStatus === "failed")
         : backing.kind === "restoring_local_file"
           ? typeof backing.originalName === "string" &&
             typeof backing.byteSize === "number" &&

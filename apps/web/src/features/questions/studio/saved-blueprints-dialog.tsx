@@ -202,7 +202,6 @@ function SavedBlueprintListRow({
       className="rounded-lg border bg-background"
       description={item.description ?? undefined}
       metadata={item.metadata}
-      variant="display"
       title={item.title}
       trailingAction={
         <div className="flex flex-wrap items-center gap-2">
@@ -218,6 +217,7 @@ function SavedBlueprintListRow({
           ) : null}
         </div>
       }
+      variant="display"
     />
   );
 }
