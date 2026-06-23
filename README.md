@@ -11,7 +11,7 @@ Breaking changes are acceptable when they improve the long-term design.
 Prerequisites:
 
 - Node.js 22.12 or newer
-- pnpm 11.1.3
+- pnpm 11.7.0
 - Podman Compose for local infrastructure
 
 Install dependencies:
