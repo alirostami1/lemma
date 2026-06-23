@@ -116,11 +116,11 @@ export class WorkerOperationalMetrics {
     value: (snapshot: OperationalSnapshot) => number,
   ): ObservableGaugeRegistration {
     return registerObservableGauge({
-      name,
       callback: async (result) => {
         const snapshot = await this.loadSnapshot();
         result.observe(value(snapshot));
       },
+      name,
     });
   }
 
@@ -148,7 +148,7 @@ async function loadOperationalSnapshot(
     loadQuestionGenerationSnapshot(db),
   ]);
 
-  return { outbox, queue, questionGeneration };
+  return { outbox, questionGeneration, queue };
 }
 
 async function loadOutboxSnapshot(db: DatabasePort) {
@@ -167,11 +167,11 @@ async function loadOutboxSnapshot(db: DatabasePort) {
   `.execute(db.executor);
   const rows = new Map(result.rows.map((row) => [row.status, row]));
   return {
-    pendingCount: rows.get("pending")?.count ?? 0,
-    publishingCount: rows.get("publishing")?.count ?? 0,
-    publishedCount: rows.get("published")?.count ?? 0,
     failedCount: rows.get("failed")?.count ?? 0,
     oldestPendingCreatedAt: rows.get("pending")?.oldestCreatedAt ?? null,
+    pendingCount: rows.get("pending")?.count ?? 0,
+    publishedCount: rows.get("published")?.count ?? 0,
+    publishingCount: rows.get("publishing")?.count ?? 0,
   };
 }
 
@@ -206,19 +206,19 @@ async function loadQueueSnapshot(db: DatabasePort): Promise<QueueSnapshot> {
 
     return {
       available: true,
-      pendingCount: pending.rows[0]?.count ?? 0,
       completedCount: completed.rows[0]?.count ?? 0,
       failedCount: failed.rows[0]?.count ?? 0,
       oldestPendingCreatedAt: pending.rows[0]?.oldestCreatedAt ?? null,
+      pendingCount: pending.rows[0]?.count ?? 0,
     };
   } catch (error) {
     if (isMissingPgBossTable(error)) {
       return {
         available: false,
-        pendingCount: 0,
         completedCount: 0,
         failedCount: 0,
         oldestPendingCreatedAt: null,
+        pendingCount: 0,
       };
     }
     throw error;
@@ -242,8 +242,8 @@ async function loadQuestionGenerationSnapshot(db: DatabasePort) {
       and finished_at >= now() - interval '15 minutes'
   `.execute(db.executor);
   return {
-    completedCount: result.rows[0]?.completedCount ?? 0,
     averageDurationSeconds: result.rows[0]?.averageDurationSeconds ?? 0,
+    completedCount: result.rows[0]?.completedCount ?? 0,
   };
 }
 

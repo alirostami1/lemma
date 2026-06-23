@@ -14,26 +14,25 @@ describe("registerWorkbookCalculationWorker", () => {
     const service = new FakeWorkbookCalculationService();
     const queue = new FakeJobQueue();
     await registerWorkbookCalculationWorker({
+      concurrency: 1,
       jobQueue: queue,
       workbookCalculationService:
         service as unknown as WorkbookCalculationService,
-      concurrency: 1,
     });
 
     await assert.rejects(
       () =>
         queue.runCalculationJobs([
           {
-            id: "019e9315-6a87-715f-9861-8654df080001",
-            name: WORKBOOK_CALCULATE_JOB,
             data: {
               workbookCalculationId: "019e9315-6a87-715f-9861-8654df080002",
             },
+            id: "019e9315-6a87-715f-9861-8654df080001",
+            name: WORKBOOK_CALCULATE_JOB,
           },
         ]),
       (error: unknown) =>
-        error instanceof Error &&
-        error.message === "sources must be an array.",
+        error instanceof Error && error.message === "sources must be an array.",
     );
     assert.equal(service.calls, 0);
   });

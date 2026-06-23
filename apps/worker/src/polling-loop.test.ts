@@ -9,17 +9,17 @@ describe("PollingLoop", () => {
     const logger = new MemoryLogger();
     let runs = 0;
     const loop = new PollingLoop({
-      name: "test-loop",
       intervalMs: 25,
-      scheduler,
       logger,
+      name: "test-loop",
+      scheduler,
       task: async () => {
         runs += 1;
         return {
           attributes: { "task.count": runs },
           log: {
-            message: "task completed",
             fields: { "task.count": runs },
+            message: "task completed",
           },
         };
       },
@@ -34,11 +34,11 @@ describe("PollingLoop", () => {
     assert.deepEqual(scheduler.delays, [0, 25]);
     assert.deepEqual(logger.infoLogs, [
       {
-        message: "task completed",
         fields: {
-          "worker.polling_loop.name": "test-loop",
           "task.count": 1,
+          "worker.polling_loop.name": "test-loop",
         },
+        message: "task completed",
       },
     ]);
   });
@@ -47,10 +47,10 @@ describe("PollingLoop", () => {
     const scheduler = new FakeScheduler();
     const logger = new MemoryLogger();
     const loop = new PollingLoop({
-      name: "failing-loop",
       intervalMs: 50,
-      scheduler,
       logger,
+      name: "failing-loop",
+      scheduler,
       task: async () => {
         throw new Error("boom");
       },
@@ -71,8 +71,8 @@ describe("PollingLoop", () => {
   it("does not reschedule after stop", async () => {
     const scheduler = new FakeScheduler();
     const loop = new PollingLoop({
-      name: "stopping-loop",
       intervalMs: 50,
+      name: "stopping-loop",
       scheduler,
       task: async () => undefined,
     });
@@ -123,10 +123,10 @@ class MemoryLogger implements WorkerLogger {
   readonly errorLogs: { message: string; fields: WorkerLogFields }[] = [];
 
   info(message: string, fields?: WorkerLogFields): void {
-    this.infoLogs.push({ message, fields: fields ?? {} });
+    this.infoLogs.push({ fields: fields ?? {}, message });
   }
 
   error(message: string, fields?: WorkerLogFields): void {
-    this.errorLogs.push({ message, fields: fields ?? {} });
+    this.errorLogs.push({ fields: fields ?? {}, message });
   }
 }

@@ -6,15 +6,18 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "check-types": "tsc --noEmit",
-    "format": "biome format",
-    "lint": "biome lint",
-    "check": "biome check",
-    "dev": "vite dev --port 3004 --clearScreen false",
     "build": "tsc && vite build",
     "build-keycloak-theme": "pnpm build && keycloakify build",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "check": "biome check",
+    "check:types": "tsc --noEmit",
+    "check:write": "biome check --write",
+    "dev": "vite dev --port 3004 --clearScreen false",
+    "format": "biome format",
+    "format:write": "biome format --write",
+    "lint": "biome lint",
+    "lint:write": "biome lint --write",
+    "storybook": "storybook dev -p 6006"
   },
   "dependencies": {
     "@lemma/ui": "workspace:*",

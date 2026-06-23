@@ -32,8 +32,8 @@ export type PollingLoopConfig = {
 };
 
 const defaultScheduler: PollingLoopScheduler = {
-  setTimeout: (callback, delayMs) => setTimeout(callback, delayMs),
   clearTimeout: (handle) => clearTimeout(handle as NodeJS.Timeout),
+  setTimeout: (callback, delayMs) => setTimeout(callback, delayMs),
 };
 
 export class PollingLoop {

@@ -12,73 +12,131 @@ import {
 } from "@lemma/events/domain";
 import type { JobDispatcher } from "@lemma/jobs/application";
 import type { NotificationProjector } from "@lemma/notifications/application";
-import { WORKBOOK_CALCULATION_REQUESTED_EVENT } from "@lemma/workbook/domain";
+import {
+  WORKBOOK_CALCULATION_REQUESTED_EVENT,
+  WORKBOOK_CALCULATION_SUCCEEDED_EVENT,
+} from "@lemma/workbook/domain";
 import { OutboxPollingDispatcher } from "./outbox-dispatcher.js";
 
 const at = new Date("2026-06-20T00:00:00.000Z");
 const lineage = {
-  requestId: "019e9315-6a87-715f-9861-8654df090001",
-  correlationId: "019e9315-6a87-715f-9861-8654df090002",
   causationId: null,
+  correlationId: "019e9315-6a87-715f-9861-8654df090002",
+  requestId: "019e9315-6a87-715f-9861-8654df090001",
 };
 
 describe("OutboxPollingDispatcher", () => {
-  it("marks workbook calculation requested events with missing sources as failed", async () => {
+  it("enqueues workbook calculation requested events without source diagnostics", async () => {
     const outboxService = new FakeOutboxService([
       createWorkbookCalculationRequestedEventWithoutSources(),
     ]);
     const jobDispatcher = new FakeJobDispatcher();
     const notificationProjector = new FakeNotificationProjector();
     const dispatcher = new OutboxPollingDispatcher({
-      outboxService: outboxService as unknown as OutboxService,
+      clock: { now: () => at },
+      config: {
+        batchSize: 1,
+        lockTimeoutMs: 10_000,
+        maxAttempts: 3,
+        pollIntervalMs: 1_000,
+        queueRetryDelaySeconds: 15,
+        queueRetryLimit: 10,
+        retryDelayMs: 30_000,
+        workerId: "worker-1",
+      },
       jobDispatcher: jobDispatcher as unknown as JobDispatcher,
       notificationProjector:
         notificationProjector as unknown as NotificationProjector,
-      clock: { now: () => at },
-      config: {
-        workerId: "worker-1",
-        batchSize: 1,
-        pollIntervalMs: 1_000,
-        lockTimeoutMs: 10_000,
-        retryDelayMs: 30_000,
-        maxAttempts: 3,
-        queueRetryLimit: 10,
-        queueRetryDelaySeconds: 15,
-      },
+      outboxService: outboxService as unknown as OutboxService,
     });
 
     assert.equal(await dispatcher.runOnce(), 1);
-    assert.equal(jobDispatcher.workbookCalculationEnqueueCalls.length, 0);
-    assert.equal(outboxService.failedCalls.length, 1);
-    assert.equal(
-      outboxService.failedCalls[0]?.errorMessage.includes(
-        "workbook_calculation.requested.v2 payload is missing sources.",
-      ),
-      true,
-    );
+    assert.deepEqual(jobDispatcher.workbookCalculationEnqueueCalls, [
+      {
+        workbookCalculationId: "019e9315-6a87-715f-9861-8654df090005",
+      },
+    ]);
+    assert.equal(outboxService.failedCalls.length, 0);
     assert.equal(notificationProjector.projectEventCalls, 0);
     assert.equal(notificationProjector.publishCalls, 0);
-    assert.equal(outboxService.publishedCalls.length, 0);
+    assert.equal(outboxService.publishedCalls.length, 1);
+  });
+
+  it("routes finished calculation without source summaries", async () => {
+    const outboxService = new FakeOutboxService([
+      createWorkbookCalculationSucceededEventWithoutSources(),
+    ]);
+    const jobDispatcher = new FakeJobDispatcher();
+    const dispatcher = new OutboxPollingDispatcher({
+      clock: { now: () => at },
+      config: {
+        batchSize: 1,
+        lockTimeoutMs: 10_000,
+        maxAttempts: 3,
+        pollIntervalMs: 1_000,
+        queueRetryDelaySeconds: 15,
+        queueRetryLimit: 10,
+        retryDelayMs: 30_000,
+        workerId: "worker-1",
+      },
+      jobDispatcher: jobDispatcher as unknown as JobDispatcher,
+      notificationProjector:
+        new FakeNotificationProjector() as unknown as NotificationProjector,
+      outboxService: outboxService as unknown as OutboxService,
+    });
+
+    assert.equal(await dispatcher.runOnce(), 1);
+    assert.deepEqual(jobDispatcher.questionGenerationEnqueueCalls, [
+      {
+        eventWorkbookSnapshotIds: ["019e9315-6a87-715f-9861-8654df090007"],
+        questionGenerationRunId: "019e9315-6a87-715f-9861-8654df090006",
+        workbookCalculationId: "019e9315-6a87-715f-9861-8654df090005",
+      },
+    ]);
+    assert.equal(outboxService.failedCalls.length, 0);
   });
 });
 
 function createWorkbookCalculationRequestedEventWithoutSources(): OutboxEvent {
   const envelope = domainEventEnvelope({
-    id: eventId("019e9315-6a87-715f-9861-8654df090003"),
-    type: WORKBOOK_CALCULATION_REQUESTED_EVENT,
-    schemaVersion: 1,
     aggregate: {
-      type: aggregateType("workbook_calculation"),
       id: aggregateId("019e9315-6a87-715f-9861-8654df090004"),
+      type: aggregateType("workbook_calculation"),
     },
+    id: eventId("019e9315-6a87-715f-9861-8654df090003"),
     lineage,
     occurredAt: at,
     payload: {
       workbookCalculationId: "019e9315-6a87-715f-9861-8654df090005",
       // sources intentionally omitted
     },
+    schemaVersion: 1,
+    type: WORKBOOK_CALCULATION_REQUESTED_EVENT,
   });
   return outboxEventFromEnvelope(envelope);
+}
+
+function createWorkbookCalculationSucceededEventWithoutSources(): OutboxEvent {
+  return outboxEventFromEnvelope(
+    domainEventEnvelope({
+      aggregate: {
+        id: aggregateId("019e9315-6a87-715f-9861-8654df090005"),
+        type: aggregateType("workbook_calculation"),
+      },
+      id: eventId("019e9315-6a87-715f-9861-8654df090008"),
+      lineage,
+      occurredAt: at,
+      payload: {
+        correlationId: "019e9315-6a87-715f-9861-8654df090006",
+        errorMessage: null,
+        snapshotIds: ["019e9315-6a87-715f-9861-8654df090007"],
+        status: "succeeded",
+        workbookCalculationId: "019e9315-6a87-715f-9861-8654df090005",
+      },
+      schemaVersion: 1,
+      type: WORKBOOK_CALCULATION_SUCCEEDED_EVENT,
+    }),
+  );
 }
 
 class FakeOutboxService {
@@ -126,8 +184,8 @@ class FakeOutboxService {
     retryAt?: Date;
   }) {
     this.failedCalls.push({
-      eventId: input.eventId,
       errorMessage: input.errorMessage,
+      eventId: input.eventId,
       retryAt: input.retryAt,
     });
   }
@@ -138,31 +196,42 @@ class FakeOutboxService {
 
   async recordProcessedEvent(_input: { eventId: string; consumer: string }) {
     return {
-      status: "recorded",
       processedEvent: {
-        eventId: _input.eventId,
         consumer: _input.consumer,
+        eventId: _input.eventId,
         processedAt: at,
       },
+      status: "recorded",
     };
   }
 }
 
 class FakeJobDispatcher {
+  readonly questionGenerationEnqueueCalls: Array<{
+    questionGenerationRunId: string;
+    workbookCalculationId: string | null;
+    eventWorkbookSnapshotIds: readonly string[];
+  }> = [];
   readonly workbookCalculationEnqueueCalls: Array<{
-    jobId: string;
     workbookCalculationId: string;
   }> = [];
 
-  async enqueueQuestionGenerationOrchestration(_input: {
+  async enqueueQuestionGenerationOrchestration(input: {
     jobId: string;
     questionGenerationRunId: string;
+    workbookCalculationId?: string | null;
+    eventWorkbookSnapshotIds?: readonly string[];
     lineage: unknown;
     retryLimit?: number;
     retryDelaySeconds?: number;
     [key: string]: unknown;
   }) {
-    throw new Error("Unexpected call.");
+    this.questionGenerationEnqueueCalls.push({
+      eventWorkbookSnapshotIds: input.eventWorkbookSnapshotIds ?? [],
+      questionGenerationRunId: input.questionGenerationRunId,
+      workbookCalculationId: input.workbookCalculationId ?? null,
+    });
+    return input.jobId;
   }
 
   async enqueueQuestionGenerationMaterialization(_input: {
@@ -187,22 +256,16 @@ class FakeJobDispatcher {
   }
 
   async enqueueWorkbookCalculation(input: {
-    jobId: string;
     workbookCalculationId: string;
-    sources: {
-      sourceId: string;
-      workbookId: string;
-    }[];
     lineage: unknown;
     retryLimit?: number;
     retryDelaySeconds?: number;
     [key: string]: unknown;
   }) {
     this.workbookCalculationEnqueueCalls.push({
-      jobId: input.jobId,
       workbookCalculationId: input.workbookCalculationId,
     });
-    return input.jobId;
+    return input.workbookCalculationId;
   }
 }
 

@@ -11,7 +11,6 @@ import type {
   WorkbookCalculationService,
   WorkbookService,
 } from "@lemma/workbook/application";
-import { normalizeWorkbookCalculationSources } from "@lemma/workbook/application";
 import { registerJobConsumer, workflowJobConsumer } from "./pipeline.js";
 
 export async function registerWorkbookValidationWorker(input: {
@@ -20,22 +19,22 @@ export async function registerWorkbookValidationWorker(input: {
   concurrency: number;
 }): Promise<QueueWorkerRegistration> {
   return registerJobConsumer({
-    jobQueue: input.jobQueue,
     concurrency: input.concurrency,
     consumer: workflowJobConsumer({
-      workflowName: "workbook",
-      stepName: "validate",
-      jobName: WORKBOOK_VALIDATE_JOB,
-      batchSize: 1,
-      parsePayload: parseWorkbookValidateJob,
-      lineage: (data) => data.lineage,
       attributes: (job) => ({ "workbook.id": job.data.workbookId }),
+      batchSize: 1,
+      jobName: WORKBOOK_VALIDATE_JOB,
+      lineage: (data) => data.lineage,
+      parsePayload: parseWorkbookValidateJob,
       run: (job) =>
         input.workbookService.processWorkbookValidation({
-          workbookId: job.data.workbookId,
           lineage: job.data.lineage,
+          workbookId: job.data.workbookId,
         }),
+      stepName: "validate",
+      workflowName: "workbook",
     }),
+    jobQueue: input.jobQueue,
   });
 }
 
@@ -45,25 +44,24 @@ export async function registerWorkbookCalculationWorker(input: {
   concurrency: number;
 }): Promise<QueueWorkerRegistration> {
   return registerJobConsumer({
-    jobQueue: input.jobQueue,
     concurrency: input.concurrency,
     consumer: workflowJobConsumer({
-      workflowName: "workbook",
-      stepName: "calculate",
-      jobName: WORKBOOK_CALCULATE_JOB,
-      batchSize: 1,
-      parsePayload: parseWorkbookCalculateJob,
-      lineage: (data) => data.lineage,
       attributes: (job) => ({
         "workbook.calculation_id": job.data.workbookCalculationId,
       }),
+      batchSize: 1,
+      jobName: WORKBOOK_CALCULATE_JOB,
+      lineage: (data) => data.lineage,
+      parsePayload: parseWorkbookCalculateJob,
       run: (job) =>
         input.workbookCalculationService.processWorkbookCalculation({
-          workbookCalculationId: job.data.workbookCalculationId,
-          sources: job.data.sources,
           lineage: job.data.lineage,
+          workbookCalculationId: job.data.workbookCalculationId,
         }),
+      stepName: "calculate",
+      workflowName: "workbook",
     }),
+    jobQueue: input.jobQueue,
   });
 }
 
@@ -85,9 +83,14 @@ function parseWorkbookCalculateJob(
   ) {
     throw new Error("Workbook calculate job payload is invalid.");
   }
+  if (!("sources" in (data as Record<string, unknown>))) {
+    throw new Error("sources must be an array.");
+  }
+  if (!Array.isArray((data as Record<string, unknown>).sources)) {
+    throw new Error("sources must be an array.");
+  }
   return {
-    ...data,
-    sources: normalizeWorkbookCalculationSources(data.sources, "sources"),
     lineage: parseOperationLineage(data.lineage),
+    workbookCalculationId: data.workbookCalculationId,
   };
 }

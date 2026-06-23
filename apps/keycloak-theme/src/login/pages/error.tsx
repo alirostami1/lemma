@@ -12,8 +12,8 @@ export function ErrorPage(props: LemmaPageProps<ErrorContext>) {
 
   return (
     <AuthLayout
-      title={message?.summary ?? msg("errorTitle")}
       description={msg("doTryAgain")}
+      title={message?.summary ?? msg("errorTitle")}
     >
       {client?.baseUrl ? (
         <Button asChild className="w-full">

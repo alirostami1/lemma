@@ -20,63 +20,63 @@ export async function registerQuestionGenerationWorker(input: {
   retryDelaySeconds: number;
 }): Promise<QueueWorkerRegistration> {
   const orchestrator = await registerJobConsumer({
-    jobQueue: input.jobQueue,
     concurrency: input.concurrency,
     consumer: workflowJobConsumer({
-      workflowName: "question_generation",
-      stepName: "orchestrate",
-      jobName: QUESTION_GENERATION_ORCHESTRATE_JOB,
-      batchSize: 1,
-      parsePayload: parseQuestionGenerationOrchestrateJob,
-      lineage: (data) => data.lineage,
       attributes: (job) => ({
         "question_generation.run_id": job.data.questionGenerationRunId,
       }),
+      batchSize: 1,
+      jobName: QUESTION_GENERATION_ORCHESTRATE_JOB,
+      lineage: (data) => data.lineage,
+      parsePayload: parseQuestionGenerationOrchestrateJob,
       run: async (job) => {
         const result =
           await input.questionGenerationWorkerService.orchestrateQuestionGenerationRun(
             {
+              eventWorkbookSnapshotIds: job.data.eventWorkbookSnapshotIds,
+              lineage: job.data.lineage,
               questionGenerationRunId: job.data.questionGenerationRunId,
-              workbookCalculationId: job.data.workbookCalculationId,
-              workbookSnapshotIds: job.data.workbookSnapshotIds,
               workbookCalculationErrorMessage:
                 job.data.workbookCalculationErrorMessage,
-              lineage: job.data.lineage,
+              workbookCalculationId: job.data.workbookCalculationId,
             },
           );
         if (result.status !== "materialization_ready") {
           return;
         }
         await input.jobDispatcher.enqueueQuestionGenerationMaterialization({
-          questionGenerationRunId: result.questionGenerationRun.id,
-          workbookSnapshotIds: result.workbookSnapshotIds,
+          eventWorkbookSnapshotIds: result.eventWorkbookSnapshotIds,
           lineage: childOperationLineage(result.lineage, job.id),
-          retryLimit: input.retryLimit,
+          questionGenerationRunId: result.questionGenerationRun.id,
           retryDelaySeconds: input.retryDelaySeconds,
+          retryLimit: input.retryLimit,
         });
       },
+      stepName: "orchestrate",
+      workflowName: "question_generation",
     }),
+    jobQueue: input.jobQueue,
   });
   const materializer = await registerJobConsumer({
-    jobQueue: input.jobQueue,
     concurrency: input.concurrency,
     consumer: workflowJobConsumer({
-      workflowName: "question_generation",
-      stepName: "materialize",
-      jobName: QUESTION_GENERATION_MATERIALIZE_JOB,
-      batchSize: 1,
-      parsePayload: parseQuestionGenerationMaterializeJob,
-      lineage: (data) => data.lineage,
       attributes: (job) => ({
         "question_generation.run_id": job.data.questionGenerationRunId,
       }),
+      batchSize: 1,
+      jobName: QUESTION_GENERATION_MATERIALIZE_JOB,
+      lineage: (data) => data.lineage,
+      parsePayload: parseQuestionGenerationMaterializeJob,
       run: (job) =>
         input.questionGenerationWorkerService.materializeQuestionGenerationRun({
-          questionGenerationRunId: job.data.questionGenerationRunId,
-          workbookSnapshotIds: job.data.workbookSnapshotIds,
+          eventWorkbookSnapshotIds: job.data.eventWorkbookSnapshotIds,
           lineage: job.data.lineage,
+          questionGenerationRunId: job.data.questionGenerationRunId,
         }),
+      stepName: "materialize",
+      workflowName: "question_generation",
     }),
+    jobQueue: input.jobQueue,
   });
   return {
     async unregister() {
@@ -92,8 +92,8 @@ function parseQuestionGenerationOrchestrateJob(
   if (
     typeof data.questionGenerationRunId !== "string" ||
     data.questionGenerationRunId.length === 0 ||
-    !Array.isArray(data.workbookSnapshotIds) ||
-    !data.workbookSnapshotIds.every((id) => typeof id === "string") ||
+    !Array.isArray(data.eventWorkbookSnapshotIds) ||
+    !data.eventWorkbookSnapshotIds.every((id) => typeof id === "string") ||
     (data.workbookCalculationId !== null &&
       typeof data.workbookCalculationId !== "string") ||
     (data.workbookCalculationErrorMessage !== null &&
@@ -110,8 +110,8 @@ function parseQuestionGenerationMaterializeJob(
   if (
     typeof data.questionGenerationRunId !== "string" ||
     data.questionGenerationRunId.length === 0 ||
-    !Array.isArray(data.workbookSnapshotIds) ||
-    !data.workbookSnapshotIds.every((id) => typeof id === "string")
+    !Array.isArray(data.eventWorkbookSnapshotIds) ||
+    !data.eventWorkbookSnapshotIds.every((id) => typeof id === "string")
   ) {
     throw new Error("Question generation materialize job payload is invalid.");
   }

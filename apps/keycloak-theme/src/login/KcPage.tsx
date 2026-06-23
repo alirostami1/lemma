@@ -27,10 +27,10 @@ export default function KcPage(props: { kcContext: KcContext }) {
   }
 
   const commonProps = {
-    i18n,
-    doUseDefaultCss: false,
-    Template,
     classes,
+    doUseDefaultCss: false,
+    i18n,
+    Template,
   };
 
   return (
@@ -43,9 +43,9 @@ export default function KcPage(props: { kcContext: KcContext }) {
             return (
               <RegisterPage
                 {...commonProps}
+                doMakeUserConfirmPassword={doMakeUserConfirmPassword}
                 kcContext={kcContext}
                 UserProfileFormFields={UserProfileFormFields}
-                doMakeUserConfirmPassword={doMakeUserConfirmPassword}
               />
             );
           case "login-reset-password.ftl":
@@ -62,9 +62,9 @@ export default function KcPage(props: { kcContext: KcContext }) {
             return (
               <DefaultPage
                 {...commonProps}
+                doMakeUserConfirmPassword={doMakeUserConfirmPassword}
                 kcContext={kcContext}
                 UserProfileFormFields={UserProfileFormFields}
-                doMakeUserConfirmPassword={doMakeUserConfirmPassword}
               />
             );
         }

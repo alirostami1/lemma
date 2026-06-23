@@ -18,8 +18,8 @@ export class OutboxCleanupScheduler {
     },
   ) {
     this.pollingLoop = new PollingLoop({
-      name: "outbox-cleanup",
       intervalMs: deps.config.intervalMs,
+      name: "outbox-cleanup",
       task: () => this.runPollingTask(),
     });
   }
@@ -43,8 +43,8 @@ export class OutboxCleanupScheduler {
       async (span) => {
         const deletedCount =
           await this.deps.outboxService.cleanupPublishedEvents({
-            olderThanMs: this.deps.config.publishedRetentionMs,
             limit: this.deps.config.batchSize,
+            olderThanMs: this.deps.config.publishedRetentionMs,
           });
         span.setAttribute("outbox.cleanup.deleted_count", deletedCount);
         return deletedCount;
@@ -65,8 +65,8 @@ export class OutboxCleanupScheduler {
     return {
       ...result,
       log: {
-        message: "outbox cleanup completed",
         fields: { "outbox.cleanup.deleted_count": deletedCount },
+        message: "outbox cleanup completed",
       },
     };
   }

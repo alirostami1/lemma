@@ -14,7 +14,7 @@ Admin UI for operational and identity workflows.
 pnpm --filter admin dev
 pnpm --filter admin build
 pnpm --filter admin test
-pnpm --filter admin check-types
+pnpm --filter admin check:types
 ```
 
 ## Notes
