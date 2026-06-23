@@ -7,47 +7,53 @@
   ],
   "type": "module",
   "imports": {
-    "#/components/ui/*": {
-      "types": "./src/components/ui/*.tsx",
-      "development": "./src/components/ui/*.tsx",
-      "import": "./dist/components/ui/*.js",
-      "default": "./dist/components/ui/*.js"
+    "#components/*": {
+      "types": "./src/components/*.tsx",
+      "source": "./src/components/*.tsx",
+      "import": "./dist/components/*.js",
+      "default": "./dist/components/*.js"
     },
-    "#/hooks/*": {
+    "#hooks/*": {
       "types": "./src/hooks/*.ts",
-      "development": "./src/hooks/*.ts",
+      "source": "./src/hooks/*.ts",
       "import": "./dist/hooks/*.js",
       "default": "./dist/hooks/*.js"
     },
-    "#/lib/*": {
+    "#lib/*": {
       "types": "./src/lib/*.ts",
-      "development": "./src/lib/*.ts",
+      "source": "./src/lib/*.ts",
       "import": "./dist/lib/*.js",
       "default": "./dist/lib/*.js"
     }
   },
   "exports": {
     "./styles.css": {
-      "development": "./src/styles.css",
+      "source": "./src/styles.css",
       "default": "./src/styles.css"
     },
     "./lib/utils": {
       "types": "./src/lib/utils.ts",
-      "development": "./src/lib/utils.ts",
+      "source": "./src/lib/utils.ts",
       "import": "./dist/lib/utils.js",
       "default": "./dist/lib/utils.js"
     },
     "./hooks/*": {
       "types": "./src/hooks/*.ts",
-      "development": "./src/hooks/*.ts",
+      "source": "./src/hooks/*.ts",
       "import": "./dist/hooks/*.js",
       "default": "./dist/hooks/*.js"
     },
+    "./lib/*": {
+      "types": "./src/lib/*.ts",
+      "source": "./src/lib/*.ts",
+      "import": "./dist/lib/*.js",
+      "default": "./dist/lib/*.js"
+    },
     "./components/*": {
-      "types": "./src/components/ui/*.tsx",
-      "development": "./src/components/ui/*.tsx",
-      "import": "./dist/components/ui/*.js",
-      "default": "./dist/components/ui/*.js"
+      "types": "./src/components/*.tsx",
+      "source": "./src/components/*.tsx",
+      "import": "./dist/components/*.js",
+      "default": "./dist/components/*.js"
     }
   },
   "scripts": {

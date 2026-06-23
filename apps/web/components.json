@@ -7,15 +7,14 @@
     "config": "",
     "css": "src/styles.css",
     "baseColor": "neutral",
-    "cssVariables": true,
-    "prefix": ""
+    "cssVariables": true
   },
+  "iconLibrary": "lucide",
   "aliases": {
-    "components": "#components",
-    "ui": "#components",
-    "lib": "#lib",
-    "hooks": "#hooks",
-    "utils": "#lib/utils"
-  },
-  "iconLibrary": "lucide"
+    "components": "#/components",
+    "lib": "#/lib",
+    "hooks": "#/hooks",
+    "utils": "@lemma/ui/lib/utils",
+    "ui": "@lemma/ui/components"
+  }
 }
