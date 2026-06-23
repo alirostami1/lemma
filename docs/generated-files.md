@@ -15,13 +15,21 @@ The package OpenAPI files below are source files, not generated files:
 | `@lemma/workbook` | `packages/workbook/openapi/openapi.ts` |
 | `@lemma/api-contract` | `packages/api-contract/src/openapi.ts` |
 
-`@lemma/api-contract` composes package fragments into separate API contracts:
+`@lemma/api-contract` composes package fragments into separate API contracts at
+Node/tooling time:
 
 - `openapi`: full API contract for API docs and whole-API linting
 - `webOpenapi`: end-user web app contract; excludes ops and admin identity routes
 - `adminOpenapi`: admin app contract; includes admin-owned routes
 
-## OpenAPI Generated Outputs
+## API-docs embedding
+
+`apps/api-docs` consumes the composed contract through a Vite virtual module that
+is populated from `@lemma/api-contract/source` in `vite.config.js`.
+
+```ts
+import { openapi } from "virtual:lemma-openapi";
+```
 
 | Owner | Generator Config | Output | Command |
 | --- | --- | --- | --- |
@@ -32,10 +40,17 @@ The package OpenAPI files below are source files, not generated files:
 | `@lemma/workbook` | `packages/workbook/orval.config.ts` | `packages/workbook/src/generated` | `pnpm --filter @lemma/workbook generate:hono` |
 | `web` | `apps/web/orval.config.ts` | `apps/web/src/api/generated` | `pnpm --filter web generate:client` |
 
-The web generator must use `webOpenapi`, not the full `openapi`, so admin/ops
-clients do not appear in the end-user app. Web identity generation is limited to
-`/identity/me` and `/identity/me/roles`; user and role administration belongs to
-the admin app.
+The web generator must use `@lemma/api-contract/source` for `webOpenapi` because
+it runs in Node/tooling context and needs typed contract composition.
+Admin/ops clients stay out via `webOpenapi` filtering.
+Web identity generation is limited to `/identity/me` and `/identity/me/roles`; user
+and role administration belongs to the admin app.
+
+Run web generation directly:
+
+```bash
+pnpm --filter web generate:client
+```
 
 `apps/admin` currently keeps admin-owned API calls in domain API files instead
 of generated Orval output. Add an admin generator against `adminOpenapi` only
