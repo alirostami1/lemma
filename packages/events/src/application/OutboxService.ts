@@ -96,8 +96,8 @@ export class OutboxService {
       }
       const now = this.deps.clock.now();
       return this.deps.outboxRepository.deletePublishedEventsBefore({
-        publishedBefore: new Date(now.getTime() - input.olderThanMs),
         limit: input.limit,
+        publishedBefore: new Date(now.getTime() - input.olderThanMs),
       });
     });
   }
@@ -125,11 +125,11 @@ export class OutboxService {
         return { status: "already_processed" };
       }
       return {
-        status: "recorded",
         processedEvent: {
           ...input,
           processedAt,
         },
+        status: "recorded",
       };
     });
   }

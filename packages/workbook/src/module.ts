@@ -12,6 +12,7 @@ import {
   WorkbookService,
   type WorkbookSnapshotResolverPort,
 } from "./application/index.js";
+import { workbookCalculationId } from "./domain/index.js";
 import { type RequireIdentity, workbookRoutes } from "./http/index.js";
 import {
   createKyselyWorkbookTransaction,
@@ -33,12 +34,12 @@ export function createWorkbookModule(deps: {
   const workbookCalculator = new EngineWorkbookCalculator(deps.workbookConfig);
 
   const serviceDeps = {
+    clock: deps.clock,
+    idGenerator: deps.idGenerator,
+    workbookCalculator,
+    workbookFileProvider,
     workbookRepository,
     workbookTransaction,
-    workbookFileProvider,
-    workbookCalculator,
-    idGenerator: deps.idGenerator,
-    clock: deps.clock,
   };
   const workbookService = new WorkbookService(serviceDeps);
   const workbookCalculationService = new WorkbookCalculationService(
@@ -47,18 +48,26 @@ export function createWorkbookModule(deps: {
 
   const workbookAccessPort = new WorkbookAccessAdapter(workbookService);
   const workbookCalculationPort = new WorkbookCalculationRequestAdapter({
+    clock: deps.clock,
+    idGenerator: deps.idGenerator,
     workbookRepository,
     workbookTransaction,
-    idGenerator: deps.idGenerator,
-    clock: deps.clock,
   });
+  const workbookSnapshotReadPort = {
+    listSnapshotMetadataForCalculation: async (input: {
+      workbookCalculationId: string;
+    }) =>
+      workbookRepository.listWorkbookSnapshotMetadataForCalculation(
+        workbookCalculationId(input.workbookCalculationId),
+      ),
+  };
   const workbookSnapshotResolverPort: WorkbookSnapshotResolverPort = {
     resolveValueSource: async (input) =>
       (
         await workbookCalculationService.resolveWorkbookSnapshotValue({
           currentUser: input.currentUser,
-          workbookSnapshotId: input.workbookSnapshotId,
           source: input.source,
+          workbookSnapshotId: input.workbookSnapshotId,
         })
       ).value,
   };
@@ -68,8 +77,8 @@ export function createWorkbookModule(deps: {
         (
           await workbookCalculationService.resolveWorkbookSnapshotValueForInternal(
             {
-              workbookSnapshotId: input.workbookSnapshotId,
               source: input.source,
+              workbookSnapshotId: input.workbookSnapshotId,
             },
           )
         ).value,
@@ -77,17 +86,18 @@ export function createWorkbookModule(deps: {
 
   const routes = workbookRoutes({
     requireIdentity: deps.requireIdentity,
-    workbookService,
     workbookCalculationService,
+    workbookService,
   });
 
   return {
     routes,
-    workbookService,
-    workbookCalculationService,
     workbookAccessPort,
     workbookCalculationPort,
-    workbookSnapshotResolverPort,
+    workbookCalculationService,
     workbookInternalSnapshotResolverPort,
+    workbookService,
+    workbookSnapshotReadPort,
+    workbookSnapshotResolverPort,
   };
 }

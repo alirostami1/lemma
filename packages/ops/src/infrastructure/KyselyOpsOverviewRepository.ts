@@ -28,11 +28,11 @@ export class KyselyOpsOverviewRepository {
     `.execute(this.db);
     const rows = new Map(result.rows.map((row) => [row.status, row]));
     return {
-      pendingCount: rows.get("pending")?.count ?? 0,
-      publishingCount: rows.get("publishing")?.count ?? 0,
-      publishedCount: rows.get("published")?.count ?? 0,
       failedCount: rows.get("failed")?.count ?? 0,
       oldestPendingCreatedAt: rows.get("pending")?.oldestCreatedAt ?? null,
+      pendingCount: rows.get("pending")?.count ?? 0,
+      publishedCount: rows.get("published")?.count ?? 0,
+      publishingCount: rows.get("publishing")?.count ?? 0,
     };
   }
 
@@ -66,19 +66,19 @@ export class KyselyOpsOverviewRepository {
       `.execute(this.db);
       return {
         available: true,
-        pendingCount: pending.rows[0]?.count ?? 0,
         completedCount: completed.rows[0]?.count ?? 0,
         failedCount: failed.rows[0]?.count ?? 0,
         oldestPendingCreatedAt: pending.rows[0]?.oldestCreatedAt ?? null,
+        pendingCount: pending.rows[0]?.count ?? 0,
       };
     } catch (error) {
       if (isMissingPgBossTable(error)) {
         return {
           available: false,
-          pendingCount: 0,
           completedCount: 0,
           failedCount: 0,
           oldestPendingCreatedAt: null,
+          pendingCount: 0,
         };
       }
       throw error;

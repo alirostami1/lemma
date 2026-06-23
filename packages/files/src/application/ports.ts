@@ -9,6 +9,14 @@ import type {
 } from "../domain/index.js";
 
 export interface FilesRepository {
+  createFileFromUpload(input: {
+    file: File;
+    upload: FileUpload;
+  }): Promise<File>;
+  createFileUpload(upload: FileUpload): Promise<FileUpload>;
+  findFileById(fileId: FileId): Promise<File | null>;
+  findFileByUploadId(uploadId: FileUploadId): Promise<File | null>;
+  findFileUploadById(uploadId: FileUploadId): Promise<FileUpload | null>;
   listFilesByOwnerUserId(input: {
     ownerUserId: UserId;
     statuses: readonly FileStatus[];
@@ -16,33 +24,25 @@ export interface FilesRepository {
     limit: number;
     cursor?: Date;
   }): Promise<File[]>;
-  findFileById(fileId: FileId): Promise<File | null>;
-  findFileByUploadId(uploadId: FileUploadId): Promise<File | null>;
-  createFileFromUpload(input: {
-    file: File;
-    upload: FileUpload;
-  }): Promise<File>;
   updateFile(file: File): Promise<File | null>;
-  createFileUpload(upload: FileUpload): Promise<FileUpload>;
-  findFileUploadById(uploadId: FileUploadId): Promise<FileUpload | null>;
   updateFileUpload(upload: FileUpload): Promise<FileUpload | null>;
 }
 
 export interface FileStorage {
+  createDownloadUrl(input: { bucket: string; key: string }): Promise<string>;
   createUploadUrl(input: {
     bucket: string;
     key: string;
     contentType: string;
     checksumSha256: string;
   }): Promise<string>;
-  createDownloadUrl(input: { bucket: string; key: string }): Promise<string>;
+  deleteObject(input: { bucket: string; key: string }): Promise<void>;
+  getObjectBytes(input: { bucket: string; key: string }): Promise<Uint8Array>;
   getObjectMetadata(input: { bucket: string; key: string }): Promise<{
     byteSize?: number;
     checksumSha256?: string;
     contentType?: string;
   } | null>;
-  getObjectBytes(input: { bucket: string; key: string }): Promise<Uint8Array>;
-  deleteObject(input: { bucket: string; key: string }): Promise<void>;
 }
 
 export type FileContentReaderPort = {

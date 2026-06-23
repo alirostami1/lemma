@@ -35,9 +35,9 @@ export class OpsService {
     return this.operation("list_outbox_events", async () => {
       this.requireOpsAccess(command.currentUser);
       return this.deps.opsRepository.listOutboxEvents({
-        status: parseStatus(command.status),
-        reviewState: parseReviewState(command.reviewState),
         limit: normalizeLimit(command.limit),
+        reviewState: parseReviewState(command.reviewState),
+        status: parseStatus(command.status),
       });
     });
   }
@@ -59,8 +59,8 @@ export class OpsService {
     return this.operation("list_queue_jobs", async () => {
       this.requireOpsAccess(command.currentUser);
       return this.deps.opsRepository.listQueueJobs({
-        state: parseQueueState(command.state),
         limit: normalizeLimit(command.limit),
+        state: parseQueueState(command.state),
       });
     });
   }
@@ -87,10 +87,10 @@ export class OpsService {
       this.requireOpsAccess(command.currentUser);
       assertUuid(command.eventId);
       const event = await this.deps.opsRepository.reviewOutboxEvent({
-        eventId: command.eventId,
         action: command.action,
-        note: normalizeNote(command.note),
         actorUserId: command.currentUser.user.id,
+        eventId: command.eventId,
+        note: normalizeNote(command.note),
       });
       if (!event) {
         throw new OpsOutboxEventNotFoundError();
@@ -108,9 +108,9 @@ export class OpsService {
       this.requireOpsAccess(command.currentUser);
       assertUuid(command.eventId);
       const event = await this.deps.opsRepository.replayOutboxEvent({
+        actorUserId: command.currentUser.user.id,
         eventId: command.eventId,
         note: normalizeNote(command.note),
-        actorUserId: command.currentUser.user.id,
       });
       if (!event) {
         throw new OpsOutboxEventNotFoundError();

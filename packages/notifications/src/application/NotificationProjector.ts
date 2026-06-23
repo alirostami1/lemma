@@ -86,16 +86,16 @@ export class NotificationProjector {
 
   private messageForEvent(event: OutboxEvent): RealtimeNotificationMessage {
     return {
-      schemaVersion: 1,
+      aggregate: {
+        id: event.aggregateId,
+        type: event.aggregateType,
+      },
       eventId: event.id,
       eventType: event.eventType,
       lineage: event.lineage,
-      aggregate: {
-        type: event.aggregateType,
-        id: event.aggregateId,
-      },
-      payload: event.payload,
       occurredAt: event.createdAt.toISOString(),
+      payload: event.payload,
+      schemaVersion: 1,
     };
   }
 }

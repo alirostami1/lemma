@@ -68,8 +68,9 @@ export async function openXlsxZipContainer(
   );
 
   return {
-    entries,
     byName,
+    close: () => zipFile.close(),
+    entries,
     readEntry: (entry) =>
       readZipEntry(zipFile, sourceByName.get(entry.name), entry, config),
     async readTextEntry(entry) {
@@ -77,7 +78,6 @@ export async function openXlsxZipContainer(
         await readZipEntry(zipFile, sourceByName.get(entry.name), entry, config)
       ).toString("utf8");
     },
-    close: () => zipFile.close(),
   };
 }
 
@@ -110,8 +110,8 @@ function indexZipEntries(
     if (zipFile.entryCount > (config.maxZipEntries ?? 10_000)) {
       reject(
         invalidZip("Workbook zip has too many entries.", {
-          reason: "zip_entry_count_exceeded",
           entryCount: zipFile.entryCount,
+          reason: "zip_entry_count_exceeded",
         }),
       );
       return;
@@ -180,23 +180,23 @@ function toIndexedEntry(
   names: Set<string>,
 ): IndexedZipEntry {
   validateEntryMetadata({
-    name: entry.fileName,
-    method: entry.compressionMethod,
     compressedSize: entry.compressedSize,
-    uncompressedSize: entry.uncompressedSize,
-    offset: entry.relativeOffsetOfLocalHeader,
-    encrypted: entry.isEncrypted(),
     config,
+    encrypted: entry.isEncrypted(),
+    method: entry.compressionMethod,
+    name: entry.fileName,
     names,
+    offset: entry.relativeOffsetOfLocalHeader,
+    uncompressedSize: entry.uncompressedSize,
   });
 
   return {
-    name: entry.fileName,
     compressedSize: entry.compressedSize,
-    uncompressedSize: entry.uncompressedSize,
     method: entry.compressionMethod,
+    name: entry.fileName,
     offset: entry.relativeOffsetOfLocalHeader,
     source: entry,
+    uncompressedSize: entry.uncompressedSize,
   };
 }
 
@@ -213,8 +213,8 @@ async function readZipEntry(
     entry.uncompressedSize > (config.maxZipEntryBytes ?? config.maxFileBytes)
   ) {
     throw invalidZip(`Workbook zip entry is too large: ${entry.name}`, {
-      reason: "zip_entry_too_large",
       entry: entry.name,
+      reason: "zip_entry_too_large",
     });
   }
 
@@ -260,22 +260,22 @@ function validateEntryMetadata(input: {
 }) {
   if (!input.name || input.name.startsWith("/") || input.name.includes("..")) {
     throw invalidZip(`Workbook zip entry path is unsafe: ${input.name}`, {
-      reason: "zip_path_traversal",
       entry: input.name,
+      reason: "zip_path_traversal",
     });
   }
   if (input.names.has(input.name)) {
     throw invalidZip(`Workbook zip entry is duplicated: ${input.name}`, {
-      reason: "zip_duplicate_entry",
       entry: input.name,
+      reason: "zip_duplicate_entry",
     });
   }
   input.names.add(input.name);
 
   if (input.encrypted || (input.method !== 0 && input.method !== 8)) {
     throw invalidZip(`Unsupported workbook zip compression: ${input.name}`, {
-      reason: "zip_unsupported_compression",
       entry: input.name,
+      reason: "zip_unsupported_compression",
     });
   }
   if (!Number.isSafeInteger(input.offset) || input.offset < 0) {
@@ -286,8 +286,8 @@ function validateEntryMetadata(input: {
     (input.config.maxZipEntryBytes ?? input.config.maxFileBytes)
   ) {
     throw invalidZip(`Workbook zip entry is too large: ${input.name}`, {
-      reason: "zip_entry_too_large",
       entry: input.name,
+      reason: "zip_entry_too_large",
     });
   }
   if (
@@ -298,8 +298,8 @@ function validateEntryMetadata(input: {
     throw invalidZip(
       `Workbook zip entry compression ratio is too high: ${input.name}`,
       {
-        reason: "zip_compression_ratio_exceeded",
         entry: input.name,
+        reason: "zip_compression_ratio_exceeded",
       },
     );
   }
@@ -307,9 +307,9 @@ function validateEntryMetadata(input: {
 
 function invalidZip(message: string, details: Record<string, unknown> = {}) {
   return new InvalidWorkbookError(message, {
-    sheetCount: 0,
     cellCount: 0,
-    formulaCount: 0,
     forbiddenFeatureFindings: [String(details.reason ?? "invalid_zip")],
+    formulaCount: 0,
+    sheetCount: 0,
   });
 }

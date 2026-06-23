@@ -77,8 +77,8 @@ export class KyselyIdentityRepository implements IdentityRepository {
       .values(mapUserToInsert(user))
       .onConflict((oc) =>
         oc.column("identityId").doUpdateSet({
-          email: user.email,
           displayName: user.displayName,
+          email: user.email,
           updatedAt: user.updatedAt,
         }),
       )
@@ -153,9 +153,9 @@ export class KyselyIdentityRepository implements IdentityRepository {
       .values(mapUserRoleGrantToInsert(userRole))
       .onConflict((oc) =>
         oc.columns(["userId", "roleId"]).doUpdateSet({
-          grantedByUserId: userRole.grantedByUserId,
-          expiresAt: userRole.expiresAt,
           createdAt: userRole.createdAt,
+          expiresAt: userRole.expiresAt,
+          grantedByUserId: userRole.grantedByUserId,
         }),
       )
       .execute();
@@ -175,20 +175,20 @@ export class KyselyIdentityRepository implements IdentityRepository {
 
 function mapUserToInsert(user: User): Insertable<Users> {
   return {
+    createdAt: user.createdAt,
+    displayName: user.displayName,
+    email: user.email,
     id: user.id,
     identityId: user.identityId,
-    email: user.email,
-    displayName: user.displayName,
     status: user.status,
-    createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
 }
 
 function mapUserToUpdate(user: User): Updateable<Users> {
   return {
-    email: user.email,
     displayName: user.displayName,
+    email: user.email,
     status: user.status,
     updatedAt: user.updatedAt,
   };
@@ -198,10 +198,10 @@ function mapUserRoleGrantToInsert(
   userRole: UserRoleGrant,
 ): Insertable<UserRoles> {
   return {
-    userId: userRole.userId,
-    roleId: userRole.roleId,
-    grantedByUserId: userRole.grantedByUserId,
-    expiresAt: userRole.expiresAt,
     createdAt: userRole.createdAt,
+    expiresAt: userRole.expiresAt,
+    grantedByUserId: userRole.grantedByUserId,
+    roleId: userRole.roleId,
+    userId: userRole.userId,
   };
 }

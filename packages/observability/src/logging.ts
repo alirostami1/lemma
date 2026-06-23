@@ -18,14 +18,14 @@ export function createPinoStructuredLogger(
 
 function createStructuredLogger(logger: Logger): StructuredLogger {
   return {
+    error(message, fields) {
+      logger.error(compactLogFields(fields), message);
+    },
     info(message, fields) {
       logger.info(compactLogFields(fields), message);
     },
     warn(message, fields) {
       logger.warn(compactLogFields(fields), message);
-    },
-    error(message, fields) {
-      logger.error(compactLogFields(fields), message);
     },
   };
 }
@@ -33,8 +33,8 @@ function createStructuredLogger(logger: Logger): StructuredLogger {
 export function errorLogFields(error: unknown): LogFields {
   if (error instanceof Error) {
     return {
-      "error.name": error.name,
       "error.message": error.message,
+      "error.name": error.name,
       "error.stack": error.stack ?? null,
     };
   }

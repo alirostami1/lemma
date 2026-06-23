@@ -31,8 +31,8 @@ export class KeycloakIdentityProvider implements IdentityProvider {
       async () => {
         try {
           const { payload } = await jwtVerify(accessToken, this.jwks, {
-            issuer: this.config.issuerUrl,
             audience: this.config.audience,
+            issuer: this.config.issuerUrl,
           });
 
           return verifiedIdentityFromJwtPayload(payload);
@@ -59,11 +59,11 @@ function verifiedIdentityFromJwtPayload(payload: JWTPayload): VerifiedIdentity {
   const displayName = stringClaimOrNull(payload, "name") ?? preferredUsername;
 
   return {
-    identityId: identityId(payload.sub),
-    sessionId: stringClaimOrNull(payload, "sid") ?? "",
-    email: email ?? `${payload.sub}@identity.local`,
     displayName: displayName ?? payload.sub,
+    email: email ?? `${payload.sub}@identity.local`,
+    identityId: identityId(payload.sub),
     preferredUsername: preferredUsername ?? payload.sub,
+    sessionId: stringClaimOrNull(payload, "sid") ?? "",
   };
 }
 

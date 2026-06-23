@@ -27,21 +27,21 @@ export function createFilesModule(deps: {
   const storage = new S3FileStorage(deps.storageConfig);
 
   const filesService = new FilesService({
-    filesRepository,
-    fileStorage: storage,
-    idGenerator: deps.idGenerator,
     clock: deps.clock,
     config: deps.config,
+    fileStorage: storage,
+    filesRepository,
+    idGenerator: deps.idGenerator,
   });
   const fileContentReaderPort = new FileContentReader({
-    filesRepository,
     fileStorage: storage,
+    filesRepository,
   });
 
   const routes = filesRoutes({
-    requireIdentity: deps.requireIdentity,
     filesService,
+    requireIdentity: deps.requireIdentity,
   });
 
-  return { routes, filesService, fileContentReaderPort };
+  return { fileContentReaderPort, filesService, routes };
 }

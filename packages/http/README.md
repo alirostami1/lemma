@@ -13,6 +13,6 @@ response handling.
 
 ```bash
 pnpm --filter @lemma/http build
-pnpm --filter @lemma/http check-types
+pnpm --filter @lemma/http check:types
 pnpm --filter @lemma/http lint
 ```

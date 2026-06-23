@@ -33,23 +33,23 @@ export interface IdentityProvider {
 }
 
 export interface IdentityRepository {
+  createUser(user: User): Promise<User>;
+
+  findRoleById(roleId: RoleId): Promise<Role | null>;
+  findRoleByKey(key: GlobalRoleKey): Promise<Role | null>;
+  findUserById(userId: UserId): Promise<User | null>;
+  findUserByIdentityId(identityId: IdentityId): Promise<User | null>;
+  grantUserRole(userRole: UserRoleGrant): Promise<void>;
+  listRoles(): Promise<Role[]>;
+
+  listUserRoles(userId: UserId): Promise<UserGrantedRole[]>;
   listUsers(input?: {
     search?: string | null;
     status?: UserStatus | null;
     limit?: number;
   }): Promise<User[]>;
-  findUserById(userId: UserId): Promise<User | null>;
-  findUserByIdentityId(identityId: IdentityId): Promise<User | null>;
-  createUser(user: User): Promise<User>;
-  updateUser(user: User): Promise<User | null>;
-
-  findRoleById(roleId: RoleId): Promise<Role | null>;
-  findRoleByKey(key: GlobalRoleKey): Promise<Role | null>;
-  listRoles(): Promise<Role[]>;
-
-  listUserRoles(userId: UserId): Promise<UserGrantedRole[]>;
-  grantUserRole(userRole: UserRoleGrant): Promise<void>;
   revokeUserRole(input: { userId: UserId; roleId: RoleId }): Promise<void>;
+  updateUser(user: User): Promise<User | null>;
 }
 
 export interface IdGenerator {

@@ -1,5 +1,6 @@
 import type { DatabaseExecutor } from "@lemma/db";
 import type {
+  FileId,
   UserId,
   Workbook,
   WorkbookId,
@@ -42,6 +43,19 @@ export class KyselyWorkbookCatalogRepository {
       .selectFrom("workbooks")
       .selectAll()
       .where("id", "=", id)
+      .executeTakeFirst();
+    return row ? mapWorkbookRowToDomain(row) : null;
+  }
+
+  async findWorkbookByOwnerUserIdAndFileId(input: {
+    ownerUserId: UserId;
+    fileId: FileId;
+  }): Promise<Workbook | null> {
+    const row = await this.db
+      .selectFrom("workbooks")
+      .selectAll()
+      .where("ownerUserId", "=", input.ownerUserId)
+      .where("fileId", "=", input.fileId)
       .executeTakeFirst();
     return row ? mapWorkbookRowToDomain(row) : null;
   }

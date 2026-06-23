@@ -22,17 +22,17 @@ describe("LibreOffice worker client", () => {
 
     try {
       await postWorkbookToLibreOfficeWorker({
-        serviceUrl: "http://localhost:8080",
-        path,
-        timeoutMs: 1000,
+        maxCachedValueBytes: 1024,
+        maxCells: 100,
         maxResponseBytes: 1024,
         maxSheets: 10,
-        maxCells: 100,
-        maxCachedValueBytes: 1024,
+        path,
         requestId,
+        serviceUrl: "http://localhost:8080",
+        timeoutMs: 1000,
       });
     } finally {
-      await rm(dir, { recursive: true, force: true });
+      await rm(dir, { force: true, recursive: true });
     }
 
     const init = fetch.mock.calls[0]?.[1];
@@ -44,8 +44,8 @@ describe("LibreOffice worker client", () => {
       JSON.stringify({
         sheets: [
           {
-            name: "Sheet1",
             cells: { A1: "1", A2: "2" },
+            name: "Sheet1",
           },
         ],
       }),
@@ -91,15 +91,15 @@ async function workbookRequestState(
     vi.fn(async () => new Response(body, responseInit)),
   );
   return {
+    cleanup: () => rm(dir, { force: true, recursive: true }),
     input: {
-      serviceUrl: "http://localhost:8080",
-      path,
-      timeoutMs: 1000,
+      maxCachedValueBytes: 1024,
+      maxCells: 100,
       maxResponseBytes: 1024,
       maxSheets: 10,
-      maxCells: 100,
-      maxCachedValueBytes: 1024,
+      path,
+      serviceUrl: "http://localhost:8080",
+      timeoutMs: 1000,
     },
-    cleanup: () => rm(dir, { recursive: true, force: true }),
   };
 }

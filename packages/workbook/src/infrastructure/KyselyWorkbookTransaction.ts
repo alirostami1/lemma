@@ -10,8 +10,8 @@ export function createKyselyWorkbookTransaction(
     transaction: (fn) =>
       db.transaction((tx) =>
         fn({
-          workbookRepository: new KyselyWorkbookRepository(tx),
           outboxRepository: createKyselyOutboxRepository(tx),
+          workbookRepository: new KyselyWorkbookRepository(tx),
         }),
       ),
   };

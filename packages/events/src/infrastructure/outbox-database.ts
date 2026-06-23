@@ -18,29 +18,29 @@ export type NullableTimestampColumn = ColumnType<
 >;
 
 export interface OutboxEventsTable {
-  id: string;
-  eventType: string;
-  schemaVersion: number;
-  aggregateType: string;
   aggregateId: string;
-  ownerUserId: string | null;
-  requestId: string;
-  correlationId: string;
-  causationId: string | null;
-  payload: JsonObject;
-  status: Generated<string>;
-  availableAt: TimestampColumn;
+  aggregateType: string;
   attempts: Generated<number>;
-  lockedBy: string | null;
-  lockedAt: NullableTimestampColumn;
-  publishedAt: NullableTimestampColumn;
-  lastError: string | null;
+  availableAt: TimestampColumn;
+  causationId: string | null;
+  correlationId: string;
   createdAt: TimestampColumn;
+  eventType: string;
+  id: string;
+  lastError: string | null;
+  lockedAt: NullableTimestampColumn;
+  lockedBy: string | null;
+  ownerUserId: string | null;
+  payload: JsonObject;
+  publishedAt: NullableTimestampColumn;
+  requestId: string;
+  schemaVersion: number;
+  status: Generated<string>;
   updatedAt: TimestampColumn;
 }
 
 export interface ProcessedEventsTable {
-  eventId: string;
   consumer: string;
+  eventId: string;
   processedAt: TimestampColumn;
 }

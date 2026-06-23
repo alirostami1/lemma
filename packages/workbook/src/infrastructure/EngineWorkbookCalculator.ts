@@ -108,11 +108,11 @@ export class EngineWorkbookCalculator implements WorkbookCalculator {
     return instrumentation.run(
       operation,
       {
-        lineage: options?.lineage,
         attributes: {
           "workbook.engine": this.config.engine,
           ...attributes,
         },
+        lineage: options?.lineage,
       },
       fn,
     );

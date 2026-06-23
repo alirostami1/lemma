@@ -37,8 +37,8 @@ export function notificationsRoutes(deps: NotificationsRoutesDeps) {
 
       try {
         const result = await deps.realtimeAuthService.createSubscriptionToken({
-          currentUser: c.var.identity,
           channel: body.channel,
+          currentUser: c.var.identity,
         });
         return c.json(presentRealtimeToken(result), 200);
       } catch (error) {

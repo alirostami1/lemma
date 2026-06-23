@@ -27,8 +27,8 @@ export class PgBossJobQueue implements JobQueuePort {
 
   constructor(config: PgBossJobQueueConfig) {
     const options: ConstructorOptions = {
-      connectionString: config.connectionString,
       application_name: config.applicationName,
+      connectionString: config.connectionString,
       schema: config.schema,
     };
     this.boss = new PgBoss(options);
@@ -60,9 +60,9 @@ export class PgBossJobQueue implements JobQueuePort {
           return (
             (await this.boss.send(input.name, input.data, {
               id: input.id,
-              singletonKey: input.id,
-              retryLimit: input.retryLimit,
               retryDelay: input.retryDelaySeconds,
+              retryLimit: input.retryLimit,
+              singletonKey: input.id,
             })) ?? input.id
           );
         } catch (error) {
@@ -94,8 +94,8 @@ export class PgBossJobQueue implements JobQueuePort {
             this.pgBossOperation(
               "handle_job_batch",
               {
-                "job.name": input.name,
                 "job.batch_size": jobs.length,
+                "job.name": input.name,
               },
               () => input.handler(jobs.map(mapPgBossJob)),
             ),
@@ -125,9 +125,9 @@ function mapPgBossJob<TData extends JsonObject>(
   job: Job<TData>,
 ): QueueJob<TData> {
   return {
+    data: job.data,
     id: job.id,
     name: job.name,
-    data: job.data,
   };
 }
 

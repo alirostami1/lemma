@@ -35,14 +35,14 @@ export type ReplayOutboxEventInput = {
 
 export interface OpsRepository {
   getOverview(): Promise<OpsOverview>;
+  listFailedQueueJobs(input: { limit: number }): Promise<OpsQueueJob[]>;
   listOutboxEvents(input: ListOutboxEventsInput): Promise<OpsOutboxEvent[]>;
   listQueueJobs(input: ListQueueJobsInput): Promise<OpsQueueJob[]>;
-  listFailedQueueJobs(input: { limit: number }): Promise<OpsQueueJob[]>;
-  reviewOutboxEvent(
-    input: ReviewOutboxEventInput,
-  ): Promise<OpsOutboxEvent | null>;
   replayOutboxEvent(
     input: ReplayOutboxEventInput,
+  ): Promise<OpsOutboxEvent | null>;
+  reviewOutboxEvent(
+    input: ReviewOutboxEventInput,
   ): Promise<OpsOutboxEvent | null>;
 }
 

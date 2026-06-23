@@ -18,32 +18,32 @@ import type {
 
 const now = new Date("2026-06-14T00:00:00.000Z");
 const lineage = {
-  requestId: "019e9315-6a87-715f-9861-8654df070c74",
-  correlationId: "019e9315-6a87-715f-9861-8654df070c74",
   causationId: null,
+  correlationId: "019e9315-6a87-715f-9861-8654df070c74",
+  requestId: "019e9315-6a87-715f-9861-8654df070c74",
 };
 const event = domainEventEnvelope({
-  id: "019e9315-6a87-715f-9861-8654df070c70",
-  type: "question_generation.run_requested.v1",
-  schemaVersion: 1,
   aggregate: {
-    type: "question_generation_run",
     id: "019e9315-6a87-715f-9861-8654df070c71",
+    type: "question_generation_run",
   },
-  ownerUserId: "019e9315-6a87-715f-9861-8654df070c72",
+  id: "019e9315-6a87-715f-9861-8654df070c70",
   lineage,
   occurredAt: now,
+  ownerUserId: "019e9315-6a87-715f-9861-8654df070c72",
   payload: {
     questionGenerationRunId: "019e9315-6a87-715f-9861-8654df070c71",
   },
+  schemaVersion: 1,
+  type: "question_generation.run_requested.v1",
 });
 
 describe("OutboxService", () => {
   it("appends events through the repository", async () => {
     const repository = new InMemoryOutboxRepository();
     const service = new OutboxService({
-      outboxRepository: repository,
       clock: { now: () => now },
+      outboxRepository: repository,
     });
 
     await service.appendEvent(event);
@@ -57,12 +57,12 @@ describe("OutboxService", () => {
   it("records processed events once per consumer", async () => {
     const repository = new InMemoryOutboxRepository();
     const service = new OutboxService({
-      outboxRepository: repository,
       clock: { now: () => now },
+      outboxRepository: repository,
     });
     const input = {
-      eventId: eventId("019e9315-6a87-715f-9861-8654df070c70"),
       consumer: outboxConsumerName("queue-question-generation"),
+      eventId: eventId("019e9315-6a87-715f-9861-8654df070c70"),
     };
 
     assert.equal(
@@ -79,8 +79,8 @@ describe("OutboxService", () => {
   it("lists failed events for review", async () => {
     const repository = new InMemoryOutboxRepository();
     const service = new OutboxService({
-      outboxRepository: repository,
       clock: { now: () => now },
+      outboxRepository: repository,
     });
     const failedEvent = {
       ...outboxEventFromEnvelope(event),
@@ -99,27 +99,27 @@ describe("OutboxService", () => {
   it("cleans up old published events", async () => {
     const repository = new InMemoryOutboxRepository();
     const service = new OutboxService({
-      outboxRepository: repository,
       clock: { now: () => now },
+      outboxRepository: repository,
     });
     const oldPublishedEvent = {
       ...outboxEventFromEnvelope(event),
       id: eventId("019e9315-6a87-715f-9861-8654df070c74"),
-      status: "published" as const,
       publishedAt: new Date("2026-06-06T00:00:00.000Z"),
+      status: "published" as const,
     };
     const recentPublishedEvent = {
       ...outboxEventFromEnvelope(event),
       id: eventId("019e9315-6a87-715f-9861-8654df070c75"),
-      status: "published" as const,
       publishedAt: new Date("2026-06-13T00:00:00.000Z"),
+      status: "published" as const,
     };
     repository.events.push(oldPublishedEvent, recentPublishedEvent);
 
     assert.equal(
       await service.cleanupPublishedEvents({
-        olderThanMs: 7 * 24 * 60 * 60 * 1_000,
         limit: 10,
+        olderThanMs: 7 * 24 * 60 * 60 * 1_000,
       }),
       1,
     );

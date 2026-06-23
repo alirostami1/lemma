@@ -55,18 +55,18 @@ export class FileUploadService {
 
       const upload = createFileUploadSession(
         {
-          id: uploadId,
-          createdByUserId: ownerUserId,
           bucket: this.deps.config.bucket,
+          checksumSha256: command.checksumSha256,
+          contentType: command.contentType,
+          createdByUserId: ownerUserId,
+          expectedByteSize: command.byteSize,
+          id: uploadId,
           objectKey: createUploadObjectKey({
+            originalName: command.originalName,
             ownerUserId,
             uploadId,
-            originalName: command.originalName,
           }),
           originalName: command.originalName,
-          contentType: command.contentType,
-          expectedByteSize: command.byteSize,
-          checksumSha256: command.checksumSha256,
           purpose: command.purpose,
         },
         at,
@@ -75,21 +75,21 @@ export class FileUploadService {
       const created = await this.deps.filesRepository.createFileUpload(upload);
       const url = await this.deps.fileStorage.createUploadUrl({
         bucket: created.bucket,
-        key: created.objectKey,
-        contentType: created.contentType,
         checksumSha256: created.checksumSha256,
+        contentType: created.contentType,
+        key: created.objectKey,
       });
 
       return {
         upload: created,
         uploadUrl: {
-          url,
-          method: "PUT",
           expiresInSeconds: this.deps.config.uploadUrlExpiresInSeconds,
           headers: {
             "Content-Type": created.contentType,
             "x-amz-checksum-sha256": sha256HexToBase64(created.checksumSha256),
           },
+          method: "PUT",
+          url,
         },
       };
     });
@@ -120,18 +120,18 @@ export class FileUploadService {
 
         const file = createFileFromUpload(
           {
-            id: this.deps.idGenerator.fileId(),
-            uploadId: upload.id,
-            ownerUserId: upload.createdByUserId,
-            createdByUserId: upload.createdByUserId,
             bucket: upload.bucket,
-            objectKey: upload.objectKey,
-            originalName: upload.originalName,
-            contentType: upload.contentType,
             byteSize: upload.expectedByteSize,
             checksumSha256: upload.checksumSha256,
-            purpose: upload.purpose,
+            contentType: upload.contentType,
+            createdByUserId: upload.createdByUserId,
+            id: this.deps.idGenerator.fileId(),
             metadata: upload.metadata,
+            objectKey: upload.objectKey,
+            originalName: upload.originalName,
+            ownerUserId: upload.createdByUserId,
+            purpose: upload.purpose,
+            uploadId: upload.id,
           },
           at,
         );
@@ -243,28 +243,28 @@ function uploadMismatchDetails(input: {
   const details: Array<{ path: string; message: string }> = [];
 
   if (!input.actual) {
-    details.push({ path: "file", message: "Uploaded object was not found." });
+    details.push({ message: "Uploaded object was not found.", path: "file" });
     return details;
   }
 
   if (input.actual.byteSize !== input.expected.byteSize) {
     details.push({
-      path: "byteSize",
       message: "Uploaded object size does not match declared file size.",
+      path: "byteSize",
     });
   }
   if (input.actual.contentType !== input.expected.contentType) {
     details.push({
-      path: "contentType",
       message: "Uploaded object content type does not match declared type.",
+      path: "contentType",
     });
   }
   if (
     input.actual.checksumSha256?.toLowerCase() !== input.expected.checksumSha256
   ) {
     details.push({
-      path: "checksumSha256",
       message: "Uploaded object checksum does not match declared checksum.",
+      path: "checksumSha256",
     });
   }
   return details;

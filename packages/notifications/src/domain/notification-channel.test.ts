@@ -19,26 +19,26 @@ describe("notification channels", () => {
   it("builds and parses registered channels", () => {
     const cases = [
       {
-        target: { type: "user" as const, userId },
         channel: userNotificationChannel(userId),
+        target: { type: "user" as const, userId },
       },
       {
-        target: {
-          type: "question_generation_run" as const,
-          questionGenerationRunId: runId,
-        },
         channel: questionGenerationRunNotificationChannel(runId),
+        target: {
+          questionGenerationRunId: runId,
+          type: "question_generation_run" as const,
+        },
       },
       {
-        target: { type: "question_set" as const, questionSetId },
         channel: questionSetNotificationChannel(questionSetId),
+        target: { questionSetId, type: "question_set" as const },
       },
       {
+        channel: workbookCalculationNotificationChannel(workbookCalculationId),
         target: {
           type: "workbook_calculation" as const,
           workbookCalculationId,
         },
-        channel: workbookCalculationNotificationChannel(workbookCalculationId),
       },
     ];
 
@@ -62,12 +62,12 @@ describe("notification channels", () => {
   it("declares access requirements from the registry target", () => {
     assert.deepEqual(
       getNotificationChannelAccessRequirement({
-        type: "question_generation_run",
         questionGenerationRunId: runId,
+        type: "question_generation_run",
       }),
       {
-        type: "question_generation_run",
         questionGenerationRunId: runId,
+        type: "question_generation_run",
       },
     );
   });

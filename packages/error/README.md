@@ -11,6 +11,6 @@ Shared error primitives and base classes.
 
 ```bash
 pnpm --filter @lemma/error build
-pnpm --filter @lemma/error check-types
+pnpm --filter @lemma/error check:types
 pnpm --filter @lemma/error lint
 ```

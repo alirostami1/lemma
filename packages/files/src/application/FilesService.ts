@@ -66,9 +66,9 @@ export class FilesService {
   ) {
     this.fileUploadService = new FileUploadService(deps);
     this.fileLifecycleService = new FileLifecycleService({
-      filesRepository: deps.filesRepository,
-      fileStorage: deps.fileStorage,
       clock: deps.clock,
+      fileStorage: deps.fileStorage,
+      filesRepository: deps.filesRepository,
     });
   }
 
@@ -86,14 +86,14 @@ export class FilesService {
     }
 
     const files = await this.deps.filesRepository.listFilesByOwnerUserId({
+      cursor: command.cursor ? decodeListCursor(command.cursor) : undefined,
+      limit: limit + 1,
       ownerUserId: command.currentUser.user.id,
-      statuses,
       purpose:
         command.purpose !== undefined
           ? filePurpose(command.purpose)
           : undefined,
-      cursor: command.cursor ? decodeListCursor(command.cursor) : undefined,
-      limit: limit + 1,
+      statuses,
     });
 
     return {
@@ -196,12 +196,12 @@ export class FilesService {
 
       return {
         download: {
+          expiresInSeconds: this.deps.config.downloadUrlExpiresInSeconds,
+          method: "GET",
           url: await this.deps.fileStorage.createDownloadUrl({
             bucket: file.bucket,
             key: file.objectKey,
           }),
-          method: "GET",
-          expiresInSeconds: this.deps.config.downloadUrlExpiresInSeconds,
         },
       };
     });

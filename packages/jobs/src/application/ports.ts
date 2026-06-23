@@ -30,12 +30,12 @@ export type RegisterJobHandlerInput<TData extends JsonObject = JsonObject> = {
 };
 
 export interface JobQueuePort {
-  start(): Promise<void>;
-  stop(): Promise<void>;
   enqueueJob<TData extends JsonObject>(
     input: EnqueueJobInput<TData>,
   ): Promise<string>;
   registerHandler<TData extends JsonObject>(
     input: RegisterJobHandlerInput<TData>,
   ): Promise<QueueWorkerRegistration>;
+  start(): Promise<void>;
+  stop(): Promise<void>;
 }

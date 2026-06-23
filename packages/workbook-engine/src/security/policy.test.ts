@@ -49,10 +49,10 @@ describe("workbook security policy", () => {
 
 function entry(name: string): ZipEntry {
   return {
-    name,
     compressedSize: 0,
-    uncompressedSize: 0,
     method: 0,
+    name,
     offset: 0,
+    uncompressedSize: 0,
   };
 }

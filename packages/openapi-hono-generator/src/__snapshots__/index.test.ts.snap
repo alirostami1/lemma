@@ -30,39 +30,41 @@ type HandlerResponse<T extends Record<string, unknown>> = {
   [Status in keyof T & string]: TypedResponse<T[Status], ResponseStatus<Status>>;
 }[keyof T & string];
 type TypedHandlerResponse<T extends Record<string, unknown>> = Response | HandlerResponse<T> | Promise<Response | HandlerResponse<T>> | Promise<void>;
-type HealthResponses = {
-  "200": HealthResponse;
-};
 type CreateFileResponses = {
   "202": FileResponse;
-};
-type GetFileResponses = {
-  "200": FileResponse;
 };
 type DeleteFileResponses = {
   "204": unknown;
 };
+type GetFileResponses = {
+  "200": FileResponse;
+};
+type HealthResponses = {
+  "200": HealthResponse;
+};
 export type FixtureHandlerMap = {
-  health: Handler<AuthenticatedAppEnv, "/health", {}, TypedHandlerResponse<HealthResponses>>;
   createFile: Handler<AuthenticatedAppEnv, "/files", { out: { json: z.infer<typeof CreateFileBody> } }, TypedHandlerResponse<CreateFileResponses>>;
-  getFile: Handler<AuthenticatedAppEnv, "/files/:fileId", { out: { param: z.infer<typeof GetFileParams>; query: z.infer<typeof GetFileQueryParams> } }, TypedHandlerResponse<GetFileResponses>>;
   deleteFile: Handler<AuthenticatedAppEnv, "/files/:fileId", { out: { param: z.infer<typeof DeleteFileParams> } }, TypedHandlerResponse<DeleteFileResponses>>;
+  getFile: Handler<AuthenticatedAppEnv, "/files/:fileId", { out: { param: z.infer<typeof GetFileParams>; query: z.infer<typeof GetFileQueryParams> } }, TypedHandlerResponse<GetFileResponses>>;
+  health: Handler<AuthenticatedAppEnv, "/health", {}, TypedHandlerResponse<HealthResponses>>;
 };
 export function createFixtureRoutes(deps: {
   requireIdentity: RequireIdentity;
   handlers: FixtureHandlerMap;
 }) {
   const app = new Hono<AuthenticatedAppEnv>();
-  app.get(
-    "/health",
-    deps.handlers.health,
-  );
-
   app.post(
     "/files",
     deps.requireIdentity,
     zValidator("json", CreateFileBody, validationHook),
     deps.handlers.createFile,
+  );
+
+  app.delete(
+    "/files/:fileId",
+    deps.requireIdentity,
+    zValidator("param", DeleteFileParams, validationHook),
+    deps.handlers.deleteFile,
   );
 
   app.get(
@@ -73,11 +75,9 @@ export function createFixtureRoutes(deps: {
     deps.handlers.getFile,
   );
 
-  app.delete(
-    "/files/:fileId",
-    deps.requireIdentity,
-    zValidator("param", DeleteFileParams, validationHook),
-    deps.handlers.deleteFile,
+  app.get(
+    "/health",
+    deps.handlers.health,
   );
   return app;
 }"

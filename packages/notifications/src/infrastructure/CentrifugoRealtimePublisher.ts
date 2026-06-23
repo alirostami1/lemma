@@ -24,16 +24,16 @@ export class CentrifugoRealtimePublisher implements RealtimePublisherPort {
       },
       async () => {
         const response = await fetch(`${this.config.apiUrl}/publish`, {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            "x-api-key": this.config.apiKey,
-          },
           body: JSON.stringify({
             channel: input.channel,
             data: input.data,
             idempotency_key: input.idempotencyKey,
           }),
+          headers: {
+            "content-type": "application/json",
+            "x-api-key": this.config.apiKey,
+          },
+          method: "POST",
         });
         if (!response.ok) {
           throw new Error(

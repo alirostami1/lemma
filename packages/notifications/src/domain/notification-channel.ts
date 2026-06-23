@@ -1,29 +1,29 @@
 import { isUuidString } from "@lemma/domain";
 
 export const NOTIFICATION_CHANNEL_REGISTRY = {
-  user: {
-    prefix: "$user",
-    idField: "userId",
-    access: "current_user",
-    frontendSubscription: "connection",
-  },
   question_generation_run: {
-    prefix: "$question-generation-run",
-    idField: "questionGenerationRunId",
     access: "question_generation_run",
     frontendSubscription: "resource",
+    idField: "questionGenerationRunId",
+    prefix: "$question-generation-run",
   },
   question_set: {
-    prefix: "$question-set",
-    idField: "questionSetId",
     access: "question_set",
     frontendSubscription: "resource",
+    idField: "questionSetId",
+    prefix: "$question-set",
+  },
+  user: {
+    access: "current_user",
+    frontendSubscription: "connection",
+    idField: "userId",
+    prefix: "$user",
   },
   workbook_calculation: {
-    prefix: "$workbook-calculation",
-    idField: "workbookCalculationId",
     access: "workbook_calculation",
     frontendSubscription: "resource",
+    idField: "workbookCalculationId",
+    prefix: "$workbook-calculation",
   },
 } as const;
 
@@ -62,13 +62,13 @@ export function questionGenerationRunNotificationChannel(
   questionGenerationRunId: string,
 ): string {
   return buildNotificationChannel({
-    type: "question_generation_run",
     questionGenerationRunId,
+    type: "question_generation_run",
   });
 }
 
 export function questionSetNotificationChannel(questionSetId: string): string {
-  return buildNotificationChannel({ type: "question_set", questionSetId });
+  return buildNotificationChannel({ questionSetId, type: "question_set" });
 }
 
 export function workbookCalculationNotificationChannel(
@@ -118,11 +118,11 @@ export function parseNotificationChannel(
       return { type: "user", userId: id };
     case NOTIFICATION_CHANNEL_REGISTRY.question_generation_run.prefix:
       return {
-        type: "question_generation_run",
         questionGenerationRunId: id,
+        type: "question_generation_run",
       };
     case NOTIFICATION_CHANNEL_REGISTRY.question_set.prefix:
-      return { type: "question_set", questionSetId: id };
+      return { questionSetId: id, type: "question_set" };
     case NOTIFICATION_CHANNEL_REGISTRY.workbook_calculation.prefix:
       return {
         type: "workbook_calculation",
@@ -141,11 +141,11 @@ export function getNotificationChannelAccessRequirement(
       return { type: "current_user", userId: target.userId };
     case "question_generation_run":
       return {
-        type: "question_generation_run",
         questionGenerationRunId: target.questionGenerationRunId,
+        type: "question_generation_run",
       };
     case "question_set":
-      return { type: "question_set", questionSetId: target.questionSetId };
+      return { questionSetId: target.questionSetId, type: "question_set" };
     case "workbook_calculation":
       return {
         type: "workbook_calculation",

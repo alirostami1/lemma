@@ -45,17 +45,17 @@ export type DeletePublishedEventsBeforeInput = {
 export interface OutboxRepository {
   appendEvents(events: readonly DomainEventEnvelope[]): Promise<void>;
   claimPendingEvents(input: ClaimPendingEventsInput): Promise<OutboxEvent[]>;
-  markEventPublished(input: MarkEventPublishedInput): Promise<void>;
-  markEventFailed(input: MarkEventFailedInput): Promise<void>;
-  findEventById(eventId: EventId): Promise<OutboxEvent | null>;
-  listFailedEvents(input: ListFailedEventsInput): Promise<OutboxEvent[]>;
   deletePublishedEventsBefore(
     input: DeletePublishedEventsBeforeInput,
   ): Promise<number>;
+  findEventById(eventId: EventId): Promise<OutboxEvent | null>;
   hasProcessedEvent(input: {
     eventId: EventId;
     consumer: OutboxConsumerName;
   }): Promise<boolean>;
+  listFailedEvents(input: ListFailedEventsInput): Promise<OutboxEvent[]>;
+  markEventFailed(input: MarkEventFailedInput): Promise<void>;
+  markEventPublished(input: MarkEventPublishedInput): Promise<void>;
   recordProcessedEvent(input: RecordProcessedEventInput): Promise<boolean>;
 }
 

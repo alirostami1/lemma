@@ -17,18 +17,18 @@ export function createIdentityModule(deps: {
   const identityRepository = new KyselyIdentityRepository(deps.db);
 
   const identityService = new IdentityService({
+    clock: deps.clock,
     identityRepository,
     idGenerator: deps.idGenerator,
-    clock: deps.clock,
   });
 
   const routes = identityRoutes({
-    requireIdentity: deps.requireIdentity,
     identityService,
+    requireIdentity: deps.requireIdentity,
   });
 
   return {
-    routes,
     identityService,
+    routes,
   };
 }

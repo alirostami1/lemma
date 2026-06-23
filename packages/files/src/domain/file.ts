@@ -58,23 +58,23 @@ export function createFileFromUpload(
   at = new Date(),
 ): File {
   return {
-    id: fileId(input.id),
-    ownerUserId: userId(input.ownerUserId),
-    createdByUserId: userId(input.createdByUserId),
     bucket: fileBucket(input.bucket),
-    objectKey: fileObjectKey(input.objectKey),
-    originalName: originalFileName(input.originalName),
-    contentType: fileContentType(input.contentType),
     byteSize: fileByteSize(input.byteSize),
     checksumSha256: fileChecksumSha256(input.checksumSha256),
-    status: "uploaded",
-    purpose: filePurpose(input.purpose),
-    metadata: fileMetadata(input.metadata ?? {}),
-    uploadId: input.uploadId,
-    retentionExpiresAt: null,
-    deletedAt: null,
+    contentType: fileContentType(input.contentType),
     createdAt: at,
+    createdByUserId: userId(input.createdByUserId),
+    deletedAt: null,
+    id: fileId(input.id),
+    metadata: fileMetadata(input.metadata ?? {}),
+    objectKey: fileObjectKey(input.objectKey),
+    originalName: originalFileName(input.originalName),
+    ownerUserId: userId(input.ownerUserId),
+    purpose: filePurpose(input.purpose),
+    retentionExpiresAt: null,
+    status: "uploaded",
     updatedAt: at,
+    uploadId: input.uploadId,
   };
 }
 
@@ -98,23 +98,23 @@ export function reconstituteFile(input: {
   updatedAt: Date;
 }): File {
   return {
-    id: fileId(input.id),
-    ownerUserId: userId(input.ownerUserId),
-    createdByUserId: userId(input.createdByUserId),
     bucket: fileBucket(input.bucket),
-    objectKey: fileObjectKey(input.objectKey),
-    originalName: originalFileName(input.originalName),
-    contentType: fileContentType(input.contentType),
     byteSize: fileByteSize(input.byteSize),
     checksumSha256: fileChecksumSha256(input.checksumSha256),
-    status: fileStatus(input.status),
-    purpose: filePurpose(input.purpose),
-    metadata: fileMetadata(input.metadata),
-    uploadId: input.uploadId,
-    retentionExpiresAt: input.retentionExpiresAt,
-    deletedAt: input.deletedAt,
+    contentType: fileContentType(input.contentType),
     createdAt: input.createdAt,
+    createdByUserId: userId(input.createdByUserId),
+    deletedAt: input.deletedAt,
+    id: fileId(input.id),
+    metadata: fileMetadata(input.metadata),
+    objectKey: fileObjectKey(input.objectKey),
+    originalName: originalFileName(input.originalName),
+    ownerUserId: userId(input.ownerUserId),
+    purpose: filePurpose(input.purpose),
+    retentionExpiresAt: input.retentionExpiresAt,
+    status: fileStatus(input.status),
     updatedAt: input.updatedAt,
+    uploadId: input.uploadId,
   };
 }
 
@@ -131,9 +131,9 @@ export function updateFile(
 
   return {
     ...touch(file, at),
+    metadata: patch.metadata ?? file.metadata,
     originalName: patch.originalName ?? file.originalName,
     purpose: patch.purpose ?? file.purpose,
-    metadata: patch.metadata ?? file.metadata,
   };
 }
 
@@ -156,8 +156,8 @@ export function markFileDeleted(file: File, at = new Date()): File {
   }
   return {
     ...touch(file, at),
-    status: "deleted",
     deletedAt: at,
+    status: "deleted",
   };
 }
 

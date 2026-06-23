@@ -11,19 +11,19 @@ import {
 describe("workbook engine values", () => {
   it("parses workbook cell refs", () => {
     expect(parseWorkbookRef("'Sheet 1'!$B$2")).toEqual({
-      sheet: "Sheet 1",
-      rowIndex: 1,
       columnIndex: 1,
+      rowIndex: 1,
+      sheet: "Sheet 1",
     });
     expect(parseWorkbookRef("'Bob''s Sheet'!A1")).toEqual({
-      sheet: "Bob's Sheet",
-      rowIndex: 0,
       columnIndex: 0,
+      rowIndex: 0,
+      sheet: "Bob's Sheet",
     });
     expect(parseWorkbookRef("Sheet1!C3:D4")).toEqual({
-      sheet: "Sheet1",
-      rowIndex: 2,
       columnIndex: 2,
+      rowIndex: 2,
+      sheet: "Sheet1",
     });
   });
 
@@ -31,13 +31,13 @@ describe("workbook engine values", () => {
     const workbook: WorkbookSparseValues = {
       sheets: [
         {
-          name: "Sheet1",
           cells: {
             A1: "alpha",
             C2: "charlie",
           },
-          rowCount: 2,
           columnCount: 3,
+          name: "Sheet1",
+          rowCount: 2,
         },
       ],
     };
@@ -63,17 +63,17 @@ describe("workbook engine values", () => {
         {
           sheets: [
             {
-              name: "Sheet1",
               cells: {
                 A1: "alpha",
                 A2: "beta",
               },
-              rowCount: 2,
               columnCount: 1,
+              name: "Sheet1",
+              rowCount: 2,
             },
           ],
         },
-        { maxSheets: 1, maxCells: 1, maxCachedValueBytes: 100 },
+        { maxCachedValueBytes: 100, maxCells: 1, maxSheets: 1 },
       ),
     ).toThrow(WorkbookEngineError);
   });
@@ -83,14 +83,14 @@ describe("workbook engine values", () => {
       {
         sheets: [
           {
-            name: "Sheet1",
             cells: { A1: "alpha" },
-            rowCount: 1,
             columnCount: 1,
+            name: "Sheet1",
+            rowCount: 1,
           },
         ],
       },
-      { maxSheets: 1, maxCells: 1, maxCachedValueBytes: 100 },
+      { maxCachedValueBytes: 100, maxCells: 1, maxSheets: 1 },
     );
 
     expect(normalized.sheets[0]).not.toHaveProperty("cellTypes");
@@ -101,7 +101,6 @@ describe("workbook engine values", () => {
       {
         sheets: [
           {
-            name: "Sheet1",
             cells: {
               A1: "alpha",
               B2: "",
@@ -112,16 +111,16 @@ describe("workbook engine values", () => {
               B2: "blank",
               C3: "string",
             },
-            rowCount: 50,
             columnCount: 20,
+            name: "Sheet1",
+            rowCount: 50,
           },
         ],
       },
-      { maxSheets: 1, maxCells: 2, maxCachedValueBytes: 100 },
+      { maxCachedValueBytes: 100, maxCells: 2, maxSheets: 1 },
     );
 
     expect(normalized.sheets[0]).toEqual({
-      name: "Sheet1",
       cells: {
         A1: "alpha",
         C3: "charlie",
@@ -130,8 +129,9 @@ describe("workbook engine values", () => {
         A1: "string",
         C3: "string",
       },
-      rowCount: 3,
       columnCount: 3,
+      name: "Sheet1",
+      rowCount: 3,
     });
   });
 });

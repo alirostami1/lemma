@@ -13,28 +13,28 @@ describe("CurrentUserService", () => {
   it("builds the current user from a verified identity and database roles", async () => {
     const at = new Date("2026-06-15T00:00:00.000Z");
     const verifiedIdentity: VerifiedIdentity = {
-      identityId: identityId("keycloak-subject-admin"),
-      sessionId: "keycloak-session",
-      email: "admin@example.com",
       displayName: "Admin User",
+      email: "admin@example.com",
+      identityId: identityId("keycloak-subject-admin"),
       preferredUsername: "admin",
+      sessionId: "keycloak-session",
     };
     const user = createUser(
       {
+        displayName: verifiedIdentity.displayName,
+        email: verifiedIdentity.email,
         id: "019e9315-6a87-715f-9861-8654df072001",
         identityId: verifiedIdentity.identityId,
-        email: verifiedIdentity.email,
-        displayName: verifiedIdentity.displayName,
       },
       at,
     );
     const roleGrant = grantUserRole(
       {
-        userId: user.id,
+        expiresAt: new Date("2027-06-15T00:00:00.000Z"),
+        grantedByUserId: user.id,
         roleId: roleId("019e9315-6a87-715f-9861-8654df073001"),
         roleKey: "admin",
-        grantedByUserId: user.id,
-        expiresAt: new Date("2027-06-15T00:00:00.000Z"),
+        userId: user.id,
       },
       at,
     );
@@ -43,6 +43,9 @@ describe("CurrentUserService", () => {
     const roleUserIds: string[] = [];
 
     const currentUserService = new CurrentUserService({
+      clock: {
+        now: () => at,
+      },
       identityProvider: {
         async verifyAccessToken(accessToken) {
           verifiedTokens.push(accessToken);
@@ -58,9 +61,6 @@ describe("CurrentUserService", () => {
           roleUserIds.push(userId);
           return [roleGrant];
         },
-      },
-      clock: {
-        now: () => at,
       },
     });
 

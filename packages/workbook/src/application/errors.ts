@@ -37,6 +37,13 @@ export class ForbiddenWorkbookActionError extends WorkbookApplicationError {
   }
 }
 
+export class InvalidWorkbookCalculationRequestError extends WorkbookApplicationError {
+  readonly applicationCode = "INVALID_WORKBOOK_CALCULATION_REQUEST";
+  constructor(message = "invalid workbook calculation request") {
+    super(message);
+  }
+}
+
 export class WorkbookFileNotFoundError extends WorkbookApplicationError {
   readonly applicationCode = "WORKBOOK_FILE_NOT_FOUND";
   constructor(message = "workbook file not found") {

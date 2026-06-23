@@ -1,5 +1,12 @@
 import type { DatabaseExecutor } from "@lemma/db";
-import type { WorkbookCalculation, WorkbookSnapshot } from "../domain/index.js";
+import type { WorkbookSnapshotGenerationMetadata } from "../application/ports.js";
+import {
+  type WorkbookCalculation,
+  type WorkbookSnapshot,
+  workbookCalculationId,
+  workbookId,
+  workbookSnapshotId,
+} from "../domain/index.js";
 import {
   mapSnapshotRowToDomain,
   mapSnapshotToInsert,
@@ -36,6 +43,34 @@ export class KyselyWorkbookSnapshotRepository {
       .limit(input.limit)
       .execute();
     return rows.map(mapSnapshotRowToDomain);
+  }
+
+  async listWorkbookSnapshotMetadataForCalculation(
+    calculationId: WorkbookCalculation["id"],
+  ): Promise<readonly WorkbookSnapshotGenerationMetadata[]> {
+    const rows = await this.db
+      .selectFrom("workbookSnapshots")
+      .select([
+        "id",
+        "calculationId",
+        "sourceId",
+        "workbookId",
+        "questionIndex",
+        "snapshotIndex",
+      ])
+      .where("calculationId", "=", calculationId)
+      .orderBy("snapshotIndex", "asc")
+      .execute();
+    return rows.map(
+      (row): WorkbookSnapshotGenerationMetadata => ({
+        calculationId: workbookCalculationId(row.calculationId),
+        id: workbookSnapshotId(row.id),
+        questionIndex: row.questionIndex,
+        snapshotIndex: row.snapshotIndex,
+        sourceId: row.sourceId,
+        workbookId: workbookId(row.workbookId),
+      }),
+    );
   }
 
   async createWorkbookSnapshots(

@@ -20,12 +20,12 @@ describe("buildHonoRoutesSource", () => {
     const fixturePath = join(import.meta.dirname, "fixtures/openapi.json");
     const document = await loadOpenApiDocument(fixturePath);
     const source = buildHonoRoutesSource({
-      routeName: "Fixture",
       envType: "AuthenticatedAppEnv",
-      validationHook: "validationHook",
       operations: collectOperations(document, {
         authSecurityScheme: "keycloakAccessToken",
       }),
+      routeName: "Fixture",
+      validationHook: "validationHook",
     });
 
     expect(source).toContain("app.get(");

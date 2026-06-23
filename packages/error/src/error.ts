@@ -103,7 +103,7 @@ export type ServiceResult<T, E extends DomainError> = Result<T, E>;
 
 export const ok = <T>(value: T) => ({ ok: true, value }) as const;
 
-export const err = <E>(error: E) => ({ ok: false, error }) as const;
+export const err = <E>(error: E) => ({ error, ok: false }) as const;
 
 export type HttpErrorMapping<
   EC extends HttpErrorCode,
@@ -160,9 +160,9 @@ export function createHttpErrorHandler<
       body: {
         error: {
           code: mapped.code,
+          details: error.details,
           message: error.message,
           requestId,
-          details: error.details,
         },
       },
       status: mapped.status,

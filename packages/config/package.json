@@ -2,8 +2,8 @@
   "name": "@lemma/config",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
   "sideEffects": false,
+  "type": "module",
   "exports": {
     ".": {
       "types": "./src/index.ts",
@@ -13,19 +13,22 @@
     }
   },
   "scripts": {
-    "check-types": "tsc --noEmit",
     "build": "tsc",
     "check": "biome check",
+    "check:types": "tsc --noEmit",
+    "check:write": "biome check --write",
     "format": "biome format",
-    "lint": "biome lint"
+    "format:write": "biome format --write",
+    "lint": "biome lint",
+    "lint:write": "biome lint --write"
   },
   "dependencies": {
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@biomejs/biome": "catalog:",
     "@lemma/typescript-config": "workspace:*",
     "@types/node": "catalog:",
-    "typescript": "catalog:",
-    "@biomejs/biome": "catalog:"
+    "typescript": "catalog:"
   }
 }

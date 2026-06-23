@@ -15,16 +15,16 @@ export function createNotificationsModule(deps: {
   clock: Clock;
 }) {
   const realtimeAuthService = new RealtimeAuthService({
-    tokenSigner: new HmacJwtTokenSigner(deps.tokenSecret),
     channelAccessPort: deps.channelAccessPort,
-    tokenTtlSeconds: deps.tokenTtlSeconds,
     clock: deps.clock,
+    tokenSigner: new HmacJwtTokenSigner(deps.tokenSecret),
+    tokenTtlSeconds: deps.tokenTtlSeconds,
   });
 
   const routes = notificationsRoutes({
-    requireIdentity: deps.requireIdentity,
     realtimeAuthService,
+    requireIdentity: deps.requireIdentity,
   });
 
-  return { routes, realtimeAuthService };
+  return { realtimeAuthService, routes };
 }

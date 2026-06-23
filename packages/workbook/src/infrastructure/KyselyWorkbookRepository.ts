@@ -1,7 +1,12 @@
 import type { DatabaseExecutor } from "@lemma/db";
 import { WorkbookRepositoryFailureError } from "../application/errors.js";
-import type { WorkbookRepository } from "../application/ports.js";
 import type {
+  WorkbookCalculationSourceRecord,
+  WorkbookRepository,
+  WorkbookSnapshotGenerationMetadata,
+} from "../application/ports.js";
+import type {
+  FileId,
   UserId,
   Workbook,
   WorkbookCalculation,
@@ -38,6 +43,15 @@ export class KyselyWorkbookRepository implements WorkbookRepository {
 
   findWorkbookById(id: WorkbookId): Promise<Workbook | null> {
     return this.withRepositoryError(() => this.catalog.findWorkbookById(id));
+  }
+
+  findWorkbookByOwnerUserIdAndFileId(input: {
+    ownerUserId: UserId;
+    fileId: FileId;
+  }): Promise<Workbook | null> {
+    return this.withRepositoryError(() =>
+      this.catalog.findWorkbookByOwnerUserIdAndFileId(input),
+    );
   }
 
   createWorkbook(workbook: Workbook): Promise<Workbook> {
@@ -90,11 +104,12 @@ export class KyselyWorkbookRepository implements WorkbookRepository {
     );
   }
 
-  createWorkbookCalculation(
-    calculation: WorkbookCalculation,
-  ): Promise<WorkbookCalculation> {
+  createWorkbookCalculationWithSources(input: {
+    calculation: WorkbookCalculation;
+    sources: readonly { sourceId: string; workbookId: string }[];
+  }): Promise<WorkbookCalculation> {
     return this.withRepositoryError(() =>
-      this.calculations.createWorkbookCalculation(calculation),
+      this.calculations.createWorkbookCalculationWithSources(input),
     );
   }
 
@@ -130,6 +145,22 @@ export class KyselyWorkbookRepository implements WorkbookRepository {
   }): Promise<WorkbookSnapshot[]> {
     return this.withRepositoryError(() =>
       this.snapshots.listWorkbookSnapshotsByCalculationId(input),
+    );
+  }
+
+  listWorkbookSnapshotMetadataForCalculation(
+    calculationId: WorkbookCalculation["id"],
+  ): Promise<readonly WorkbookSnapshotGenerationMetadata[]> {
+    return this.withRepositoryError(() =>
+      this.snapshots.listWorkbookSnapshotMetadataForCalculation(calculationId),
+    );
+  }
+
+  listWorkbookCalculationSources(
+    calculationId: WorkbookCalculation["id"],
+  ): Promise<WorkbookCalculationSourceRecord[]> {
+    return this.withRepositoryError(() =>
+      this.calculations.listWorkbookCalculationSources(calculationId),
     );
   }
 

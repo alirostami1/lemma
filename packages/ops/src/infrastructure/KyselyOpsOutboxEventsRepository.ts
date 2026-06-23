@@ -72,10 +72,10 @@ export class KyselyOpsOutboxEventsRepository {
         return null;
       }
       await this.insertReview(tx, {
-        eventId: input.eventId,
         action: input.action,
-        note: input.note ?? null,
         actorUserId: input.actorUserId,
+        eventId: input.eventId,
+        note: input.note ?? null,
       });
       return this.findOutboxEvent(tx, input.eventId);
     });
@@ -102,10 +102,10 @@ export class KyselyOpsOutboxEventsRepository {
         return null;
       }
       await this.insertReview(tx, {
-        eventId: input.eventId,
         action: "replayed",
-        note: input.note ?? null,
         actorUserId: input.actorUserId,
+        eventId: input.eventId,
+        note: input.note ?? null,
       });
       return this.findOutboxEvent(tx, input.eventId);
     });

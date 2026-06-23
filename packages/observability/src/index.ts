@@ -141,8 +141,8 @@ export function spanAttributesFromLineage(
     return {};
   }
   return {
-    "operation.request_id": lineage.requestId,
     "operation.correlation_id": lineage.correlationId,
+    "operation.request_id": lineage.requestId,
     ...(lineage.causationId
       ? { "operation.causation_id": lineage.causationId }
       : {}),
@@ -187,12 +187,12 @@ function createInstrumentedOperation<TOperation extends string>(
       }
       return recordInstrumentedOperation(
         {
-          name: `${packageName}.${component}.${operation}`,
-          packageName,
-          component,
-          operation,
           attributes: options?.attributes,
+          component,
           lineage: options?.lineage,
+          name: `${packageName}.${component}.${operation}`,
+          operation,
+          packageName,
         },
         kind,
         fn,
@@ -212,10 +212,10 @@ async function recordInstrumentedOperation<T>(
     return await withSpan(
       input.name,
       {
-        "lemma.package": input.packageName,
         "lemma.component": input.component,
         "lemma.operation": input.operation,
         "lemma.operation_kind": kind,
+        "lemma.package": input.packageName,
         ...spanAttributesFromLineage(input.lineage),
         ...input.attributes,
       },
@@ -252,16 +252,6 @@ function getOperationInstruments(): OperationInstruments {
   }
   const meter = metrics.getMeter("lemma");
   operationInstruments = {
-    operationCounter: meter.createCounter("lemma_operation_total", {
-      description: "Application operation count.",
-    }),
-    operationDuration: meter.createHistogram(
-      "lemma_operation_duration_seconds",
-      {
-        description: "Application operation duration.",
-        unit: "s",
-      },
-    ),
     externalOperationCounter: meter.createCounter(
       "lemma_external_operation_total",
       {
@@ -275,6 +265,16 @@ function getOperationInstruments(): OperationInstruments {
         unit: "s",
       },
     ),
+    operationCounter: meter.createCounter("lemma_operation_total", {
+      description: "Application operation count.",
+    }),
+    operationDuration: meter.createHistogram(
+      "lemma_operation_duration_seconds",
+      {
+        description: "Application operation duration.",
+        unit: "s",
+      },
+    ),
   };
   return operationInstruments;
 }
@@ -284,9 +284,9 @@ function metricAttributes(
   status: OperationStatus,
 ): Attributes {
   return {
-    lemma_package: input.packageName,
     lemma_component: input.component,
     lemma_operation: input.operation,
+    lemma_package: input.packageName,
     status,
   };
 }
