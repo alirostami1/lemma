@@ -11,7 +11,6 @@ export type GenerateBlueprintSource = {
     name: string;
     workbookId: string;
   }[];
-  currentVersionId?: string;
 };
 
 export type GenerateQuestionsDialogInput = {
@@ -30,7 +29,6 @@ export type ActiveRunContext = {
 export type GenerateQuestionsDialogSource = {
   kind: "saved_blueprint";
   blueprintId: string;
-  blueprintVersionId: string;
   name: string;
   sources: {
     sourceId: string;

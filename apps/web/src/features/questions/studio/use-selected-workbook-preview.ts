@@ -46,8 +46,8 @@ export function useSelectedWorkbookPreview({
   );
   const calculationsQuery = useWorkbookCalculationsQuery(
     {
-      workbookId: selectedWorkbook?.id ?? "",
       limit: 1,
+      workbookId: selectedWorkbook?.id ?? "",
     },
     {
       enabled: shouldLoadPreview,
@@ -82,8 +82,8 @@ export function useSelectedWorkbookPreview({
   const shouldLoadSnapshots = shouldLoadPreview && Boolean(calculationId);
   const snapshotsQuery = useWorkbookSnapshotsQuery(
     {
-      workbookCalculationId: calculationId,
       limit: 1,
+      workbookCalculationId: calculationId,
     },
     {
       enabled: shouldLoadSnapshots,
@@ -100,7 +100,7 @@ export function useSelectedWorkbookPreview({
     enabled: shouldLoadSnapshotDetails,
   });
   const sheetsQuery = useWorkbookSnapshotSheetsInfiniteQuery(
-    { workbookSnapshotId: snapshotId, limit: 25 },
+    { limit: 25, workbookSnapshotId: snapshotId },
     { enabled: shouldLoadSnapshotDetails && loadPickerPreview },
   );
   const workbookSheets = useMemo(
@@ -112,12 +112,12 @@ export function useSelectedWorkbookPreview({
   const firstSheet = workbookSheets[0] ?? null;
   const firstSheetCellsQuery = useWorkbookSnapshotCellsQuery(
     {
-      workbookSnapshotId: snapshotId,
-      sheetIndex: firstSheet?.sheetIndex ?? 0,
-      startRow: 1,
-      startColumn: 1,
-      rowCount: 50,
       columnCount: 20,
+      rowCount: 50,
+      sheetIndex: firstSheet?.sheetIndex ?? 0,
+      startColumn: 1,
+      startRow: 1,
+      workbookSnapshotId: snapshotId,
     },
     {
       enabled:
@@ -191,19 +191,19 @@ export function useSelectedWorkbookPreview({
   if (isPickerPreviewPending || (loadPickerPreview && !sheetsQuery.data)) {
     return {
       ...loadingController,
-      workbookSnapshotId: snapshotId,
       workbookSheets,
+      workbookSnapshotId: snapshotId,
       ...workbookSheetPagination,
     };
   }
 
   return {
-    workbookPreview,
-    workbookSnapshotId: snapshotId,
-    workbookSheets,
-    workbookPreviewError: null,
     isWorkbookPreviewPending: false,
     needsWorkbookPreviewCalculation: false,
+    workbookPreview,
+    workbookPreviewError: null,
+    workbookSheets,
+    workbookSnapshotId: snapshotId,
     ...workbookSheetPagination,
     previewStatus: "ready",
   };
@@ -212,43 +212,43 @@ export function useSelectedWorkbookPreview({
 const noop = () => {};
 
 const idleController: SelectedWorkbookPreviewController = {
-  workbookPreview: null,
-  workbookSnapshotId: null,
-  workbookSheets: [],
-  workbookPreviewError: null,
-  isWorkbookPreviewPending: false,
-  needsWorkbookPreviewCalculation: false,
   hasMoreWorkbookSheets: false,
   isLoadingMoreWorkbookSheets: false,
+  isWorkbookPreviewPending: false,
   loadMoreWorkbookSheets: noop,
+  needsWorkbookPreviewCalculation: false,
   previewStatus: "idle",
+  workbookPreview: null,
+  workbookPreviewError: null,
+  workbookSheets: [],
+  workbookSnapshotId: null,
 };
 
 const loadingController: SelectedWorkbookPreviewController = {
-  workbookPreview: null,
-  workbookSnapshotId: null,
-  workbookSheets: [],
-  workbookPreviewError: null,
-  isWorkbookPreviewPending: true,
-  needsWorkbookPreviewCalculation: false,
   hasMoreWorkbookSheets: false,
   isLoadingMoreWorkbookSheets: false,
+  isWorkbookPreviewPending: true,
   loadMoreWorkbookSheets: noop,
+  needsWorkbookPreviewCalculation: false,
   previewStatus: "loading",
+  workbookPreview: null,
+  workbookPreviewError: null,
+  workbookSheets: [],
+  workbookSnapshotId: null,
 };
 
 function errorController(message: string): SelectedWorkbookPreviewController {
   return {
-    workbookPreview: null,
-    workbookSnapshotId: null,
-    workbookSheets: [],
-    workbookPreviewError: message,
-    isWorkbookPreviewPending: false,
-    needsWorkbookPreviewCalculation: false,
     hasMoreWorkbookSheets: false,
     isLoadingMoreWorkbookSheets: false,
+    isWorkbookPreviewPending: false,
     loadMoreWorkbookSheets: noop,
+    needsWorkbookPreviewCalculation: false,
     previewStatus: "error",
+    workbookPreview: null,
+    workbookPreviewError: message,
+    workbookSheets: [],
+    workbookSnapshotId: null,
   };
 }
 
@@ -260,9 +260,9 @@ function mapSnapshotCellsToWorkbookPreview(
   return {
     fileName,
     sheets: sheets.map((sheet) => ({
+      columnCount: sheet.columnCount,
       name: sheet.name,
       rows: sheet.sheetIndex === cells.sheetIndex ? cells.rows : [],
-      columnCount: sheet.columnCount,
     })),
   };
 }

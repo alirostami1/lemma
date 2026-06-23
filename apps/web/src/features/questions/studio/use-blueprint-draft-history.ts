@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
-import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
+import type { StudioSource } from "./source/studio-source-model";
 import {
   type StudioHistorySnapshot,
   useStudioHistory,
@@ -11,12 +11,12 @@ type UseBlueprintDraftHistoryInput = {
   authoringModel: ComposedEditorModel;
   blueprintDescription: string;
   blueprintName: string;
-  sources: QuestionBlueprintWorkbookSource[];
+  sources: StudioSource[];
   setAuthoringModel(model: ComposedEditorModel): void;
   setBlueprintDescription(description: string): void;
   setBlueprintName(name: string): void;
   setHasUserEdited(hasUserEdited: boolean): void;
-  setSources(sources: QuestionBlueprintWorkbookSource[]): void;
+  setSources(sources: StudioSource[]): void;
 };
 
 export function useBlueprintDraftHistory({
@@ -50,12 +50,7 @@ export function useBlueprintDraftHistory({
       setAuthoringModel(snapshot.authoringModel);
       setSources(snapshot.sources);
     },
-    [
-      setAuthoringModel,
-      setBlueprintDescription,
-      setBlueprintName,
-      setSources,
-    ],
+    [setAuthoringModel, setBlueprintDescription, setBlueprintName, setSources],
   );
 
   const undoHistory = useCallback(() => {
@@ -142,7 +137,7 @@ export function useBlueprintDraftHistory({
   );
 
   const setEditableSources = useCallback(
-    (nextSources: QuestionBlueprintWorkbookSource[]) => {
+    (nextSources: StudioSource[]) => {
       recordAndApplyHistorySnapshot(
         {
           ...currentHistorySnapshot,

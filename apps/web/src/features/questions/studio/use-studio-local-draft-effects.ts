@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import type { QuestionBlueprintAuthoring } from "#/domains/questions/model";
+import type { StudioSource } from "./source/studio-source-model";
 import {
   createStudioDraftSnapshot,
   readStudioDraftSnapshot,
@@ -29,8 +30,8 @@ export function useStudioLocalDraftEffects({
   lastSavedDraftKey,
   loadedBlueprint,
   loadedBlueprintId,
-  loadedBlueprintVersionId,
   sources,
+  isDraftRouteActive,
   setIsRecoveryResolved,
   setLastLocalSavedDraftKey,
   setLocalDraftError,
@@ -50,8 +51,8 @@ export function useStudioLocalDraftEffects({
   lastSavedDraftKey: string | null;
   loadedBlueprint: QuestionBlueprintAuthoring | null;
   loadedBlueprintId: string | null;
-  loadedBlueprintVersionId: string | null;
-  sources: QuestionBlueprintAuthoring["sources"];
+  sources: StudioSource[];
+  isDraftRouteActive: boolean;
   setIsRecoveryResolved(value: boolean): void;
   setLastLocalSavedDraftKey(value: string | null): void;
   setLocalDraftError(value: string | null): void;
@@ -59,8 +60,16 @@ export function useStudioLocalDraftEffects({
   setRecoverySnapshot(value: StudioDraftSnapshot | null): void;
 }) {
   const checkedRecoveryDraftKeyRef = useRef<string | null>(null);
-
   useEffect(() => {
+    if (isDraftRouteActive) {
+      checkedRecoveryDraftKeyRef.current = draftStorageKey;
+      setRecoverySnapshot(null);
+      if (!isRecoveryResolved) {
+        setIsRecoveryResolved(true);
+      }
+      return;
+    }
+
     if (
       isRemoteLoadPending ||
       checkedRecoveryDraftKeyRef.current === draftStorageKey
@@ -102,6 +111,7 @@ export function useStudioLocalDraftEffects({
     lastRemoteSaveSnapshotKey,
     loadedBlueprint,
     loadedBlueprintId,
+    isDraftRouteActive,
     setIsRecoveryResolved,
     setLastLocalSavedDraftKey,
     setLocalDraftError,
@@ -114,9 +124,9 @@ export function useStudioLocalDraftEffects({
 
     const shouldAutosave =
       hasUnsavedChangesFromKeys({
-        loadedBlueprintId,
-        lastSavedDraftKey,
         currentDraftKey,
+        lastSavedDraftKey,
+        loadedBlueprintId,
       }) &&
       (loadedBlueprintId !== null || hasUserEdited);
     if (!shouldAutosave) {
@@ -131,27 +141,28 @@ export function useStudioLocalDraftEffects({
 
     setLocalDraftStatus("idle");
     const timeout = window.setTimeout(() => {
-      setLocalDraftStatus("saving");
-      const snapshot = createStudioDraftSnapshot({
-        draftKey: draftStorageKey,
-        loadedBlueprintId,
-        loadedBlueprintVersionId,
-        sources,
-        blueprintName,
-        blueprintDescription,
-        authoringModel,
-        lastRemoteSaveSnapshotKey,
-      });
-      const result = writeStudioDraftSnapshot(snapshot);
-      if (!result.ok) {
-        setLocalDraftStatus("failed");
-        setLocalDraftError("Local draft could not be autosaved.");
-        return;
-      }
+      void (async () => {
+        setLocalDraftStatus("saving");
+        const snapshot = createStudioDraftSnapshot({
+          authoringModel,
+          blueprintDescription,
+          blueprintName,
+          draftKey: draftStorageKey,
+          lastRemoteSaveSnapshotKey,
+          loadedBlueprintId,
+          sources,
+        });
+        const result = writeStudioDraftSnapshot(snapshot);
+        if (!result.ok) {
+          setLocalDraftStatus("failed");
+          setLocalDraftError("Local draft could not be autosaved.");
+          return;
+        }
 
-      setLastLocalSavedDraftKey(currentDraftKey);
-      setLocalDraftStatus("autosaved");
-      setLocalDraftError(null);
+        setLastLocalSavedDraftKey(currentDraftKey);
+        setLocalDraftStatus("autosaved");
+        setLocalDraftError(null);
+      })();
     }, LOCAL_AUTOSAVE_DELAY_MS);
 
     return () => window.clearTimeout(timeout);
@@ -167,7 +178,6 @@ export function useStudioLocalDraftEffects({
     lastRemoteSaveSnapshotKey,
     lastSavedDraftKey,
     loadedBlueprintId,
-    loadedBlueprintVersionId,
     sources,
     setLastLocalSavedDraftKey,
     setLocalDraftError,
@@ -175,15 +185,20 @@ export function useStudioLocalDraftEffects({
   ]);
 
   useEffect(() => {
-    const hasUnsavedChanges = hasUnsavedChangesFromKeys({
-      loadedBlueprintId,
-      lastSavedDraftKey,
-      currentDraftKey,
-    });
-    const shouldProtect =
-      hasUnsavedChanges && (loadedBlueprintId !== null || hasUserEdited);
-    const hasSafeLocalDraft = lastLocalSavedDraftKey === currentDraftKey;
-    if (!shouldProtect || hasSafeLocalDraft) {
+    const hasUnsavedLocalFiles = sources.some(
+      (source) => source.backing.kind === "local_file",
+    );
+    const hasUnsavedServerDraft =
+      loadedBlueprintId !== null &&
+      currentDraftKey !== lastRemoteSaveSnapshotKey;
+    const hasUnsavedLocalDraft = lastLocalSavedDraftKey !== currentDraftKey;
+    const hasUnsafeAssets = false;
+    const shouldProtectLeave =
+      hasUnsavedServerDraft ||
+      hasUnsavedLocalDraft ||
+      hasUnsavedLocalFiles ||
+      hasUnsafeAssets;
+    if (!shouldProtectLeave) {
       return;
     }
 
@@ -196,10 +211,10 @@ export function useStudioLocalDraftEffects({
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [
     currentDraftKey,
-    hasUserEdited,
     lastLocalSavedDraftKey,
-    lastSavedDraftKey,
     loadedBlueprintId,
+    lastRemoteSaveSnapshotKey,
+    sources,
   ]);
 
   return {

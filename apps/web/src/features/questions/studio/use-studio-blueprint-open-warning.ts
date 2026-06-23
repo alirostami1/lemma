@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
+import type { StudioSource } from "./source/studio-source-model";
 import {
   createStudioDraftSnapshot,
   readLatestStudioDraftSnapshot,
@@ -23,12 +24,10 @@ export function useStudioBlueprintOpenWarning({
   hasUserEdited,
   initialBlueprintId,
   initialBlueprintOpenKey,
-  initialBlueprintVersionId,
   lastRemoteSaveSnapshotKey,
   lastSavedDraftKey,
   loadedBlueprintId,
   loadedBlueprintKeyRef,
-  loadedBlueprintVersionId,
   onLocalDraftLoadFailed,
   sources,
   cancelledBlueprintOpenIdRef,
@@ -42,14 +41,12 @@ export function useStudioBlueprintOpenWarning({
   hasUserEdited: boolean;
   initialBlueprintId: string;
   initialBlueprintOpenKey: string;
-  initialBlueprintVersionId: string;
   lastRemoteSaveSnapshotKey: string | null;
   lastSavedDraftKey: string | null;
   loadedBlueprintId: string | null;
   loadedBlueprintKeyRef: MutableRef<string | null>;
-  loadedBlueprintVersionId: string | null;
   onLocalDraftLoadFailed(): void;
-  sources: { sourceId: string; name: string; workbookId: string }[];
+  sources: StudioSource[];
   cancelledBlueprintOpenIdRef: MutableRef<string | null>;
   confirmedBlueprintOpenIdsRef: MutableRef<Set<string>>;
 }) {
@@ -74,21 +71,20 @@ export function useStudioBlueprintOpenWarning({
     const hasCurrentLocalChanges =
       hasUserEdited &&
       hasUnsavedChangesFromKeys({
-        loadedBlueprintId,
-        lastSavedDraftKey,
         currentDraftKey,
+        lastSavedDraftKey,
+        loadedBlueprintId,
       });
     const latestResult = readLatestStudioDraftSnapshot();
     const nextWarningSnapshot = hasCurrentLocalChanges
       ? createStudioDraftSnapshot({
-          draftKey: draftStorageKey,
-          loadedBlueprintId,
-          loadedBlueprintVersionId,
-          sources,
-          blueprintName,
-          blueprintDescription,
           authoringModel,
+          blueprintDescription,
+          blueprintName,
+          draftKey: draftStorageKey,
           lastRemoteSaveSnapshotKey,
+          loadedBlueprintId,
+          sources,
         })
       : latestResult.ok
         ? latestResult.value
@@ -101,9 +97,8 @@ export function useStudioBlueprintOpenWarning({
     if (
       nextWarningSnapshot &&
       shouldWarnBeforeOpeningBlueprint({
-        snapshot: nextWarningSnapshot,
         nextBlueprintId: initialBlueprintId,
-        nextBlueprintVersionId: initialBlueprintVersionId || null,
+        snapshot: nextWarningSnapshot,
       })
     ) {
       setWarningSnapshot(nextWarningSnapshot);
@@ -122,19 +117,17 @@ export function useStudioBlueprintOpenWarning({
     hasUserEdited,
     initialBlueprintId,
     initialBlueprintOpenKey,
-    initialBlueprintVersionId,
     lastRemoteSaveSnapshotKey,
     lastSavedDraftKey,
     loadedBlueprintId,
     loadedBlueprintKeyRef,
-    loadedBlueprintVersionId,
     onLocalDraftLoadFailed,
     sources,
     warningSnapshot,
   ]);
 
   return {
-    warningSnapshot,
     setWarningSnapshot,
+    warningSnapshot,
   };
 }

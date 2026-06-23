@@ -1,71 +1,113 @@
 import { useMemo } from "react";
-import { useQuestionBlueprintsInfiniteQuery } from "#/domains/questions";
+import {
+  useQuestionBlueprintDraftsInfiniteQuery,
+  useQuestionBlueprintsInfiniteQuery,
+} from "#/domains/questions";
 import type { QuestionBlueprint } from "#/domains/questions/model";
 import {
   buildSavedBlueprintsViewModel,
+  buildSavedDraftsViewModel,
   type SavedBlueprintListItem,
+  type SavedDraftListItem,
 } from "./saved-blueprints-view-model";
 
-const PAGE_SIZE = 12;
+const BLUEPRINT_PAGE_SIZE = 12;
+const DRAFT_PAGE_SIZE = 10;
 
 export function useSavedBlueprintsController({
+  onOpenBlueprint,
+  onOpenDraft,
   onGenerateBlueprint,
 }: {
+  onOpenBlueprint(blueprintId: string): void;
+  onOpenDraft(draftId: string): void;
   onGenerateBlueprint(blueprint: QuestionBlueprint): void;
 }) {
+  const draftsQuery = useQuestionBlueprintDraftsInfiniteQuery({
+    limit: DRAFT_PAGE_SIZE,
+    status: "draft",
+  });
   const blueprintsQuery = useQuestionBlueprintsInfiniteQuery({
-    limit: PAGE_SIZE,
+    limit: BLUEPRINT_PAGE_SIZE,
     status: "active",
   });
 
+  const drafts = useMemo(
+    () => draftsQuery.data?.pages.flatMap((page) => page.drafts) ?? [],
+    [draftsQuery.data?.pages],
+  );
   const blueprints = useMemo(
     () =>
       blueprintsQuery.data?.pages.flatMap((page) => page.questionBlueprints) ??
       [],
     [blueprintsQuery.data?.pages],
   );
+  const draftItems = useMemo(() => buildSavedDraftsViewModel(drafts), [drafts]);
+  const blueprintItems = useMemo(
+    () => buildSavedBlueprintsViewModel(blueprints),
+    [blueprints],
+  );
   const blueprintById = useMemo(
     () => new Map(blueprints.map((blueprint) => [blueprint.id, blueprint])),
     [blueprints],
   );
-  const items = useMemo(
-    () => buildSavedBlueprintsViewModel(blueprints),
-    [blueprints],
-  );
 
   return {
-    items,
-    isInitialLoading: blueprintsQuery.isLoading,
+    blueprints: blueprintItems,
+    draftLoadMoreErrorMessage: draftsQuery.isFetchNextPageError
+      ? "More recent drafts could not be loaded."
+      : null,
+    drafts: draftItems,
+    draftsErrorMessage: draftsQuery.isError
+      ? "Recent drafts could not be loaded."
+      : null,
     errorMessage: blueprintsQuery.isError
       ? "Saved blueprints could not be loaded."
       : null,
+    hasMoreBlueprints: Boolean(blueprintsQuery.hasNextPage),
+    hasMoreDrafts: Boolean(draftsQuery.hasNextPage),
+    isDraftsInitialLoading: draftsQuery.isLoading,
+    isInitialLoading: blueprintsQuery.isLoading,
+    isLoadingBlueprintsMore: blueprintsQuery.isFetchingNextPage,
+    isLoadingDraftsMore: draftsQuery.isFetchingNextPage,
     loadMoreErrorMessage: blueprintsQuery.isFetchNextPageError
       ? "More saved blueprints could not be loaded."
       : null,
-    hasMore: Boolean(blueprintsQuery.hasNextPage),
-    isLoadingMore: blueprintsQuery.isFetchingNextPage,
-    onRetry: () => {
-      void blueprintsQuery.refetch();
-    },
-    onLoadMore: () => {
-      void blueprintsQuery.fetchNextPage();
-    },
-    onOpenBlueprint: (_id: string) => {},
     onGenerate: (id: string) => {
       const blueprint = blueprintById.get(id);
       if (blueprint) {
         onGenerateBlueprint(blueprint);
       }
     },
+    onLoadMoreBlueprints: () => {
+      void blueprintsQuery.fetchNextPage();
+    },
+    onLoadMoreDrafts: () => {
+      void draftsQuery.fetchNextPage();
+    },
+    onOpenBlueprint,
+    onOpenDraft,
+    onRetry: () => {
+      void draftsQuery.refetch();
+      void blueprintsQuery.refetch();
+    },
   } satisfies {
-    items: SavedBlueprintListItem[];
+    drafts: SavedDraftListItem[];
+    isDraftsInitialLoading: boolean;
+    draftsErrorMessage: string | null;
+    draftLoadMoreErrorMessage: string | null;
+    blueprints: SavedBlueprintListItem[];
     isInitialLoading: boolean;
     errorMessage: string | null;
     loadMoreErrorMessage: string | null;
-    hasMore: boolean;
-    isLoadingMore: boolean;
+    hasMoreBlueprints: boolean;
+    hasMoreDrafts: boolean;
+    isLoadingBlueprintsMore: boolean;
+    isLoadingDraftsMore: boolean;
     onRetry(): void;
-    onLoadMore(): void;
+    onLoadMoreDrafts(): void;
+    onLoadMoreBlueprints(): void;
+    onOpenDraft(id: string): void;
     onOpenBlueprint(id: string): void;
     onGenerate(id: string): void;
   };

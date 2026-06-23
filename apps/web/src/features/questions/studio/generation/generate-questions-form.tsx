@@ -59,17 +59,17 @@ export function GenerateQuestionsForm({
     >
       <FieldGroup>
         <GenerationTargetSection
-          questionSets={questionSets}
-          questionSetMode={questionSetMode}
-          selectedQuestionSetId={selectedQuestionSetId}
-          newQuestionSetName={newQuestionSetName}
-          newQuestionSetDescription={newQuestionSetDescription}
-          isSubmitting={isSubmitting}
           existingQuestionSetIssue={existingQuestionSetIssue}
+          isSubmitting={isSubmitting}
+          newQuestionSetDescription={newQuestionSetDescription}
+          newQuestionSetName={newQuestionSetName}
           newQuestionSetNameIssue={newQuestionSetNameIssue}
-          onQuestionSetValueChange={onQuestionSetValueChange}
-          onNewQuestionSetNameChange={onNewQuestionSetNameChange}
           onNewQuestionSetDescriptionChange={onNewQuestionSetDescriptionChange}
+          onNewQuestionSetNameChange={onNewQuestionSetNameChange}
+          onQuestionSetValueChange={onQuestionSetValueChange}
+          questionSetMode={questionSetMode}
+          questionSets={questionSets}
+          selectedQuestionSetId={selectedQuestionSetId}
         />
 
         <Field>
@@ -77,13 +77,13 @@ export function GenerateQuestionsForm({
             Number of questions
           </FieldLabel>
           <Input
-            id="generate-question-count"
-            type="number"
-            min={1}
-            max={100}
-            value={countInput}
             disabled={isSubmitting}
+            id="generate-question-count"
+            max={100}
+            min={1}
             onChange={(event) => onCountInputChange(event.currentTarget.value)}
+            type="number"
+            value={countInput}
           />
           <FieldDescription>
             Choose between 1 and 100 questions.
@@ -98,11 +98,11 @@ export function GenerateQuestionsForm({
 
       <DialogFooter>
         <DialogClose asChild>
-          <Button type="button" variant="outline" disabled={isSubmitting}>
+          <Button disabled={isSubmitting} type="button" variant="outline">
             Cancel
           </Button>
         </DialogClose>
-        <Button type="submit" disabled={isGenerateDisabled}>
+        <Button disabled={isGenerateDisabled} type="submit">
           {isSubmitting ? "Generating..." : "Generate"}
         </Button>
       </DialogFooter>

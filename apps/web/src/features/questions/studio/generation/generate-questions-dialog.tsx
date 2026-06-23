@@ -35,7 +35,7 @@ export function GenerateQuestionsDialog({
   onCountInputChange,
 }: GenerateQuestionsDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Generate questions</DialogTitle>
@@ -55,23 +55,23 @@ export function GenerateQuestionsDialog({
         ) : null}
 
         <GenerateQuestionsForm
-          questionSets={questionSets}
-          questionSetMode={questionSetMode}
-          selectedQuestionSetId={selectedQuestionSetId}
-          newQuestionSetName={newQuestionSetName}
-          newQuestionSetDescription={newQuestionSetDescription}
           countInput={countInput}
-          isSubmitting={isSubmitting}
-          isGenerateDisabled={isGenerateDisabled}
           countIssue={countIssue}
           existingQuestionSetIssue={existingQuestionSetIssue}
+          isGenerateDisabled={isGenerateDisabled}
+          isSubmitting={isSubmitting}
+          newQuestionSetDescription={newQuestionSetDescription}
+          newQuestionSetName={newQuestionSetName}
           newQuestionSetNameIssue={newQuestionSetNameIssue}
-          submitError={submitError}
-          onSubmit={onSubmit}
-          onQuestionSetValueChange={onQuestionSetValueChange}
-          onNewQuestionSetNameChange={onNewQuestionSetNameChange}
-          onNewQuestionSetDescriptionChange={onNewQuestionSetDescriptionChange}
           onCountInputChange={onCountInputChange}
+          onNewQuestionSetDescriptionChange={onNewQuestionSetDescriptionChange}
+          onNewQuestionSetNameChange={onNewQuestionSetNameChange}
+          onQuestionSetValueChange={onQuestionSetValueChange}
+          onSubmit={onSubmit}
+          questionSetMode={questionSetMode}
+          questionSets={questionSets}
+          selectedQuestionSetId={selectedQuestionSetId}
+          submitError={submitError}
         />
       </DialogContent>
     </Dialog>

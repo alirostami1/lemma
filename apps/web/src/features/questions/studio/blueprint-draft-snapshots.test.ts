@@ -16,7 +16,6 @@ describe("blueprint draft snapshots", () => {
       draftKey: "new:default",
       lastRemoteSaveSnapshotKey: null,
       loadedBlueprintId: null,
-      loadedBlueprintVersionId: null,
       sources: [],
     });
     expect(state.draftKey).toBeTruthy();
@@ -29,29 +28,29 @@ describe("blueprint draft snapshots", () => {
       blueprintDescription: "Description",
       blueprintId: "blueprint-1",
       blueprintName: " Blueprint ",
-      blueprintVersionId: "version-1",
-      sources: [
-        {
-          sourceId: "source_1",
-          name: "Source 1",
-          workbookId: "workbook-1",
-        },
-      ],
+      sources: [persistedSource("source_1", "workbook-1")],
     });
 
-    expect(state.draftKey).toBe("blueprint:blueprint-1:version:version-1");
+    expect(state.draftKey).toBe("blueprint:blueprint-1");
     expect(state.syncedSnapshot).toMatchObject({
       authoringModel,
       blueprintDescription: "Description",
       blueprintName: " Blueprint ",
-      draftKey: "blueprint:blueprint-1:version:version-1",
+      draftKey: "blueprint:blueprint-1",
       loadedBlueprintId: "blueprint-1",
-      loadedBlueprintVersionId: "version-1",
       sources: [
         {
-          sourceId: "source_1",
+          backing: {
+            byteSize: null,
+            kind: "persisted_workbook",
+            originalName: "source_1.xlsx",
+            parsedWorkbook: null,
+            workbookId: "workbook-1",
+          },
+          createdAt: expect.any(Date),
           name: "Source 1",
-          workbookId: "workbook-1",
+          sourceId: "source_1",
+          type: "workbook",
         },
       ],
     });
@@ -63,9 +62,25 @@ describe("blueprint draft snapshots", () => {
 
 function createModel(): ComposedEditorModel {
   return {
-    schemaVersion: 1,
     blocks: [],
     references: [],
     responseFields: [],
+    schemaVersion: 1,
+  };
+}
+
+function persistedSource(sourceId: string, workbookId: string) {
+  return {
+    backing: {
+      byteSize: null,
+      kind: "persisted_workbook" as const,
+      originalName: `${sourceId}.xlsx`,
+      parsedWorkbook: null,
+      workbookId,
+    },
+    createdAt: new Date("2026-06-21T00:00:00.000Z"),
+    name: "Source 1",
+    sourceId,
+    type: "workbook" as const,
   };
 }

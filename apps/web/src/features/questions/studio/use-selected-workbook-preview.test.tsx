@@ -16,8 +16,8 @@ const workbookApiMocks = vi.hoisted(() => ({
   getWorkbookSnapshotRange: vi.fn(),
   getWorkbookSnapshotRangeBatch: vi.fn(),
   listWorkbookCalculations: vi.fn(),
-  listWorkbookSnapshots: vi.fn(),
   listWorkbookSnapshotSheets: vi.fn(),
+  listWorkbookSnapshots: vi.fn(),
   listWorkbooks: vi.fn(),
   updateWorkbook: vi.fn(),
   validateWorkbook: vi.fn(),
@@ -28,42 +28,43 @@ vi.mock("#/api/generated/workbook/workbook", () => workbookApiMocks);
 describe("useSelectedWorkbookPreview", () => {
   it("does not load sheets or cells until the picker preview is requested", async () => {
     workbookApiMocks.listWorkbookCalculations.mockResolvedValue({
+      nextCursor: null,
       workbookCalculations: [
         {
+          attemptNumber: 1,
+          attempts: 1,
+          correlationId: null,
+          createdAt: "2026-06-18T00:00:00.000Z",
+          createdByUserId: "user-1",
+          errorMessage: null,
+          finishedAt: "2026-06-18T00:00:01.000Z",
           id: "calculation-1",
           ownerUserId: "user-1",
-          createdByUserId: "user-1",
-          workbookId: "workbook-1",
           requestedCount: 1,
-          status: "succeeded",
-          correlationId: null,
-          errorMessage: null,
-          attempts: 1,
+          retryOfCalculationId: null,
           startedAt: "2026-06-18T00:00:00.000Z",
-          finishedAt: "2026-06-18T00:00:01.000Z",
-          createdAt: "2026-06-18T00:00:00.000Z",
+          status: "succeeded",
           updatedAt: "2026-06-18T00:00:01.000Z",
         },
       ],
-      nextCursor: null,
     });
     workbookApiMocks.listWorkbookSnapshots.mockResolvedValue({
+      nextCursor: null,
       workbookSnapshots: [
         {
-          id: "snapshot-1",
-          workbookId: "workbook-1",
           calculationId: "calculation-1",
-          snapshotIndex: 0,
           createdAt: "2026-06-18T00:00:01.000Z",
+          id: "snapshot-1",
+          snapshotIndex: 0,
+          workbookId: "workbook-1",
         },
       ],
-      nextCursor: null,
     });
     workbookApiMocks.getWorkbookSnapshotMetadata.mockResolvedValue({
       workbookSnapshotMetadata: {
-        status: "ready",
-        sheetCount: 2,
         cellCount: 10,
+        sheetCount: 2,
+        status: "ready",
       },
     });
 

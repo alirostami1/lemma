@@ -2,6 +2,10 @@ import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import { createDefaultComposedEditorModel } from "#/domains/questions/authoring";
 import { questionBlueprintDocumentToComposedEditorModel } from "#/domains/questions/canonical-authoring";
 import type { QuestionBlueprintAuthoring } from "#/domains/questions/model";
+import {
+  type StudioSource,
+  toStudioSourcesFromSavedBlueprint,
+} from "./source/studio-source-model";
 import { createDraftSnapshotKey } from "./studio-controller-helpers";
 import {
   createStudioDraftKey,
@@ -11,7 +15,6 @@ import { createDraftKeyFromSnapshot } from "./studio-state";
 
 export type LoadedBlueprintDraftSnapshotState = {
   authoringModel: ComposedEditorModel;
-  blueprintVersionId: string | null;
   draftStorageKey: string;
   remoteSnapshotKey: string;
   syncedSnapshot: ReturnType<typeof createStudioDraftSnapshot>;
@@ -32,33 +35,32 @@ export function createLoadedBlueprintDraftSnapshotState(input: {
 
   const draftStorageKey = createStudioDraftKey({
     loadedBlueprintId: input.blueprintId,
-    loadedBlueprintVersionId: input.blueprint.selectedVersionId ?? null,
   });
-  const blueprintVersionId = input.blueprint.selectedVersionId ?? null;
   const blueprintDescription = input.blueprint.description ?? "";
+  const studioSources = toStudioSourcesFromSavedBlueprint(
+    input.blueprint.sources,
+  );
   const remoteSnapshotKey = createDraftSnapshotKey({
+    authoringModel,
     blueprintId: input.blueprintId,
     blueprintName: input.blueprint.name.trim(),
     description: blueprintDescription,
-    sources: input.blueprint.sources,
-    authoringModel,
+    sources: studioSources,
   });
   const syncedSnapshot = createStudioDraftSnapshot({
-    draftKey: draftStorageKey,
-    loadedBlueprintId: input.blueprintId,
-    loadedBlueprintVersionId: blueprintVersionId,
-    sources: input.blueprint.sources,
-    blueprintName: input.blueprint.name,
-    blueprintDescription,
     authoringModel,
+    blueprintDescription,
+    blueprintName: input.blueprint.name,
+    draftKey: draftStorageKey,
     lastRemoteSaveSnapshotKey: remoteSnapshotKey,
+    loadedBlueprintId: input.blueprintId,
+    sources: studioSources,
   });
 
   return {
     ok: true,
     value: {
       authoringModel,
-      blueprintVersionId,
       draftStorageKey,
       remoteSnapshotKey,
       syncedSnapshot,
@@ -72,14 +74,13 @@ export function createResetStudioDraftSnapshotState() {
     loadedBlueprintId: null,
   });
   const snapshot = createStudioDraftSnapshot({
-    draftKey: draftStorageKey,
-    loadedBlueprintId: null,
-    loadedBlueprintVersionId: null,
-    sources: [],
-    blueprintName: "Question blueprint",
-    blueprintDescription: "",
     authoringModel,
+    blueprintDescription: "",
+    blueprintName: "Question blueprint",
+    draftKey: draftStorageKey,
     lastRemoteSaveSnapshotKey: null,
+    loadedBlueprintId: null,
+    sources: [],
   });
 
   return {
@@ -95,29 +96,26 @@ export function createSavedBlueprintDraftSnapshotState(input: {
   blueprintDescription: string;
   blueprintId: string;
   blueprintName: string;
-  blueprintVersionId?: string | null;
-  sources: QuestionBlueprintAuthoring["sources"];
+  sources: StudioSource[];
 }) {
   const remoteSnapshotKey = createDraftSnapshotKey({
+    authoringModel: input.authoringModel,
     blueprintId: input.blueprintId,
     blueprintName: input.blueprintName.trim(),
     description: input.blueprintDescription,
     sources: input.sources,
-    authoringModel: input.authoringModel,
   });
   const draftKey = createStudioDraftKey({
     loadedBlueprintId: input.blueprintId,
-    loadedBlueprintVersionId: input.blueprintVersionId ?? null,
   });
   const syncedSnapshot = createStudioDraftSnapshot({
-    draftKey,
-    loadedBlueprintId: input.blueprintId,
-    loadedBlueprintVersionId: input.blueprintVersionId ?? null,
-    sources: input.sources,
-    blueprintName: input.blueprintName,
-    blueprintDescription: input.blueprintDescription,
     authoringModel: input.authoringModel,
+    blueprintDescription: input.blueprintDescription,
+    blueprintName: input.blueprintName,
+    draftKey,
     lastRemoteSaveSnapshotKey: remoteSnapshotKey,
+    loadedBlueprintId: input.blueprintId,
+    sources: input.sources,
   });
 
   return {

@@ -1,5 +1,11 @@
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
-import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
+import {
+  deserializeStudioSources,
+  type SerializableStudioSource,
+  type StudioSource,
+  serializeStudioSources,
+} from "./source/studio-source-model";
+import { saveStudioDraftWorkbookFile } from "./studio-draft-assets-store";
 
 const STORAGE_PREFIX = "lemma:studio-draft:v1:";
 const STORAGE_INDEX_KEY = "lemma:studio-draft:index:v1";
@@ -9,15 +15,13 @@ const MAX_DRAFT_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 
 export type StudioDraftKeyInput = {
   loadedBlueprintId: string | null;
-  loadedBlueprintVersionId?: string | null;
 };
 
 export type StudioDraftSnapshot = {
   schemaVersion: 2;
   draftKey: string;
   loadedBlueprintId: string | null;
-  loadedBlueprintVersionId?: string | null;
-  sources: QuestionBlueprintWorkbookSource[];
+  sources: StudioSource[];
   blueprintName: string;
   blueprintDescription: string;
   authoringModel: ComposedEditorModel;
@@ -25,18 +29,38 @@ export type StudioDraftSnapshot = {
   lastRemoteSaveSnapshotKey: string | null;
 };
 
+type SerializedStudioDraftSnapshot = Omit<StudioDraftSnapshot, "sources"> & {
+  sources: SerializableStudioSource[];
+};
+
 export type StudioDraftStoreResult<T> =
   | { ok: true; value: T }
   | { ok: false; error: "storage_unavailable" | "invalid_snapshot" };
 
+export type StudioDraftSnapshotWithAssetsResult =
+  | {
+      ok: true;
+      value: StudioDraftSnapshot;
+      assets: { status: "safe" };
+    }
+  | {
+      ok: true;
+      value: StudioDraftSnapshot;
+      assets: {
+        status: "unsafe";
+        unsafeSourceIds: readonly string[];
+        error: "asset_write_failed" | "indexeddb_unavailable";
+      };
+    }
+  | {
+      ok: false;
+      error: "storage_unavailable" | "invalid_snapshot";
+    };
+
 export function createStudioDraftKey({
   loadedBlueprintId,
-  loadedBlueprintVersionId,
 }: StudioDraftKeyInput) {
   if (loadedBlueprintId) {
-    if (loadedBlueprintVersionId) {
-      return `blueprint:${loadedBlueprintId}:version:${loadedBlueprintVersionId}`;
-    }
     return `blueprint:${loadedBlueprintId}`;
   }
 
@@ -47,7 +71,7 @@ export function readStudioDraftSnapshot(
   draftKey: string,
 ): StudioDraftStoreResult<StudioDraftSnapshot | null> {
   const storage = getStorage();
-  if (!storage) return { ok: false, error: "storage_unavailable" };
+  if (!storage) return { error: "storage_unavailable", ok: false };
 
   const storageKey = getStorageKey(draftKey);
   try {
@@ -58,24 +82,30 @@ export function readStudioDraftSnapshot(
     if (!isStudioDraftSnapshot(parsed) || parsed.draftKey !== draftKey) {
       storage.removeItem(storageKey);
       removeIndexEntry(storage, draftKey);
-      return { ok: false, error: "invalid_snapshot" };
+      return { error: "invalid_snapshot", ok: false };
     }
 
-    return { ok: true, value: parsed };
+    return {
+      ok: true,
+      value: {
+        ...parsed,
+        sources: deserializeStudioSources(parsed.sources),
+      },
+    };
   } catch {
     try {
       storage.removeItem(storageKey);
       removeIndexEntry(storage, draftKey);
     } catch {
-      return { ok: false, error: "storage_unavailable" };
+      return { error: "storage_unavailable", ok: false };
     }
-    return { ok: false, error: "invalid_snapshot" };
+    return { error: "invalid_snapshot", ok: false };
   }
 }
 
 export function readLatestStudioDraftSnapshot(): StudioDraftStoreResult<StudioDraftSnapshot | null> {
   const storage = getStorage();
-  if (!storage) return { ok: false, error: "storage_unavailable" };
+  if (!storage) return { error: "storage_unavailable", ok: false };
 
   const entries = readIndex(storage).sort(
     (left, right) => right.lastLocalSaveTimestamp - left.lastLocalSaveTimestamp,
@@ -95,38 +125,107 @@ export function writeStudioDraftSnapshot(
   snapshot: StudioDraftSnapshot,
 ): StudioDraftStoreResult<StudioDraftSnapshot> {
   const storage = getStorage();
-  if (!storage) return { ok: false, error: "storage_unavailable" };
+  if (!storage) return { error: "storage_unavailable", ok: false };
 
   try {
-    storage.setItem(getStorageKey(snapshot.draftKey), JSON.stringify(snapshot));
+    const serializedSources: SerializableStudioSource[] = [];
+    for (const source of snapshot.sources) {
+      serializedSources.push(...serializeStudioSources([source]));
+    }
+
+    const serializedSnapshot: SerializedStudioDraftSnapshot = {
+      ...snapshot,
+      sources: serializedSources,
+    };
+    storage.setItem(
+      getStorageKey(snapshot.draftKey),
+      JSON.stringify(serializedSnapshot),
+    );
     upsertIndexEntry(storage, snapshot);
     pruneStudioDraftSnapshots(storage);
     return { ok: true, value: snapshot };
   } catch {
-    return { ok: false, error: "storage_unavailable" };
+    return { error: "storage_unavailable", ok: false };
   }
+}
+
+export async function writeStudioDraftSnapshotWithAssets(input: {
+  snapshot: StudioDraftSnapshot;
+}): Promise<StudioDraftSnapshotWithAssetsResult> {
+  const unsafeSourceIds: string[] = [];
+  let assetError: "asset_write_failed" | "indexeddb_unavailable" | null = null;
+
+  for (const source of input.snapshot.sources) {
+    if (source.backing.kind !== "local_file") {
+      continue;
+    }
+
+    const result = await saveStudioDraftWorkbookFile({
+      draftKey: input.snapshot.draftKey,
+      file: source.backing.file,
+      sourceId: source.sourceId,
+    });
+    if (!result.ok) {
+      unsafeSourceIds.push(source.sourceId);
+      assetError =
+        result.error === "indexeddb_unavailable"
+          ? "indexeddb_unavailable"
+          : "asset_write_failed";
+    }
+  }
+
+  const writeResult = writeStudioDraftSnapshot(input.snapshot);
+  if (!writeResult.ok) {
+    return writeResult;
+  }
+
+  if (unsafeSourceIds.length > 0) {
+    return {
+      assets: {
+        error: assetError ?? "asset_write_failed",
+        status: "unsafe",
+        unsafeSourceIds,
+      },
+      ok: true,
+      value: writeResult.value,
+    };
+  }
+
+  return {
+    assets: { status: "safe" },
+    ok: true,
+    value: writeResult.value,
+  };
 }
 
 export function deleteStudioDraftSnapshot(
   draftKey: string,
 ): StudioDraftStoreResult<null> {
   const storage = getStorage();
-  if (!storage) return { ok: false, error: "storage_unavailable" };
+  if (!storage) return { error: "storage_unavailable", ok: false };
 
   try {
     storage.removeItem(getStorageKey(draftKey));
     removeIndexEntry(storage, draftKey);
     return { ok: true, value: null };
   } catch {
-    return { ok: false, error: "storage_unavailable" };
+    return { error: "storage_unavailable", ok: false };
   }
+}
+
+export function listStudioDraftKeys(): string[] {
+  const storage = getStorage();
+  if (!storage) {
+    return [];
+  }
+
+  return readIndex(storage).map((entry) => entry.draftKey);
 }
 
 export function createStudioDraftSnapshot(input: {
   draftKey: string;
   loadedBlueprintId: string | null;
-  loadedBlueprintVersionId?: string | null;
-  sources: QuestionBlueprintWorkbookSource[];
+  sources: StudioSource[];
   blueprintName: string;
   blueprintDescription: string;
   authoringModel: ComposedEditorModel;
@@ -134,16 +233,15 @@ export function createStudioDraftSnapshot(input: {
   timestamp?: number;
 }): StudioDraftSnapshot {
   return {
-    schemaVersion: SNAPSHOT_SCHEMA_VERSION,
-    draftKey: input.draftKey,
-    loadedBlueprintId: input.loadedBlueprintId,
-    loadedBlueprintVersionId: input.loadedBlueprintVersionId ?? null,
-    sources: input.sources,
-    blueprintName: input.blueprintName,
-    blueprintDescription: input.blueprintDescription,
     authoringModel: input.authoringModel,
+    blueprintDescription: input.blueprintDescription,
+    blueprintName: input.blueprintName,
+    draftKey: input.draftKey,
     lastLocalSaveTimestamp: input.timestamp ?? Date.now(),
     lastRemoteSaveSnapshotKey: input.lastRemoteSaveSnapshotKey,
+    loadedBlueprintId: input.loadedBlueprintId,
+    schemaVersion: SNAPSHOT_SCHEMA_VERSION,
+    sources: input.sources,
   };
 }
 
@@ -165,19 +263,18 @@ function getStorage(): Storage | null {
   }
 }
 
-function isStudioDraftSnapshot(value: unknown): value is StudioDraftSnapshot {
+function isStudioDraftSnapshot(
+  value: unknown,
+): value is SerializedStudioDraftSnapshot {
   if (!value || typeof value !== "object") return false;
-  const candidate = value as Partial<StudioDraftSnapshot>;
+  const candidate = value as Partial<SerializedStudioDraftSnapshot>;
   return (
     candidate.schemaVersion === SNAPSHOT_SCHEMA_VERSION &&
     typeof candidate.draftKey === "string" &&
     (typeof candidate.loadedBlueprintId === "string" ||
       candidate.loadedBlueprintId === null) &&
-    (typeof candidate.loadedBlueprintVersionId === "string" ||
-      typeof candidate.loadedBlueprintVersionId === "undefined" ||
-      candidate.loadedBlueprintVersionId === null) &&
     Array.isArray(candidate.sources) &&
-    candidate.sources.every(isQuestionBlueprintWorkbookSource) &&
+    candidate.sources.every(isSerializableStudioSource) &&
     typeof candidate.blueprintName === "string" &&
     typeof candidate.blueprintDescription === "string" &&
     isComposedEditorModel(candidate.authoringModel) &&
@@ -198,15 +295,39 @@ function isComposedEditorModel(value: unknown): value is ComposedEditorModel {
   );
 }
 
-function isQuestionBlueprintWorkbookSource(
+function isSerializableStudioSource(
   value: unknown,
-): value is QuestionBlueprintWorkbookSource {
+): value is SerializableStudioSource {
   if (!value || typeof value !== "object") return false;
-  const candidate = value as Partial<QuestionBlueprintWorkbookSource>;
+  const candidate = value as Partial<SerializableStudioSource>;
+  const backing = candidate.backing;
   return (
+    candidate.type === "workbook" &&
     typeof candidate.sourceId === "string" &&
     typeof candidate.name === "string" &&
-    typeof candidate.workbookId === "string"
+    typeof candidate.createdAt === "string" &&
+    typeof backing === "object" &&
+    backing !== null &&
+    (backing.kind === "persisted_workbook"
+      ? typeof backing.workbookId === "string" &&
+        typeof backing.originalName === "string" &&
+        (typeof backing.byteSize === "number" || backing.byteSize === null)
+      : backing.kind === "local_file"
+        ? typeof backing.originalName === "string" &&
+          typeof backing.byteSize === "number" &&
+          typeof backing.lastModified === "number" &&
+          (backing.parseStatus === "parsed" || backing.parseStatus === "failed")
+        : backing.kind === "draft_file"
+          ? typeof backing.byteSize === "number" &&
+            typeof backing.checksumSha256 === "string" &&
+            typeof backing.fileId === "string" &&
+            typeof backing.originalName === "string"
+          : backing.kind === "missing_local_file"
+            ? typeof backing.originalName === "string" &&
+              typeof backing.byteSize === "number" &&
+              typeof backing.lastModified === "number" &&
+              typeof backing.parseError === "string"
+            : false)
   );
 }
 

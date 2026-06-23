@@ -1,12 +1,18 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createWorkbookSelectionCacheKey } from "#/domains/questions/reference-preview";
+import { normalizeWorkbookRef } from "#/domains/questions/workbook-reference";
 import type {
   WorkbookPickerRequest,
   WorkbookRangeSelection,
 } from "#/features/questions/table-block-editor";
-import { createWorkbookSelectionCacheKey } from "#/domains/questions/reference-preview";
-import { normalizeWorkbookRef } from "#/domains/questions/workbook-reference";
+import { toEditorAttachedWorkbookSources } from "./source/studio-source-model";
 import { useSourceController } from "./source/use-source-controller";
+import {
+  navigateToStudioBlueprint,
+  navigateToStudioDraft,
+  toStudioSearch,
+} from "./studio-controller-helpers";
 import type {
   StudioController,
   StudioRouteSearch,
@@ -29,38 +35,76 @@ export function useStudioController(
 ): StudioController {
   const navigate = useNavigate();
   const initialBlueprintId = input.blueprintId ?? "";
-  const initialBlueprintVersionId = input.blueprintVersionId ?? "";
+  const initialDraftId = input.draftId ?? "";
+  const routeHasDraftId = initialDraftId.length > 0;
+  const routeHasBlueprintId = initialBlueprintId.length > 0;
+  const routeHasBlueprintOnly = routeHasBlueprintId && !routeHasDraftId;
+  const routeHasBothParams = routeHasDraftId && routeHasBlueprintId;
+  const draftInitialBlueprintId = routeHasDraftId ? "" : initialBlueprintId;
   const [workbookPickerRequest, setWorkbookPickerRequest] =
     useState<WorkbookPickerRequest | null>(null);
-  const [workbookSelectionValuesBySourceAndRef, setWorkbookSelectionValuesBySourceAndRef] =
-    useState<Record<string, string[][]>>({});
+  const [
+    workbookSelectionValuesBySourceAndRef,
+    setWorkbookSelectionValuesBySourceAndRef,
+  ] = useState<Record<string, string[][]>>({});
   const [isSavedBlueprintsOpen, setIsSavedBlueprintsOpen] = useState(false);
 
   const draft = useBlueprintDraftController({
-    initialBlueprintId,
-    initialBlueprintVersionId,
-  });
-  const source = useSourceController({
-    loadWorkbookPickerPreview: workbookPickerRequest !== null,
-    model: draft.authoringModel,
-    sources: draft.sources,
-    onSourcesChange: draft.setSources,
-  });
-  const referencePreview = useReferencePreviewController({
-    model: draft.authoringModel,
-    previewSourceId: source.previewSourceId,
-    workbookSnapshotId: source.workbookPreviewController.workbookSnapshotId,
-    workbookSelectionValuesBySourceAndRef,
-    workbookPreview: source.workbookPreviewController.workbookPreview,
+    initialBlueprintId: draftInitialBlueprintId,
+    initialDraftId,
   });
 
-  const attachedSources = draft.sources;
+  useEffect(() => {
+    if (routeHasBothParams) {
+      void navigateToStudioDraft(navigate, initialDraftId, { replace: true });
+    }
+  }, [
+    initialBlueprintId,
+    initialDraftId,
+    navigate,
+    routeHasBothParams,
+    routeHasDraftId,
+    routeHasBlueprintId,
+  ]);
+
+  const draftStorage = useSourceController({
+    loadWorkbookPickerPreview: workbookPickerRequest !== null,
+    lookupSourceId: workbookPickerRequest?.sourceId ?? null,
+    model: draft.authoringModel,
+    onSourcesChange: draft.setSources,
+    sources: draft.sources,
+  });
+  const editorSources = useMemo(
+    () => toEditorAttachedWorkbookSources(draftStorage.sources),
+    [draftStorage.sources],
+  );
+  const referencePreview = useReferencePreviewController({
+    model: draft.authoringModel,
+    sources: draftStorage.sources,
+    workbookSelectionValuesBySourceAndRef,
+  });
+  const workbookSheetNamesBySourceId = useMemo(() => {
+    const sheetNamesBySourceId: Record<string, readonly string[]> = {};
+
+    for (const studioSource of draftStorage.sources) {
+      const parsedWorkbook =
+        "parsedWorkbook" in studioSource.backing
+          ? studioSource.backing.parsedWorkbook
+          : null;
+      sheetNamesBySourceId[studioSource.sourceId] =
+        parsedWorkbook?.sheets.map((sheet) => sheet.name) ?? [];
+    }
+
+    return sheetNamesBySourceId;
+  }, [draftStorage.sources]);
+
+  const attachedSources = editorSources;
   const canUseWorkbookTools = attachedSources.length > 0;
   const readiness = useMemo(
     () =>
       getStudioReadiness(draft.authoringModel, {
-        questionName: draft.blueprintName,
         attachedSources,
+        questionName: draft.blueprintName,
       }),
     [attachedSources, draft.authoringModel, draft.blueprintName],
   );
@@ -69,38 +113,50 @@ export function useStudioController(
     blueprintDescription: draft.blueprintDescription,
     blueprintName: draft.blueprintName,
     hasUnsavedChanges: draft.hasUnsavedChanges,
+    initialDraftId: draft.serverDraftId,
     loadedBlueprintId: draft.loadedBlueprintId,
-    sources: attachedSources,
-    readiness,
+    onBlueprintPublished: ({ draftId }) => {
+      if (draftId) {
+        draft.clearServerDraftId();
+      }
+    },
+    onDraftSaved: ({ draftId }) => {
+      void navigateToStudioDraft(navigate, draftId, { replace: true });
+    },
     onSaved: (saved) => {
       draft.markSaved(saved);
+      draft.clearServerDraftId();
+      void navigateToStudioBlueprint(navigate, saved.blueprintId, {
+        replace: true,
+      });
     },
+    onSourcesChange: draft.setSources,
+    readiness,
+    sources: draftStorage.sources,
   });
   const generation = useGenerateQuestionsController();
   const savedBlueprints = useSavedBlueprintsController({
     onGenerateBlueprint: generation.onGenerateBlueprint,
+    onOpenBlueprint: (blueprintId) => {
+      void navigateToStudioBlueprint(navigate, blueprintId, { replace: false });
+    },
+    onOpenDraft: (draftId) => {
+      void navigateToStudioDraft(navigate, draftId, { replace: false });
+    },
   });
-  const commandBarVersions = useMemo(
-    () =>
-      (draft.loadedBlueprint?.versions ?? []).map((version) => ({
-        id: version.id,
-        versionNumber: version.versionNumber,
-        createdAt: version.createdAt,
-        sourceCount: version.sourceAssets.length,
-        isCurrent: version.id === draft.loadedBlueprint?.currentVersionId,
-      })),
-    [draft.loadedBlueprint?.currentVersionId, draft.loadedBlueprint?.versions],
-  );
 
   useEffect(() => {
     setWorkbookSelectionValuesBySourceAndRef((currentValues) => {
-      const sourceIds = new Set(attachedSources.map((source) => source.sourceId));
+      const sourceIds = new Set(
+        attachedSources.map((source) => source.sourceId),
+      );
       let changed = false;
       const nextValues: Record<string, string[][]> = {};
 
       for (const [cacheKey, value] of Object.entries(currentValues)) {
         const delimiterIndex = cacheKey.indexOf("::");
-        const sourceId = delimiterIndex >= 0 ? cacheKey.slice(0, delimiterIndex) : "";
+        const sourceId =
+          delimiterIndex >= 0 ? cacheKey.slice(0, delimiterIndex) : "";
         if (!sourceIds.has(sourceId)) {
           changed = true;
           continue;
@@ -116,27 +172,23 @@ export function useStudioController(
     readiness,
     "generate_saved_blueprint",
   );
-  const currentGenerationSource =
-    draft.loadedBlueprintId && draft.loadedBlueprintVersionId
-      ? {
-          id: draft.loadedBlueprintId,
-          name: draft.blueprintName,
-          sources: attachedSources,
-          currentVersionId: draft.loadedBlueprintVersionId,
-        }
-      : null;
+  const currentGenerationSource = draft.loadedBlueprintId
+    ? {
+        id: draft.loadedBlueprintId,
+        name: draft.blueprintName,
+        sources: attachedSources,
+      }
+    : null;
   const studioState = getStudioState({
     activeGenerationRun: generation.generationStatus.run,
-    currentGenerationSourceExists: currentGenerationSource !== null,
-    hasLoadedBlueprint: draft.loadedBlueprintId !== null,
     hasUnsavedChanges: draft.hasUnsavedChanges,
     isGenerationSubmitting: generation.generateDialog.isSubmitting,
     isLoadingBlueprint: draft.isLoadingBlueprint,
     isResetPending: draft.resetConfirmation.open,
     loadError: draft.loadError,
+    loadedBlueprintId: draft.loadedBlueprintId,
     localDraftError: draft.localDraftError,
     localDraftStatus: draft.localDraftStatus,
-    loadedBlueprintId: draft.loadedBlueprintId,
     readinessIssue: generateReadinessIssue,
     remoteSaveError: save.commandBarSave.saveError,
     remoteSaveIsSaving: save.commandBarSave.isSaving,
@@ -144,7 +196,7 @@ export function useStudioController(
   });
 
   return {
-    state: studioState,
+    blueprintOpenWarning: draft.blueprintOpenWarning,
     commandBar: {
       blueprintDescription: draft.blueprintDescription,
       blueprintName: draft.blueprintName,
@@ -153,10 +205,6 @@ export function useStudioController(
       canUndo: draft.canUndo,
       generateDisabledReason: studioState.generateDisabledReason,
       isSaving: save.commandBarSave.isSaving,
-      saveState: studioState.saveState,
-      saveError: studioState.saveError,
-      selectedVersionId: draft.loadedBlueprintVersionId,
-      versions: commandBarVersions,
       onBlueprintDescriptionChange: (description) => {
         draft.setBlueprintDescription(description);
         save.clearMessages();
@@ -172,73 +220,80 @@ export function useStudioController(
       },
       onOpenSaveDialog: save.commandBarSave.onOpenSaveDialog,
       onOpenSavedBlueprints: () => setIsSavedBlueprintsOpen(true),
-      onOpenVersion: (versionId) => {
-        if (!draft.loadedBlueprintId || !versionId) {
-          return;
-        }
-        void navigate({
-          to: "/studio",
-          search: {
-            blueprintId: draft.loadedBlueprintId,
-            blueprintVersionId: versionId,
-          },
-        });
-      },
-      onReset: draft.requestReset,
       onRedo: draft.redo,
+      onReset: draft.requestReset,
+      onSaveDraft: save.commandBarSave.onSaveDraft,
       onUndo: draft.undo,
+      routeSearch: toStudioSearch(
+        routeHasDraftId
+          ? { draftId: initialDraftId, kind: "draft" }
+          : routeHasBlueprintOnly
+            ? { blueprintId: initialBlueprintId, kind: "blueprint" }
+            : { kind: "blank" },
+      ),
+      saveError: studioState.saveError,
+      saveState: studioState.saveState,
     },
-    blueprintOpenWarning: draft.blueprintOpenWarning,
     draftRecovery: draft.draftRecovery,
-    resetConfirmation: draft.resetConfirmation,
-    source,
     editor: {
       authoringModel: draft.authoringModel,
-      referencePreviewCache: referencePreview.referencePreviewCache,
       canUseWorkbookTools,
-      sources: attachedSources,
-      previewSourceId: source.previewSourceId,
       onAuthoringModelChange: (model) => {
         draft.setAuthoringModel(model);
         save.clearMessages();
       },
+      referencePreviewCache: referencePreview.referencePreviewCache,
+      sources: editorSources,
+      workbookSheetNamesBySourceId,
     },
+    generateDialog: generation.generateDialog,
+    generationStatus: generation.generationStatus,
+    readiness,
+    resetConfirmation: draft.resetConfirmation,
+    saveDialog: save.saveDialog,
     savedBlueprints: {
       open: isSavedBlueprintsOpen,
       ...savedBlueprints,
-      onOpenChange: setIsSavedBlueprintsOpen,
       onOpenBlueprint: (id) => {
         savedBlueprints.onOpenBlueprint(id);
         setIsSavedBlueprintsOpen(false);
       },
-    },
-    generationStatus: generation.generationStatus,
-    saveDialog: save.saveDialog,
-    generateDialog: generation.generateDialog,
-    workbookPicker: {
-      workbookSnapshotId: source.workbookPreviewController.workbookSnapshotId,
-      workbookSheets: source.workbookPreviewController.workbookSheets,
-      hasMoreWorkbookSheets:
-        source.workbookPreviewController.hasMoreWorkbookSheets,
-      isLoadingMoreWorkbookSheets:
-        source.workbookPreviewController.isLoadingMoreWorkbookSheets,
-      fileName:
-        source.previewSourceWorkbook?.originalName ??
-        (source.previewSourceId
-          ? source.getSourceById(source.previewSourceId)?.name ?? ""
-          : ""),
-      open: workbookPickerRequest !== null,
-      request: workbookPickerRequest,
-      openWorkbookPicker: (request) => {
-        setWorkbookPickerRequest(request);
+      onOpenChange: setIsSavedBlueprintsOpen,
+      onOpenDraft: (id) => {
+        savedBlueprints.onOpenDraft(id);
+        setIsSavedBlueprintsOpen(false);
       },
+    },
+    source: {
+      ...draftStorage,
+      actions: {
+        ...draftStorage.actions,
+      },
+    },
+    sourcePicker: {
+      onOpenChange: draftStorage.actions.setPickerOpen,
+      open: draftStorage.isPickerOpen,
+    },
+    state: studioState,
+    workbookPicker: {
+      fileName: workbookPickerRequest?.sourceId
+        ? (draftStorage.getSourceById(workbookPickerRequest.sourceId)?.backing
+            .originalName ??
+          draftStorage.getSourceById(workbookPickerRequest.sourceId)?.name ??
+          "")
+        : (draftStorage.lookupSourceWorkbook?.originalName ?? ""),
+      hasMoreWorkbookSheets:
+        draftStorage.workbookPreviewController.hasMoreWorkbookSheets,
+      isLoadingMoreWorkbookSheets:
+        draftStorage.workbookPreviewController.isLoadingMoreWorkbookSheets,
+      localWorkbook: draftStorage.lookupLocalWorkbook,
+      onLoadMoreWorkbookSheets:
+        draftStorage.workbookPreviewController.loadMoreWorkbookSheets,
       onOpenChange: (open) => {
         if (!open) {
           setWorkbookPickerRequest(null);
         }
       },
-      onLoadMoreWorkbookSheets:
-        source.workbookPreviewController.loadMoreWorkbookSheets,
       onSelect: (selection: WorkbookRangeSelection) => {
         const normalizedReference =
           normalizeWorkbookRef(selection.reference) ?? selection.reference;
@@ -256,7 +311,14 @@ export function useStudioController(
         workbookPickerRequest?.onSelect(selection);
         setWorkbookPickerRequest(null);
       },
+      open: workbookPickerRequest !== null,
+      openWorkbookPicker: (request) => {
+        setWorkbookPickerRequest(request);
+      },
+      request: workbookPickerRequest,
+      workbookSheets: draftStorage.workbookPreviewController.workbookSheets,
+      workbookSnapshotId:
+        draftStorage.workbookPreviewController.workbookSnapshotId,
     },
-    readiness,
   };
 }

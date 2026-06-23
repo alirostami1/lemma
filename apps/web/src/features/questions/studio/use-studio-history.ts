@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
-import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
+import type { StudioSource } from "./source/studio-source-model";
 
 const MAX_HISTORY_ENTRIES = 100;
 const GROUP_WINDOW_MS = 900;
@@ -9,7 +9,7 @@ export type StudioHistorySnapshot = {
   authoringModel: ComposedEditorModel;
   blueprintDescription: string;
   blueprintName: string;
-  sources: QuestionBlueprintWorkbookSource[];
+  sources: StudioSource[];
 };
 
 export type StudioHistoryChangeGroup =

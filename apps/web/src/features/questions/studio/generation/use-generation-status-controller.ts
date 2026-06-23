@@ -120,12 +120,12 @@ export function useGenerationStatusController({
         notifiedSuccessRunIdsRef.current.add(run.id);
         const successInput = {
           count: run.result?.questionIds.length ?? lastRunContext?.count,
-          questionSetName:
-            lastRunContext?.questionSetName ??
-            getQuestionSetName(run.targetQuestionSetId ?? null),
           onOpenQuestionSet: () => {
             void openQuestionSet(run.targetQuestionSetId ?? null);
           },
+          questionSetName:
+            lastRunContext?.questionSetName ??
+            getQuestionSetName(run.targetQuestionSetId ?? null),
         };
 
         if (retryToastId) {
@@ -159,14 +159,14 @@ export function useGenerationStatusController({
         notifiedFailureRunIdsRef.current.add(run.id);
         if (retryToastId) {
           notifyQuestionGenerationRetryFailed({
-            toastId: retryToastId,
             message,
+            toastId: retryToastId,
           });
           onRetryToastChange(null);
         } else {
           notifyQuestionGenerationFailed(message, {
-            toastId: getActiveToastIdForRun(run.id),
             onRetry: run.status === "failed" ? onRetry : null,
+            toastId: getActiveToastIdForRun(run.id),
           });
         }
       }

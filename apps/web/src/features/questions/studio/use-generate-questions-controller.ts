@@ -32,8 +32,8 @@ export function useGenerateQuestionsController(): GenerateQuestionsController {
     }
 
     await navigate({
-      to: "/question-sets/$questionSetId",
       params: { questionSetId },
+      to: "/question-sets/$questionSetId",
     });
   }
 
@@ -50,35 +50,36 @@ export function useGenerateQuestionsController(): GenerateQuestionsController {
   const retry = useGenerationRetryController({
     lastRunContext,
     onGenerationErrorChange: setGenerationError,
+    onRetryStarted: (run, context) => {
+      setLastRun(run);
+      setActiveRunContext(context);
+      setLastRunContext(context);
+    },
     onRetryToastChange: setRetryToastId,
-    onRetryStarted: setActiveRunContext,
   });
 
   const status = useGenerationStatusController({
     activeRunContext,
-    lastRunContext,
+    getQuestionSetName,
     lastRun,
-    retryToastId,
+    lastRunContext,
     onActiveRunContextChange: setActiveRunContext,
+    onGenerationErrorChange: setGenerationError,
     onLastRunChange: setLastRun,
     onLastRunContextChange: setLastRunContext,
-    onGenerationErrorChange: setGenerationError,
-    onRetryToastChange: setRetryToastId,
-    getQuestionSetName,
-    openQuestionSet,
     onRetry: () => {
       void retry.retryLastRun();
     },
+    onRetryToastChange: setRetryToastId,
+    openQuestionSet,
+    retryToastId,
   });
   const generateDialog = useGenerateQuestionsDialogController({
-    open: command.generateDialog.open,
-    source: command.generateDialog.source,
     errorMessage: generationError,
     isGenerating:
       command.isCreateGenerationPending ||
       retry.isRetryGenerationPending ||
       status.isRunLoading,
-    onOpenChange: command.generateDialog.onOpenChange,
     onGenerate: async (dialogInput) => {
       const started = await command.generateDialog.onGenerate(dialogInput);
       if (started) {
@@ -86,17 +87,20 @@ export function useGenerateQuestionsController(): GenerateQuestionsController {
       }
       return started;
     },
+    onOpenChange: command.generateDialog.onOpenChange,
+    open: command.generateDialog.open,
+    source: command.generateDialog.source,
   });
 
   return {
     generateDialog,
     generationStatus: {
-      run: status.run,
       errorMessage: generationError,
       isRetrying: retry.isRetryGenerationPending,
       onRetry: () => {
         void retry.retryLastRun();
       },
+      run: status.run,
     },
     onGenerateBlueprint: command.onGenerateBlueprint,
   };

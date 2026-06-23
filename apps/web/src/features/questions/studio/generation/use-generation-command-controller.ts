@@ -48,11 +48,9 @@ export function useGenerationCommandController({
     try {
       const result = await createGeneration(
         toCreateQuestionGenerationRunInput({
+          blueprintId: dialogSource.blueprintId,
           count: dialogInput.count,
           targetQuestionSetId: dialogInput.targetQuestionSetId,
-          blueprintId: dialogSource.blueprintId,
-          blueprintVersionId: dialogSource.blueprintVersionId,
-          sourceWorkbookId: dialogSource.sources[0]?.workbookId ?? null,
         }),
       );
 
@@ -80,15 +78,9 @@ export function useGenerationCommandController({
 
   function onGenerateBlueprint(blueprint: GenerateBlueprintSource) {
     onGenerationErrorChange(null);
-    if (!blueprint.currentVersionId) {
-      onGenerationErrorChange("This saved blueprint cannot be generated yet.");
-      return;
-    }
-
     setDialogSource({
-      kind: "saved_blueprint",
       blueprintId: blueprint.id,
-      blueprintVersionId: blueprint.currentVersionId,
+      kind: "saved_blueprint",
       name: blueprint.name,
       sources: blueprint.sources,
     });
@@ -107,15 +99,15 @@ export function useGenerationCommandController({
   }
 
   return {
-    dialogSource,
-    isCreateGenerationPending,
-    onGenerateBlueprint,
     clearSource,
+    dialogSource,
     generateDialog: {
+      onGenerate,
+      onOpenChange,
       open: isDialogOpen,
       source: dialogSource,
-      onOpenChange,
-      onGenerate,
     },
+    isCreateGenerationPending,
+    onGenerateBlueprint,
   };
 }

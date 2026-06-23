@@ -25,51 +25,51 @@ export function getGenerationStatusState(
 ) {
   if (!run) {
     return {
-      title: errorMessage ? "Generation failed." : "Generation status",
+      canRetry: false,
       description: errorMessage
         ? "Check issue and retry when ready."
         : "Questions are being created.",
-      message: errorMessage,
-      canRetry: false,
       hidden: !errorMessage,
+      message: errorMessage,
+      title: errorMessage ? "Generation failed." : "Generation status",
     };
   }
 
   if (run.status === "succeeded") {
     return {
-      title: "Questions generated.",
-      description: "Generation finished.",
-      message: null,
       canRetry: false,
+      description: "Generation finished.",
       hidden: true,
+      message: null,
+      title: "Questions generated.",
     };
   }
 
   if (run.status === "failed") {
     return {
-      title: "Generation failed.",
-      description: "Check issue and retry when ready.",
-      message: errorMessage ?? run.errorMessage ?? "Generation failed.",
       canRetry: true,
+      description: "Check issue and retry when ready.",
       hidden: false,
+      message: errorMessage ?? run.errorMessage ?? "Generation failed.",
+      title: "Generation failed.",
     };
   }
 
   if (run.status === "cancelled") {
     return {
-      title: "Generation failed.",
-      description: "Check issue and retry when ready.",
-      message: errorMessage ?? run.errorMessage ?? "Generation failed.",
       canRetry: false,
+      description: "Check issue and retry when ready.",
       hidden: false,
+      message: errorMessage ?? run.errorMessage ?? "Generation failed.",
+      title: "Generation failed.",
     };
   }
 
   return {
-    title: "Generating questions...",
-    description: "Questions are being created.",
-    message: errorMessage ?? run.errorMessage,
     canRetry: false,
+    description: "Questions are being created.",
     hidden: false,
+    message: errorMessage ?? run.errorMessage,
+    title: "Generating questions...",
   };
 }

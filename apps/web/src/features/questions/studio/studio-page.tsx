@@ -7,7 +7,8 @@ import { WorkbookPickerDialog } from "../workbook-picker-dialog";
 import { GenerateQuestionsDialog } from "./generation/generate-questions-dialog";
 import { SaveBlueprintDialog } from "./save-blueprint-dialog";
 import { SavedBlueprintsDialog } from "./saved-blueprints-dialog";
-import { StudioSourceBar } from "./source/studio-source-bar";
+import { StudioSourceList } from "./source/studio-source-list";
+import { StudioSourcePickerDialog } from "./source/studio-source-picker-dialog";
 import { StudioCommandBar } from "./studio-command-bar";
 import {
   StudioBlueprintOpenWarningDialog,
@@ -27,6 +28,7 @@ const initialStickyRegionBottom = 176;
 export function StudioPage(input: StudioRouteSearch = {}) {
   const studio = useStudioController(input);
   const stickyRegionRef = useRef<HTMLDivElement>(null);
+  const [isSourcePanelExpanded, setIsSourcePanelExpanded] = useState(false);
   const stickyRegionBottom = useStickyRegionBottom(stickyRegionRef);
   const inspectorStickyOffset = stickyRegionBottom + stickyInspectorGap;
 
@@ -34,29 +36,34 @@ export function StudioPage(input: StudioRouteSearch = {}) {
     <WorkbookPickerProvider
       value={{ openWorkbookPicker: studio.workbookPicker.openWorkbookPicker }}
     >
-      <PageContainer variant="workbench" className="pb-8">
+      <PageContainer className="pb-8" variant="workbench">
         <div
-          ref={stickyRegionRef}
           className="sticky top-0 z-30 grid gap-2 bg-background/95 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+          ref={stickyRegionRef}
         >
           <StudioCommandBar {...studio.commandBar} />
-          <StudioSourceBar
-            sourceCard={studio.source.sourceCard}
+          <StudioSourceList
+            isExpanded={isSourcePanelExpanded}
             onAddSource={studio.source.actions.addSource}
-            onPreviewSourceChange={studio.source.actions.setPreviewSourceId}
+            onExpandedChange={setIsSourcePanelExpanded}
+            onReattachSource={studio.source.actions.reattachSource}
             onRemoveSource={studio.source.actions.removeSource}
+            sources={studio.source.sources}
+            usageBySourceId={studio.source.usageBySourceId}
           />
         </div>
 
         <section className="rounded-lg border bg-background p-3 shadow-sm sm:p-4">
           <div className="max-w-none">
             <ComposedQuestionEditor
+              inspectorStickyOffset={inspectorStickyOffset}
               model={studio.editor.authoringModel}
               onModelChange={studio.editor.onAuthoringModelChange}
               referencePreviewCache={studio.editor.referencePreviewCache}
               sources={studio.editor.sources}
-              previewSourceId={studio.editor.previewSourceId}
-              inspectorStickyOffset={inspectorStickyOffset}
+              workbookSheetNamesBySourceId={
+                studio.editor.workbookSheetNamesBySourceId
+              }
             />
           </div>
         </section>
@@ -65,27 +72,31 @@ export function StudioPage(input: StudioRouteSearch = {}) {
         <StudioDraftRecoveryDialog {...studio.draftRecovery} />
         <StudioResetConfirmationDialog {...studio.resetConfirmation} />
         <SaveBlueprintDialog {...studio.saveDialog} />
+        <StudioSourcePickerDialog
+          existingSources={studio.source.sources}
+          onCreateSource={studio.source.actions.createSource}
+          onOpenChange={studio.sourcePicker.onOpenChange}
+          open={studio.sourcePicker.open}
+        />
         <GenerateQuestionsDialog {...studio.generateDialog} />
         <SavedBlueprintsDialog {...studio.savedBlueprints} />
         <WorkbookPickerDialog
-          workbookSnapshotId={studio.workbookPicker.workbookSnapshotId}
-          workbookSheets={studio.workbookPicker.workbookSheets}
-          previewSourceId={
-            studio.workbookPicker.request?.sourceId ??
-            studio.source.previewSourceId
-          }
+          fileName={studio.workbookPicker.fileName}
           hasMoreSheets={studio.workbookPicker.hasMoreWorkbookSheets}
           isLoadingMoreSheets={
             studio.workbookPicker.isLoadingMoreWorkbookSheets
           }
-          fileName={studio.workbookPicker.fileName}
-          open={studio.workbookPicker.open}
-          onOpenChange={studio.workbookPicker.onOpenChange}
+          localWorkbook={studio.workbookPicker.localWorkbook}
           onLoadMoreSheets={studio.workbookPicker.onLoadMoreWorkbookSheets}
+          onOpenChange={studio.workbookPicker.onOpenChange}
+          onSelectRange={studio.workbookPicker.onSelect}
+          open={studio.workbookPicker.open}
           selectionRequirement={
             studio.workbookPicker.request?.selectionRequirement ?? {}
           }
-          onSelectRange={studio.workbookPicker.onSelect}
+          sourceId={studio.workbookPicker.request?.sourceId ?? null}
+          workbookSheets={studio.workbookPicker.workbookSheets}
+          workbookSnapshotId={studio.workbookPicker.workbookSnapshotId}
         />
       </PageContainer>
     </WorkbookPickerProvider>
