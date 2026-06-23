@@ -27,8 +27,8 @@ async function runMigrations() {
     db,
     provider: new FileMigrationProvider({
       fs,
-      path,
       migrationFolder,
+      path,
     }),
   });
 

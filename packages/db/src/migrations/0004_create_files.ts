@@ -1,7 +1,7 @@
-import type { Kysely } from "kysely";
 import { sql } from "kysely";
+import type { MigrationDb } from "./helpers.js";
 
-export async function up(db: Kysely<Record<string, never>>): Promise<void> {
+export async function up(db: MigrationDb): Promise<void> {
   await db.schema
     .createTable("file_uploads")
     .addColumn("id", "uuid", (c) => c.primaryKey().defaultTo(sql`uuidv7()`))
@@ -50,6 +50,22 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
       "file_uploads_metadata_object_check",
       sql`jsonb_typeof(metadata) = 'object'`,
     )
+    .addCheckConstraint(
+      "file_uploads_bucket_non_empty_check",
+      sql`length(trim(bucket)) > 0`,
+    )
+    .addCheckConstraint(
+      "file_uploads_object_key_non_empty_check",
+      sql`length(trim(object_key)) > 0`,
+    )
+    .addCheckConstraint(
+      "file_uploads_original_name_non_empty_check",
+      sql`length(trim(original_name)) > 0`,
+    )
+    .addCheckConstraint(
+      "file_uploads_content_type_non_empty_check",
+      sql`length(trim(content_type)) > 0`,
+    )
     .addForeignKeyConstraint(
       "file_uploads_created_by_user_id_foreign",
       ["created_by_user_id"],
@@ -64,18 +80,23 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
     .on("file_uploads")
     .columns(["created_by_user_id", "created_at"])
     .execute();
-
   await db.schema
     .createIndex("file_uploads_status_upload_expires_at_index")
     .on("file_uploads")
     .columns(["status", "upload_expires_at"])
     .execute();
-
   await db.schema
     .createIndex("file_uploads_purpose_created_at_index")
     .on("file_uploads")
     .columns(["purpose", "created_at"])
     .execute();
+
+  await sql`
+    create trigger file_uploads_set_updated_at
+    before update on file_uploads
+    for each row
+    execute function set_updated_at()
+  `.execute(db);
 
   await db.schema
     .createTable("files")
@@ -110,6 +131,7 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
       "files_status_check",
       sql`status in ('uploaded', 'deleting', 'deleted')`,
     )
+    .addCheckConstraint("files_purpose_check", sql`purpose in ('workbook')`)
     .addCheckConstraint("files_byte_size_positive_check", sql`byte_size > 0`)
     .addCheckConstraint(
       "files_checksum_sha256_check",
@@ -118,6 +140,22 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
     .addCheckConstraint(
       "files_metadata_object_check",
       sql`jsonb_typeof(metadata) = 'object'`,
+    )
+    .addCheckConstraint(
+      "files_bucket_non_empty_check",
+      sql`length(trim(bucket)) > 0`,
+    )
+    .addCheckConstraint(
+      "files_object_key_non_empty_check",
+      sql`length(trim(object_key)) > 0`,
+    )
+    .addCheckConstraint(
+      "files_original_name_non_empty_check",
+      sql`length(trim(original_name)) > 0`,
+    )
+    .addCheckConstraint(
+      "files_content_type_non_empty_check",
+      sql`length(trim(content_type)) > 0`,
     )
     .addForeignKeyConstraint(
       "files_upload_id_foreign",
@@ -147,31 +185,21 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
     .on("files")
     .columns(["owner_user_id", "status", "created_at"])
     .execute();
-
   await db.schema
     .createIndex("files_created_by_user_id_purpose_created_at_index")
     .on("files")
     .columns(["created_by_user_id", "purpose", "created_at"])
     .execute();
-
   await db.schema
     .createIndex("files_checksum_sha256_index")
     .on("files")
     .column("checksum_sha256")
     .execute();
-
   await db.schema
     .createIndex("files_status_retention_expires_at_index")
     .on("files")
     .columns(["status", "retention_expires_at"])
     .execute();
-
-  await sql`
-    create trigger file_uploads_set_updated_at
-    before update on file_uploads
-    for each row
-    execute function set_updated_at()
-  `.execute(db);
 
   await sql`
     create trigger files_set_updated_at
@@ -181,11 +209,11 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
   `.execute(db);
 }
 
-export async function down(db: Kysely<Record<string, never>>): Promise<void> {
+export async function down(db: MigrationDb): Promise<void> {
   await sql`drop trigger if exists files_set_updated_at on files`.execute(db);
+  await db.schema.dropTable("files").execute();
   await sql`drop trigger if exists file_uploads_set_updated_at on file_uploads`.execute(
     db,
   );
-  await db.schema.dropTable("files").execute();
   await db.schema.dropTable("file_uploads").execute();
 }

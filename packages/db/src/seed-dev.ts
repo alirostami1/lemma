@@ -5,17 +5,17 @@ const config = createDatabaseConfig();
 
 const devUsers = [
   {
-    localUserId: "019e9315-6a87-715f-9861-8654df072001",
-    identityId: "019e9315-6a87-715f-9861-8654df071001",
-    email: "test@example.com",
     displayName: "Test User",
+    email: "test@example.com",
+    identityId: "019e9315-6a87-715f-9861-8654df071001",
+    localUserId: "019e9315-6a87-715f-9861-8654df072001",
     roleKeys: ["member"],
   },
   {
-    localUserId: "019e9315-6a87-715f-9861-8654df072002",
-    identityId: "019e9315-6a87-715f-9861-8654df071002",
-    email: "admin@example.com",
     displayName: "Admin User",
+    email: "admin@example.com",
+    identityId: "019e9315-6a87-715f-9861-8654df071002",
+    localUserId: "019e9315-6a87-715f-9861-8654df072002",
     roleKeys: ["admin"],
   },
 ] as const;

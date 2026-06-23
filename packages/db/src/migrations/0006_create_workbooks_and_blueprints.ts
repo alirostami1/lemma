@@ -1,7 +1,7 @@
-import type { Kysely } from "kysely";
 import { sql } from "kysely";
+import type { MigrationDb } from "./helpers.js";
 
-export async function up(db: Kysely<Record<string, never>>): Promise<void> {
+export async function up(db: MigrationDb): Promise<void> {
   await db.schema
     .createTable("workbooks")
     .addColumn("id", "uuid", (c) => c.primaryKey().defaultTo(sql`uuidv7()`))
@@ -27,6 +27,10 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
     .addCheckConstraint(
       "workbooks_name_nonempty_check",
       sql`length(trim(name)) > 0`,
+    )
+    .addCheckConstraint(
+      "workbooks_original_name_nonempty_check",
+      sql`length(trim(original_name)) > 0`,
     )
     .addCheckConstraint(
       "workbooks_checksum_sha256_check",
@@ -72,6 +76,21 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
     .on("workbooks")
     .columns(["owner_user_id", "created_at"])
     .execute();
+  await db.schema
+    .createIndex("workbooks_owner_user_id_status_created_at_index")
+    .on("workbooks")
+    .columns(["owner_user_id", "status", "created_at"])
+    .execute();
+  await db.schema
+    .createIndex("workbooks_file_id_index")
+    .on("workbooks")
+    .column("file_id")
+    .execute();
+  await db.schema
+    .createIndex("workbooks_checksum_sha256_index")
+    .on("workbooks")
+    .column("checksum_sha256")
+    .execute();
 
   await sql`
     create trigger workbooks_set_updated_at
@@ -88,11 +107,10 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
     .addColumn("name", "varchar(160)", (c) => c.notNull())
     .addColumn("description", "text")
     .addColumn("visibility", "text", (c) => c.notNull().defaultTo("private"))
-    .addColumn("workbook_id", "uuid")
-    .addColumn("workbook_sources", "jsonb", (c) =>
+    .addColumn("document", "jsonb", (c) => c.notNull())
+    .addColumn("sources", "jsonb", (c) =>
       c.notNull().defaultTo(sql`'[]'::jsonb`),
     )
-    .addColumn("current_version_id", "uuid")
     .addColumn("status", "text", (c) => c.notNull().defaultTo("active"))
     .addColumn("archived_at", "timestamptz")
     .addColumn("created_at", "timestamptz", (c) =>
@@ -118,8 +136,28 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
       sql`length(trim(name)) > 0`,
     )
     .addCheckConstraint(
-      "question_blueprints_workbook_sources_array_check",
-      sql`jsonb_typeof(workbook_sources) = 'array'`,
+      "question_blueprints_document_object_check",
+      sql`jsonb_typeof(document) = 'object'`,
+    )
+    .addCheckConstraint(
+      "question_blueprints_document_schema_version_check",
+      sql`document @> '{"schemaVersion":1}'::jsonb`,
+    )
+    .addCheckConstraint(
+      "question_blueprints_document_blocks_check",
+      sql`document ? 'blocks' and jsonb_typeof(document->'blocks') = 'array'`,
+    )
+    .addCheckConstraint(
+      "question_blueprints_document_response_fields_check",
+      sql`document ? 'responseFields' and jsonb_typeof(document->'responseFields') = 'array'`,
+    )
+    .addCheckConstraint(
+      "question_blueprints_document_references_check",
+      sql`document ? 'references' and jsonb_typeof(document->'references') = 'array'`,
+    )
+    .addCheckConstraint(
+      "question_blueprints_sources_array_check",
+      sql`jsonb_typeof(sources) = 'array'`,
     )
     .addForeignKeyConstraint(
       "question_blueprints_owner_user_id_foreign",
@@ -135,13 +173,6 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
       ["id"],
       (cb) => cb.onDelete("restrict"),
     )
-    .addForeignKeyConstraint(
-      "question_blueprints_workbook_id_foreign",
-      ["workbook_id"],
-      "workbooks",
-      ["id"],
-      (cb) => cb.onDelete("restrict"),
-    )
     .execute();
 
   await db.schema
@@ -149,138 +180,27 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
     .on("question_blueprints")
     .columns(["owner_user_id", "status", "created_at"])
     .execute();
-
   await db.schema
     .createIndex("question_blueprints_created_by_user_id_created_at_index")
     .on("question_blueprints")
     .columns(["created_by_user_id", "created_at"])
     .execute();
-
   await db.schema
-    .createIndex("question_blueprints_workbook_id_index")
+    .createIndex("question_blueprints_status_updated_at_index")
     .on("question_blueprints")
-    .column("workbook_id")
+    .columns(["status", "updated_at"])
     .execute();
+  await sql`
+    create index question_blueprints_sources_gin_index
+    on question_blueprints using gin (sources jsonb_path_ops)
+  `.execute(db);
 
-  await db.schema
-    .createIndex("question_blueprints_current_version_id_index")
-    .on("question_blueprints")
-    .column("current_version_id")
-    .execute();
-
-  await db.schema
-    .createTable("question_blueprint_versions")
-    .addColumn("id", "uuid", (c) => c.primaryKey().defaultTo(sql`uuidv7()`))
-    .addColumn("question_blueprint_id", "uuid", (c) => c.notNull())
-    .addColumn("version_number", "integer", (c) => c.notNull())
-    .addColumn("document", "jsonb", (c) => c.notNull())
-    .addColumn("workbook_id", "uuid")
-    .addColumn("workbook_sources", "jsonb", (c) =>
-      c.notNull().defaultTo(sql`'[]'::jsonb`),
-    )
-    .addColumn("created_by_user_id", "uuid", (c) => c.notNull())
-    .addColumn("created_at", "timestamptz", (c) =>
-      c.notNull().defaultTo(sql`now()`),
-    )
-    .addUniqueConstraint(
-      "question_blueprint_versions_blueprint_id_version_number_unique",
-      ["question_blueprint_id", "version_number"],
-    )
-    .addCheckConstraint(
-      "question_blueprint_versions_version_number_check",
-      sql`version_number > 0`,
-    )
-    .addCheckConstraint(
-      "question_blueprint_versions_document_object_check",
-      sql`jsonb_typeof(document) = 'object'`,
-    )
-    .addCheckConstraint(
-      "question_blueprint_versions_document_schema_version_check",
-      sql`document ? 'schemaVersion'`,
-    )
-    .addCheckConstraint(
-      "question_blueprint_versions_document_blocks_check",
-      sql`document ? 'blocks'`,
-    )
-    .addCheckConstraint(
-      "question_blueprint_versions_document_response_fields_check",
-      sql`document ? 'responseFields'`,
-    )
-    .addCheckConstraint(
-      "question_blueprint_versions_document_references_check",
-      sql`document ? 'references'`,
-    )
-    .addCheckConstraint(
-      "question_blueprint_versions_document_blocks_array_check",
-      sql`jsonb_typeof(document->'blocks') = 'array'`,
-    )
-    .addCheckConstraint(
-      "question_blueprint_versions_document_response_fields_array_check",
-      sql`jsonb_typeof(document->'responseFields') = 'array'`,
-    )
-    .addCheckConstraint(
-      "question_blueprint_versions_document_references_array_check",
-      sql`jsonb_typeof(document->'references') = 'array'`,
-    )
-    .addCheckConstraint(
-      "question_blueprint_versions_workbook_sources_array_check",
-      sql`jsonb_typeof(workbook_sources) = 'array'`,
-    )
-    .addForeignKeyConstraint(
-      "question_blueprint_versions_question_blueprint_id_foreign",
-      ["question_blueprint_id"],
-      "question_blueprints",
-      ["id"],
-      (cb) => cb.onDelete("cascade"),
-    )
-    .addForeignKeyConstraint(
-      "question_blueprint_versions_workbook_id_foreign",
-      ["workbook_id"],
-      "workbooks",
-      ["id"],
-      (cb) => cb.onDelete("restrict"),
-    )
-    .addForeignKeyConstraint(
-      "question_blueprint_versions_created_by_user_id_foreign",
-      ["created_by_user_id"],
-      "users",
-      ["id"],
-      (cb) => cb.onDelete("restrict"),
-    )
-    .execute();
-
-  await db.schema
-    .createIndex(
-      "question_blueprint_versions_blueprint_id_version_number_index",
-    )
-    .on("question_blueprint_versions")
-    .columns(["question_blueprint_id", "version_number"])
-    .execute();
-
-  await db.schema
-    .createIndex("question_blueprint_versions_workbook_id_index")
-    .on("question_blueprint_versions")
-    .column("workbook_id")
-    .execute();
-
-  await db.schema
-    .createIndex(
-      "question_blueprint_versions_created_by_user_id_created_at_index",
-    )
-    .on("question_blueprint_versions")
-    .columns(["created_by_user_id", "created_at"])
-    .execute();
-
-  await db.schema
-    .alterTable("question_blueprints")
-    .addForeignKeyConstraint(
-      "question_blueprints_current_version_id_foreign",
-      ["current_version_id"],
-      "question_blueprint_versions",
-      ["id"],
-      (cb) => cb.onDelete("restrict"),
-    )
-    .execute();
+  await sql`
+    create trigger question_blueprints_set_updated_at
+    before update on question_blueprints
+    for each row
+    execute function set_updated_at()
+  `.execute(db);
 
   await db.schema
     .createTable("question_blueprint_members")
@@ -328,58 +248,26 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
     .on("question_blueprint_members")
     .columns(["user_id", "blueprint_id"])
     .execute();
-
   await db.schema
     .createIndex("question_blueprint_members_role_index")
     .on("question_blueprint_members")
     .column("role")
     .execute();
-
   await db.schema
     .createIndex("question_blueprint_members_expires_at_index")
     .on("question_blueprint_members")
     .column("expires_at")
     .execute();
-
-  await sql`
-    create or replace function prevent_question_blueprint_version_update()
-    returns trigger as $$
-    begin
-      raise exception 'question_blueprint_versions are immutable';
-    end;
-    $$ language plpgsql
-  `.execute(db);
-
-  await sql`
-    create trigger question_blueprint_versions_prevent_update
-    before update on question_blueprint_versions
-    for each row
-    execute function prevent_question_blueprint_version_update()
-  `.execute(db);
-
-  await sql`
-    create trigger question_blueprints_set_updated_at
-    before update on question_blueprints
-    for each row
-    execute function set_updated_at()
-  `.execute(db);
 }
 
-export async function down(db: Kysely<Record<string, never>>): Promise<void> {
+export async function down(db: MigrationDb): Promise<void> {
+  await db.schema.dropTable("question_blueprint_members").execute();
   await sql`drop trigger if exists question_blueprints_set_updated_at on question_blueprints`.execute(
     db,
   );
-  await sql`drop trigger if exists question_blueprint_versions_prevent_update on question_blueprint_versions`.execute(
+  await sql`drop index if exists question_blueprints_sources_gin_index`.execute(
     db,
   );
-  await sql`drop function if exists prevent_question_blueprint_version_update()`.execute(
-    db,
-  );
-  await sql`alter table if exists question_blueprints drop constraint if exists question_blueprints_current_version_id_foreign`.execute(
-    db,
-  );
-  await db.schema.dropTable("question_blueprint_members").execute();
-  await db.schema.dropTable("question_blueprint_versions").execute();
   await db.schema.dropTable("question_blueprints").execute();
   await sql`drop trigger if exists workbooks_set_updated_at on workbooks`.execute(
     db,

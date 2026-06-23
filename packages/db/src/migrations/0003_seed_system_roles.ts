@@ -2,6 +2,7 @@ import type { Kysely } from "kysely";
 
 type RolesSeedDb = {
   roles: {
+    id: string;
     key: string;
     name: string;
     description: string;
@@ -11,24 +12,28 @@ type RolesSeedDb = {
 
 const roles = [
   {
+    description: "Full application administration.",
+    id: "019e9315-6a87-7000-8000-000000000001",
     key: "admin",
     name: "Admin",
-    description: "Full application administration.",
   },
   {
+    description: "Default authenticated user.",
+    id: "019e9315-6a87-7000-8000-000000000002",
     key: "member",
     name: "Member",
-    description: "Default authenticated user.",
   },
   {
+    description: "Support access.",
+    id: "019e9315-6a87-7000-8000-000000000003",
     key: "support",
     name: "Support",
-    description: "Support access.",
   },
   {
+    description: "Teacher access.",
+    id: "019e9315-6a87-7000-8000-000000000004",
     key: "teacher",
     name: "Teacher",
-    description: "Teacher Access.",
   },
 ] as const;
 
