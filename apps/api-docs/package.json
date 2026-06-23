@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "vite build",
+    "build": "vite build --configLoader runner",
     "check": "biome check",
     "check:write": "biome check --write",
-    "dev": "vite --host 0.0.0.0 --clearScreen false",
+    "dev": "vite --configLoader runner --host 0.0.0.0 --clearScreen false",
     "format": "biome format",
     "format:write": "biome format --write",
     "lint": "biome lint",

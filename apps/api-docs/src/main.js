@@ -1,6 +1,6 @@
 import { createApiReference } from "@scalar/api-reference";
 import "@scalar/api-reference/style.css";
-import { openapi } from "@lemma/api-contract";
+import { openapi } from "virtual:lemma-openapi";
 
 createApiReference("#app", {
   content: openapi,
