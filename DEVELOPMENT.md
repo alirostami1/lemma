@@ -83,14 +83,14 @@ PR: fix(deploy): add caddy cloudflare proxy module
 Run before PR:
 
 ```bash
-pnpm check-types && pnpm check && pnpm test
+pnpm check:types && pnpm check && pnpm test
 ```
 
 For focused work, package filters are fine:
 
 ```bash
 pnpm --filter @lemma/questions test
-pnpm --filter web check-types
+pnpm --filter web check:types
 ```
 
 CI should stay change-scoped as the repo grows:

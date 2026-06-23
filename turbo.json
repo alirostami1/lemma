@@ -5,38 +5,33 @@
   "noUpdateNotifier": true,
   "tasks": {
     "build": {
-      "dependsOn": ["^build", "generate:openapi", "generate:api"],
+      "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": ["dist/**", ".output/**"]
     },
-    "lint": {
-      "dependsOn": ["^lint"]
-    },
-    "format": {
-      "dependsOn": ["^format"]
-    },
-    "check": {
-      "dependsOn": ["^check"]
-    },
-    "check-types": {
-      "dependsOn": ["generate:openapi", "generate:api", "^check-types"]
+    "lint": {},
+    "lint:write": {},
+    "format": {},
+    "format:write": {},
+    "check": {},
+    "check:write": {},
+    "check:types": {
+      "dependsOn": ["^check:types"]
     },
     "test": {
       "dependsOn": ["^test"]
     },
-    "generate:openapi": {
-      "dependsOn": ["^build"],
+    "generate:hono": {
+      "dependsOn": ["@lemma/openapi-hono-generator#build"],
       "inputs": [
         "package.json",
         "orval.config.ts",
         "openapi/**",
-        "$TURBO_ROOT$/scripts/run-openapi-generator.mjs",
-        "$TURBO_ROOT$/packages/openapi-hono-generator/dist/**"
+        "$TURBO_ROOT$/packages/openapi-hono-generator/**"
       ],
-      "outputs": ["src/gen/**"]
+      "outputs": ["src/generated/**"]
     },
-    "generate:api": {
-      "dependsOn": ["^build"],
+    "generate:client": {
       "inputs": [
         "package.json",
         "orval.config.ts",
@@ -44,9 +39,6 @@
         "$TURBO_ROOT$/packages/api-contract/src/**"
       ],
       "outputs": ["src/api/generated/**"]
-    },
-    "check:architecture": {
-      "dependsOn": ["^check:architecture"]
     },
     "dev": {
       "cache": false,

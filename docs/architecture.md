@@ -14,7 +14,7 @@ flowchart TB
   Questions[questions] --> Workbook[workbook]
   Workbook --> Engine[workbook-engine]
   APIContract[api-contract] --> OpenAPI[OpenAPI fragments]
-  OpenAPIGen[openapi-hono-generator] --> HonoGen[src/gen/hono]
+  OpenAPIGen[openapi-hono-generator] --> HonoGen[src/generated/hono]
 ```
 
 Rules:
@@ -78,13 +78,15 @@ sequenceDiagram
   participant DB
 
   Web->>API: Create generation run
-  API->>Questions: Validate request
-  Questions->>DB: Save run
+  API->>Questions: Validate request and freeze blueprint snapshot
+  Questions->>DB: Save queued run
   Questions->>Events: Write outbox event
   Worker->>Events: Poll outbox
-  Worker->>Questions: Execute generation
-  Questions->>Workbook: Resolve workbook values
-  Questions->>DB: Store generated questions
+  Worker->>Questions: Orchestrate run by id
+  Questions->>Workbook: Request one multi-source calculation
+  Workbook->>DB: Persist source/question snapshots
+  Worker->>Questions: Materialize from run snapshot and snapshot metadata
+  Questions->>DB: Store durable questions and private lineage
 ```
 
 ## Workbook Flow
@@ -103,12 +105,17 @@ sequenceDiagram
   Files->>Storage: Sign object operation
   Web->>Storage: Upload workbook
   Web->>API: Create workbook
-  API->>Workbook: Register source
+  API->>Workbook: Register workbook
   Workbook->>Engine: Inspect or calculate workbook
   Engine-->>Workbook: Values and findings
   Workbook-->>API: Persist sanitized snapshot values
   Web->>API: Read bounded snapshot preview
 ```
+
+Generation workers load persisted state by id. Workbook jobs carry only the
+calculation id and operation lineage. Materialization validates snapshots by
+calculation, source slot, workbook binding, and question index; event and row
+order are never authoritative.
 
 ## OpenAPI Generation Flow
 
@@ -116,8 +123,8 @@ sequenceDiagram
 flowchart LR
   Packages[package openapi/openapi.ts] --> Contract[api-contract]
   Packages --> Orval[orval]
-  Orval --> Types[src/gen/types]
-  Orval --> Zod[src/gen/zod]
-  HonoGen[openapi-hono-generator] --> Hono[src/gen/hono]
+  Orval --> Types[src/generated/types]
+  Orval --> Zod[src/generated/zod]
+  HonoGen[openapi-hono-generator] --> Hono[src/generated/hono]
   Contract --> WebClient[apps/web/src/api/generated]
 ```

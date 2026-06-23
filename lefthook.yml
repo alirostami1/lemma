@@ -1,4 +1,4 @@
 pre-commit:
   commands:
     validate:
-      run: pnpm check-types && pnpm check
+      run: pnpm check:types && pnpm check

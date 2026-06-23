@@ -53,7 +53,7 @@ src/domain/          business rules and invariants
 src/application/     orchestration, policies, ports
 src/infrastructure/  Kysely and external adapters
 src/http/            handlers, presenters, route binding
-src/gen/             generated OpenAPI/Hono/Zod output
+src/generated/             generated OpenAPI/Hono/Zod output
 openapi/             package OpenAPI fragment
 ```
 

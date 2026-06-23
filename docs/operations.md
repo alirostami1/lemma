@@ -19,3 +19,8 @@ below.
   event id; question generation materialization uses the generation run id.
   Handlers must remain safe to retry and must check terminal domain state before
   committing side effects.
+- Generation and workbook retries create replacement records. Failed or
+  cancelled originals remain terminal history; replacement records carry
+  `retryOfRunId` or `retryOfCalculationId` plus incremented `attemptNumber`.
+- Generation replacement ids become new correlation roots. Failed workbook
+  calculations and their snapshots are never reused by replacement runs.

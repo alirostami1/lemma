@@ -3,30 +3,30 @@ import { defineConfig } from "orval";
 
 export default defineConfig({
   api: {
+    input: {
+      target: webOpenapi,
+    },
     output: {
-      mode: "tags-split",
-      target: "src/api/generated/api.ts",
-      schemas: "src/api/generated/model",
-      client: "react-query",
-      mock: false,
       clean: true,
+      client: "react-query",
       formatter: "biome",
+      mock: false,
+      mode: "tags-split",
       override: {
-        mutator: {
-          path: "./src/lib/custom-fetch.ts",
-          name: "authedFetch",
-        },
         fetch: {
           includeHttpResponseReturnType: false,
         },
+        mutator: {
+          name: "authedFetch",
+          path: "./src/lib/custom-fetch.ts",
+        },
         query: {
-          useInvalidate: true,
           useGetQueryData: true,
+          useInvalidate: true,
         },
       },
-    },
-    input: {
-      target: webOpenapi,
+      schemas: "src/api/generated/model",
+      target: "src/api/generated/api.ts",
     },
   },
 });
