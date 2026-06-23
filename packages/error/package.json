@@ -7,7 +7,7 @@
   "exports": {
     ".": {
       "types": "./src/error.ts",
-      "development": "./src/error.ts",
+      "source": "./src/error.ts",
       "import": "./dist/error.js",
       "default": "./dist/error.js"
     }

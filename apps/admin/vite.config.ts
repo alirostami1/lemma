@@ -4,7 +4,10 @@ import { oidcSpa } from "oidc-spa/vite-plugin";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  resolve: { tsconfigPaths: true },
+  resolve: {
+    conditions: ["source"],
+    tsconfigPaths: true,
+  },
   envPrefix: "LEMMA_ADMIN",
   plugins: [tailwindcss(), react(), oidcSpa({})],
 });

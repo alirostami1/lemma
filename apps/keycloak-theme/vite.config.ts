@@ -17,5 +17,8 @@ export default defineConfig({
       themeName: "lemma",
     }),
   ],
-  resolve: { tsconfigPaths: true },
+  resolve: {
+    conditions: ["source"],
+    tsconfigPaths: true,
+  },
 });

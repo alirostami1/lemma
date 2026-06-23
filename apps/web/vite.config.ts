@@ -21,7 +21,10 @@ const config = defineConfig({
     oidcSpa({}),
     babel({ presets: [reactCompilerPreset()] }),
   ],
-  resolve: { tsconfigPaths: true },
+  resolve: {
+    conditions: ["source"],
+    tsconfigPaths: true,
+  },
 });
 
 export default config;

@@ -7,7 +7,7 @@
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "development": "./src/index.ts",
+      "source": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     }
@@ -21,7 +21,7 @@
     "format:write": "biome format --write",
     "lint": "biome lint",
     "lint:write": "biome lint --write",
-    "test": "node --import tsx --test src/**/*.test.ts"
+    "test": "node --conditions=source --import tsx --test src/**/*.test.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",

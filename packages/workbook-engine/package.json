@@ -7,13 +7,13 @@
   "exports": {
     "./runtime": {
       "types": "./src/runtime.ts",
-      "development": "./src/runtime.ts",
+      "source": "./src/runtime.ts",
       "import": "./dist/runtime.js",
       "default": "./dist/runtime.js"
     },
     "./domain": {
       "types": "./src/domain.ts",
-      "development": "./src/domain.ts",
+      "source": "./src/domain.ts",
       "import": "./dist/domain.js",
       "default": "./dist/domain.js"
     }

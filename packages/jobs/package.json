@@ -7,13 +7,13 @@
   "exports": {
     "./application": {
       "types": "./src/application/index.ts",
-      "development": "./src/application/index.ts",
+      "source": "./src/application/index.ts",
       "import": "./dist/application/index.js",
       "default": "./dist/application/index.js"
     },
     "./infrastructure": {
       "types": "./src/infrastructure/index.ts",
-      "development": "./src/infrastructure/index.ts",
+      "source": "./src/infrastructure/index.ts",
       "import": "./dist/infrastructure/index.js",
       "default": "./dist/infrastructure/index.js"
     }
@@ -27,7 +27,7 @@
     "format:write": "biome format --write",
     "lint": "biome lint",
     "lint:write": "biome lint --write",
-    "test": "node --import tsx --test src/**/*.test.ts"
+    "test": "node --conditions=source --import tsx --test src/**/*.test.ts"
   },
   "dependencies": {
     "@lemma/domain": "workspace:*",
