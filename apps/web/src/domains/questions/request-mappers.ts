@@ -3,22 +3,22 @@ import type {
   CreateQuestionGenerationRunRequest,
   UpdateQuestionBlueprintRequest,
 } from "#/api/generated/model";
-import { CreateWorkbookSourceType } from "#/api/generated/model";
 import type {
   CreateQuestionBlueprintInput,
   CreateQuestionGenerationRunInput,
   UpdateQuestionBlueprintInput,
 } from "./model";
+import { toQuestionBlueprintSources } from "./source-model";
 
 export function toCreateQuestionBlueprintRequest(
   input: CreateQuestionBlueprintInput,
 ): CreateQuestionBlueprintRequest {
   return {
-    name: input.name,
     description: input.description,
-    visibility: input.visibility,
     document: input.document,
-    sources: input.sources,
+    name: input.name,
+    sources: toQuestionBlueprintSources(input.sources),
+    visibility: input.visibility,
   };
 }
 
@@ -26,12 +26,14 @@ export function toUpdateQuestionBlueprintRequest(
   input: UpdateQuestionBlueprintInput,
 ): UpdateQuestionBlueprintRequest {
   return {
-    name: input.name,
     description: input.description,
-    visibility: input.visibility,
     document: input.document,
-    sources: input.sources,
+    name: input.name,
+    sources: input.sources
+      ? toQuestionBlueprintSources(input.sources)
+      : undefined,
     status: input.status,
+    visibility: input.visibility,
   };
 }
 
@@ -39,17 +41,8 @@ export function toCreateQuestionGenerationRunRequest(
   input: CreateQuestionGenerationRunInput,
 ): CreateQuestionGenerationRunRequest {
   return {
+    blueprintId: input.blueprintId,
     count: input.count,
     targetQuestionSetId: input.targetQuestionSetId,
-    source: input.source
-      ? input.source
-      : input.sourceWorkbookId
-        ? {
-            type: CreateWorkbookSourceType.workbook_snapshot,
-            workbookId: input.sourceWorkbookId,
-          }
-        : null,
-    blueprintId: input.blueprintId,
-    blueprintVersionId: input.blueprintVersionId,
   };
 }

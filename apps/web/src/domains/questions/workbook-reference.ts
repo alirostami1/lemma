@@ -29,8 +29,8 @@ export function parseWorkbookRef(ref: string): ParsedWorkbookRef | null {
   }
 
   return {
-    sheetName: sheetAndRange.sheetName,
     range: sheetAndRange.range,
+    sheetName: sheetAndRange.sheetName,
     ...parsedRange,
   };
 }
@@ -48,10 +48,11 @@ export function normalizeWorkbookRef(ref: string): string | null {
     parsedRef.endRowIndex + 1
   }`;
 
-  return `${formatWorkbookSheetName(
-    parsedRef.sheetName,
-    true,
-  )}!${startCell}:${endCell}`;
+  const normalizedRange = parsedRef.hasRange
+    ? `${startCell}:${endCell}`
+    : startCell;
+
+  return `${formatWorkbookSheetName(parsedRef.sheetName, true)}!${normalizedRange}`;
 }
 
 export function resolveWorkbookValue(
@@ -162,7 +163,7 @@ function splitWorkbookRef(ref: string): {
     if (parts.length !== 2 || !parts[0] || !parts[1]) {
       return null;
     }
-    return { sheetName: parts[0], range: parts[1] };
+    return { range: parts[1], sheetName: parts[0] };
   }
 
   let index = 1;
@@ -179,7 +180,7 @@ function splitWorkbookRef(ref: string): {
         return null;
       }
       const range = ref.slice(index + 2);
-      return range ? { sheetName, range } : null;
+      return range ? { range, sheetName } : null;
     }
     sheetName += char;
     index += 1;
@@ -208,18 +209,23 @@ function parseWorkbookRange(
   if (
     startColumnIndex < 0 ||
     startRowIndex < 0 ||
-    endColumnIndex < startColumnIndex ||
-    endRowIndex < startRowIndex
+    endColumnIndex < 0 ||
+    endRowIndex < 0
   ) {
     return null;
   }
 
+  const normalizedStartColumnIndex = Math.min(startColumnIndex, endColumnIndex);
+  const normalizedEndColumnIndex = Math.max(startColumnIndex, endColumnIndex);
+  const normalizedStartRowIndex = Math.min(startRowIndex, endRowIndex);
+  const normalizedEndRowIndex = Math.max(startRowIndex, endRowIndex);
+
   return {
-    startColumnIndex,
-    startRowIndex,
-    endColumnIndex,
-    endRowIndex,
+    endColumnIndex: normalizedEndColumnIndex,
+    endRowIndex: normalizedEndRowIndex,
     hasRange: match[3] !== undefined,
+    startColumnIndex: normalizedStartColumnIndex,
+    startRowIndex: normalizedStartRowIndex,
   };
 }
 

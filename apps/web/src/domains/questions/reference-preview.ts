@@ -5,11 +5,10 @@ import {
   type ReferenceSourceDraft,
   type ValueExpression,
 } from "./authoring";
-import {
-  normalizeWorkbookRef,
-  resolveWorkbookPreviewValue,
-  type WorkbookPreviewForReferences,
-} from "./workbook-reference";
+import { formatReferenceToken } from "./reference-names";
+import { normalizeWorkbookRef } from "./workbook-reference";
+
+export type { WorkbookPreviewForReferences } from "./workbook-reference";
 
 export type ReferencePreviewStatus = "resolved" | "missing_source" | "error";
 
@@ -30,38 +29,27 @@ export type LiteralPreviewValue = {
 export type ReferencePreviewCache = Record<string, ReferencePreviewValue>;
 export type WorkbookSelectionValuesBySourceAndRef = Record<string, string[][]>;
 
-export type { WorkbookPreviewForReferences };
-
-export function createWorkbookSelectionCacheKey(
-  sourceId: string,
-  ref: string,
-) {
+export function createWorkbookSelectionCacheKey(sourceId: string, ref: string) {
   return `${sourceId}::${ref}`;
 }
 
 export function resolveReferencePreviewValues({
   model,
-  previewSourceId,
   workbookSelectionValuesBySourceAndRef = {},
-  workbookPreview,
   now = Date.now(),
 }: {
   model: ComposedEditorModel;
-  previewSourceId: string | null;
   workbookSelectionValuesBySourceAndRef?: WorkbookSelectionValuesBySourceAndRef;
-  workbookPreview: WorkbookPreviewForReferences | null;
   now?: number;
 }): ReferencePreviewCache {
   const cache: ReferencePreviewCache = {};
 
   for (const reference of model.references) {
     cache[reference.id] = resolveReferenceSourcePreview({
+      now,
       referenceId: reference.id,
       source: reference.source,
-      previewSourceId,
       workbookSelectionValuesBySourceAndRef,
-      workbookPreview,
-      now,
     });
   }
 
@@ -72,10 +60,7 @@ export function formatReferenceFallback(
   referenceId: string,
   rangeCell?: RangeCellOffset,
 ) {
-  const cellSuffix = rangeCell
-    ? `[${rangeCell.rowOffset},${rangeCell.columnOffset}]`
-    : "";
-  return `{{ .${referenceId}${cellSuffix} }}`;
+  return formatReferenceToken(referenceId, rangeCell);
 }
 
 export function resolveInlineReferencePreview({
@@ -94,10 +79,10 @@ export function resolveInlineReferencePreview({
   const basePreview = referencePreviewCache[referenceId];
   if (!basePreview) {
     return {
-      referenceId,
-      status: "missing_source",
       displayValue:
         fallbackText ?? formatReferenceFallback(referenceId, rangeCell),
+      referenceId,
+      status: "missing_source",
       updatedAt: now,
     };
   }
@@ -117,19 +102,19 @@ export function resolveInlineReferencePreview({
   const cellValue = resolveRangeCellValue(basePreview.rawValue, rangeCell);
   if (cellValue.status === "error") {
     return {
-      referenceId,
-      status: "error",
       displayValue:
         fallbackText ?? formatReferenceFallback(referenceId, rangeCell),
+      referenceId,
+      status: "error",
       updatedAt: basePreview.updatedAt,
     };
   }
 
   return {
-    referenceId,
-    status: "resolved",
     displayValue: formatUnknownPreviewValue(cellValue.value),
     rawValue: cellValue.value,
+    referenceId,
+    status: "resolved",
     updatedAt: basePreview.updatedAt,
   };
 }
@@ -145,17 +130,17 @@ export function resolveValueExpressionPreview({
 }): ReferencePreviewValue | LiteralPreviewValue {
   if (value.type === "literal") {
     return {
-      status: "literal",
       displayValue: formatAnswerInputValue(value.value),
       rawValue: value.value,
+      status: "literal",
     };
   }
 
   return (
     referencePreviewCache[value.referenceId] ?? {
+      displayValue: formatReferenceFallback(value.referenceId),
       referenceId: value.referenceId,
       status: "missing_source",
-      displayValue: formatReferenceFallback(value.referenceId),
       updatedAt: now,
     }
   );
@@ -164,24 +149,20 @@ export function resolveValueExpressionPreview({
 function resolveReferenceSourcePreview({
   referenceId,
   source,
-  previewSourceId,
   workbookSelectionValuesBySourceAndRef,
-  workbookPreview,
   now,
 }: {
   referenceId: string;
   source: ReferenceSourceDraft;
-  previewSourceId: string | null;
   workbookSelectionValuesBySourceAndRef: WorkbookSelectionValuesBySourceAndRef;
-  workbookPreview: WorkbookPreviewForReferences | null;
   now: number;
 }): ReferencePreviewValue {
   if (source.type === "literal") {
     return {
-      referenceId,
-      status: "resolved",
       displayValue: formatAnswerInputValue(source.value),
       rawValue: source.value,
+      referenceId,
+      status: "resolved",
       updatedAt: now,
     };
   }
@@ -203,52 +184,29 @@ function resolveReferenceSourcePreview({
           : selectedValues;
 
       return {
-        referenceId,
-        status: "resolved",
         displayValue:
           source.type === "workbook_range"
             ? formatRangePreview(rawValue)
             : formatUnknownPreviewValue(rawValue),
         rawValue,
-        updatedAt: now,
-      };
-    }
-
-    if (previewSourceId !== source.sourceId || !workbookPreview) {
-      return {
         referenceId,
-        status: "missing_source",
-        displayValue: formatReferenceFallback(referenceId),
-        updatedAt: now,
-      };
-    }
-
-    const resolved = resolveWorkbookPreviewValue(workbookPreview, source.ref);
-    if (resolved.status === "error") {
-      return {
-        referenceId,
-        status: "error",
-        displayValue: formatReferenceFallback(referenceId),
+        status: "resolved",
         updatedAt: now,
       };
     }
 
     return {
+      displayValue: formatReferenceFallback(referenceId),
       referenceId,
-      status: "resolved",
-      displayValue:
-        source.type === "workbook_range"
-          ? formatRangePreview(resolved.value)
-          : formatUnknownPreviewValue(resolved.value),
-      rawValue: resolved.value,
+      status: "missing_source",
       updatedAt: now,
     };
   }
 
   return {
+    displayValue: formatReferenceFallback(referenceId),
     referenceId,
     status: "error",
-    displayValue: formatReferenceFallback(referenceId),
     updatedAt: now,
   };
 }

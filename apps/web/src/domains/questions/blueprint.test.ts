@@ -63,23 +63,23 @@ describe("table answer values", () => {
         answer_1: { nested: ["x", 2, null] },
       }),
     ).toEqual({
-      schemaVersion: 1,
       responses: [
         {
           responseFieldId: "answer_1",
           value: { nested: ["x", 2, null] },
         },
       ],
+      schemaVersion: 1,
     });
     expect(
       questionAnswerToTableAnswerState({
-        schemaVersion: 1,
         responses: [
           {
             responseFieldId: "answer_1",
             value: { nested: ["x", 2, null] },
           },
         ],
+        schemaVersion: 1,
       }),
     ).toEqual({ answer_1: { nested: ["x", 2, null] } });
   });
@@ -89,34 +89,28 @@ describe("question generation input mapping", () => {
   it("maps saved blueprint generation inputs with workbook sources", () => {
     expect(
       toCreateQuestionGenerationRunInput({
+        blueprintId: "blueprint_1",
         count: 3,
         targetQuestionSetId: "question_set_1",
-        sourceWorkbookId: "workbook_1",
-        blueprintId: "blueprint_1",
       }),
     ).toEqual({
+      blueprintId: "blueprint_1",
       count: 3,
       targetQuestionSetId: "question_set_1",
-      blueprintId: "blueprint_1",
-      sourceWorkbookId: "workbook_1",
     });
   });
 
   it("maps saved blueprint generation inputs without a workbook source", () => {
     expect(
       toCreateQuestionGenerationRunInput({
+        blueprintId: "blueprint_1",
         count: 1,
         targetQuestionSetId: "question_set_1",
-        sourceWorkbookId: null,
-        blueprintId: "blueprint_1",
-        blueprintVersionId: "blueprint_version_1",
       }),
     ).toEqual({
+      blueprintId: "blueprint_1",
       count: 1,
       targetQuestionSetId: "question_set_1",
-      blueprintId: "blueprint_1",
-      blueprintVersionId: "blueprint_version_1",
-      sourceWorkbookId: null,
     });
   });
 });
@@ -124,18 +118,18 @@ describe("question generation input mapping", () => {
 describe("composed blueprint conversions", () => {
   it("parses inline references", () => {
     expect(parseInlineBlueprint("Revenue: {{ .revenue }}")).toEqual([
-      { type: "text", text: "Revenue: " },
-      { type: "reference", referenceId: "revenue" },
+      { text: "Revenue: ", type: "text" },
+      { referenceId: "revenue", type: "reference" },
     ]);
   });
 
   it("parses range cell inline references", () => {
     expect(parseInlineBlueprint("Revenue: {{ .range[1,2] }}")).toEqual([
-      { type: "text", text: "Revenue: " },
+      { text: "Revenue: ", type: "text" },
       {
-        type: "reference",
+        rangeCell: { columnOffset: 2, rowOffset: 1 },
         referenceId: "range",
-        rangeCell: { rowOffset: 1, columnOffset: 2 },
+        type: "reference",
       },
     ]);
   });
@@ -143,8 +137,8 @@ describe("composed blueprint conversions", () => {
   it("formats inline references", () => {
     expect(
       formatInlineBlueprint([
-        { type: "text", text: "Revenue: " },
-        { type: "reference", referenceId: "revenue" },
+        { text: "Revenue: ", type: "text" },
+        { referenceId: "revenue", type: "reference" },
       ]),
     ).toBe("Revenue: {{ .revenue }}");
   });
@@ -152,11 +146,11 @@ describe("composed blueprint conversions", () => {
   it("formats range cell inline references", () => {
     expect(
       formatInlineBlueprint([
-        { type: "text", text: "Revenue: " },
+        { text: "Revenue: ", type: "text" },
         {
-          type: "reference",
+          rangeCell: { columnOffset: 2, rowOffset: 1 },
           referenceId: "range",
-          rangeCell: { rowOffset: 1, columnOffset: 2 },
+          type: "reference",
         },
       ]),
     ).toBe("Revenue: {{ .range[1,2] }}");
@@ -164,122 +158,113 @@ describe("composed blueprint conversions", () => {
 
   it("creates range-backed table cells without generated cell references", () => {
     const currentModel: TableEditorModel = {
-      prompt: "",
+      cells: [],
       columns: [],
+      prompt: "",
+      responseFields: [],
       rows: [],
       showColumnNames: true,
       showRowNames: true,
-      responseFields: [],
-      cells: [],
     };
 
     const result = createTableFromWorkbookRangeReference({
       currentModel,
+      existingReferenceIds: ["range"],
       rangeReference: {
         id: "range",
         source: {
-          type: "workbook_range",
-          sourceId: "source_1",
           ref: "Sheet1!A1:B2",
+          sourceId: "source_1",
+          type: "workbook_range",
         },
       },
       values: [
         ["A1", "B1"],
         ["A2", "B2"],
       ],
-      existingReferenceIds: ["range"],
     });
 
     expect(result.references).toEqual([]);
     expect(result.table.cells).toEqual([
       {
+        columnId: "column_1",
+        content: [
+          {
+            fallbackText: "A1",
+            rangeCell: { columnOffset: 0, rowOffset: 0 },
+            referenceId: "range",
+            type: "reference",
+          },
+        ],
         id: "cell_1_1",
         rowId: "row_1",
-        columnId: "column_1",
         type: "content",
-        content: [
-          {
-            type: "reference",
-            referenceId: "range",
-            rangeCell: { rowOffset: 0, columnOffset: 0 },
-            fallbackText: "A1",
-          },
-        ],
       },
       {
+        columnId: "column_2",
+        content: [
+          {
+            fallbackText: "B1",
+            rangeCell: { columnOffset: 1, rowOffset: 0 },
+            referenceId: "range",
+            type: "reference",
+          },
+        ],
         id: "cell_1_2",
         rowId: "row_1",
-        columnId: "column_2",
         type: "content",
-        content: [
-          {
-            type: "reference",
-            referenceId: "range",
-            rangeCell: { rowOffset: 0, columnOffset: 1 },
-            fallbackText: "B1",
-          },
-        ],
       },
       {
+        columnId: "column_1",
+        content: [
+          {
+            fallbackText: "A2",
+            rangeCell: { columnOffset: 0, rowOffset: 1 },
+            referenceId: "range",
+            type: "reference",
+          },
+        ],
         id: "cell_2_1",
         rowId: "row_2",
-        columnId: "column_1",
         type: "content",
-        content: [
-          {
-            type: "reference",
-            referenceId: "range",
-            rangeCell: { rowOffset: 1, columnOffset: 0 },
-            fallbackText: "A2",
-          },
-        ],
       },
       {
-        id: "cell_2_2",
-        rowId: "row_2",
         columnId: "column_2",
-        type: "content",
         content: [
           {
-            type: "reference",
-            referenceId: "range",
-            rangeCell: { rowOffset: 1, columnOffset: 1 },
             fallbackText: "B2",
+            rangeCell: { columnOffset: 1, rowOffset: 1 },
+            referenceId: "range",
+            type: "reference",
           },
         ],
+        id: "cell_2_2",
+        rowId: "row_2",
+        type: "content",
       },
     ]);
   });
 
   it("creates canonical blocks for text and response blocks", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
+          content: [{ text: "What is 2 + 2?", type: "text" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "text", text: "What is 2 + 2?" }],
         },
         {
+          correctValueSource: {
+            referenceId: "answer_source",
+            type: "reference",
+          },
+          grading: { mode: "exact" },
           id: "response_1",
-          type: "response",
-          responseFieldId: "answer_1",
           label: "Answer",
           placeholder: "Type a number",
-          correctValueSource: {
-            type: "reference",
-            referenceId: "answer_source",
-          },
           points: 2,
-          grading: { mode: "exact" },
-        },
-      ],
-      responseFields: [
-        {
-          id: "answer_1",
-          type: "number",
-          label: "Answer",
-          required: true,
+          responseFieldId: "answer_1",
+          type: "response",
         },
       ],
       references: [
@@ -288,37 +273,37 @@ describe("composed blueprint conversions", () => {
           source: { type: "literal", value: 4 },
         },
       ],
-    };
-
-    expect(composedEditorModelToQuestionBlueprintDocument(model)).toEqual({
-      schemaVersion: 1,
-      blocks: [
-        {
-          id: "text_1",
-          type: "text",
-          content: [{ type: "text", text: "What is 2 + 2?" }],
-        },
-        {
-          id: "response_1",
-          type: "response",
-          responseFieldId: "answer_1",
-          label: "Answer",
-          placeholder: "Type a number",
-          correctValueSource: {
-            schemaVersion: 1,
-            type: "reference",
-            referenceId: "answer_source",
-          },
-          points: 2,
-          grading: { mode: "exact" },
-        },
-      ],
       responseFields: [
         {
           id: "answer_1",
-          type: "number",
           label: "Answer",
           required: true,
+          type: "number",
+        },
+      ],
+      schemaVersion: 1,
+    };
+
+    expect(composedEditorModelToQuestionBlueprintDocument(model)).toEqual({
+      blocks: [
+        {
+          content: [{ text: "What is 2 + 2?", type: "text" }],
+          id: "text_1",
+          type: "text",
+        },
+        {
+          correctValueSource: {
+            referenceId: "answer_source",
+            schemaVersion: 1,
+            type: "reference",
+          },
+          grading: { mode: "exact" },
+          id: "response_1",
+          label: "Answer",
+          placeholder: "Type a number",
+          points: 2,
+          responseFieldId: "answer_1",
+          type: "response",
         },
       ],
       references: [
@@ -327,34 +312,36 @@ describe("composed blueprint conversions", () => {
           source: { schemaVersion: 1, type: "literal", value: 4 },
         },
       ],
+      responseFields: [
+        {
+          id: "answer_1",
+          label: "Answer",
+          required: true,
+          type: "number",
+        },
+      ],
+      schemaVersion: 1,
     });
   });
 
   it("treats literal-only composed documents as static", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
+          content: [{ text: "Static prompt", type: "text" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "text", text: "Static prompt" }],
         },
         {
-          id: "response_1",
-          type: "response",
-          responseFieldId: "answer_1",
           correctValueSource: {
-            type: "reference",
             referenceId: "answer_source",
+            type: "reference",
           },
-          points: 1,
           grading: { mode: "exact" },
-        },
-      ],
-      responseFields: [
-        {
-          id: "answer_1",
-          type: "text",
+          id: "response_1",
+          points: 1,
+          responseFieldId: "answer_1",
+          type: "response",
         },
       ],
       references: [
@@ -363,6 +350,13 @@ describe("composed blueprint conversions", () => {
           source: { type: "literal", value: "ok" },
         },
       ],
+      responseFields: [
+        {
+          id: "answer_1",
+          type: "text",
+        },
+      ],
+      schemaVersion: 1,
     };
 
     expect(extractWorkbookReferenceRefsFromComposedEditorModel(model)).toEqual(
@@ -372,24 +366,24 @@ describe("composed blueprint conversions", () => {
 
   it("keeps literal references static in canonical conversion", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
+          content: [
+            { text: "Rate: ", type: "text" },
+            { referenceId: "rate", type: "reference" },
+          ],
           id: "text_1",
           type: "text",
-          content: [
-            { type: "text", text: "Rate: " },
-            { type: "reference", referenceId: "rate" },
-          ],
         },
       ],
-      responseFields: [],
       references: [
         {
           id: "rate",
           source: { type: "literal", value: 0.5 },
         },
       ],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     const blueprint = composedEditorModelToQuestionBlueprintDocument(model);
@@ -400,12 +394,12 @@ describe("composed blueprint conversions", () => {
       },
     ]);
     expect(blueprint.blocks[0]).toEqual({
+      content: [
+        { text: "Rate: ", type: "text" },
+        { referenceId: "rate", type: "reference" },
+      ],
       id: "text_1",
       type: "text",
-      content: [
-        { type: "text", text: "Rate: " },
-        { type: "reference", referenceId: "rate" },
-      ],
     });
     expect(extractWorkbookReferenceRefsFromComposedEditorModel(model)).toEqual(
       [],
@@ -414,25 +408,25 @@ describe("composed blueprint conversions", () => {
 
   it("ignores unused workbook-backed references for workbook source detection", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
+          content: [{ text: "Static prompt", type: "text" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "text", text: "Static prompt" }],
         },
       ],
-      responseFields: [],
       references: [
         {
           id: "unused_ref",
           source: {
-            type: "workbook_cell",
-            sourceId: "source_1",
             ref: "'Sheet1'!A1",
+            sourceId: "source_1",
+            type: "workbook_cell",
           },
         },
       ],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     expect(extractUsedReferenceIdsFromComposedEditorModel(model)).toEqual([]);
@@ -443,25 +437,25 @@ describe("composed blueprint conversions", () => {
 
   it("collects workbook refs from workbook-backed references", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
+          content: [{ referenceId: "revenue", type: "reference" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "reference", referenceId: "revenue" }],
         },
       ],
-      responseFields: [],
       references: [
         {
           id: "revenue",
           source: {
-            type: "workbook_cell",
-            sourceId: "source_1",
             ref: "'Sheet1'!A1",
+            sourceId: "source_1",
+            type: "workbook_cell",
           },
         },
       ],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     expect(
@@ -470,10 +464,10 @@ describe("composed blueprint conversions", () => {
       {
         id: "revenue",
         source: {
-          schemaVersion: 1,
-          type: "workbook_cell",
-          sourceId: "source_1",
           ref: "'Sheet1'!A1",
+          schemaVersion: 1,
+          sourceId: "source_1",
+          type: "workbook_cell",
         },
       },
     ]);
@@ -484,21 +478,21 @@ describe("composed blueprint conversions", () => {
 
   it("keeps used literal references out of workbook source detection", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
+          content: [{ referenceId: "literal_ref", type: "reference" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "reference", referenceId: "literal_ref" }],
         },
       ],
-      responseFields: [],
       references: [
         {
           id: "literal_ref",
           source: { type: "literal", value: "Alpha" },
         },
       ],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     expect(extractUsedReferenceIdsFromComposedEditorModel(model)).toEqual([
@@ -511,47 +505,45 @@ describe("composed blueprint conversions", () => {
 
   it("round-trips reference-backed table content and answer values", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         createTableBlock("table_1", {
-          prompt: "",
+          cells: [
+            {
+              columnId: "column_1",
+              content: [{ referenceId: "content_ref", type: "reference" }],
+              id: "cell_1",
+              rowId: "row_1",
+              type: "content",
+            },
+            {
+              columnId: "column_1",
+              correctValueSource: {
+                referenceId: "answer_ref",
+                type: "reference",
+              },
+              grading: { mode: "exact" },
+              id: "cell_2",
+              points: 2,
+              responseFieldId: "answer_1",
+              rowId: "row_1",
+              type: "response",
+            },
+          ],
           columns: [{ id: "column_1", label: "Column 1" }],
-          rows: [{ id: "row_1", label: "Row 1" }],
-          showColumnNames: true,
-          showRowNames: true,
+          prompt: "",
           responseFields: [
             {
               id: "answer_1",
-              type: "number",
               label: "Answer",
               required: true,
+              type: "number",
             },
           ],
-          cells: [
-            {
-              id: "cell_1",
-              rowId: "row_1",
-              columnId: "column_1",
-              type: "content",
-              content: [{ type: "reference", referenceId: "content_ref" }],
-            },
-            {
-              id: "cell_2",
-              rowId: "row_1",
-              columnId: "column_1",
-              type: "response",
-              responseFieldId: "answer_1",
-              correctValueSource: {
-                type: "reference",
-                referenceId: "answer_ref",
-              },
-              points: 2,
-              grading: { mode: "exact" },
-            },
-          ],
+          rows: [{ id: "row_1", label: "Row 1" }],
+          showColumnNames: true,
+          showRowNames: true,
         }),
       ],
-      responseFields: [],
       references: [
         {
           id: "content_ref",
@@ -562,6 +554,8 @@ describe("composed blueprint conversions", () => {
           source: { type: "literal", value: 3 },
         },
       ],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     const blueprint = composedEditorModelToQuestionBlueprintDocument(model);
@@ -572,18 +566,27 @@ describe("composed blueprint conversions", () => {
 
   it("collects workbook refs from standalone response blocks", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
-          id: "response_1",
-          type: "response",
-          responseFieldId: "answer_1",
           correctValueSource: {
-            type: "reference",
             referenceId: "answer_source",
+            type: "reference",
           },
-          points: 1,
           grading: { mode: "exact" },
+          id: "response_1",
+          points: 1,
+          responseFieldId: "answer_1",
+          type: "response",
+        },
+      ],
+      references: [
+        {
+          id: "answer_source",
+          source: {
+            ref: "'Sheet1'!B2",
+            sourceId: "source_1",
+            type: "workbook_cell",
+          },
         },
       ],
       responseFields: [
@@ -592,16 +595,7 @@ describe("composed blueprint conversions", () => {
           type: "number",
         },
       ],
-      references: [
-        {
-          id: "answer_source",
-          source: {
-            type: "workbook_cell",
-            sourceId: "source_1",
-            ref: "'Sheet1'!B2",
-          },
-        },
-      ],
+      schemaVersion: 1,
     };
 
     expect(extractWorkbookReferenceRefsFromComposedEditorModel(model)).toEqual([
@@ -611,37 +605,37 @@ describe("composed blueprint conversions", () => {
 
   it("collects workbook refs from table cell sources", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         createTableBlock("table_1", {
-          prompt: "",
+          cells: [
+            {
+              columnId: "column_1",
+              content: [{ referenceId: "table_source", type: "reference" }],
+              id: "cell_1",
+              rowId: "row_1",
+              type: "content",
+            },
+          ],
           columns: [{ id: "column_1", label: "Column 1" }],
+          prompt: "",
+          responseFields: [],
           rows: [{ id: "row_1", label: "Row 1" }],
           showColumnNames: true,
           showRowNames: true,
-          responseFields: [],
-          cells: [
-            {
-              id: "cell_1",
-              rowId: "row_1",
-              columnId: "column_1",
-              type: "content",
-              content: [{ type: "reference", referenceId: "table_source" }],
-            },
-          ],
         }),
       ],
-      responseFields: [],
       references: [
         {
           id: "table_source",
           source: {
-            type: "workbook_range",
-            sourceId: "source_1",
             ref: "'Sheet1'!A1:B2",
+            sourceId: "source_1",
+            type: "workbook_range",
           },
         },
       ],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     expect(extractWorkbookReferenceRefsFromComposedEditorModel(model)).toEqual([
@@ -651,16 +645,16 @@ describe("composed blueprint conversions", () => {
 
   it("rejects unknown references", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
+          content: [{ referenceId: "missing", type: "reference" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "reference", referenceId: "missing" }],
         },
       ],
-      responseFields: [],
       references: [],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     expect(() => validateComposedEditorModel(model)).toThrow(
@@ -670,24 +664,24 @@ describe("composed blueprint conversions", () => {
 
   it("rejects missing references in answer values", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
-          id: "response_1",
-          type: "response",
-          responseFieldId: "answer_1",
-          correctValueSource: { type: "reference", referenceId: "missing" },
-          points: 1,
+          correctValueSource: { referenceId: "missing", type: "reference" },
           grading: { mode: "exact" },
+          id: "response_1",
+          points: 1,
+          responseFieldId: "answer_1",
+          type: "response",
         },
       ],
+      references: [],
       responseFields: [
         {
           id: "answer_1",
           type: "text",
         },
       ],
-      references: [],
+      schemaVersion: 1,
     };
 
     expect(() => validateComposedEditorModel(model)).toThrow(
@@ -697,28 +691,28 @@ describe("composed blueprint conversions", () => {
 
   it("rejects missing references in table content cells", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         createTableBlock("table_1", {
-          prompt: "",
+          cells: [
+            {
+              columnId: "column_1",
+              content: [{ referenceId: "missing", type: "reference" }],
+              id: "cell_1",
+              rowId: "row_1",
+              type: "content",
+            },
+          ],
           columns: [{ id: "column_1", label: "Column 1" }],
+          prompt: "",
+          responseFields: [],
           rows: [{ id: "row_1", label: "Row 1" }],
           showColumnNames: true,
           showRowNames: true,
-          responseFields: [],
-          cells: [
-            {
-              id: "cell_1",
-              rowId: "row_1",
-              columnId: "column_1",
-              type: "content",
-              content: [{ type: "reference", referenceId: "missing" }],
-            },
-          ],
         }),
       ],
-      responseFields: [],
       references: [],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     expect(() => validateComposedEditorModel(model)).toThrow(
@@ -728,36 +722,36 @@ describe("composed blueprint conversions", () => {
 
   it("rejects missing references in table answer cells", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         createTableBlock("table_1", {
-          prompt: "",
+          cells: [
+            {
+              columnId: "column_1",
+              correctValueSource: { referenceId: "missing", type: "reference" },
+              grading: { mode: "exact" },
+              id: "cell_1",
+              points: 1,
+              responseFieldId: "answer_1",
+              rowId: "row_1",
+              type: "response",
+            },
+          ],
           columns: [{ id: "column_1", label: "Column 1" }],
-          rows: [{ id: "row_1", label: "Row 1" }],
-          showColumnNames: true,
-          showRowNames: true,
+          prompt: "",
           responseFields: [
             {
               id: "answer_1",
               type: "number",
             },
           ],
-          cells: [
-            {
-              id: "cell_1",
-              rowId: "row_1",
-              columnId: "column_1",
-              type: "response",
-              responseFieldId: "answer_1",
-              correctValueSource: { type: "reference", referenceId: "missing" },
-              points: 1,
-              grading: { mode: "exact" },
-            },
-          ],
+          rows: [{ id: "row_1", label: "Row 1" }],
+          showColumnNames: true,
+          showRowNames: true,
         }),
       ],
-      responseFields: [],
       references: [],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     expect(() => validateComposedEditorModel(model)).toThrow(
@@ -767,9 +761,7 @@ describe("composed blueprint conversions", () => {
 
   it("rejects duplicate reference ids", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [],
-      responseFields: [],
       references: [
         {
           id: "dup",
@@ -780,6 +772,8 @@ describe("composed blueprint conversions", () => {
           source: { type: "literal", value: 2 },
         },
       ],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     expect(() => validateComposedEditorModel(model)).toThrow(
@@ -789,15 +783,15 @@ describe("composed blueprint conversions", () => {
 
   it("rejects invalid reference ids", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [],
-      responseFields: [],
       references: [
         {
           id: "bad id",
           source: { type: "literal", value: 1 },
         },
       ],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     expect(() => validateComposedEditorModel(model)).toThrow(
@@ -807,40 +801,40 @@ describe("composed blueprint conversions", () => {
 
   it("allocates standalone response field IDs after table block IDs", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
           id: "table_1",
-          type: "table",
           table: {
-            prompt: "",
+            cells: [
+              {
+                columnId: "column_1",
+                correctValueSource: { type: "literal", value: 1 },
+                grading: { mode: "exact" },
+                id: "cell_1",
+                points: 1,
+                responseFieldId: "answer_1",
+                rowId: "row_1",
+                type: "response",
+              },
+            ],
             columns: [{ id: "column_1", label: "Column 1" }],
-            rows: [{ id: "row_1", label: "Row 1" }],
-            showColumnNames: true,
-            showRowNames: true,
+            prompt: "",
             responseFields: [
               {
                 id: "answer_1",
                 type: "number",
               },
             ],
-            cells: [
-              {
-                id: "cell_1",
-                rowId: "row_1",
-                columnId: "column_1",
-                type: "response",
-                responseFieldId: "answer_1",
-                correctValueSource: { type: "literal", value: 1 },
-                points: 1,
-                grading: { mode: "exact" },
-              },
-            ],
+            rows: [{ id: "row_1", label: "Row 1" }],
+            showColumnNames: true,
+            showRowNames: true,
           },
+          type: "table",
         },
       ],
-      responseFields: [],
       references: [],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     expect(nextAvailableResponseFieldId(model)).toBe("answer_2");
@@ -848,62 +842,62 @@ describe("composed blueprint conversions", () => {
 
   it("preserves table conversion inside composed documents", () => {
     const tableModel: TableEditorModel = {
-      prompt: "Ignored in composed mode",
+      cells: [
+        {
+          columnId: "column_1",
+          content: [{ text: "Alpha", type: "text" }],
+          id: "cell_1",
+          rowId: "row_1",
+          type: "content",
+        },
+        {
+          columnId: "column_2",
+          correctValueSource: { type: "literal", value: 3 },
+          grading: { mode: "exact" },
+          id: "cell_2",
+          points: 2,
+          responseFieldId: "answer_1",
+          rowId: "row_1",
+          type: "response",
+        },
+      ],
       columns: [
         { id: "column_1", label: "Column 1" },
         { id: "column_2", label: "Column 2" },
       ],
-      rows: [{ id: "row_1", label: "Row 1" }],
-      showColumnNames: true,
-      showRowNames: true,
+      prompt: "Ignored in composed mode",
       responseFields: [
         {
           id: "answer_1",
-          type: "number",
           label: "Answer",
           required: true,
+          type: "number",
         },
       ],
-      cells: [
-        {
-          id: "cell_1",
-          rowId: "row_1",
-          columnId: "column_1",
-          type: "content",
-          content: [{ type: "text", text: "Alpha" }],
-        },
-        {
-          id: "cell_2",
-          rowId: "row_1",
-          columnId: "column_2",
-          type: "response",
-          responseFieldId: "answer_1",
-          correctValueSource: { type: "literal", value: 3 },
-          points: 2,
-          grading: { mode: "exact" },
-        },
-      ],
+      rows: [{ id: "row_1", label: "Row 1" }],
+      showColumnNames: true,
+      showRowNames: true,
     };
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
+          content: [{ text: "Solve this.", type: "text" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "text", text: "Solve this." }],
         },
         createTableBlock("table_1", tableModel),
       ],
-      responseFields: [],
       references: [],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     const blueprint = composedEditorModelToQuestionBlueprintDocument(model);
     expect(blueprint.blocks).toHaveLength(3);
     expect(blueprint.blocks[1]).toMatchObject({
+      content: [{ text: "Ignored in composed mode", type: "text" }],
       id: "table_1_prompt",
       type: "text",
-      content: [{ type: "text", text: "Ignored in composed mode" }],
     });
     expect(blueprint.blocks[2]).toMatchObject({
       id: "table_1",
@@ -915,186 +909,186 @@ describe("composed blueprint conversions", () => {
     }
     expect(tableBlock.cells).toEqual([
       {
+        columnId: "column_1",
+        content: [{ text: "Alpha", type: "text" }],
         id: "cell_1",
         rowId: "row_1",
-        columnId: "column_1",
         type: "content",
-        content: [{ type: "text", text: "Alpha" }],
       },
       {
-        id: "cell_2",
-        rowId: "row_1",
         columnId: "column_2",
-        type: "response",
-        responseFieldId: "table_1_answer_1",
         correctValueSource: { schemaVersion: 1, type: "literal", value: 3 },
-        points: 2,
         grading: { mode: "exact" },
+        id: "cell_2",
+        points: 2,
+        responseFieldId: "table_1_answer_1",
+        rowId: "row_1",
+        type: "response",
       },
     ]);
     expect(blueprint.responseFields).toEqual([
       {
         id: "table_1_answer_1",
-        type: "number",
         label: "Answer",
         required: true,
+        type: "number",
       },
     ]);
   });
 
   it("loads canonical text and response blocks back into the composed model", () => {
     const blueprint: QuestionBlueprintDocument = {
-      schemaVersion: 1,
       blocks: [
         {
+          content: [{ text: "Prompt", type: "text" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "text", text: "Prompt" }],
         },
         {
           id: "separator_1",
           type: "separator",
         },
         {
-          id: "response_1",
-          type: "response",
-          responseFieldId: "answer_1",
-          label: "Answer",
-          placeholder: "Type here",
           correctValueSource: {
             schemaVersion: 1,
             type: "literal",
             value: "42",
           },
-          points: 1,
           grading: { mode: "exact" },
-        },
-      ],
-      responseFields: [
-        {
-          id: "answer_1",
-          type: "text",
+          id: "response_1",
           label: "Answer",
-          required: true,
+          placeholder: "Type here",
+          points: 1,
+          responseFieldId: "answer_1",
+          type: "response",
         },
       ],
       references: [],
+      responseFields: [
+        {
+          id: "answer_1",
+          label: "Answer",
+          required: true,
+          type: "text",
+        },
+      ],
+      schemaVersion: 1,
     };
 
     expect(questionBlueprintDocumentToComposedEditorModel(blueprint)).toEqual({
-      schemaVersion: 1,
       blocks: [
         {
+          content: [{ text: "Prompt", type: "text" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "text", text: "Prompt" }],
         },
         {
           id: "separator_1",
           type: "separator",
         },
         {
+          correctValueSource: { type: "literal", value: "42" },
+          grading: { mode: "exact" },
           id: "response_1",
-          type: "response",
-          responseFieldId: "answer_1",
           label: "Answer",
           placeholder: "Type here",
-          correctValueSource: { type: "literal", value: "42" },
           points: 1,
-          grading: { mode: "exact" },
-        },
-      ],
-      responseFields: [
-        {
-          id: "answer_1",
-          type: "text",
-          label: "Answer",
-          required: true,
+          responseFieldId: "answer_1",
+          type: "response",
         },
       ],
       references: [],
+      responseFields: [
+        {
+          id: "answer_1",
+          label: "Answer",
+          required: true,
+          type: "text",
+        },
+      ],
+      schemaVersion: 1,
     });
   });
 
   it("loads references from canonical blueprints", () => {
     const blueprint: QuestionBlueprintDocument = {
-      schemaVersion: 1,
       blocks: [
         {
+          content: [
+            { text: "Revenue: ", type: "text" },
+            { referenceId: "revenue", type: "reference" },
+          ],
           id: "text_1",
           type: "text",
-          content: [
-            { type: "text", text: "Revenue: " },
-            { type: "reference", referenceId: "revenue" },
-          ],
         },
       ],
-      responseFields: [],
       references: [
         {
           id: "revenue",
           source: { schemaVersion: 1, type: "literal", value: 123 },
         },
       ],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     expect(questionBlueprintDocumentToComposedEditorModel(blueprint)).toEqual({
-      schemaVersion: 1,
       blocks: [
         {
+          content: [
+            { text: "Revenue: ", type: "text" },
+            { referenceId: "revenue", type: "reference" },
+          ],
           id: "text_1",
           type: "text",
-          content: [
-            { type: "text", text: "Revenue: " },
-            { type: "reference", referenceId: "revenue" },
-          ],
         },
       ],
-      responseFields: [],
       references: [
         {
           id: "revenue",
           source: { type: "literal", value: 123 },
         },
       ],
+      responseFields: [],
+      schemaVersion: 1,
     });
   });
 
   it("round-trips rich text blocks without references", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
-          id: "rich_1",
-          type: "rich_text",
           content: {
-            type: "doc",
             content: [
               {
+                content: [{ text: "Prompt", type: "text" }],
                 type: "paragraph",
-                content: [{ type: "text", text: "Prompt" }],
               },
             ],
+            type: "doc",
           },
+          id: "rich_1",
+          type: "rich_text",
         },
       ],
-      responseFields: [],
       references: [],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     const blueprint = composedEditorModelToQuestionBlueprintDocument(model);
     expect(blueprint.blocks[0]).toEqual({
-      id: "rich_1",
-      type: "rich_text",
       content: {
-        type: "doc",
         content: [
           {
+            content: [{ text: "Prompt", type: "text" }],
             type: "paragraph",
-            content: [{ type: "text", text: "Prompt" }],
           },
         ],
+        type: "doc",
       },
+      id: "rich_1",
+      type: "rich_text",
     });
     expect(questionBlueprintDocumentToComposedEditorModel(blueprint)).toEqual(
       model,
@@ -1103,47 +1097,47 @@ describe("composed blueprint conversions", () => {
 
   it("round-trips rich text references as structured inline content", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
-          id: "rich_1",
-          type: "rich_text",
           content: {
-            type: "doc",
             content: [
               {
-                type: "paragraph",
                 content: [
-                  { type: "text", text: "Revenue: " },
-                  { type: "reference", referenceId: "revenue" },
+                  { text: "Revenue: ", type: "text" },
+                  { referenceId: "revenue", type: "reference" },
                 ],
+                type: "paragraph",
               },
             ],
+            type: "doc",
           },
+          id: "rich_1",
+          type: "rich_text",
         },
       ],
-      responseFields: [],
       references: [
         {
           id: "revenue",
           source: { type: "literal", value: 123 },
         },
       ],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     const blueprint = composedEditorModelToQuestionBlueprintDocument(model);
     expect(blueprint.blocks[0]).toEqual({
-      id: "rich_1",
-      type: "rich_text",
       content: {
-        type: "doc",
         content: [
           {
+            content: [{ text: "Revenue: {{ .revenue }}", type: "text" }],
             type: "paragraph",
-            content: [{ type: "text", text: "Revenue: {{ .revenue }}" }],
           },
         ],
+        type: "doc",
       },
+      id: "rich_1",
+      type: "rich_text",
     });
     expect(questionBlueprintDocumentToComposedEditorModel(blueprint)).toEqual(
       model,
@@ -1152,29 +1146,29 @@ describe("composed blueprint conversions", () => {
 
   it("validates manually-constructed rich text reference nodes", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
-          id: "rich_1",
-          type: "rich_text",
           content: {
-            type: "doc",
             content: [
               {
+                content: [{ referenceId: "revenue", type: "reference" }],
                 type: "paragraph",
-                content: [{ type: "reference", referenceId: "revenue" }],
               },
             ],
+            type: "doc",
           },
+          id: "rich_1",
+          type: "rich_text",
         },
       ],
-      responseFields: [],
       references: [
         {
           id: "revenue",
           source: { type: "literal", value: 123 },
         },
       ],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     expect(() => validateComposedEditorModel(model)).not.toThrow();
@@ -1184,55 +1178,55 @@ describe("composed blueprint conversions", () => {
 describe("table blueprint conversions", () => {
   it("keeps literal table content inline", () => {
     const model: TableEditorModel = {
-      prompt: "Prompt",
+      cells: [
+        {
+          columnId: "column_1",
+          content: [{ text: "Alpha", type: "text" }],
+          id: "cell_1",
+          rowId: "row_1",
+          type: "content",
+        },
+        {
+          columnId: "column_2",
+          correctValueSource: { type: "literal", value: 3 },
+          grading: { mode: "exact" },
+          id: "cell_2",
+          points: 2,
+          responseFieldId: "answer_1",
+          rowId: "row_1",
+          type: "response",
+        },
+      ],
       columns: [
         { id: "column_1", label: "Column 1" },
         { id: "column_2", label: "Column 2" },
       ],
-      rows: [{ id: "row_1", label: "Row 1" }],
-      showColumnNames: true,
-      showRowNames: true,
+      prompt: "Prompt",
       responseFields: [
         {
           id: "answer_1",
-          type: "number",
           label: "Answer",
           required: true,
+          type: "number",
         },
       ],
-      cells: [
-        {
-          id: "cell_1",
-          rowId: "row_1",
-          columnId: "column_1",
-          type: "content",
-          content: [{ type: "text", text: "Alpha" }],
-        },
-        {
-          id: "cell_2",
-          rowId: "row_1",
-          columnId: "column_2",
-          type: "response",
-          responseFieldId: "answer_1",
-          correctValueSource: { type: "literal", value: 3 },
-          points: 2,
-          grading: { mode: "exact" },
-        },
-      ],
+      rows: [{ id: "row_1", label: "Row 1" }],
+      showColumnNames: true,
+      showRowNames: true,
     };
 
     const blueprint = tableEditorModelToQuestionBlueprintDocument(model);
     expect(blueprint.blocks[0]).toEqual({
+      content: [{ text: "Prompt", type: "text" }],
       id: "prompt",
       type: "text",
-      content: [{ type: "text", text: "Prompt" }],
     });
 
     expect(blueprint.references).toEqual([]);
 
     const tableBlock = blueprint.blocks.find((block) => block.type === "table");
     expect(tableBlock).toBeDefined();
-    if (!tableBlock || tableBlock.type !== "table") {
+    if (tableBlock?.type !== "table") {
       throw new Error("Expected table block.");
     }
     const contentCell = tableBlock.cells.find(
@@ -1242,124 +1236,124 @@ describe("table blueprint conversions", () => {
       (cell: (typeof tableBlock.cells)[number]) => cell.id === "cell_2",
     );
     expect(contentCell).toEqual({
+      columnId: "column_1",
+      content: [{ text: "Alpha", type: "text" }],
       id: "cell_1",
       rowId: "row_1",
-      columnId: "column_1",
       type: "content",
-      content: [{ type: "text", text: "Alpha" }],
     });
     expect(responseCell).toEqual({
-      id: "cell_2",
-      rowId: "row_1",
       columnId: "column_2",
-      type: "response",
-      responseFieldId: "answer_1",
       correctValueSource: { schemaVersion: 1, type: "literal", value: 3 },
-      points: 2,
       grading: { mode: "exact" },
+      id: "cell_2",
+      points: 2,
+      responseFieldId: "answer_1",
+      rowId: "row_1",
+      type: "response",
     });
   });
 
   it("maps rendered table bodies to preview cells with text", () => {
     const preview = questionBodyToTableBlockPreviewModel({
-      schemaVersion: QuestionBodySchemaVersion.NUMBER_1,
       blocks: [
         {
+          content: [{ text: "Prompt", type: "text" }],
           id: "prompt",
           type: "text",
-          content: [{ type: "text", text: "Prompt" }],
         },
         {
-          id: "table",
-          type: "table",
+          cells: [
+            {
+              columnId: "column_1",
+              id: "cell_1",
+              rowId: "row_1",
+              text: "A1",
+              type: "content",
+            },
+            {
+              columnId: "column_2",
+              id: "cell_2",
+              responseFieldId: "answer_1",
+              rowId: "row_1",
+              type: "response",
+            },
+          ],
           columns: [
             { id: "column_1", label: "Column 1" },
             { id: "column_2", label: "Column 2" },
           ],
+          id: "table",
           rows: [{ id: "row_1", label: "Row 1" }],
           showColumnNames: true,
           showRowNames: true,
-          cells: [
-            {
-              id: "cell_1",
-              rowId: "row_1",
-              columnId: "column_1",
-              type: "content",
-              text: "A1",
-            },
-            {
-              id: "cell_2",
-              rowId: "row_1",
-              columnId: "column_2",
-              type: "response",
-              responseFieldId: "answer_1",
-            },
-          ],
+          type: "table",
         },
       ],
       responseFields: [
         {
           id: "answer_1",
-          type: "number",
           label: "Answer",
           required: true,
+          type: "number",
         },
       ],
+      schemaVersion: QuestionBodySchemaVersion.NUMBER_1,
     });
 
     expect(preview.cells).toEqual([
       {
+        columnId: "column_1",
+        content: [{ text: "A1", type: "text" }],
         id: "cell_1",
         rowId: "row_1",
-        columnId: "column_1",
         type: "content",
-        content: [{ type: "text", text: "A1" }],
       },
       {
-        id: "cell_2",
-        rowId: "row_1",
         columnId: "column_2",
-        type: "response",
+        id: "cell_2",
         responseFieldId: "answer_1",
+        rowId: "row_1",
+        type: "response",
       },
     ]);
   });
 
   it("renders inline display values in the prompt preview", () => {
     const preview = questionBodyToTableBlockPreviewModel({
-      schemaVersion: QuestionBodySchemaVersion.NUMBER_1,
       blocks: [
         {
-          id: "prompt",
-          type: "text",
           content: [
-            { type: "text", text: "Revenue: " },
+            { text: "Revenue: ", type: "text" },
             {
-              type: "value",
-              referenceId: "revenue",
               displayValue: "123",
+              referenceId: "revenue",
+              type: "value",
             },
           ],
+          id: "prompt",
+          type: "text",
         },
         {
-          id: "table",
-          type: "table",
+          cells: [
+            {
+              columnId: "column_1",
+              id: "cell_1",
+              rowId: "row_1",
+              text: "A1",
+              type: "content",
+            },
+          ],
           columns: [{ id: "column_1", label: "Column 1" }],
+          id: "table",
           rows: [{ id: "row_1", label: "Row 1" }],
           showColumnNames: true,
           showRowNames: true,
-          cells: [
-            {
-              id: "cell_1",
-              rowId: "row_1",
-              columnId: "column_1",
-              type: "content",
-              text: "A1",
-            },
-          ],
+          type: "table",
         },
       ],
       responseFields: [],
+      schemaVersion: QuestionBodySchemaVersion.NUMBER_1,
     });
 
     expect(preview.prompt).toBe("Revenue: 123");
@@ -1369,47 +1363,47 @@ describe("table blueprint conversions", () => {
 describe("table blueprint response fields", () => {
   it("preserves response field metadata when loading and saving", () => {
     const blueprint: QuestionBlueprintDocument = {
-      schemaVersion: 1,
       blocks: [
         {
+          content: [{ text: "Prompt", type: "text" }],
           id: "prompt",
           type: "text",
-          content: [{ type: "text", text: "Prompt" }],
         },
         {
-          id: "table",
-          type: "table",
-          columns: [{ id: "column_1", label: "Column 1" }],
-          rows: [{ id: "row_1", label: "Row 1" }],
-          showColumnNames: true,
-          showRowNames: true,
           cells: [
             {
-              id: "cell_1",
-              rowId: "row_1",
               columnId: "column_1",
-              type: "response",
-              responseFieldId: "answer_1",
               correctValueSource: {
                 schemaVersion: 1,
                 type: "literal",
                 value: "001",
               },
-              points: 2,
               grading: { mode: "exact" },
+              id: "cell_1",
+              points: 2,
+              responseFieldId: "answer_1",
+              rowId: "row_1",
+              type: "response",
             },
           ],
+          columns: [{ id: "column_1", label: "Column 1" }],
+          id: "table",
+          rows: [{ id: "row_1", label: "Row 1" }],
+          showColumnNames: true,
+          showRowNames: true,
+          type: "table",
         },
       ],
       references: [],
       responseFields: [
         {
           id: "answer_1",
-          type: "text",
           label: "Student answer",
           required: false,
+          type: "text",
         },
       ],
+      schemaVersion: 1,
     };
 
     const model = questionBlueprintDocumentToTableEditorModel(blueprint);
@@ -1422,31 +1416,31 @@ describe("table blueprint response fields", () => {
 
   it("preserves response field types when saving table models", () => {
     const model: TableEditorModel = {
-      prompt: "Prompt",
+      cells: [
+        {
+          columnId: "column_1",
+          correctValueSource: { type: "literal", value: 3 },
+          grading: { mode: "exact" },
+          id: "cell_1",
+          points: 1,
+          responseFieldId: "answer_1",
+          rowId: "row_1",
+          type: "response",
+        },
+      ],
       columns: [{ id: "column_1", label: "Column 1" }],
-      rows: [{ id: "row_1", label: "Row 1" }],
-      showColumnNames: true,
-      showRowNames: true,
+      prompt: "Prompt",
       responseFields: [
         {
           id: "answer_1",
-          type: "number",
           label: "Amount",
           required: true,
+          type: "number",
         },
       ],
-      cells: [
-        {
-          id: "cell_1",
-          rowId: "row_1",
-          columnId: "column_1",
-          type: "response",
-          responseFieldId: "answer_1",
-          correctValueSource: { type: "literal", value: 3 },
-          points: 1,
-          grading: { mode: "exact" },
-        },
-      ],
+      rows: [{ id: "row_1", label: "Row 1" }],
+      showColumnNames: true,
+      showRowNames: true,
     };
 
     expect(
@@ -1454,29 +1448,30 @@ describe("table blueprint response fields", () => {
     ).toEqual([
       {
         id: "answer_1",
-        type: "number",
         label: "Amount",
         required: true,
+        type: "number",
       },
     ]);
   });
 
   it("rejects saved blueprints with unsupported json response fields", () => {
     const blueprint = {
-      schemaVersion: 1,
       blocks: [],
       references: [],
       responseFields: [
         {
           id: "answer_1",
-          type: "json",
           label: "Payload",
           required: false,
+          type: "json",
         },
       ],
-    } as unknown as QuestionBlueprintDocument;
+      schemaVersion: 1,
+    };
 
     expect(() =>
+      // @ts-expect-error invalid persisted response field fixture
       questionBlueprintDocumentToComposedEditorModel(blueprint),
     ).toThrow("Unsupported response field type: json");
   });
@@ -1485,11 +1480,11 @@ describe("table blueprint response fields", () => {
     const model = createModelWithResponseFields([]);
     model.cells = [
       {
+        columnId: "column_1",
+        content: [{ referenceId: "content_ref", type: "reference" }],
         id: "cell_1",
         rowId: "row_1",
-        columnId: "column_1",
         type: "content",
-        content: [{ type: "reference", referenceId: "content_ref" }],
       },
     ];
 
@@ -1505,14 +1500,14 @@ describe("table blueprint response fields", () => {
 
     model.cells = [
       {
-        id: "cell_1",
-        rowId: "row_1",
         columnId: "column_1",
-        type: "response",
-        responseFieldId: "answer_1",
-        correctValueSource: { type: "reference", referenceId: "answer_ref" },
-        points: 1,
+        correctValueSource: { referenceId: "answer_ref", type: "reference" },
         grading: { mode: "exact" },
+        id: "cell_1",
+        points: 1,
+        responseFieldId: "answer_1",
+        rowId: "row_1",
+        type: "response",
       },
     ];
 
@@ -1567,69 +1562,69 @@ describe("table blueprint composed namespacing", () => {
       blocks: [
         {
           id: "table_1",
-          type: "table",
           table: {
-            prompt: "Prompt",
+            cells: [
+              {
+                columnId: "column_1",
+                correctValueSource: { type: "literal", value: 3 },
+                grading: { mode: "exact" },
+                id: "cell_1",
+                points: 1,
+                responseFieldId: "answer_1",
+                rowId: "row_1",
+                type: "response",
+              },
+            ],
             columns: [{ id: "column_1", label: "Column 1" }],
-            rows: [{ id: "row_1", label: "Row 1" }],
-            showColumnNames: true,
-            showRowNames: true,
+            prompt: "Prompt",
             responseFields: [
               {
                 id: "answer_1",
-                type: "number",
                 label: "Answer",
                 required: true,
+                type: "number",
               },
             ],
-            cells: [
-              {
-                id: "cell_1",
-                rowId: "row_1",
-                columnId: "column_1",
-                type: "response",
-                responseFieldId: "answer_1",
-                correctValueSource: { type: "literal", value: 3 },
-                points: 1,
-                grading: { mode: "exact" },
-              },
-            ],
+            rows: [{ id: "row_1", label: "Row 1" }],
+            showColumnNames: true,
+            showRowNames: true,
           },
+          type: "table",
         },
         {
           id: "table_2",
-          type: "table",
           table: {
-            prompt: "Prompt",
+            cells: [
+              {
+                columnId: "column_1",
+                correctValueSource: { type: "literal", value: 4 },
+                grading: { mode: "exact" },
+                id: "cell_1",
+                points: 1,
+                responseFieldId: "answer_1",
+                rowId: "row_1",
+                type: "response",
+              },
+            ],
             columns: [{ id: "column_1", label: "Column 1" }],
-            rows: [{ id: "row_1", label: "Row 1" }],
-            showColumnNames: true,
-            showRowNames: true,
+            prompt: "Prompt",
             responseFields: [
               {
                 id: "answer_1",
-                type: "number",
                 label: "Answer",
                 required: true,
+                type: "number",
               },
             ],
-            cells: [
-              {
-                id: "cell_1",
-                rowId: "row_1",
-                columnId: "column_1",
-                type: "response",
-                responseFieldId: "answer_1",
-                correctValueSource: { type: "literal", value: 4 },
-                points: 1,
-                grading: { mode: "exact" },
-              },
-            ],
+            rows: [{ id: "row_1", label: "Row 1" }],
+            showColumnNames: true,
+            showRowNames: true,
           },
+          type: "table",
         },
       ],
-      responseFields: [],
       references: [],
+      responseFields: [],
     };
 
     const blueprint = composedEditorModelToQuestionBlueprintDocument(model);
@@ -1643,20 +1638,20 @@ describe("table blueprint composed namespacing", () => {
     );
     expect(tableBlocks).toHaveLength(2);
     expect(tableBlocks[0]).toMatchObject({
-      id: "table_1",
       cells: [
         expect.objectContaining({
           responseFieldId: "table_1_answer_1",
         }),
       ],
+      id: "table_1",
     });
     expect(tableBlocks[1]).toMatchObject({
-      id: "table_2",
       cells: [
         expect.objectContaining({
           responseFieldId: "table_2_answer_1",
         }),
       ],
+      id: "table_2",
     });
   });
 
@@ -1666,38 +1661,38 @@ describe("table blueprint composed namespacing", () => {
       blocks: [
         {
           id: "table_1",
-          type: "table",
           table: {
-            prompt: "Prompt",
+            cells: [
+              {
+                columnId: "column_1",
+                correctValueSource: { type: "literal", value: 3 },
+                grading: { mode: "exact" },
+                id: "cell_1",
+                points: 1,
+                responseFieldId: "answer_1",
+                rowId: "row_1",
+                type: "response",
+              },
+            ],
             columns: [{ id: "column_1", label: "Column 1" }],
-            rows: [{ id: "row_1", label: "Row 1" }],
-            showColumnNames: true,
-            showRowNames: true,
+            prompt: "Prompt",
             responseFields: [
               {
                 id: "answer_1",
-                type: "number",
                 label: "Answer",
                 required: true,
+                type: "number",
               },
             ],
-            cells: [
-              {
-                id: "cell_1",
-                rowId: "row_1",
-                columnId: "column_1",
-                type: "response",
-                responseFieldId: "answer_1",
-                correctValueSource: { type: "literal", value: 3 },
-                points: 1,
-                grading: { mode: "exact" },
-              },
-            ],
+            rows: [{ id: "row_1", label: "Row 1" }],
+            showColumnNames: true,
+            showRowNames: true,
           },
+          type: "table",
         },
       ],
-      responseFields: [],
       references: [],
+      responseFields: [],
     };
 
     const blueprint = composedEditorModelToQuestionBlueprintDocument(model);
@@ -1711,23 +1706,23 @@ function createModelWithResponseFields(
   responseFields: TableEditorModel["responseFields"],
 ): TableEditorModel {
   return {
-    prompt: "Prompt",
+    cells: [
+      {
+        columnId: "column_1",
+        correctValueSource: { type: "literal", value: 3 },
+        grading: { mode: "exact" },
+        id: "cell_1",
+        points: 1,
+        responseFieldId: "answer_1",
+        rowId: "row_1",
+        type: "response",
+      },
+    ],
     columns: [{ id: "column_1", label: "Column 1" }],
+    prompt: "Prompt",
+    responseFields,
     rows: [{ id: "row_1", label: "Row 1" }],
     showColumnNames: true,
     showRowNames: true,
-    responseFields,
-    cells: [
-      {
-        id: "cell_1",
-        rowId: "row_1",
-        columnId: "column_1",
-        type: "response",
-        responseFieldId: "answer_1",
-        correctValueSource: { type: "literal", value: 3 },
-        points: 1,
-        grading: { mode: "exact" },
-      },
-    ],
   };
 }

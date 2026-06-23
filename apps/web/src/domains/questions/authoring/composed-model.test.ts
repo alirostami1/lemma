@@ -17,43 +17,43 @@ import {
 describe("composed authoring helpers", () => {
   it("creates a default composed editor model", () => {
     expect(createDefaultComposedEditorModel()).toEqual({
-      schemaVersion: 1,
       blocks: [
         {
+          content: [{ text: "Write the question here.", type: "text" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "text", text: "Write the question here." }],
         },
         {
-          id: "response_1",
-          type: "response",
-          responseFieldId: "answer_1",
-          placeholder: "Answer",
           correctValueSource: { type: "literal", value: "" },
-          points: 1,
           grading: { mode: "exact" },
-        },
-      ],
-      responseFields: [
-        {
-          id: "answer_1",
-          type: "text",
-          label: "Answer",
-          required: true,
+          id: "response_1",
+          placeholder: "Answer",
+          points: 1,
+          responseFieldId: "answer_1",
+          type: "response",
         },
       ],
       references: [],
+      responseFields: [
+        {
+          id: "answer_1",
+          label: "Answer",
+          required: true,
+          type: "text",
+        },
+      ],
+      schemaVersion: 1,
     });
   });
 
   it("creates a reference draft with a fresh id", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [],
-      responseFields: [],
       references: [
         { id: "reference_1", source: { type: "literal", value: "alpha" } },
       ],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     expect(createReferenceDraft(model)).toEqual({
@@ -64,37 +64,30 @@ describe("composed authoring helpers", () => {
 
   it("extracts used reference ids and workbook refs", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         createTextBlock("text_1", "Hello"),
         {
+          content: [
+            { referenceId: "reference_1", type: "reference" },
+            { referenceId: "reference_2", type: "reference" },
+          ],
           id: "text_2",
           type: "text",
-          content: [
-            { type: "reference", referenceId: "reference_1" },
-            { type: "reference", referenceId: "reference_2" },
-          ],
         },
         createResponseBlock("response_1", "answer_1", {
           correctValueSource: {
-            type: "reference",
             referenceId: "answer_source",
+            type: "reference",
           },
         }),
-      ],
-      responseFields: [
-        {
-          id: "answer_1",
-          type: "text",
-        },
       ],
       references: [
         {
           id: "reference_1",
           source: {
-            type: "workbook_range",
-            sourceId: "source_1",
             ref: "'Sheet1'!A1:B2",
+            sourceId: "source_1",
+            type: "workbook_range",
           },
         },
         {
@@ -104,12 +97,19 @@ describe("composed authoring helpers", () => {
         {
           id: "answer_source",
           source: {
-            type: "workbook_cell",
-            sourceId: "source_1",
             ref: "'Sheet1'!A1",
+            sourceId: "source_1",
+            type: "workbook_cell",
           },
         },
       ],
+      responseFields: [
+        {
+          id: "answer_1",
+          type: "text",
+        },
+      ],
+      schemaVersion: 1,
     };
 
     expect(extractUsedReferenceIdsFromComposedEditorModel(model)).toEqual([
@@ -125,68 +125,61 @@ describe("composed authoring helpers", () => {
 
   it("tracks exact reference usage locations", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
+          content: [{ referenceId: "reference_1", type: "reference" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "reference", referenceId: "reference_1" }],
         },
         {
-          id: "response_1",
-          type: "response",
-          responseFieldId: "answer_1",
           correctValueSource: {
-            type: "reference",
             referenceId: "answer_source",
+            type: "reference",
           },
-          points: 1,
           grading: { mode: "exact" },
+          id: "response_1",
+          points: 1,
+          responseFieldId: "answer_1",
+          type: "response",
         },
         {
           id: "table_1",
-          type: "table",
           table: {
-            prompt: "",
+            cells: [
+              {
+                columnId: "column_1",
+                content: [{ referenceId: "content_ref", type: "reference" }],
+                id: "cell_1",
+                rowId: "row_1",
+                type: "content",
+              },
+              {
+                columnId: "column_1",
+                correctValueSource: {
+                  referenceId: "table_ref",
+                  type: "reference",
+                },
+                grading: { mode: "exact" },
+                id: "cell_2",
+                points: 1,
+                responseFieldId: "table_answer_1",
+                rowId: "row_1",
+                type: "response",
+              },
+            ],
             columns: [{ id: "column_1", label: "Column 1" }],
-            rows: [{ id: "row_1", label: "Row 1" }],
-            showColumnNames: true,
-            showRowNames: true,
+            prompt: "",
             responseFields: [
               {
                 id: "table_answer_1",
                 type: "text",
               },
             ],
-            cells: [
-              {
-                id: "cell_1",
-                rowId: "row_1",
-                columnId: "column_1",
-                type: "content",
-                content: [{ type: "reference", referenceId: "content_ref" }],
-              },
-              {
-                id: "cell_2",
-                rowId: "row_1",
-                columnId: "column_1",
-                type: "response",
-                responseFieldId: "table_answer_1",
-                correctValueSource: {
-                  type: "reference",
-                  referenceId: "table_ref",
-                },
-                points: 1,
-                grading: { mode: "exact" },
-              },
-            ],
+            rows: [{ id: "row_1", label: "Row 1" }],
+            showColumnNames: true,
+            showRowNames: true,
           },
-        },
-      ],
-      responseFields: [
-        {
-          id: "answer_1",
-          type: "text",
+          type: "table",
         },
       ],
       references: [
@@ -207,18 +200,25 @@ describe("composed authoring helpers", () => {
           source: { type: "literal", value: "delta" },
         },
       ],
+      responseFields: [
+        {
+          id: "answer_1",
+          type: "text",
+        },
+      ],
+      schemaVersion: 1,
     };
 
     expect(getReferenceUsage(model)).toEqual(
       new Map([
-        ["reference_1", [{ type: "text_block", blockId: "text_1" }]],
+        ["reference_1", [{ blockId: "text_1", type: "text_block" }]],
         [
           "answer_source",
           [
             {
-              type: "response_answer",
               blockId: "response_1",
               responseFieldId: "answer_1",
+              type: "response_answer",
             },
           ],
         ],
@@ -226,9 +226,9 @@ describe("composed authoring helpers", () => {
           "content_ref",
           [
             {
-              type: "table_content_cell",
               blockId: "table_1",
               cellId: "cell_1",
+              type: "table_content_cell",
             },
           ],
         ],
@@ -236,10 +236,10 @@ describe("composed authoring helpers", () => {
           "table_ref",
           [
             {
-              type: "table_answer_cell",
               blockId: "table_1",
               cellId: "cell_2",
               responseFieldId: "table_answer_1",
+              type: "table_answer_cell",
             },
           ],
         ],
@@ -249,22 +249,15 @@ describe("composed authoring helpers", () => {
 
   it("strips unused references without changing live content", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
+          content: [{ referenceId: "used_text", type: "reference" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "reference", referenceId: "used_text" }],
         },
         createResponseBlock("response_1", "answer_1", {
-          correctValueSource: { type: "reference", referenceId: "used_answer" },
+          correctValueSource: { referenceId: "used_answer", type: "reference" },
         }),
-      ],
-      responseFields: [
-        {
-          id: "answer_1",
-          type: "text",
-        },
       ],
       references: [
         {
@@ -280,6 +273,13 @@ describe("composed authoring helpers", () => {
           source: { type: "literal", value: "gamma" },
         },
       ],
+      responseFields: [
+        {
+          id: "answer_1",
+          type: "text",
+        },
+      ],
+      schemaVersion: 1,
     };
 
     expect(getComposedEditorReferenceUsage(model)).toEqual(
@@ -302,38 +302,38 @@ describe("composed authoring helpers", () => {
   it("converts a table editor model to a static preview model", () => {
     expect(
       tableEditorModelToStaticPreviewModel({
-        prompt: "Prompt",
+        cells: [
+          {
+            columnId: "column_1",
+            content: [{ text: "001", type: "text" }],
+            id: "cell_1",
+            rowId: "row_1",
+            type: "content",
+          },
+        ],
         columns: [{ id: "column_1", label: "Column 1" }],
+        prompt: "Prompt",
+        responseFields: [],
         rows: [{ id: "row_1", label: "Row 1" }],
         showColumnNames: true,
         showRowNames: true,
-        responseFields: [],
-        cells: [
-          {
-            id: "cell_1",
-            rowId: "row_1",
-            columnId: "column_1",
-            type: "content",
-            content: [{ type: "text", text: "001" }],
-          },
-        ],
       }),
     ).toEqual({
-      prompt: "Prompt",
+      cells: [
+        {
+          columnId: "column_1",
+          content: [{ text: "001", type: "text" }],
+          id: "cell_1",
+          rowId: "row_1",
+          type: "content",
+        },
+      ],
       columns: [{ id: "column_1", label: "Column 1" }],
+      prompt: "Prompt",
+      responseFields: [],
       rows: [{ id: "row_1", label: "Row 1" }],
       showColumnNames: true,
       showRowNames: true,
-      responseFields: [],
-      cells: [
-        {
-          id: "cell_1",
-          rowId: "row_1",
-          columnId: "column_1",
-          type: "content",
-          content: [{ type: "text", text: "001" }],
-        },
-      ],
     });
   });
 });

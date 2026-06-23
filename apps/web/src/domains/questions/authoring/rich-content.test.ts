@@ -11,82 +11,82 @@ import {
 
 describe("rich content helpers", () => {
   it("normalizes empty documents to an empty paragraph", () => {
-    expect(normalizeRichContent({ type: "doc", content: [] })).toEqual({
+    expect(normalizeRichContent({ content: [], type: "doc" })).toEqual({
+      content: [{ content: [], type: "paragraph" }],
       type: "doc",
-      content: [{ type: "paragraph", content: [] }],
     });
   });
 
   it("normalizes empty list items to empty paragraphs", () => {
     expect(
       normalizeRichContent({
-        type: "doc",
         content: [
           {
+            items: [{ content: [], type: "list_item" }],
             type: "bullet_list",
-            items: [{ type: "list_item", content: [] }],
           },
         ],
+        type: "doc",
       }),
     ).toEqual({
-      type: "doc",
       content: [
         {
-          type: "bullet_list",
           items: [
             {
+              content: [{ content: [], type: "paragraph" }],
               type: "list_item",
-              content: [{ type: "paragraph", content: [] }],
             },
           ],
+          type: "bullet_list",
         },
       ],
+      type: "doc",
     });
   });
 
   it("extracts and replaces references across nested lists", () => {
     const content: ComposedRichContent = {
-      type: "doc",
       content: [
         {
+          content: [{ referenceId: "top", type: "reference" }],
           type: "paragraph",
-          content: [{ type: "reference", referenceId: "top" }],
         },
         {
-          type: "bullet_list",
           items: [
             {
-              type: "list_item",
               content: [
                 {
+                  content: [{ referenceId: "child", type: "reference" }],
                   type: "paragraph",
-                  content: [{ type: "reference", referenceId: "child" }],
                 },
                 {
-                  type: "ordered_list",
                   items: [
                     {
-                      type: "list_item",
                       content: [
                         {
-                          type: "paragraph",
                           content: [
-                            { type: "reference", referenceId: "nested" },
+                            { referenceId: "nested", type: "reference" },
                           ],
+                          type: "paragraph",
                         },
                       ],
+                      type: "list_item",
                     },
                     {
-                      type: "list_item",
                       content: [],
+                      type: "list_item",
                     },
                   ],
+                  type: "ordered_list",
                 },
               ],
+              type: "list_item",
             },
           ],
+          type: "bullet_list",
         },
       ],
+      type: "doc",
     };
 
     expect(extractRichReferenceIds(content)).toEqual([
@@ -95,23 +95,23 @@ describe("rich content helpers", () => {
       "nested",
     ]);
     expect(normalizeRichContent(content).content[1]).toMatchObject({
-      type: "bullet_list",
       items: [
         {
           content: [
             {},
             {
-              type: "ordered_list",
               items: [
                 {},
                 {
-                  content: [{ type: "paragraph", content: [] }],
+                  content: [{ content: [], type: "paragraph" }],
                 },
               ],
+              type: "ordered_list",
             },
           ],
         },
       ],
+      type: "bullet_list",
     });
     expect(
       extractRichReferenceIds(
@@ -122,8 +122,8 @@ describe("rich content helpers", () => {
 
   it("converts simple rich content to inline content", () => {
     const inline = [
-      { type: "text" as const, text: "Revenue: " },
-      { type: "reference" as const, referenceId: "revenue" },
+      { text: "Revenue: ", type: "text" as const },
+      { referenceId: "revenue", type: "reference" as const },
     ];
 
     expect(
@@ -137,8 +137,8 @@ describe("rich content helpers", () => {
     expect(
       richContentToPlainText(
         richContentFromInlineContent([
-          { type: "text", text: "Revenue: " },
-          { type: "reference", referenceId: "revenue", fallbackText: "$10" },
+          { text: "Revenue: ", type: "text" },
+          { fallbackText: "$10", referenceId: "revenue", type: "reference" },
         ]),
       ),
     ).toBe("Revenue: $10");

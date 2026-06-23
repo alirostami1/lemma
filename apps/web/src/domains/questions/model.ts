@@ -8,6 +8,7 @@ import type {
 
 export type { QuestionAnswer };
 export type QuestionGrade = GradeResult;
+export type QuestionBlueprintDocument = AuthoringQuestionBlueprintDocument;
 
 export type QuestionSetStatus = "active" | "archived" | "deleted";
 
@@ -25,157 +26,188 @@ export type QuestionGenerationRunStatus =
   | "failed"
   | "cancelled";
 
-export interface WorkbookQuestionSource {
-  type: "workbook_snapshot";
-  workbookId: string;
-  workbookVersionId?: string | null;
-  workbookCalculationId?: string | null;
-  workbookSnapshotId?: string | null;
-}
-
 export interface QuestionProducer {
-  schemaVersion: 1;
   compiler: string;
+  schemaVersion: 1;
   source?: Record<string, unknown>;
 }
 
-export interface QuestionBlueprintVersion {
-  id: string;
-  versionNumber: number;
-  sourceAssets: QuestionBlueprintVersionAsset[];
-  sources: QuestionBlueprintWorkbookSource[];
-  createdByUserId: string;
-  createdAt: Date;
-}
-
-export interface QuestionBlueprintCurrentVersion {
-  id: string;
-  versionNumber: number;
-  sources: QuestionBlueprintWorkbookSource[];
-  createdByUserId: string;
-  createdAt: Date;
-}
-
-export interface QuestionBlueprintVersionAsset {
-  questionBlueprintVersionId: string;
-  workbookId: string;
-  kind: "workbook";
-  position: number;
-  createdAt: Date;
-}
-
 export interface QuestionBlueprintWorkbookSource {
+  name: string;
+  sourceId: string;
+  workbookId: string;
+}
+
+export type QuestionBlueprintDraftSource = {
+  type: "workbook";
   sourceId: string;
   name: string;
-  workbookId: string;
+  fileId: string | null;
+  workbookId: string | null;
+  status: "local" | "uploaded" | "validated" | "invalid";
+  originalName: string | null;
+  byteSize: number | null;
+  checksumSha256: string | null;
+};
+
+export interface QuestionBlueprintDraft {
+  blueprintId: string | null;
+  createdAt: Date;
+  createdByUserId: string;
+  description: string | null;
+  document: AuthoringQuestionBlueprintDocument;
+  id: string;
+  lastSavedAt: Date;
+  name: string;
+  ownerUserId: string;
+  sources: QuestionBlueprintDraftSource[];
+  status: "draft" | "publishing" | "published" | "discarded";
+  updatedAt: Date;
+}
+
+export type CreateQuestionBlueprintDraftInput = {
+  blueprintId?: string | null;
+  name: string;
+  description?: string | null;
+  document: AuthoringQuestionBlueprintDocument;
+  sources: QuestionBlueprintDraftSource[];
+};
+export type UpdateQuestionBlueprintDraftInput = {
+  draftId: string;
+  name: string;
+  description: string | null;
+  document: AuthoringQuestionBlueprintDocument;
+  sources: QuestionBlueprintDraftSource[];
+};
+export type AttachQuestionBlueprintDraftSourceFileInput = {
+  draftId: string;
+  sourceId: string;
+  fileId: string;
+};
+export type QuestionBlueprintDraftResult = { draft: QuestionBlueprintDraft };
+export type QuestionBlueprintDraftSummary = {
+  id: string;
+  blueprintId: string | null;
+  name: string;
+  description: string | null;
+  status: "draft" | "publishing" | "published" | "discarded";
+  sourceCount: number;
+  updatedAt: Date;
+  lastSavedAt: Date;
+};
+export type QuestionBlueprintDraftSummariesPage = {
+  drafts: QuestionBlueprintDraftSummary[];
+  nextCursor: string | null;
+};
+export type QuestionBlueprintDraftsPage = {
+  drafts: QuestionBlueprintDraft[];
+  nextCursor: string | null;
+};
+export type PublishQuestionBlueprintDraftResult = {
+  draft: QuestionBlueprintDraft;
+  questionBlueprint: QuestionBlueprint;
+};
+export interface ListQuestionBlueprintDraftsInput {
+  cursor?: string;
+  limit?: number;
+  status?: QuestionBlueprintDraftSummary["status"];
 }
 
 export interface QuestionSet {
-  id: string;
-  ownerUserId: string;
-  createdByUserId: string;
-  name: string;
-  description: string | null;
-  status: QuestionSetStatus;
   createdAt: Date;
+  createdByUserId: string;
+  description: string | null;
+  id: string;
+  name: string;
+  ownerUserId: string;
+  status: QuestionSetStatus;
   updatedAt: Date;
 }
 
 export interface QuestionBlueprint {
-  id: string;
-  ownerUserId: string;
-  createdByUserId: string;
-  name: string;
-  description: string | null;
-  document: PublicQuestionBlueprintDocument;
-  sources: QuestionBlueprintWorkbookSource[];
-  currentVersionId?: string;
-  currentVersionNumber?: number;
-  currentVersion?: QuestionBlueprintCurrentVersion;
-  visibility: QuestionBlueprintVisibility;
-  status: QuestionBlueprintStatus;
   archivedAt: Date | null;
   createdAt: Date;
+  createdByUserId: string;
+  description: string | null;
+  document: PublicQuestionBlueprintDocument;
+  id: string;
+  name: string;
+  ownerUserId: string;
+  sources: QuestionBlueprintWorkbookSource[];
+  status: QuestionBlueprintStatus;
   updatedAt: Date;
+  visibility: QuestionBlueprintVisibility;
 }
 
 export interface QuestionBlueprintAuthoring {
-  id: string;
-  ownerUserId: string;
-  createdByUserId: string;
-  name: string;
-  description: string | null;
-  document: AuthoringQuestionBlueprintDocument;
-  sources: QuestionBlueprintWorkbookSource[];
-  currentVersionId?: string;
-  currentVersionNumber?: number;
-  currentVersion?: QuestionBlueprintVersion;
-  selectedVersionId: string;
-  selectedVersionNumber: number;
-  selectedVersion: QuestionBlueprintVersion;
-  versions: QuestionBlueprintVersion[];
-  visibility: QuestionBlueprintVisibility;
-  status: QuestionBlueprintStatus;
   archivedAt: Date | null;
   createdAt: Date;
+  createdByUserId: string;
+  description: string | null;
+  document: AuthoringQuestionBlueprintDocument;
+  id: string;
+  name: string;
+  ownerUserId: string;
+  sources: QuestionBlueprintWorkbookSource[];
+  status: QuestionBlueprintStatus;
   updatedAt: Date;
+  visibility: QuestionBlueprintVisibility;
 }
 
 export interface Question {
+  blueprintId: string;
+  body: QuestionBody;
+  createdAt: Date;
+  createdByUserId: string;
+  generationRunId: string;
   id: string;
   ownerUserId: string;
-  createdByUserId: string;
-  blueprintId: string;
-  blueprintVersionId: string;
-  generationRunId: string;
-  body: QuestionBody;
   producer: QuestionProducer;
-  source: WorkbookQuestionSource | null;
   status: QuestionStatus;
-  createdAt: Date;
   updatedAt: Date;
 }
 
 export interface QuestionGenerationRun {
+  attemptNumber: number;
+  attempts: number;
+  blueprintId: string;
+  createdAt: Date;
+  createdByUserId: string;
+  errorMessage: string | null;
+  finishedAt: Date | null;
   id: string;
   ownerUserId: string;
-  createdByUserId: string;
-  blueprintId: string;
-  blueprintVersionId: string;
-  targetQuestionSetId: string;
   requestedCount: number;
-  source: WorkbookQuestionSource | null;
-  status: QuestionGenerationRunStatus;
   result: { questionIds: string[] } | null;
-  errorMessage: string | null;
-  attempts: number;
+  retryOfRunId: string | null;
   startedAt: Date | null;
-  finishedAt: Date | null;
-  createdAt: Date;
+  status: QuestionGenerationRunStatus;
+  targetQuestionSetId: string;
   updatedAt: Date;
+  workbookCalculationId: string | null;
 }
 
 export interface ListQuestionSetsInput {
-  limit?: number;
   cursor?: string;
+  limit?: number;
 }
 
 export interface CreateQuestionSetInput {
-  name: string;
   description?: string | null;
+  name: string;
 }
 
 export interface UpdateQuestionSetInput {
-  questionSetId: string;
-  name?: string;
   description?: string | null;
+  name?: string;
+  questionSetId: string;
   status?: QuestionSetStatus;
 }
 
 export interface ListQuestionSetItemsInput {
-  questionSetId: string;
-  limit?: number;
   cursor?: string;
+  limit?: number;
+  questionSetId: string;
 }
 
 export interface GetQuestionInput {
@@ -183,13 +215,13 @@ export interface GetQuestionInput {
 }
 
 export interface GradeQuestionInput {
-  questionId: string;
   answer: QuestionAnswer;
+  questionId: string;
 }
 
 export interface ListQuestionBlueprintsInput {
-  limit?: number;
   cursor?: string;
+  limit?: number;
   status?: QuestionBlueprintStatus;
 }
 
@@ -197,42 +229,29 @@ export interface GetQuestionBlueprintInput {
   questionBlueprintId: string;
 }
 
-export interface GetQuestionBlueprintVersionInput {
-  questionBlueprintId: string;
-  questionBlueprintVersionId: string;
-}
-
 export interface CreateQuestionBlueprintInput {
-  name: string;
   description?: string | null;
-  visibility?: QuestionBlueprintVisibility;
   document: AuthoringQuestionBlueprintDocument;
+  name: string;
   sources: QuestionBlueprintWorkbookSource[];
+  visibility?: QuestionBlueprintVisibility;
 }
 
 export interface UpdateQuestionBlueprintInput {
-  questionBlueprintId: string;
-  name?: string;
   description?: string | null;
-  visibility?: QuestionBlueprintVisibility;
   document?: AuthoringQuestionBlueprintDocument;
-  sources: QuestionBlueprintWorkbookSource[];
+  name?: string;
+  questionBlueprintId: string;
+  sources?: QuestionBlueprintWorkbookSource[];
   status?: QuestionBlueprintStatus;
+  visibility?: QuestionBlueprintVisibility;
 }
 
 export type CreateQuestionGenerationRunInput = {
   targetQuestionSetId: string;
   count: number;
   blueprintId: string;
-  blueprintVersionId?: string | null;
-  sourceWorkbookId?: string | null;
-  source?: CreateWorkbookQuestionSourceInput | null;
 };
-
-export interface CreateWorkbookQuestionSourceInput {
-  type: "workbook_snapshot";
-  workbookId: string;
-}
 
 export interface GetQuestionGenerationRunInput {
   questionGenerationRunId: string;
@@ -244,8 +263,8 @@ export interface RetryQuestionGenerationRunInput {
 }
 
 export interface QuestionSetsPage {
-  questionSets: QuestionSet[];
   nextCursor: string | null;
+  questionSets: QuestionSet[];
 }
 
 export interface QuestionSetResult {
@@ -268,25 +287,21 @@ export interface QuestionBlueprintAuthoringResult {
   questionBlueprint: QuestionBlueprintAuthoring;
 }
 
-export interface QuestionBlueprintVersionsResult {
-  versions: QuestionBlueprintVersion[];
-}
-
 export interface QuestionGenerationRunResult {
   questionGenerationRun: QuestionGenerationRun;
 }
 
 export interface QuestionBlueprintsPage {
-  questionBlueprints: QuestionBlueprint[];
   nextCursor: string | null;
+  questionBlueprints: QuestionBlueprint[];
 }
 
 export interface QuestionsPage {
-  questions: Question[];
   nextCursor: string | null;
+  questions: Question[];
 }
 
 export interface QuestionGenerationRunsPage {
-  questionGenerationRuns: QuestionGenerationRun[];
   nextCursor: string | null;
+  questionGenerationRuns: QuestionGenerationRun[];
 }

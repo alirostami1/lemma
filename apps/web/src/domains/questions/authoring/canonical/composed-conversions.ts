@@ -67,18 +67,18 @@ export function composedEditorModelToQuestionBlueprintDocument(
   for (const block of model.blocks) {
     if (block.type === "text") {
       blocks.push({
+        content: block.content,
         id: block.id,
         type: "text",
-        content: block.content,
       });
       continue;
     }
 
     if (block.type === "rich_text") {
       blocks.push({
+        content: composedRichContentToCanonicalRichContent(block.content),
         id: block.id,
         type: "rich_text",
-        content: composedRichContentToCanonicalRichContent(block.content),
       });
       continue;
     }
@@ -102,14 +102,14 @@ export function composedEditorModelToQuestionBlueprintDocument(
       }
       pushUniqueResponseField(responseFields, responseFieldIds, responseField);
       blocks.push({
+        correctValueSource: toQuestionValueExpression(block.correctValueSource),
+        grading: block.grading,
         id: block.id,
-        type: "response",
-        responseFieldId: block.responseFieldId,
         label: block.label,
         placeholder: block.placeholder,
-        correctValueSource: toQuestionValueExpression(block.correctValueSource),
         points: block.points,
-        grading: block.grading,
+        responseFieldId: block.responseFieldId,
+        type: "response",
       });
       continue;
     }
@@ -117,9 +117,9 @@ export function composedEditorModelToQuestionBlueprintDocument(
     validateTableEditorModelAnswers(block.table);
     if (block.table.prompt.length > 0) {
       blocks.push({
+        content: plainTextToInlineContent(block.table.prompt),
         id: `${block.id}_prompt`,
         type: "text",
-        content: plainTextToInlineContent(block.table.prompt),
       });
     }
     const tableResponseFields = tableEditorModelToResponseFields(
@@ -137,10 +137,10 @@ export function composedEditorModelToQuestionBlueprintDocument(
   }
 
   return {
-    schemaVersion: 1,
     blocks,
-    responseFields,
     references,
+    responseFields,
+    schemaVersion: 1,
   };
 }
 
@@ -177,18 +177,18 @@ export function questionBlueprintDocumentToComposedEditorModel(
 
     if (block.type === "text") {
       blocks.push({
+        content: block.content,
         id: block.id,
         type: "text",
-        content: block.content,
       });
       continue;
     }
 
     if (block.type === "rich_text") {
       blocks.push({
+        content: canonicalRichContentToComposed(block.content),
         id: block.id,
         type: "rich_text",
-        content: canonicalRichContentToComposed(block.content),
       });
       continue;
     }
@@ -224,14 +224,14 @@ export function questionBlueprintDocumentToComposedEditorModel(
         responseFields.push(questionResponseFieldToComposed(responseField));
       }
       blocks.push({
+        correctValueSource: toValueExpression(block.correctValueSource),
+        grading: block.grading,
         id: block.id,
-        type: "response",
-        responseFieldId: block.responseFieldId,
         label: block.label,
         placeholder: block.placeholder,
-        correctValueSource: toValueExpression(block.correctValueSource),
         points: block.points,
-        grading: block.grading,
+        responseFieldId: block.responseFieldId,
+        type: "response",
       });
       continue;
     }
@@ -244,8 +244,8 @@ export function questionBlueprintDocumentToComposedEditorModel(
       );
       blocks.push({
         id: block.id,
-        type: "table",
         table,
+        type: "table",
       });
       continue;
     }
@@ -256,9 +256,9 @@ export function questionBlueprintDocumentToComposedEditorModel(
   }
 
   return {
-    schemaVersion: 1,
     blocks,
-    responseFields,
     references,
+    responseFields,
+    schemaVersion: 1,
   };
 }

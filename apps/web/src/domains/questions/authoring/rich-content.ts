@@ -13,13 +13,13 @@ import type {
 
 export function createDefaultRichContent(text = ""): ComposedRichContent {
   return {
-    type: "doc",
     content: [
       {
-        type: "paragraph",
         content: createTextInlineContent(text),
+        type: "paragraph",
       },
     ],
+    type: "doc",
   };
 }
 
@@ -27,8 +27,8 @@ export function richContentFromInlineContent(
   content: ComposedInlineContent[],
 ): ComposedRichContent {
   return {
+    content: [{ content, type: "paragraph" }],
     type: "doc",
-    content: [{ type: "paragraph", content }],
   };
 }
 
@@ -59,7 +59,7 @@ export function normalizeRichContent(
 ): ComposedRichContent {
   const normalizedNodes = content.content.map(normalizeRichNode);
   return normalizedNodes.length > 0
-    ? { type: "doc", content: normalizedNodes }
+    ? { content: normalizedNodes, type: "doc" }
     : createDefaultRichContent();
 }
 
@@ -69,12 +69,12 @@ export function replaceRichReferenceId(
   nextReferenceId: string,
 ): ComposedRichContent {
   return {
-    type: "doc",
     content: content.content.map((node) =>
       mapRichNode(node, (inline) =>
         replaceInlineReferenceId(inline, previousReferenceId, nextReferenceId),
       ),
     ),
+    type: "doc",
   };
 }
 
@@ -138,9 +138,9 @@ function normalizeRichListItem(
 ): ComposedRichListItem {
   const content = item.content.map(richNodeToListItemChild);
   return {
-    type: "list_item",
     content:
-      content.length > 0 ? content : [{ type: "paragraph", content: [] }],
+      content.length > 0 ? content : [{ content: [], type: "paragraph" }],
+    type: "list_item",
   };
 }
 
@@ -152,8 +152,8 @@ function mapRichListItemChild(
 ): ComposedRichListItemChild {
   return child.type === "paragraph"
     ? {
-        type: "paragraph",
         content: mapInline(child.content),
+        type: "paragraph",
       }
     : richNodeToListItemChild(mapRichNode(child, mapInline));
 }
@@ -163,8 +163,8 @@ export function richNodeToListItemChild(
 ): ComposedRichListItemChild {
   if (node.type === "paragraph" || node.type === "heading") {
     return {
-      type: "paragraph",
       content: [...node.content],
+      type: "paragraph",
     };
   }
   return {
@@ -194,9 +194,9 @@ function mapRichListItem(
   mapInline: (content: ComposedInlineContent[]) => ComposedInlineContent[],
 ): ComposedRichListItem {
   return {
-    type: "list_item",
     content: item.content.map((child) =>
       mapRichListItemChild(child, mapInline),
     ),
+    type: "list_item",
   };
 }

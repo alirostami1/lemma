@@ -30,8 +30,8 @@ export function markdownToRichContent(markdown: string): ComposedRichContent {
   const lines = markdown.replace(/\r\n?/g, "\n").split("\n");
   const result = parseMarkdownBlocks(lines, 0, 0);
   return normalizeRichContent({
-    type: "doc",
     content: result.nodes,
+    type: "doc",
   });
 }
 
@@ -61,8 +61,8 @@ export function toggleMarkdownFormat({
 
   return {
     markdown: `${before}${nextSelected}${after}`,
-    selectionStart: range.start,
     selectionEnd: range.start + nextSelected.length,
+    selectionStart: range.start,
   };
 }
 
@@ -150,20 +150,20 @@ function parseMarkdownBlocks(
     const heading = parseHeading(line);
     if (heading) {
       nodes.push({
-        type: "heading",
-        level: heading.level,
         content: parseInlineBlueprint(heading.text),
+        level: heading.level,
+        type: "heading",
       });
     } else {
       nodes.push({
-        type: "paragraph",
         content: parseInlineBlueprint(line.trim()),
+        type: "paragraph",
       });
     }
     index += 1;
   }
 
-  return { nodes, nextIndex: index };
+  return { nextIndex: index, nodes };
 }
 
 function parseMarkdownList(
@@ -197,23 +197,23 @@ function parseMarkdownList(
     if (listLine.kind !== kind) break;
 
     items.push({
-      type: "list_item",
       content: [
         {
-          type: "paragraph",
           content: parseInlineBlueprint(listLine.text),
+          type: "paragraph",
         },
       ],
+      type: "list_item",
     });
     index += 1;
   }
 
   return {
-    node: {
-      type: kind,
-      items,
-    } as Extract<ComposedRichContentNode, { type: ListKind }>,
     nextIndex: index,
+    node: {
+      items,
+      type: kind,
+    } as Extract<ComposedRichContentNode, { type: ListKind }>,
   };
 }
 
@@ -246,7 +246,7 @@ function getSelectedLineRange(
   const start = markdown.lastIndexOf("\n", Math.max(0, selectionStart - 1)) + 1;
   const endLineBreak = markdown.indexOf("\n", selectionEnd);
   const end = endLineBreak === -1 ? markdown.length : endLineBreak;
-  return { start, end };
+  return { end, start };
 }
 
 function applyMarkdownFormatToLine(

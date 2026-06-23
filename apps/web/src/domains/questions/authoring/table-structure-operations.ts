@@ -96,9 +96,9 @@ export function duplicateTableRow(
     .map((cell) =>
       duplicateTableCell({
         cell,
+        responseFields,
         rowId: nextRow.id,
         usedCellIds,
-        responseFields,
       }),
     );
 
@@ -107,9 +107,9 @@ export function duplicateTableRow(
 
   return {
     ...model,
-    rows,
     cells: [...model.cells, ...duplicatedCells],
     responseFields,
+    rows,
   };
 }
 
@@ -142,8 +142,8 @@ export function duplicateTableColumn(
       duplicateTableCell({
         cell,
         columnId: nextColumn.id,
-        usedCellIds,
         responseFields,
+        usedCellIds,
       }),
     );
 
@@ -152,8 +152,8 @@ export function duplicateTableColumn(
 
   return {
     ...model,
-    columns,
     cells: [...model.cells, ...duplicatedCells],
+    columns,
     responseFields,
   };
 }
@@ -164,8 +164,8 @@ export function deleteTableRow(
 ): TableEditorModel {
   return pruneUnusedResponseFields({
     ...model,
-    rows: model.rows.filter((row) => row.id !== rowId),
     cells: model.cells.filter((cell) => cell.rowId !== rowId),
+    rows: model.rows.filter((row) => row.id !== rowId),
   });
 }
 
@@ -175,8 +175,8 @@ export function deleteTableColumn(
 ): TableEditorModel {
   return pruneUnusedResponseFields({
     ...model,
-    columns: model.columns.filter((column) => column.id !== columnId),
     cells: model.cells.filter((cell) => cell.columnId !== columnId),
+    columns: model.columns.filter((column) => column.id !== columnId),
   });
 }
 

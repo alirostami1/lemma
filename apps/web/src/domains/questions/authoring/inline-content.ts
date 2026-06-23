@@ -1,3 +1,8 @@
+import {
+  formatReferenceToken,
+  isSimpleReferenceIdentifier,
+} from "../reference-names";
+
 export type ComposedInlineContent =
   | {
       type: "text";
@@ -15,20 +20,19 @@ export type RangeCellOffset = {
   columnOffset: number;
 };
 
-const REFERENCE_ID_PATTERN = /^[A-Za-z][A-Za-z0-9_-]*$/u;
 const BLUEPRINT_REFERENCE_PATTERN =
-  /\{\{\s*\.\s*([A-Za-z][A-Za-z0-9_-]*)(?:\s*\[\s*(\d+)\s*,\s*(\d+)\s*\])?\s*\}\}/gu;
+  /\{\{\s*\.\s*(?:([A-Za-z][A-Za-z0-9_-]*)|\[\s*"((?:[^"\\]|\\.)*)"\s*\])(?:\s*\[\s*(\d+)\s*,\s*(\d+)\s*\])?\s*\}\}/gu;
 
 export function normalizeReferenceId(input: string) {
   return input.trim().replace(/^\./u, "").trim();
 }
 
 export function isValidReferenceId(input: string) {
-  return REFERENCE_ID_PATTERN.test(input);
+  return isSimpleReferenceIdentifier(input);
 }
 
 export function createTextInlineContent(text: string): ComposedInlineContent[] {
-  return text.length > 0 ? [{ type: "text", text }] : [];
+  return text.length > 0 ? [{ text, type: "text" }] : [];
 }
 
 export const plainTextToInlineContent = createTextInlineContent;
@@ -38,23 +42,32 @@ export function parseInlineBlueprint(input: string): ComposedInlineContent[] {
   let lastIndex = 0;
 
   for (const match of input.matchAll(BLUEPRINT_REFERENCE_PATTERN)) {
-    const [raw, referenceId, rowOffset, columnOffset] = match;
+    const [
+      raw,
+      simpleReferenceId,
+      bracketReferenceId,
+      rowOffset,
+      columnOffset,
+    ] = match;
     const startIndex = match.index ?? 0;
+    const referenceId = simpleReferenceId
+      ? simpleReferenceId
+      : decodeBracketReferenceId(bracketReferenceId ?? "");
     if (startIndex > lastIndex) {
       content.push({
-        type: "text",
         text: input.slice(lastIndex, startIndex),
+        type: "text",
       });
     }
     content.push({
-      type: "reference",
       referenceId,
+      type: "reference",
       ...(rowOffset === undefined || columnOffset === undefined
         ? {}
         : {
             rangeCell: {
-              rowOffset: Number(rowOffset),
               columnOffset: Number(columnOffset),
+              rowOffset: Number(rowOffset),
             },
           }),
     });
@@ -63,8 +76,8 @@ export function parseInlineBlueprint(input: string): ComposedInlineContent[] {
 
   if (lastIndex < input.length) {
     content.push({
-      type: "text",
       text: input.slice(lastIndex),
+      type: "text",
     });
   }
 
@@ -82,10 +95,7 @@ export function formatInlineBlueprint(content: ComposedInlineContent[]) {
 export function formatInlineReference(
   item: Extract<ComposedInlineContent, { type: "reference" }>,
 ) {
-  const rangeCell = item.rangeCell
-    ? `[${item.rangeCell.rowOffset},${item.rangeCell.columnOffset}]`
-    : "";
-  return `{{ .${item.referenceId}${rangeCell} }}`;
+  return formatReferenceToken(item.referenceId, item.rangeCell);
 }
 
 export function inlineContentToPlainText(content: ComposedInlineContent[]) {
@@ -137,4 +147,12 @@ function mergeAdjacentText(content: ComposedInlineContent[]) {
     merged.push(item);
   }
   return merged;
+}
+
+function decodeBracketReferenceId(value: string): string {
+  try {
+    return JSON.parse(`"${value}"`) as string;
+  } catch {
+    return value;
+  }
 }

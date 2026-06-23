@@ -36,26 +36,26 @@ export function ensureTableCell(
 ): { model: TableEditorModel; cell: TableEditorCell } {
   const existing = getTableCellAt(model, rowId, columnId);
   if (existing) {
-    return { model, cell: existing };
+    return { cell: existing, model };
   }
 
   const cell: TableEditorContentCell = {
+    columnId,
+    content: [],
     id: nextAvailableId(
       "cell",
       model.cells.map((item) => item.id),
     ),
     rowId,
-    columnId,
     type: "content",
-    content: [],
   };
 
   return {
+    cell,
     model: {
       ...model,
       cells: [...model.cells, cell],
     },
-    cell,
   };
 }
 
@@ -77,11 +77,11 @@ export function makeContentCell(
   cellId: string,
 ): TableEditorModel {
   return updateTableCell(model, cellId, (cell) => ({
+    columnId: cell.columnId,
+    content: cell.type === "content" ? [...cell.content] : [],
     id: cell.id,
     rowId: cell.rowId,
-    columnId: cell.columnId,
     type: "content",
-    content: cell.type === "content" ? [...cell.content] : [],
   }));
 }
 
@@ -99,11 +99,11 @@ export function makeResponseCell(
   }
 
   const { cell: responseCell, responseField } = createAnswerCellForPosition({
-    model,
     cellId: cell.id,
-    rowId: cell.rowId,
     columnId: cell.columnId,
+    model,
     previousCell: cell,
+    rowId: cell.rowId,
   });
 
   return {
@@ -120,7 +120,7 @@ export function ensureResponseFieldForCell(
   cellId: string,
 ): TableEditorModel {
   const cell = getTableCell(model, cellId);
-  if (!cell || cell.type !== "response") {
+  if (cell?.type !== "response") {
     return model;
   }
 
@@ -136,7 +136,7 @@ export function repairMissingAnswerFieldForCell(
   cellId: string,
 ): TableEditorModel {
   const cell = getTableCell(model, cellId);
-  if (!cell || cell.type !== "response") {
+  if (cell?.type !== "response") {
     return model;
   }
 
@@ -146,9 +146,9 @@ export function repairMissingAnswerFieldForCell(
 
   const responseField: TableResponseField = {
     id: cell.responseFieldId,
-    type: DEFAULT_TABLE_ANSWER_FIELD_TYPE,
     label: cell.label ?? nextTableAnswerLabel(model),
     required: true,
+    type: DEFAULT_TABLE_ANSWER_FIELD_TYPE,
   };
 
   return {
@@ -163,7 +163,7 @@ export function updateResponseFieldForCell(
   update: (field: TableResponseField) => TableResponseField,
 ): TableEditorModel {
   const cell = getTableCell(model, cellId);
-  if (!cell || cell.type !== "response") {
+  if (cell?.type !== "response") {
     return model;
   }
 
@@ -233,10 +233,10 @@ export function duplicateTableCell({
   if (cell.type === "content") {
     return {
       ...cell,
-      id: nextCellId,
-      rowId,
       columnId,
       content: [...cell.content],
+      id: nextCellId,
+      rowId,
     };
   }
 
@@ -244,25 +244,25 @@ export function duplicateTableCell({
     modelForDuplicate(responseFields),
     {
       label: cell.label,
+      required: responseFields.find(
+        (field) => field.id === cell.responseFieldId,
+      )?.required,
       type:
         cell.type === "response"
           ? responseFields.find((field) => field.id === cell.responseFieldId)
               ?.type
           : undefined,
-      required: responseFields.find(
-        (field) => field.id === cell.responseFieldId,
-      )?.required,
     },
   );
   responseFields.push(responseField);
 
   return {
     ...cell,
-    id: nextCellId,
-    rowId,
     columnId,
-    responseFieldId: responseField.id,
+    id: nextCellId,
     label: cell.label ?? responseField.label,
+    responseFieldId: responseField.id,
+    rowId,
   };
 }
 
@@ -287,18 +287,18 @@ function createAnswerCellForPosition({
   });
 
   return {
-    responseField,
     cell: {
-      id: cellId,
-      rowId,
       columnId,
-      type: "response",
-      responseFieldId: responseField.id,
       correctValueSource: { type: "literal", value: "" },
-      points: 1,
       grading: { mode: "exact" },
+      id: cellId,
       label: responseField.label,
+      points: 1,
+      responseFieldId: responseField.id,
+      rowId,
+      type: "response",
     },
+    responseField,
   };
 }
 
@@ -306,13 +306,13 @@ function modelForDuplicate(
   responseFields: TableResponseField[],
 ): TableEditorModel {
   return {
-    prompt: "",
+    cells: [],
     columns: [],
+    prompt: "",
+    responseFields,
     rows: [],
     showColumnNames: true,
     showRowNames: true,
-    responseFields,
-    cells: [],
   };
 }
 
@@ -328,9 +328,9 @@ function createNextTableAnswerField(
 
   return {
     id,
-    type: input?.type ?? DEFAULT_TABLE_ANSWER_FIELD_TYPE,
     label: input?.label ?? nextTableAnswerLabel(model),
     required: input?.required ?? true,
+    type: input?.type ?? DEFAULT_TABLE_ANSWER_FIELD_TYPE,
   };
 }
 

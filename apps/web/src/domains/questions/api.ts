@@ -1,26 +1,34 @@
 import {
+  attachQuestionBlueprintDraftSourceFile as attachQuestionBlueprintDraftSourceFileGenerated,
+  createQuestionBlueprintDraft as createQuestionBlueprintDraftGenerated,
   createQuestionBlueprint as createQuestionBlueprintGenerated,
   createQuestionGenerationRun as createQuestionGenerationRunGenerated,
   createQuestionSet as createQuestionSetGenerated,
+  discardQuestionBlueprintDraft as discardQuestionBlueprintDraftGenerated,
   getQuestionBlueprintAuthoring as getQuestionBlueprintAuthoringGenerated,
+  getQuestionBlueprintDraft as getQuestionBlueprintDraftGenerated,
   getQuestionBlueprint as getQuestionBlueprintGenerated,
-  getQuestionBlueprintVersionAuthoring as getQuestionBlueprintVersionAuthoringGenerated,
   getQuestion as getQuestionGenerated,
   getQuestionGenerationRun as getQuestionGenerationRunGenerated,
   getQuestionSet as getQuestionSetGenerated,
   gradeQuestion as gradeQuestionGenerated,
+  listQuestionBlueprintDrafts as listQuestionBlueprintDraftsGenerated,
   listQuestionBlueprints as listQuestionBlueprintsGenerated,
-  listQuestionBlueprintVersions as listQuestionBlueprintVersionsGenerated,
   listQuestionSetQuestions as listQuestionSetQuestionsGenerated,
   listQuestionSets as listQuestionSetsGenerated,
+  publishQuestionBlueprintDraft as publishQuestionBlueprintDraftGenerated,
   retryQuestionGenerationRun as retryQuestionGenerationRunGenerated,
+  updateQuestionBlueprintDraft as updateQuestionBlueprintDraftGenerated,
   updateQuestionBlueprint as updateQuestionBlueprintGenerated,
 } from "#/api/generated/questions/questions";
 import {
+  mapPublishQuestionBlueprintDraftResponse,
   mapQuestionBlueprintAuthoringResponse,
+  mapQuestionBlueprintDraftResponse,
+  mapQuestionBlueprintDraftSummariesResponse,
+  mapQuestionBlueprintDraftsResponse,
   mapQuestionBlueprintResponse,
   mapQuestionBlueprintsResponse,
-  mapQuestionBlueprintVersionsResponse,
   mapQuestionGenerationRunResponse,
   mapQuestionResponse,
   mapQuestionSetResponse,
@@ -28,21 +36,26 @@ import {
   mapQuestionsResponse,
 } from "./mappers";
 import type {
+  AttachQuestionBlueprintDraftSourceFileInput,
+  CreateQuestionBlueprintDraftInput,
   CreateQuestionBlueprintInput,
   CreateQuestionGenerationRunInput,
   CreateQuestionSetInput,
   GetQuestionBlueprintInput,
-  GetQuestionBlueprintVersionInput,
   GetQuestionGenerationRunInput,
   GetQuestionInput,
   GradeQuestionInput,
+  ListQuestionBlueprintDraftsInput,
   ListQuestionBlueprintsInput,
   ListQuestionSetItemsInput,
   ListQuestionSetsInput,
+  PublishQuestionBlueprintDraftResult,
   QuestionBlueprintAuthoringResult,
+  QuestionBlueprintDraftResult,
+  QuestionBlueprintDraftSummariesPage,
+  QuestionBlueprintDraftsPage,
   QuestionBlueprintResult,
   QuestionBlueprintsPage,
-  QuestionBlueprintVersionsResult,
   QuestionGenerationRunResult,
   QuestionGradeResult,
   QuestionResult,
@@ -50,8 +63,84 @@ import type {
   QuestionSetsPage,
   QuestionsPage,
   RetryQuestionGenerationRunInput,
+  UpdateQuestionBlueprintDraftInput,
   UpdateQuestionBlueprintInput,
 } from "./model";
+
+export async function listQuestionBlueprintDrafts(input?: {
+  limit?: number;
+  cursor?: string;
+}): Promise<QuestionBlueprintDraftsPage> {
+  return mapQuestionBlueprintDraftsResponse(
+    await listQuestionBlueprintDraftsGenerated(input),
+  );
+}
+
+export async function listQuestionBlueprintDraftSummaries(
+  input?: ListQuestionBlueprintDraftsInput,
+): Promise<QuestionBlueprintDraftSummariesPage> {
+  const { status, ...query } = input ?? {};
+  const response = await listQuestionBlueprintDraftsGenerated(query);
+  const filteredDrafts = status
+    ? response.drafts.filter((draft) => draft.status === status)
+    : response.drafts;
+
+  return mapQuestionBlueprintDraftSummariesResponse({
+    ...response,
+    drafts: filteredDrafts,
+  });
+}
+
+export async function getQuestionBlueprintDraft(
+  draftId: string,
+): Promise<QuestionBlueprintDraftResult> {
+  return mapQuestionBlueprintDraftResponse(
+    await getQuestionBlueprintDraftGenerated(draftId),
+  );
+}
+
+export async function createQuestionBlueprintDraft(
+  input: CreateQuestionBlueprintDraftInput,
+): Promise<QuestionBlueprintDraftResult> {
+  return mapQuestionBlueprintDraftResponse(
+    await createQuestionBlueprintDraftGenerated(input),
+  );
+}
+
+export async function updateQuestionBlueprintDraft(
+  input: UpdateQuestionBlueprintDraftInput,
+): Promise<QuestionBlueprintDraftResult> {
+  const { draftId, ...request } = input;
+  return mapQuestionBlueprintDraftResponse(
+    await updateQuestionBlueprintDraftGenerated(draftId, request),
+  );
+}
+
+export async function attachQuestionBlueprintDraftSourceFile(
+  input: AttachQuestionBlueprintDraftSourceFileInput,
+): Promise<QuestionBlueprintDraftResult> {
+  return mapQuestionBlueprintDraftResponse(
+    await attachQuestionBlueprintDraftSourceFileGenerated(input.draftId, {
+      fileId: input.fileId,
+      sourceId: input.sourceId,
+    }),
+  );
+}
+
+export async function publishQuestionBlueprintDraft(
+  draftId: string,
+): Promise<PublishQuestionBlueprintDraftResult> {
+  return mapPublishQuestionBlueprintDraftResponse(
+    await publishQuestionBlueprintDraftGenerated(draftId),
+  );
+}
+
+export async function discardQuestionBlueprintDraft(
+  draftId: string,
+): Promise<void> {
+  await discardQuestionBlueprintDraftGenerated(draftId);
+}
+
 import {
   toCreateQuestionBlueprintRequest,
   toCreateQuestionGenerationRunRequest,
@@ -119,26 +208,6 @@ export async function getQuestionBlueprintAuthoring({
 }: GetQuestionBlueprintInput): Promise<QuestionBlueprintAuthoringResult> {
   return mapQuestionBlueprintAuthoringResponse(
     await getQuestionBlueprintAuthoringGenerated(questionBlueprintId),
-  );
-}
-
-export async function listQuestionBlueprintVersions({
-  questionBlueprintId,
-}: GetQuestionBlueprintInput): Promise<QuestionBlueprintVersionsResult> {
-  return mapQuestionBlueprintVersionsResponse(
-    await listQuestionBlueprintVersionsGenerated(questionBlueprintId),
-  );
-}
-
-export async function getQuestionBlueprintVersionAuthoring({
-  questionBlueprintId,
-  questionBlueprintVersionId,
-}: GetQuestionBlueprintVersionInput): Promise<QuestionBlueprintAuthoringResult> {
-  return mapQuestionBlueprintAuthoringResponse(
-    await getQuestionBlueprintVersionAuthoringGenerated(
-      questionBlueprintId,
-      questionBlueprintVersionId,
-    ),
   );
 }
 
