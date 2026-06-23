@@ -128,6 +128,12 @@ Generated-output rules and commands live in
 
 Packages must use public exports. Do not import from another package's `src/*`.
 The architecture check enforces this.
+Source-time Node/tsx scripts should use `--conditions=source` so workspace imports
+resolve to source exports.
+Vite apps that intentionally bundle workspace source exports should set
+`resolve.conditions: ["source"]`.
+Runtime and build consumers should continue to use `import`/`default` exports to
+`dist/*`.
 
 ## Migrations
 
