@@ -6,6 +6,7 @@ import type {
 } from "@lemma/db/tables";
 import type { JsonObject } from "@lemma/domain";
 import type { Insertable, Selectable, Updateable } from "kysely";
+import { sql } from "kysely";
 import {
   type Question,
   type QuestionBlueprint,
@@ -98,10 +99,8 @@ export function mapQuestionBlueprintToUpdate(
   };
 }
 
-function mapJsonArrayToDb(
-  value: readonly JsonObject[],
-): Insertable<QuestionBlueprints>["sources"] {
-  return value as Insertable<QuestionBlueprints>["sources"];
+export function mapJsonArrayToDb(value: readonly JsonObject[]) {
+  return sql`${JSON.stringify(value)}::jsonb`;
 }
 
 export function mapQuestionRowToDomain(

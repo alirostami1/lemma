@@ -21,16 +21,36 @@ const createdAt = new Date("2026-06-18T00:00:00.000Z");
 describe("KyselyQuestionMappers", () => {
   it("maps blueprint rows with document and sources on the blueprint", () => {
     const blueprint = mapQuestionBlueprintRowToDomain(blueprintRow());
+    const insertSources = mapQuestionBlueprintToInsert(blueprint).sources;
+    const updateSources = mapQuestionBlueprintToUpdate(blueprint).sources;
 
     assert.equal(blueprint.document.schemaVersion, 1);
     assert.equal(blueprint.sources[0]?.sourceId, "source_1");
+    assert.equal(typeof insertSources, "object");
     assert.equal(
-      typeof mapQuestionBlueprintToInsert(blueprint).sources,
-      "object",
+      typeof (insertSources as { toOperationNode?: unknown }).toOperationNode,
+      "function",
+    );
+    assert.equal(typeof updateSources, "object");
+    assert.equal(
+      typeof (updateSources as { toOperationNode?: unknown }).toOperationNode,
+      "function",
+    );
+  });
+
+  it("maps empty blueprint sources as a jsonb expression", () => {
+    const blueprint = mapQuestionBlueprintRowToDomain(emptyBlueprintRow());
+    const insertSources = mapQuestionBlueprintToInsert(blueprint).sources;
+    const updateSources = mapQuestionBlueprintToUpdate(blueprint).sources;
+
+    assert.deepEqual(blueprint.sources, []);
+    assert.equal(
+      typeof (insertSources as { toOperationNode?: unknown }).toOperationNode,
+      "function",
     );
     assert.equal(
-      typeof mapQuestionBlueprintToUpdate(blueprint).sources,
-      "object",
+      typeof (updateSources as { toOperationNode?: unknown }).toOperationNode,
+      "function",
     );
   });
 
@@ -82,6 +102,30 @@ function blueprintRow(): Parameters<typeof mapQuestionBlueprintRowToDomain>[0] {
     name: "Blueprint",
     ownerUserId: userId,
     sources: [source()],
+    status: "active",
+    updatedAt: createdAt,
+    visibility: "private",
+  };
+}
+
+function emptyBlueprintRow(): Parameters<
+  typeof mapQuestionBlueprintRowToDomain
+>[0] {
+  return {
+    archivedAt: null,
+    createdAt,
+    createdByUserId: userId,
+    description: null,
+    document: {
+      blocks: [],
+      references: [],
+      responseFields: [],
+      schemaVersion: 1,
+    },
+    id,
+    name: "Blueprint",
+    ownerUserId: userId,
+    sources: [],
     status: "active",
     updatedAt: createdAt,
     visibility: "private",

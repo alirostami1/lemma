@@ -12,6 +12,7 @@ import {
   reconstituteQuestionBlueprintDraft,
   type UserId,
 } from "../domain/index.js";
+import { mapJsonArrayToDb } from "./KyselyQuestionMappers.js";
 
 export class KyselyQuestionBlueprintDraftRepository {
   constructor(private readonly db: DatabaseExecutor) {}
@@ -130,9 +131,7 @@ function mapInsert(
     name: draft.name,
     ownerUserId: draft.ownerUserId,
     publishedAt: draft.publishedAt,
-    sources: JSON.stringify(
-      draft.sources,
-    ) as Insertable<QuestionBlueprintDrafts>["sources"],
+    sources: mapJsonArrayToDb(draft.sources),
     status: draft.status,
     updatedAt: draft.updatedAt,
   };
@@ -151,9 +150,7 @@ function mapUpdate(
     lastSavedAt: draft.lastSavedAt,
     name: draft.name,
     publishedAt: draft.publishedAt,
-    sources: JSON.stringify(
-      draft.sources,
-    ) as Updateable<QuestionBlueprintDrafts>["sources"],
+    sources: mapJsonArrayToDb(draft.sources),
     status: draft.status,
     updatedAt: draft.updatedAt,
   };
