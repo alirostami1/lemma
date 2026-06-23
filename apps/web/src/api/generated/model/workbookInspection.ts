@@ -7,12 +7,12 @@
 
 export interface WorkbookInspection {
   /** @minimum 0 */
-  sheetCount: number;
-  /** @minimum 0 */
   cellCount: number;
+  forbiddenFeatureFindings: string[];
   /** @minimum 0 */
   formulaCount: number;
-  forbiddenFeatureFindings: string[];
   /** @nullable */
   libreOfficeVersion: string | null;
+  /** @minimum 0 */
+  sheetCount: number;
 }

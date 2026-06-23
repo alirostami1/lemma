@@ -7,6 +7,6 @@
 import type { RichTextNodeType } from "./richTextNodeType.ts";
 
 export interface RichTextNode {
-  type: RichTextNodeType;
   text: string;
+  type: RichTextNodeType;
 }

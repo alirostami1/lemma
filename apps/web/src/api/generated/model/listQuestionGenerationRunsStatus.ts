@@ -9,10 +9,10 @@ export type ListQuestionGenerationRunsStatus =
   (typeof ListQuestionGenerationRunsStatus)[keyof typeof ListQuestionGenerationRunsStatus];
 
 export const ListQuestionGenerationRunsStatus = {
-  queued: "queued",
-  waiting_for_workbook_calculation: "waiting_for_workbook_calculation",
-  materializing: "materializing",
-  succeeded: "succeeded",
-  failed: "failed",
   cancelled: "cancelled",
+  failed: "failed",
+  materializing: "materializing",
+  queued: "queued",
+  succeeded: "succeeded",
+  waiting_for_workbook_calculation: "waiting_for_workbook_calculation",
 } as const;

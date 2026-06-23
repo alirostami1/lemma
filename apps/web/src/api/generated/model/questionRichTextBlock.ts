@@ -8,8 +8,8 @@ import type { QuestionRichTextBlockType } from "./questionRichTextBlockType.ts";
 import type { RichContent } from "./richContent.ts";
 
 export interface QuestionRichTextBlock {
+  content: RichContent;
   /** @minLength 1 */
   id: string;
   type: QuestionRichTextBlockType;
-  content: RichContent;
 }

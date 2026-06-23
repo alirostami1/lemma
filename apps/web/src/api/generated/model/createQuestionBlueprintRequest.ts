@@ -10,16 +10,16 @@ import type { QuestionBlueprintSource } from "./questionBlueprintSource.ts";
 
 export interface CreateQuestionBlueprintRequest {
   /**
-   * @minLength 1
-   * @maxLength 160
-   */
-  name: string;
-  /**
    * @maxLength 1000
    * @nullable
    */
   description?: string | null;
-  visibility?: CreateQuestionBlueprintRequestVisibility;
   document: QuestionBlueprintDocument;
+  /**
+   * @minLength 1
+   * @maxLength 160
+   */
+  name: string;
   sources: QuestionBlueprintSource[];
+  visibility?: CreateQuestionBlueprintRequestVisibility;
 }

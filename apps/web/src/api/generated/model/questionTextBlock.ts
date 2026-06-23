@@ -8,8 +8,8 @@ import type { QuestionTextBlockType } from "./questionTextBlockType.ts";
 import type { RenderedInlineContent } from "./renderedInlineContent.ts";
 
 export interface QuestionTextBlock {
+  content: RenderedInlineContent[];
   /** @minLength 1 */
   id: string;
   type: QuestionTextBlockType;
-  content: RenderedInlineContent[];
 }

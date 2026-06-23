@@ -8,6 +8,6 @@ import type { QuestionAnswerResponsesItem } from "./questionAnswerResponsesItem.
 import type { QuestionAnswerSchemaVersion } from "./questionAnswerSchemaVersion.ts";
 
 export interface QuestionAnswer {
-  schemaVersion: QuestionAnswerSchemaVersion;
   responses: QuestionAnswerResponsesItem[];
+  schemaVersion: QuestionAnswerSchemaVersion;
 }

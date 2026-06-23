@@ -9,9 +9,9 @@ export type FileUploadStatus =
   (typeof FileUploadStatus)[keyof typeof FileUploadStatus];
 
 export const FileUploadStatus = {
+  cancelled: "cancelled",
+  expired: "expired",
+  failed: "failed",
   initiated: "initiated",
   verified: "verified",
-  failed: "failed",
-  expired: "expired",
-  cancelled: "cancelled",
 } as const;

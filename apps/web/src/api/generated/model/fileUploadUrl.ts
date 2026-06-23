@@ -8,9 +8,9 @@ import type { FileUploadUrlHeaders } from "./fileUploadUrlHeaders.ts";
 import type { FileUploadUrlMethod } from "./fileUploadUrlMethod.ts";
 
 export interface FileUploadUrl {
-  url: string;
-  method: FileUploadUrlMethod;
   /** @exclusiveMinimum 0 */
   expiresInSeconds: number;
   headers: FileUploadUrlHeaders;
+  method: FileUploadUrlMethod;
+  url: string;
 }

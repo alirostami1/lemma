@@ -9,7 +9,7 @@ import type { QuestionBodySchemaVersion } from "./questionBodySchemaVersion.ts";
 import type { QuestionResponseField } from "./questionResponseField.ts";
 
 export interface QuestionBody {
-  schemaVersion: QuestionBodySchemaVersion;
   blocks: QuestionBlock[];
   responseFields: QuestionResponseField[];
+  schemaVersion: QuestionBodySchemaVersion;
 }

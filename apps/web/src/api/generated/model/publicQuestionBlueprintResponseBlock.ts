@@ -9,9 +9,9 @@ import type { PublicQuestionBlueprintResponseBlockType } from "./publicQuestionB
 export interface PublicQuestionBlueprintResponseBlock {
   /** @minLength 1 */
   id: string;
-  type: PublicQuestionBlueprintResponseBlockType;
-  /** @minLength 1 */
-  responseFieldId: string;
   label?: string;
   placeholder?: string;
+  /** @minLength 1 */
+  responseFieldId: string;
+  type: PublicQuestionBlueprintResponseBlockType;
 }

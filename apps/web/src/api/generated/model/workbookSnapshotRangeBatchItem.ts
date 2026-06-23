@@ -8,10 +8,10 @@ import type { WorkbookSnapshotRange } from "./workbookSnapshotRange.ts";
 import type { WorkbookSnapshotRangeBatchItemStatus } from "./workbookSnapshotRangeBatchItemStatus.ts";
 
 export interface WorkbookSnapshotRangeBatchItem {
+  /** @nullable */
+  errorMessage: string | null;
+  range: WorkbookSnapshotRange | null;
   /** @minLength 1 */
   ref: string;
   status: WorkbookSnapshotRangeBatchItemStatus;
-  range: WorkbookSnapshotRange | null;
-  /** @nullable */
-  errorMessage: string | null;
 }

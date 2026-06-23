@@ -8,7 +8,7 @@ import type { QuestionProducerSchemaVersion } from "./questionProducerSchemaVers
 import type { QuestionProducerSource } from "./questionProducerSource.ts";
 
 export interface QuestionProducer {
-  schemaVersion: QuestionProducerSchemaVersion;
   compiler: string;
+  schemaVersion: QuestionProducerSchemaVersion;
   source?: QuestionProducerSource;
 }

@@ -60,7 +60,7 @@ export const getGetHealthQueryOptions = <
     signal,
   }) => getHealth({ signal, ...requestOptions });
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+  return { queryFn, queryKey, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getHealth>>,
     TError,
     TData

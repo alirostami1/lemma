@@ -7,6 +7,6 @@
 import type { RenderedInlineTextType } from "./renderedInlineTextType.ts";
 
 export interface RenderedInlineText {
-  type: RenderedInlineTextType;
   text: string;
+  type: RenderedInlineTextType;
 }

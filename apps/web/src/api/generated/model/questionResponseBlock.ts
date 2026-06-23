@@ -9,9 +9,9 @@ import type { QuestionResponseBlockType } from "./questionResponseBlockType.ts";
 export interface QuestionResponseBlock {
   /** @minLength 1 */
   id: string;
-  type: QuestionResponseBlockType;
-  /** @minLength 1 */
-  responseFieldId: string;
   label?: string;
   placeholder?: string;
+  /** @minLength 1 */
+  responseFieldId: string;
+  type: QuestionResponseBlockType;
 }

@@ -8,7 +8,7 @@
 export type FileStatus = (typeof FileStatus)[keyof typeof FileStatus];
 
 export const FileStatus = {
-  uploaded: "uploaded",
-  deleting: "deleting",
   deleted: "deleted",
+  deleting: "deleting",
+  uploaded: "uploaded",
 } as const;

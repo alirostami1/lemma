@@ -7,8 +7,8 @@
 import type { RenderedInlineValueType } from "./renderedInlineValueType.ts";
 
 export interface RenderedInlineValue {
-  type: RenderedInlineValueType;
+  displayValue: string;
   /** @minLength 1 */
   referenceId: string;
-  displayValue: string;
+  type: RenderedInlineValueType;
 }

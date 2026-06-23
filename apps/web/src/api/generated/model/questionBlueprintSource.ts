@@ -7,11 +7,14 @@
 import type { QuestionBlueprintSourceType } from "./questionBlueprintSourceType.ts";
 
 export interface QuestionBlueprintSource {
-  type: QuestionBlueprintSourceType;
-  /** @minLength 1 */
-  sourceId: string;
   /** @minLength 1 */
   name: string;
+  /**
+   * Blueprint-local source identifier.
+   * @minLength 1
+   */
+  sourceId: string;
+  type: QuestionBlueprintSourceType;
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
   workbookId: string;
 }

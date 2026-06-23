@@ -9,15 +9,15 @@ import type { QuestionBlueprintResponseBlockType } from "./questionBlueprintResp
 import type { QuestionValueExpression } from "./questionValueExpression.ts";
 
 export interface QuestionBlueprintResponseBlock {
+  correctValueSource?: QuestionValueExpression;
+  grading: QuestionBlueprintGrading;
   /** @minLength 1 */
   id: string;
-  type: QuestionBlueprintResponseBlockType;
-  /** @minLength 1 */
-  responseFieldId: string;
   label?: string;
   placeholder?: string;
-  correctValueSource?: QuestionValueExpression;
   /** @exclusiveMinimum 0 */
   points: number;
-  grading: QuestionBlueprintGrading;
+  /** @minLength 1 */
+  responseFieldId: string;
+  type: QuestionBlueprintResponseBlockType;
 }

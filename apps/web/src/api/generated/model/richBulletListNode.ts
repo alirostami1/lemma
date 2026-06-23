@@ -8,6 +8,6 @@ import type { RichBulletListNodeType } from "./richBulletListNodeType.ts";
 import type { RichListItemNode } from "./richListItemNode.ts";
 
 export interface RichBulletListNode {
-  type: RichBulletListNodeType;
   content: RichListItemNode[];
+  type: RichBulletListNodeType;
 }

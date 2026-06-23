@@ -8,42 +8,31 @@ import type { QuestionBlueprintAuthoringStatus } from "./questionBlueprintAuthor
 import type { QuestionBlueprintAuthoringVisibility } from "./questionBlueprintAuthoringVisibility.ts";
 import type { QuestionBlueprintDocument } from "./questionBlueprintDocument.ts";
 import type { QuestionBlueprintSource } from "./questionBlueprintSource.ts";
-import type { QuestionBlueprintVersion } from "./questionBlueprintVersion.ts";
 
 export interface QuestionBlueprintAuthoring {
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  id: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  ownerUserId: string;
+  /** @nullable */
+  archivedAt: string | null;
+  createdAt: string;
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
   createdByUserId: string;
-  /**
-   * @minLength 1
-   * @maxLength 160
-   */
-  name: string;
   /**
    * @maxLength 1000
    * @nullable
    */
   description: string | null;
   document: QuestionBlueprintDocument;
+  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
+  id: string;
+  /**
+   * @minLength 1
+   * @maxLength 160
+   */
+  name: string;
+  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
+  ownerUserId: string;
+  /** Blueprint-local source entries attached to this blueprint. */
   sources: QuestionBlueprintSource[];
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  currentVersionId: string;
-  /** @minimum 1 */
-  currentVersionNumber: number;
-  currentVersion: QuestionBlueprintVersion;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  selectedVersionId: string;
-  /** @minimum 1 */
-  selectedVersionNumber: number;
-  selectedVersion: QuestionBlueprintVersion;
-  versions: QuestionBlueprintVersion[];
-  visibility: QuestionBlueprintAuthoringVisibility;
   status: QuestionBlueprintAuthoringStatus;
-  /** @nullable */
-  archivedAt: string | null;
-  createdAt: string;
   updatedAt: string;
+  visibility: QuestionBlueprintAuthoringVisibility;
 }

@@ -9,18 +9,6 @@ import type { FilePurpose } from "./filePurpose.ts";
 import type { FileStatus } from "./fileStatus.ts";
 
 export interface File {
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  id: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  ownerUserId: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  createdByUserId: string;
-  /**
-   * @minLength 1
-   * @maxLength 500
-   */
-  originalName: string;
-  contentType: FileContentType;
   /**
    * @maximum 26214400
    * @exclusiveMinimum 0
@@ -28,10 +16,22 @@ export interface File {
   byteSize: number;
   /** @pattern ^[A-Fa-f0-9]{64}$ */
   checksumSha256: string;
-  status: FileStatus;
-  purpose: FilePurpose;
+  contentType: FileContentType;
+  createdAt: string;
+  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
+  createdByUserId: string;
   /** @nullable */
   deletedAt: string | null;
-  createdAt: string;
+  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
+  id: string;
+  /**
+   * @minLength 1
+   * @maxLength 500
+   */
+  originalName: string;
+  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
+  ownerUserId: string;
+  purpose: FilePurpose;
+  status: FileStatus;
   updatedAt: string;
 }

@@ -10,18 +10,18 @@ import type { QuestionValueExpression } from "./questionValueExpression.ts";
 
 export interface QuestionBlueprintTableResponseCell {
   /** @minLength 1 */
-  id: string;
-  /** @minLength 1 */
-  rowId: string;
-  /** @minLength 1 */
   columnId: string;
-  type: QuestionBlueprintTableResponseCellType;
+  correctValueSource?: QuestionValueExpression;
+  grading: QuestionBlueprintGrading;
   /** @minLength 1 */
-  responseFieldId: string;
+  id: string;
   label?: string;
   placeholder?: string;
-  correctValueSource?: QuestionValueExpression;
   /** @exclusiveMinimum 0 */
   points: number;
-  grading: QuestionBlueprintGrading;
+  /** @minLength 1 */
+  responseFieldId: string;
+  /** @minLength 1 */
+  rowId: string;
+  type: QuestionBlueprintTableResponseCellType;
 }

@@ -7,8 +7,8 @@
 import type { WorkbookEngineHealthEngine } from "./workbookEngineHealthEngine.ts";
 
 export interface WorkbookEngineHealth {
-  ok: boolean;
   engine: WorkbookEngineHealthEngine;
+  ok: boolean;
   /** @nullable */
   version: string | null;
 }

@@ -93,7 +93,7 @@ export const getListFilesQueryOptions = <
     signal,
   }) => listFiles(params, { signal, ...requestOptions });
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+  return { queryFn, queryKey, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof listFiles>>,
     TError,
     TData
@@ -238,9 +238,9 @@ export const createFileUpload = async (
 ): Promise<CreateFileUploadResponse> => {
   return authedFetch<CreateFileUploadResponse>(getCreateFileUploadUrl(), {
     ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(createFileUploadRequest),
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    method: "POST",
   });
 };
 
@@ -371,9 +371,9 @@ export const getGetFileQueryOptions = <
   }) => getFile(fileId, { signal, ...requestOptions });
 
   return {
-    queryKey,
-    queryFn,
     enabled: fileId !== null && fileId !== undefined,
+    queryFn,
+    queryKey,
     ...queryOptions,
   } as UseQueryOptions<Awaited<ReturnType<typeof getFile>>, TError, TData> & {
     queryKey: DataTag<QueryKey, TData, TError>;
@@ -536,9 +536,9 @@ export const updateFile = async (
 ): Promise<FileResponse> => {
   return authedFetch<FileResponse>(getUpdateFileUrl(fileId), {
     ...options,
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(updateFileRequest),
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    method: "PATCH",
   });
 };
 

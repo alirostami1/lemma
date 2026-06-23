@@ -6,37 +6,45 @@
  */
 import type { QuestionGenerationRunResult } from "./questionGenerationRunResult.ts";
 import type { QuestionGenerationRunStatus } from "./questionGenerationRunStatus.ts";
-import type { WorkbookSource } from "./workbookSource.ts";
 
 export interface QuestionGenerationRun {
+  /** @minimum 1 */
+  attemptNumber: number;
+  /** @minimum 0 */
+  attempts: number;
+  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
+  blueprintId: string;
+  createdAt: string;
+  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
+  createdByUserId: string;
+  /** @nullable */
+  errorMessage: string | null;
+  /** @nullable */
+  finishedAt: string | null;
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
   id: string;
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
   ownerUserId: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  createdByUserId: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  blueprintId: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  blueprintVersionId: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  targetQuestionSetId: string;
   /**
    * @minimum 1
    * @maximum 100
    */
   requestedCount: number;
-  source: WorkbookSource | null;
-  status: QuestionGenerationRunStatus;
   result: QuestionGenerationRunResult;
-  /** @nullable */
-  errorMessage: string | null;
-  /** @minimum 0 */
-  attempts: number;
+  /**
+   * @nullable
+   * @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
+   */
+  retryOfRunId: string | null;
   /** @nullable */
   startedAt: string | null;
-  /** @nullable */
-  finishedAt: string | null;
-  createdAt: string;
+  status: QuestionGenerationRunStatus;
+  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
+  targetQuestionSetId: string;
   updatedAt: string;
+  /**
+   * @nullable
+   * @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
+   */
+  workbookCalculationId: string | null;
 }

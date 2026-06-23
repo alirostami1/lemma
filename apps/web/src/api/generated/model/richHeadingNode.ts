@@ -9,7 +9,7 @@ import type { RichHeadingNodeType } from "./richHeadingNodeType.ts";
 import type { RichTextNode } from "./richTextNode.ts";
 
 export interface RichHeadingNode {
-  type: RichHeadingNodeType;
   attrs: RichHeadingNodeAttrs;
   content?: RichTextNode[];
+  type: RichHeadingNodeType;
 }

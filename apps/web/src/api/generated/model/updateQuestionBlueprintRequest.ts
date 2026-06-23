@@ -11,17 +11,17 @@ import type { UpdateQuestionBlueprintRequestVisibility } from "./updateQuestionB
 
 export interface UpdateQuestionBlueprintRequest {
   /**
-   * @minLength 1
-   * @maxLength 160
-   */
-  name?: string;
-  /**
    * @maxLength 1000
    * @nullable
    */
   description?: string | null;
-  visibility?: UpdateQuestionBlueprintRequestVisibility;
   document?: QuestionBlueprintDocument;
+  /**
+   * @minLength 1
+   * @maxLength 160
+   */
+  name?: string;
   sources?: QuestionBlueprintSource[];
   status?: UpdateQuestionBlueprintRequestStatus;
+  visibility?: UpdateQuestionBlueprintRequestVisibility;
 }

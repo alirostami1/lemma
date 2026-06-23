@@ -4,9 +4,10 @@
  * Lemma API
  * OpenAPI spec version: 0.1.0
  */
-import type { CreateWorkbookSource } from "./createWorkbookSource.ts";
 
 export interface CreateQuestionGenerationRunRequest {
+  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
+  blueprintId: string;
   /**
    * @minimum 1
    * @maximum 100
@@ -14,12 +15,4 @@ export interface CreateQuestionGenerationRunRequest {
   count: number;
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
   targetQuestionSetId: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  blueprintId: string;
-  /**
-   * @nullable
-   * @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
-   */
-  blueprintVersionId?: string | null;
-  source?: CreateWorkbookSource | null;
 }

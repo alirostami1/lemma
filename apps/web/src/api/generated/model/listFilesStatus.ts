@@ -9,7 +9,7 @@ export type ListFilesStatus =
   (typeof ListFilesStatus)[keyof typeof ListFilesStatus];
 
 export const ListFilesStatus = {
-  uploaded: "uploaded",
-  deleting: "deleting",
   deleted: "deleted",
+  deleting: "deleting",
+  uploaded: "uploaded",
 } as const;

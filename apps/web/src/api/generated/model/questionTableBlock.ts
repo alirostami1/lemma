@@ -11,12 +11,12 @@ import type { QuestionTableResponseCell } from "./questionTableResponseCell.ts";
 import type { QuestionTableRow } from "./questionTableRow.ts";
 
 export interface QuestionTableBlock {
+  cells: (QuestionTableContentCell | QuestionTableResponseCell)[];
+  columns: QuestionTableColumn[];
   /** @minLength 1 */
   id: string;
-  type: QuestionTableBlockType;
+  rows: QuestionTableRow[];
   showColumnNames: boolean;
   showRowNames: boolean;
-  columns: QuestionTableColumn[];
-  rows: QuestionTableRow[];
-  cells: (QuestionTableContentCell | QuestionTableResponseCell)[];
+  type: QuestionTableBlockType;
 }

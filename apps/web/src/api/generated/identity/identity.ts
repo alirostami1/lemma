@@ -76,7 +76,7 @@ export const getGetCurrentIdentityQueryOptions = <
     Awaited<ReturnType<typeof getCurrentIdentity>>
   > = ({ signal }) => getCurrentIdentity({ signal, ...requestOptions });
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+  return { queryFn, queryKey, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getCurrentIdentity>>,
     TError,
     TData
@@ -232,9 +232,9 @@ export const updateCurrentIdentity = async (
 ): Promise<IdentityUserResponse> => {
   return authedFetch<IdentityUserResponse>(getUpdateCurrentIdentityUrl(), {
     ...options,
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(updateCurrentUserRequest),
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    method: "PATCH",
   });
 };
 
@@ -367,7 +367,7 @@ export const getGetCurrentIdentityRolesQueryOptions = <
     Awaited<ReturnType<typeof getCurrentIdentityRoles>>
   > = ({ signal }) => getCurrentIdentityRoles({ signal, ...requestOptions });
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+  return { queryFn, queryKey, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getCurrentIdentityRoles>>,
     TError,
     TData

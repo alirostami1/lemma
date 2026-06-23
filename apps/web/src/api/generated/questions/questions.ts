@@ -23,17 +23,20 @@ import type {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { authedFetch } from "../../../lib/custom-fetch";
 import type {
+  AttachQuestionBlueprintDraftSourceFileRequest,
   BadRequestResponse,
   ConflictResponse,
+  CreateQuestionBlueprintDraftRequest,
   CreateQuestionBlueprintRequest,
   CreateQuestionGenerationRunRequest,
   CreateQuestionSetRequest,
   ForbiddenResponse,
   GradeQuestionRequest,
   GradeQuestionResponse,
+  ListQuestionBlueprintDraftsParams,
+  ListQuestionBlueprintDraftsResponse,
   ListQuestionBlueprintsParams,
   ListQuestionBlueprintsResponse,
-  ListQuestionBlueprintVersionsResponse,
   ListQuestionGenerationRunsParams,
   ListQuestionGenerationRunsResponse,
   ListQuestionSetQuestionsParams,
@@ -42,12 +45,15 @@ import type {
   ListQuestionsParams,
   ListQuestionsResponse,
   NotFoundResponse,
+  PublishQuestionBlueprintDraftResponse,
   QuestionBlueprintAuthoringResponse,
+  QuestionBlueprintDraftResponse,
   QuestionBlueprintResponse,
   QuestionGenerationRunResponse,
   QuestionResponse,
   QuestionSetResponse,
   UnauthorizedResponse,
+  UpdateQuestionBlueprintDraftRequest,
   UpdateQuestionBlueprintRequest,
   UpdateQuestionSetRequest,
   UpstreamWorkbookResponse,
@@ -121,7 +127,7 @@ export const getListQuestionSetsQueryOptions = <
     Awaited<ReturnType<typeof listQuestionSets>>
   > = ({ signal }) => listQuestionSets(params, { signal, ...requestOptions });
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+  return { queryFn, queryKey, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof listQuestionSets>>,
     TError,
     TData
@@ -309,9 +315,9 @@ export const createQuestionSet = async (
 ): Promise<QuestionSetResponse> => {
   return authedFetch<QuestionSetResponse>(getCreateQuestionSetUrl(), {
     ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(createQuestionSetRequest),
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    method: "POST",
   });
 };
 
@@ -451,9 +457,9 @@ export const getGetQuestionSetQueryOptions = <
   }) => getQuestionSet(questionSetId, { signal, ...requestOptions });
 
   return {
-    queryKey,
-    queryFn,
     enabled: questionSetId !== null && questionSetId !== undefined,
+    queryFn,
+    queryKey,
     ...queryOptions,
   } as UseQueryOptions<
     Awaited<ReturnType<typeof getQuestionSet>>,
@@ -630,9 +636,9 @@ export const updateQuestionSet = async (
     getUpdateQuestionSetUrl(questionSetId),
     {
       ...options,
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...options?.headers },
       body: JSON.stringify(updateQuestionSetRequest),
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      method: "PATCH",
     },
   );
 };
@@ -909,9 +915,9 @@ export const getListQuestionSetQuestionsQueryOptions = <
     });
 
   return {
-    queryKey,
-    queryFn,
     enabled: questionSetId !== null && questionSetId !== undefined,
+    queryFn,
+    queryKey,
     ...queryOptions,
   } as UseQueryOptions<
     Awaited<ReturnType<typeof listQuestionSetQuestions>>,
@@ -1208,6 +1214,978 @@ export const useRemoveQuestionFromSet = <
     queryClient,
   );
 };
+export const getListQuestionBlueprintDraftsUrl = (
+  params?: ListQuestionBlueprintDraftsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/question-blueprint-drafts?${stringifiedParams}`
+    : `/api/v1/question-blueprint-drafts`;
+};
+
+/**
+ * @summary List question blueprint drafts
+ */
+export const listQuestionBlueprintDrafts = async (
+  params?: ListQuestionBlueprintDraftsParams,
+  options?: RequestInit,
+): Promise<ListQuestionBlueprintDraftsResponse> => {
+  return authedFetch<ListQuestionBlueprintDraftsResponse>(
+    getListQuestionBlueprintDraftsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListQuestionBlueprintDraftsQueryKey = (
+  params?: ListQuestionBlueprintDraftsParams,
+) => {
+  return [
+    `/api/v1/question-blueprint-drafts`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListQuestionBlueprintDraftsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listQuestionBlueprintDrafts>>,
+  TError = BadRequestResponse | UnauthorizedResponse | ForbiddenResponse,
+>(
+  params?: ListQuestionBlueprintDraftsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listQuestionBlueprintDrafts>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListQuestionBlueprintDraftsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listQuestionBlueprintDrafts>>
+  > = ({ signal }) =>
+    listQuestionBlueprintDrafts(params, { signal, ...requestOptions });
+
+  return { queryFn, queryKey, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listQuestionBlueprintDrafts>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListQuestionBlueprintDraftsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listQuestionBlueprintDrafts>>
+>;
+export type ListQuestionBlueprintDraftsQueryError =
+  | BadRequestResponse
+  | UnauthorizedResponse
+  | ForbiddenResponse;
+
+export function useListQuestionBlueprintDrafts<
+  TData = Awaited<ReturnType<typeof listQuestionBlueprintDrafts>>,
+  TError = BadRequestResponse | UnauthorizedResponse | ForbiddenResponse,
+>(
+  params: undefined | ListQuestionBlueprintDraftsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listQuestionBlueprintDrafts>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listQuestionBlueprintDrafts>>,
+          TError,
+          Awaited<ReturnType<typeof listQuestionBlueprintDrafts>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListQuestionBlueprintDrafts<
+  TData = Awaited<ReturnType<typeof listQuestionBlueprintDrafts>>,
+  TError = BadRequestResponse | UnauthorizedResponse | ForbiddenResponse,
+>(
+  params?: ListQuestionBlueprintDraftsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listQuestionBlueprintDrafts>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listQuestionBlueprintDrafts>>,
+          TError,
+          Awaited<ReturnType<typeof listQuestionBlueprintDrafts>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListQuestionBlueprintDrafts<
+  TData = Awaited<ReturnType<typeof listQuestionBlueprintDrafts>>,
+  TError = BadRequestResponse | UnauthorizedResponse | ForbiddenResponse,
+>(
+  params?: ListQuestionBlueprintDraftsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listQuestionBlueprintDrafts>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary List question blueprint drafts
+ */
+
+export function useListQuestionBlueprintDrafts<
+  TData = Awaited<ReturnType<typeof listQuestionBlueprintDrafts>>,
+  TError = BadRequestResponse | UnauthorizedResponse | ForbiddenResponse,
+>(
+  params?: ListQuestionBlueprintDraftsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listQuestionBlueprintDrafts>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListQuestionBlueprintDraftsQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List question blueprint drafts
+ */
+export const invalidateListQuestionBlueprintDrafts = async (
+  queryClient: QueryClient,
+  params?: ListQuestionBlueprintDraftsParams,
+  options?: InvalidateOptions,
+): Promise<QueryClient> => {
+  await queryClient.invalidateQueries(
+    { queryKey: getListQuestionBlueprintDraftsQueryKey(params) },
+    options,
+  );
+
+  return queryClient;
+};
+
+/**
+ * @summary List question blueprint drafts
+ */
+export const useGetListQuestionBlueprintDraftsQueryData = () => {
+  const queryClient = useQueryClient();
+  return (params?: ListQuestionBlueprintDraftsParams) =>
+    queryClient.getQueryData<
+      Awaited<ReturnType<typeof listQuestionBlueprintDrafts>>
+    >(getListQuestionBlueprintDraftsQueryKey(params));
+};
+
+export const getCreateQuestionBlueprintDraftUrl = () => {
+  return `/api/v1/question-blueprint-drafts`;
+};
+
+/**
+ * @summary Create question blueprint draft
+ */
+export const createQuestionBlueprintDraft = async (
+  createQuestionBlueprintDraftRequest: CreateQuestionBlueprintDraftRequest,
+  options?: RequestInit,
+): Promise<QuestionBlueprintDraftResponse> => {
+  return authedFetch<QuestionBlueprintDraftResponse>(
+    getCreateQuestionBlueprintDraftUrl(),
+    {
+      ...options,
+      body: JSON.stringify(createQuestionBlueprintDraftRequest),
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      method: "POST",
+    },
+  );
+};
+
+export const getCreateQuestionBlueprintDraftMutationOptions = <
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createQuestionBlueprintDraft>>,
+    TError,
+    { data: CreateQuestionBlueprintDraftRequest },
+    TContext
+  >;
+  request?: SecondParameter<typeof authedFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createQuestionBlueprintDraft>>,
+  TError,
+  { data: CreateQuestionBlueprintDraftRequest },
+  TContext
+> => {
+  const mutationKey = ["createQuestionBlueprintDraft"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createQuestionBlueprintDraft>>,
+    { data: CreateQuestionBlueprintDraftRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createQuestionBlueprintDraft(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateQuestionBlueprintDraftMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createQuestionBlueprintDraft>>
+>;
+export type CreateQuestionBlueprintDraftMutationBody =
+  CreateQuestionBlueprintDraftRequest;
+export type CreateQuestionBlueprintDraftMutationError =
+  | BadRequestResponse
+  | UnauthorizedResponse
+  | ForbiddenResponse
+  | NotFoundResponse;
+
+/**
+ * @summary Create question blueprint draft
+ */
+export const useCreateQuestionBlueprintDraft = <
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createQuestionBlueprintDraft>>,
+      TError,
+      { data: CreateQuestionBlueprintDraftRequest },
+      TContext
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createQuestionBlueprintDraft>>,
+  TError,
+  { data: CreateQuestionBlueprintDraftRequest },
+  TContext
+> => {
+  return useMutation(
+    getCreateQuestionBlueprintDraftMutationOptions(options),
+    queryClient,
+  );
+};
+export const getGetQuestionBlueprintDraftUrl = (draftId: string) => {
+  return `/api/v1/question-blueprint-drafts/${draftId}`;
+};
+
+/**
+ * @summary Get question blueprint draft
+ */
+export const getQuestionBlueprintDraft = async (
+  draftId: string,
+  options?: RequestInit,
+): Promise<QuestionBlueprintDraftResponse> => {
+  return authedFetch<QuestionBlueprintDraftResponse>(
+    getGetQuestionBlueprintDraftUrl(draftId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetQuestionBlueprintDraftQueryKey = (draftId: string) => {
+  return [`/api/v1/question-blueprint-drafts/${draftId}`] as const;
+};
+
+export const getGetQuestionBlueprintDraftQueryOptions = <
+  TData = Awaited<ReturnType<typeof getQuestionBlueprintDraft>>,
+  TError = UnauthorizedResponse | ForbiddenResponse | NotFoundResponse,
+>(
+  draftId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getQuestionBlueprintDraft>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetQuestionBlueprintDraftQueryKey(draftId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getQuestionBlueprintDraft>>
+  > = ({ signal }) =>
+    getQuestionBlueprintDraft(draftId, { signal, ...requestOptions });
+
+  return {
+    enabled: draftId !== null && draftId !== undefined,
+    queryFn,
+    queryKey,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getQuestionBlueprintDraft>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetQuestionBlueprintDraftQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getQuestionBlueprintDraft>>
+>;
+export type GetQuestionBlueprintDraftQueryError =
+  | UnauthorizedResponse
+  | ForbiddenResponse
+  | NotFoundResponse;
+
+export function useGetQuestionBlueprintDraft<
+  TData = Awaited<ReturnType<typeof getQuestionBlueprintDraft>>,
+  TError = UnauthorizedResponse | ForbiddenResponse | NotFoundResponse,
+>(
+  draftId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getQuestionBlueprintDraft>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getQuestionBlueprintDraft>>,
+          TError,
+          Awaited<ReturnType<typeof getQuestionBlueprintDraft>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetQuestionBlueprintDraft<
+  TData = Awaited<ReturnType<typeof getQuestionBlueprintDraft>>,
+  TError = UnauthorizedResponse | ForbiddenResponse | NotFoundResponse,
+>(
+  draftId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getQuestionBlueprintDraft>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getQuestionBlueprintDraft>>,
+          TError,
+          Awaited<ReturnType<typeof getQuestionBlueprintDraft>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetQuestionBlueprintDraft<
+  TData = Awaited<ReturnType<typeof getQuestionBlueprintDraft>>,
+  TError = UnauthorizedResponse | ForbiddenResponse | NotFoundResponse,
+>(
+  draftId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getQuestionBlueprintDraft>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get question blueprint draft
+ */
+
+export function useGetQuestionBlueprintDraft<
+  TData = Awaited<ReturnType<typeof getQuestionBlueprintDraft>>,
+  TError = UnauthorizedResponse | ForbiddenResponse | NotFoundResponse,
+>(
+  draftId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getQuestionBlueprintDraft>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetQuestionBlueprintDraftQueryOptions(
+    draftId,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get question blueprint draft
+ */
+export const invalidateGetQuestionBlueprintDraft = async (
+  queryClient: QueryClient,
+  draftId: string,
+  options?: InvalidateOptions,
+): Promise<QueryClient> => {
+  await queryClient.invalidateQueries(
+    { queryKey: getGetQuestionBlueprintDraftQueryKey(draftId) },
+    options,
+  );
+
+  return queryClient;
+};
+
+/**
+ * @summary Get question blueprint draft
+ */
+export const useGetGetQuestionBlueprintDraftQueryData = () => {
+  const queryClient = useQueryClient();
+  return (draftId: string) =>
+    queryClient.getQueryData<
+      Awaited<ReturnType<typeof getQuestionBlueprintDraft>>
+    >(getGetQuestionBlueprintDraftQueryKey(draftId));
+};
+
+export const getUpdateQuestionBlueprintDraftUrl = (draftId: string) => {
+  return `/api/v1/question-blueprint-drafts/${draftId}`;
+};
+
+/**
+ * @summary Update question blueprint draft
+ */
+export const updateQuestionBlueprintDraft = async (
+  draftId: string,
+  updateQuestionBlueprintDraftRequest: UpdateQuestionBlueprintDraftRequest,
+  options?: RequestInit,
+): Promise<QuestionBlueprintDraftResponse> => {
+  return authedFetch<QuestionBlueprintDraftResponse>(
+    getUpdateQuestionBlueprintDraftUrl(draftId),
+    {
+      ...options,
+      body: JSON.stringify(updateQuestionBlueprintDraftRequest),
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      method: "PATCH",
+    },
+  );
+};
+
+export const getUpdateQuestionBlueprintDraftMutationOptions = <
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateQuestionBlueprintDraft>>,
+    TError,
+    { draftId: string; data: UpdateQuestionBlueprintDraftRequest },
+    TContext
+  >;
+  request?: SecondParameter<typeof authedFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateQuestionBlueprintDraft>>,
+  TError,
+  { draftId: string; data: UpdateQuestionBlueprintDraftRequest },
+  TContext
+> => {
+  const mutationKey = ["updateQuestionBlueprintDraft"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateQuestionBlueprintDraft>>,
+    { draftId: string; data: UpdateQuestionBlueprintDraftRequest }
+  > = (props) => {
+    const { draftId, data } = props ?? {};
+
+    return updateQuestionBlueprintDraft(draftId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateQuestionBlueprintDraftMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateQuestionBlueprintDraft>>
+>;
+export type UpdateQuestionBlueprintDraftMutationBody =
+  UpdateQuestionBlueprintDraftRequest;
+export type UpdateQuestionBlueprintDraftMutationError =
+  | BadRequestResponse
+  | UnauthorizedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | ConflictResponse;
+
+/**
+ * @summary Update question blueprint draft
+ */
+export const useUpdateQuestionBlueprintDraft = <
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateQuestionBlueprintDraft>>,
+      TError,
+      { draftId: string; data: UpdateQuestionBlueprintDraftRequest },
+      TContext
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateQuestionBlueprintDraft>>,
+  TError,
+  { draftId: string; data: UpdateQuestionBlueprintDraftRequest },
+  TContext
+> => {
+  return useMutation(
+    getUpdateQuestionBlueprintDraftMutationOptions(options),
+    queryClient,
+  );
+};
+export const getDiscardQuestionBlueprintDraftUrl = (draftId: string) => {
+  return `/api/v1/question-blueprint-drafts/${draftId}`;
+};
+
+/**
+ * @summary Discard question blueprint draft
+ */
+export const discardQuestionBlueprintDraft = async (
+  draftId: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return authedFetch<void>(getDiscardQuestionBlueprintDraftUrl(draftId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDiscardQuestionBlueprintDraftMutationOptions = <
+  TError =
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof discardQuestionBlueprintDraft>>,
+    TError,
+    { draftId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof authedFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof discardQuestionBlueprintDraft>>,
+  TError,
+  { draftId: string },
+  TContext
+> => {
+  const mutationKey = ["discardQuestionBlueprintDraft"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof discardQuestionBlueprintDraft>>,
+    { draftId: string }
+  > = (props) => {
+    const { draftId } = props ?? {};
+
+    return discardQuestionBlueprintDraft(draftId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DiscardQuestionBlueprintDraftMutationResult = NonNullable<
+  Awaited<ReturnType<typeof discardQuestionBlueprintDraft>>
+>;
+
+export type DiscardQuestionBlueprintDraftMutationError =
+  | UnauthorizedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | ConflictResponse;
+
+/**
+ * @summary Discard question blueprint draft
+ */
+export const useDiscardQuestionBlueprintDraft = <
+  TError =
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof discardQuestionBlueprintDraft>>,
+      TError,
+      { draftId: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof discardQuestionBlueprintDraft>>,
+  TError,
+  { draftId: string },
+  TContext
+> => {
+  return useMutation(
+    getDiscardQuestionBlueprintDraftMutationOptions(options),
+    queryClient,
+  );
+};
+export const getAttachQuestionBlueprintDraftSourceFileUrl = (
+  draftId: string,
+) => {
+  return `/api/v1/question-blueprint-drafts/${draftId}/source-files`;
+};
+
+/**
+ * @summary Attach source file to question blueprint draft
+ */
+export const attachQuestionBlueprintDraftSourceFile = async (
+  draftId: string,
+  attachQuestionBlueprintDraftSourceFileRequest: AttachQuestionBlueprintDraftSourceFileRequest,
+  options?: RequestInit,
+): Promise<QuestionBlueprintDraftResponse> => {
+  return authedFetch<QuestionBlueprintDraftResponse>(
+    getAttachQuestionBlueprintDraftSourceFileUrl(draftId),
+    {
+      ...options,
+      body: JSON.stringify(attachQuestionBlueprintDraftSourceFileRequest),
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      method: "POST",
+    },
+  );
+};
+
+export const getAttachQuestionBlueprintDraftSourceFileMutationOptions = <
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof attachQuestionBlueprintDraftSourceFile>>,
+    TError,
+    { draftId: string; data: AttachQuestionBlueprintDraftSourceFileRequest },
+    TContext
+  >;
+  request?: SecondParameter<typeof authedFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof attachQuestionBlueprintDraftSourceFile>>,
+  TError,
+  { draftId: string; data: AttachQuestionBlueprintDraftSourceFileRequest },
+  TContext
+> => {
+  const mutationKey = ["attachQuestionBlueprintDraftSourceFile"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof attachQuestionBlueprintDraftSourceFile>>,
+    { draftId: string; data: AttachQuestionBlueprintDraftSourceFileRequest }
+  > = (props) => {
+    const { draftId, data } = props ?? {};
+
+    return attachQuestionBlueprintDraftSourceFile(
+      draftId,
+      data,
+      requestOptions,
+    );
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AttachQuestionBlueprintDraftSourceFileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof attachQuestionBlueprintDraftSourceFile>>
+>;
+export type AttachQuestionBlueprintDraftSourceFileMutationBody =
+  AttachQuestionBlueprintDraftSourceFileRequest;
+export type AttachQuestionBlueprintDraftSourceFileMutationError =
+  | BadRequestResponse
+  | UnauthorizedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | ConflictResponse;
+
+/**
+ * @summary Attach source file to question blueprint draft
+ */
+export const useAttachQuestionBlueprintDraftSourceFile = <
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof attachQuestionBlueprintDraftSourceFile>>,
+      TError,
+      { draftId: string; data: AttachQuestionBlueprintDraftSourceFileRequest },
+      TContext
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof attachQuestionBlueprintDraftSourceFile>>,
+  TError,
+  { draftId: string; data: AttachQuestionBlueprintDraftSourceFileRequest },
+  TContext
+> => {
+  return useMutation(
+    getAttachQuestionBlueprintDraftSourceFileMutationOptions(options),
+    queryClient,
+  );
+};
+export const getPublishQuestionBlueprintDraftUrl = (draftId: string) => {
+  return `/api/v1/question-blueprint-drafts/${draftId}/publish`;
+};
+
+/**
+ * @summary Publish question blueprint draft
+ */
+export const publishQuestionBlueprintDraft = async (
+  draftId: string,
+  options?: RequestInit,
+): Promise<PublishQuestionBlueprintDraftResponse> => {
+  return authedFetch<PublishQuestionBlueprintDraftResponse>(
+    getPublishQuestionBlueprintDraftUrl(draftId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getPublishQuestionBlueprintDraftMutationOptions = <
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof publishQuestionBlueprintDraft>>,
+    TError,
+    { draftId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof authedFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof publishQuestionBlueprintDraft>>,
+  TError,
+  { draftId: string },
+  TContext
+> => {
+  const mutationKey = ["publishQuestionBlueprintDraft"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof publishQuestionBlueprintDraft>>,
+    { draftId: string }
+  > = (props) => {
+    const { draftId } = props ?? {};
+
+    return publishQuestionBlueprintDraft(draftId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PublishQuestionBlueprintDraftMutationResult = NonNullable<
+  Awaited<ReturnType<typeof publishQuestionBlueprintDraft>>
+>;
+
+export type PublishQuestionBlueprintDraftMutationError =
+  | BadRequestResponse
+  | UnauthorizedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | ConflictResponse
+  | UpstreamWorkbookResponse;
+
+/**
+ * @summary Publish question blueprint draft
+ */
+export const usePublishQuestionBlueprintDraft = <
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof publishQuestionBlueprintDraft>>,
+      TError,
+      { draftId: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof publishQuestionBlueprintDraft>>,
+  TError,
+  { draftId: string },
+  TContext
+> => {
+  return useMutation(
+    getPublishQuestionBlueprintDraftMutationOptions(options),
+    queryClient,
+  );
+};
 export const getListQuestionBlueprintsUrl = (
   params?: ListQuestionBlueprintsParams,
 ) => {
@@ -1280,7 +2258,7 @@ export const getListQuestionBlueprintsQueryOptions = <
   > = ({ signal }) =>
     listQuestionBlueprints(params, { signal, ...requestOptions });
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+  return { queryFn, queryKey, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof listQuestionBlueprints>>,
     TError,
     TData
@@ -1471,9 +2449,9 @@ export const createQuestionBlueprint = async (
     getCreateQuestionBlueprintUrl(),
     {
       ...options,
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...options?.headers },
       body: JSON.stringify(createQuestionBlueprintRequest),
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      method: "POST",
     },
   );
 };
@@ -1629,9 +2607,9 @@ export const getGetQuestionBlueprintQueryOptions = <
     getQuestionBlueprint(questionBlueprintId, { signal, ...requestOptions });
 
   return {
-    queryKey,
-    queryFn,
     enabled: questionBlueprintId !== null && questionBlueprintId !== undefined,
+    queryFn,
+    queryKey,
     ...queryOptions,
   } as UseQueryOptions<
     Awaited<ReturnType<typeof getQuestionBlueprint>>,
@@ -1828,9 +2806,9 @@ export const updateQuestionBlueprint = async (
     getUpdateQuestionBlueprintUrl(questionBlueprintId),
     {
       ...options,
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...options?.headers },
       body: JSON.stringify(updateQuestionBlueprintRequest),
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      method: "PATCH",
     },
   );
 };
@@ -2098,9 +3076,9 @@ export const getGetQuestionBlueprintAuthoringQueryOptions = <
     });
 
   return {
-    queryKey,
-    queryFn,
     enabled: questionBlueprintId !== null && questionBlueprintId !== undefined,
+    queryFn,
+    queryKey,
     ...queryOptions,
   } as UseQueryOptions<
     Awaited<ReturnType<typeof getQuestionBlueprintAuthoring>>,
@@ -2280,537 +3258,6 @@ export const useGetGetQuestionBlueprintAuthoringQueryData = () => {
     >(getGetQuestionBlueprintAuthoringQueryKey(questionBlueprintId));
 };
 
-export const getListQuestionBlueprintVersionsUrl = (
-  questionBlueprintId: string,
-) => {
-  return `/api/v1/question-blueprints/${questionBlueprintId}/versions`;
-};
-
-/**
- * Authoring-only. Returns immutable version metadata and bound source assets.
- * @summary List question blueprint versions
- */
-export const listQuestionBlueprintVersions = async (
-  questionBlueprintId: string,
-  options?: RequestInit,
-): Promise<ListQuestionBlueprintVersionsResponse> => {
-  return authedFetch<ListQuestionBlueprintVersionsResponse>(
-    getListQuestionBlueprintVersionsUrl(questionBlueprintId),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
-
-export const getListQuestionBlueprintVersionsQueryKey = (
-  questionBlueprintId: string,
-) => {
-  return [
-    `/api/v1/question-blueprints/${questionBlueprintId}/versions`,
-  ] as const;
-};
-
-export const getListQuestionBlueprintVersionsQueryOptions = <
-  TData = Awaited<ReturnType<typeof listQuestionBlueprintVersions>>,
-  TError =
-    | BadRequestResponse
-    | UnauthorizedResponse
-    | ForbiddenResponse
-    | NotFoundResponse
-    | ConflictResponse
-    | UpstreamWorkbookResponse,
->(
-  questionBlueprintId: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof listQuestionBlueprintVersions>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof authedFetch>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey =
-    queryOptions?.queryKey ??
-    getListQuestionBlueprintVersionsQueryKey(questionBlueprintId);
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof listQuestionBlueprintVersions>>
-  > = ({ signal }) =>
-    listQuestionBlueprintVersions(questionBlueprintId, {
-      signal,
-      ...requestOptions,
-    });
-
-  return {
-    queryKey,
-    queryFn,
-    enabled: questionBlueprintId !== null && questionBlueprintId !== undefined,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof listQuestionBlueprintVersions>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type ListQuestionBlueprintVersionsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof listQuestionBlueprintVersions>>
->;
-export type ListQuestionBlueprintVersionsQueryError =
-  | BadRequestResponse
-  | UnauthorizedResponse
-  | ForbiddenResponse
-  | NotFoundResponse
-  | ConflictResponse
-  | UpstreamWorkbookResponse;
-
-export function useListQuestionBlueprintVersions<
-  TData = Awaited<ReturnType<typeof listQuestionBlueprintVersions>>,
-  TError =
-    | BadRequestResponse
-    | UnauthorizedResponse
-    | ForbiddenResponse
-    | NotFoundResponse
-    | ConflictResponse
-    | UpstreamWorkbookResponse,
->(
-  questionBlueprintId: string,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof listQuestionBlueprintVersions>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof listQuestionBlueprintVersions>>,
-          TError,
-          Awaited<ReturnType<typeof listQuestionBlueprintVersions>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof authedFetch>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useListQuestionBlueprintVersions<
-  TData = Awaited<ReturnType<typeof listQuestionBlueprintVersions>>,
-  TError =
-    | BadRequestResponse
-    | UnauthorizedResponse
-    | ForbiddenResponse
-    | NotFoundResponse
-    | ConflictResponse
-    | UpstreamWorkbookResponse,
->(
-  questionBlueprintId: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof listQuestionBlueprintVersions>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof listQuestionBlueprintVersions>>,
-          TError,
-          Awaited<ReturnType<typeof listQuestionBlueprintVersions>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof authedFetch>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useListQuestionBlueprintVersions<
-  TData = Awaited<ReturnType<typeof listQuestionBlueprintVersions>>,
-  TError =
-    | BadRequestResponse
-    | UnauthorizedResponse
-    | ForbiddenResponse
-    | NotFoundResponse
-    | ConflictResponse
-    | UpstreamWorkbookResponse,
->(
-  questionBlueprintId: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof listQuestionBlueprintVersions>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof authedFetch>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary List question blueprint versions
- */
-
-export function useListQuestionBlueprintVersions<
-  TData = Awaited<ReturnType<typeof listQuestionBlueprintVersions>>,
-  TError =
-    | BadRequestResponse
-    | UnauthorizedResponse
-    | ForbiddenResponse
-    | NotFoundResponse
-    | ConflictResponse
-    | UpstreamWorkbookResponse,
->(
-  questionBlueprintId: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof listQuestionBlueprintVersions>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof authedFetch>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getListQuestionBlueprintVersionsQueryOptions(
-    questionBlueprintId,
-    options,
-  );
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-/**
- * @summary List question blueprint versions
- */
-export const invalidateListQuestionBlueprintVersions = async (
-  queryClient: QueryClient,
-  questionBlueprintId: string,
-  options?: InvalidateOptions,
-): Promise<QueryClient> => {
-  await queryClient.invalidateQueries(
-    { queryKey: getListQuestionBlueprintVersionsQueryKey(questionBlueprintId) },
-    options,
-  );
-
-  return queryClient;
-};
-
-/**
- * @summary List question blueprint versions
- */
-export const useGetListQuestionBlueprintVersionsQueryData = () => {
-  const queryClient = useQueryClient();
-  return (questionBlueprintId: string) =>
-    queryClient.getQueryData<
-      Awaited<ReturnType<typeof listQuestionBlueprintVersions>>
-    >(getListQuestionBlueprintVersionsQueryKey(questionBlueprintId));
-};
-
-export const getGetQuestionBlueprintVersionAuthoringUrl = (
-  questionBlueprintId: string,
-  questionBlueprintVersionId: string,
-) => {
-  return `/api/v1/question-blueprints/${questionBlueprintId}/versions/${questionBlueprintVersionId}/authoring`;
-};
-
-/**
- * Authoring-only. Returns the private canonical document and source assets from one immutable version.
- * @summary Get question blueprint version authoring data
- */
-export const getQuestionBlueprintVersionAuthoring = async (
-  questionBlueprintId: string,
-  questionBlueprintVersionId: string,
-  options?: RequestInit,
-): Promise<QuestionBlueprintAuthoringResponse> => {
-  return authedFetch<QuestionBlueprintAuthoringResponse>(
-    getGetQuestionBlueprintVersionAuthoringUrl(
-      questionBlueprintId,
-      questionBlueprintVersionId,
-    ),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
-
-export const getGetQuestionBlueprintVersionAuthoringQueryKey = (
-  questionBlueprintId: string,
-  questionBlueprintVersionId: string,
-) => {
-  return [
-    `/api/v1/question-blueprints/${questionBlueprintId}/versions/${questionBlueprintVersionId}/authoring`,
-  ] as const;
-};
-
-export const getGetQuestionBlueprintVersionAuthoringQueryOptions = <
-  TData = Awaited<ReturnType<typeof getQuestionBlueprintVersionAuthoring>>,
-  TError =
-    | BadRequestResponse
-    | UnauthorizedResponse
-    | ForbiddenResponse
-    | NotFoundResponse
-    | ConflictResponse
-    | UpstreamWorkbookResponse,
->(
-  questionBlueprintId: string,
-  questionBlueprintVersionId: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getQuestionBlueprintVersionAuthoring>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof authedFetch>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey =
-    queryOptions?.queryKey ??
-    getGetQuestionBlueprintVersionAuthoringQueryKey(
-      questionBlueprintId,
-      questionBlueprintVersionId,
-    );
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getQuestionBlueprintVersionAuthoring>>
-  > = ({ signal }) =>
-    getQuestionBlueprintVersionAuthoring(
-      questionBlueprintId,
-      questionBlueprintVersionId,
-      { signal, ...requestOptions },
-    );
-
-  return {
-    queryKey,
-    queryFn,
-    enabled:
-      questionBlueprintId !== null &&
-      questionBlueprintId !== undefined &&
-      questionBlueprintVersionId !== null &&
-      questionBlueprintVersionId !== undefined,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof getQuestionBlueprintVersionAuthoring>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type GetQuestionBlueprintVersionAuthoringQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getQuestionBlueprintVersionAuthoring>>
->;
-export type GetQuestionBlueprintVersionAuthoringQueryError =
-  | BadRequestResponse
-  | UnauthorizedResponse
-  | ForbiddenResponse
-  | NotFoundResponse
-  | ConflictResponse
-  | UpstreamWorkbookResponse;
-
-export function useGetQuestionBlueprintVersionAuthoring<
-  TData = Awaited<ReturnType<typeof getQuestionBlueprintVersionAuthoring>>,
-  TError =
-    | BadRequestResponse
-    | UnauthorizedResponse
-    | ForbiddenResponse
-    | NotFoundResponse
-    | ConflictResponse
-    | UpstreamWorkbookResponse,
->(
-  questionBlueprintId: string,
-  questionBlueprintVersionId: string,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getQuestionBlueprintVersionAuthoring>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getQuestionBlueprintVersionAuthoring>>,
-          TError,
-          Awaited<ReturnType<typeof getQuestionBlueprintVersionAuthoring>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof authedFetch>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetQuestionBlueprintVersionAuthoring<
-  TData = Awaited<ReturnType<typeof getQuestionBlueprintVersionAuthoring>>,
-  TError =
-    | BadRequestResponse
-    | UnauthorizedResponse
-    | ForbiddenResponse
-    | NotFoundResponse
-    | ConflictResponse
-    | UpstreamWorkbookResponse,
->(
-  questionBlueprintId: string,
-  questionBlueprintVersionId: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getQuestionBlueprintVersionAuthoring>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getQuestionBlueprintVersionAuthoring>>,
-          TError,
-          Awaited<ReturnType<typeof getQuestionBlueprintVersionAuthoring>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof authedFetch>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetQuestionBlueprintVersionAuthoring<
-  TData = Awaited<ReturnType<typeof getQuestionBlueprintVersionAuthoring>>,
-  TError =
-    | BadRequestResponse
-    | UnauthorizedResponse
-    | ForbiddenResponse
-    | NotFoundResponse
-    | ConflictResponse
-    | UpstreamWorkbookResponse,
->(
-  questionBlueprintId: string,
-  questionBlueprintVersionId: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getQuestionBlueprintVersionAuthoring>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof authedFetch>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary Get question blueprint version authoring data
- */
-
-export function useGetQuestionBlueprintVersionAuthoring<
-  TData = Awaited<ReturnType<typeof getQuestionBlueprintVersionAuthoring>>,
-  TError =
-    | BadRequestResponse
-    | UnauthorizedResponse
-    | ForbiddenResponse
-    | NotFoundResponse
-    | ConflictResponse
-    | UpstreamWorkbookResponse,
->(
-  questionBlueprintId: string,
-  questionBlueprintVersionId: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getQuestionBlueprintVersionAuthoring>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof authedFetch>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getGetQuestionBlueprintVersionAuthoringQueryOptions(
-    questionBlueprintId,
-    questionBlueprintVersionId,
-    options,
-  );
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-/**
- * @summary Get question blueprint version authoring data
- */
-export const invalidateGetQuestionBlueprintVersionAuthoring = async (
-  queryClient: QueryClient,
-  questionBlueprintId: string,
-  questionBlueprintVersionId: string,
-  options?: InvalidateOptions,
-): Promise<QueryClient> => {
-  await queryClient.invalidateQueries(
-    {
-      queryKey: getGetQuestionBlueprintVersionAuthoringQueryKey(
-        questionBlueprintId,
-        questionBlueprintVersionId,
-      ),
-    },
-    options,
-  );
-
-  return queryClient;
-};
-
-/**
- * @summary Get question blueprint version authoring data
- */
-export const useGetGetQuestionBlueprintVersionAuthoringQueryData = () => {
-  const queryClient = useQueryClient();
-  return (questionBlueprintId: string, questionBlueprintVersionId: string) =>
-    queryClient.getQueryData<
-      Awaited<ReturnType<typeof getQuestionBlueprintVersionAuthoring>>
-    >(
-      getGetQuestionBlueprintVersionAuthoringQueryKey(
-        questionBlueprintId,
-        questionBlueprintVersionId,
-      ),
-    );
-};
-
 export const getListQuestionsUrl = (params?: ListQuestionsParams) => {
   const normalizedParams = new URLSearchParams();
 
@@ -2870,7 +3317,7 @@ export const getListQuestionsQueryOptions = <
     signal,
   }) => listQuestions(params, { signal, ...requestOptions });
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+  return { queryFn, queryKey, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof listQuestions>>,
     TError,
     TData
@@ -3077,9 +3524,9 @@ export const getGetQuestionQueryOptions = <
   }) => getQuestion(questionId, { signal, ...requestOptions });
 
   return {
-    queryKey,
-    queryFn,
     enabled: questionId !== null && questionId !== undefined,
+    queryFn,
+    queryKey,
     ...queryOptions,
   } as UseQueryOptions<
     Awaited<ReturnType<typeof getQuestion>>,
@@ -3355,9 +3802,9 @@ export const gradeQuestion = async (
 ): Promise<GradeQuestionResponse> => {
   return authedFetch<GradeQuestionResponse>(getGradeQuestionUrl(questionId), {
     ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(gradeQuestionRequest),
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    method: "POST",
   });
 };
 
@@ -3523,7 +3970,7 @@ export const getListQuestionGenerationRunsQueryOptions = <
   > = ({ signal }) =>
     listQuestionGenerationRuns(params, { signal, ...requestOptions });
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+  return { queryFn, queryKey, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof listQuestionGenerationRuns>>,
     TError,
     TData
@@ -3706,7 +4153,7 @@ export const getCreateQuestionGenerationRunUrl = () => {
 };
 
 /**
- * Create a generation run from a saved blueprint version.
+ * Create a generation run from the current blueprint state.
  * @summary Create question generation run
  */
 export const createQuestionGenerationRun = async (
@@ -3717,9 +4164,9 @@ export const createQuestionGenerationRun = async (
     getCreateQuestionGenerationRunUrl(),
     {
       ...options,
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...options?.headers },
       body: JSON.stringify(createQuestionGenerationRunRequest),
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      method: "POST",
     },
   );
 };
@@ -3882,10 +4329,10 @@ export const getGetQuestionGenerationRunQueryOptions = <
     });
 
   return {
-    queryKey,
-    queryFn,
     enabled:
       questionGenerationRunId !== null && questionGenerationRunId !== undefined,
+    queryFn,
+    queryKey,
     ...queryOptions,
   } as UseQueryOptions<
     Awaited<ReturnType<typeof getQuestionGenerationRun>>,
@@ -4181,7 +4628,7 @@ export const getRetryQuestionGenerationRunUrl = (
 };
 
 /**
- * @summary Retry question generation run
+ * @summary Create replacement question generation run from frozen failed run snapshot
  */
 export const retryQuestionGenerationRun = async (
   questionGenerationRunId: string,
@@ -4253,7 +4700,7 @@ export type RetryQuestionGenerationRunMutationError =
   | UpstreamWorkbookResponse;
 
 /**
- * @summary Retry question generation run
+ * @summary Create replacement question generation run from frozen failed run snapshot
  */
 export const useRetryQuestionGenerationRun = <
   TError =

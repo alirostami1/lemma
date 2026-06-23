@@ -9,9 +9,9 @@ export type ListWorkbookCalculationsStatus =
   (typeof ListWorkbookCalculationsStatus)[keyof typeof ListWorkbookCalculationsStatus];
 
 export const ListWorkbookCalculationsStatus = {
+  cancelled: "cancelled",
+  failed: "failed",
   queued: "queued",
   running: "running",
   succeeded: "succeeded",
-  failed: "failed",
-  cancelled: "cancelled",
 } as const;

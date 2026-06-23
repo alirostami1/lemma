@@ -10,6 +10,6 @@ import type { RichOrderedListNode } from "./richOrderedListNode.ts";
 import type { RichParagraphNode } from "./richParagraphNode.ts";
 
 export interface RichListItemNode {
-  type: RichListItemNodeType;
   content: (RichParagraphNode | RichBulletListNode | RichOrderedListNode)[];
+  type: RichListItemNodeType;
 }

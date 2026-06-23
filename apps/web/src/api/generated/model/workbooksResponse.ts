@@ -7,7 +7,7 @@
 import type { Workbook } from "./workbook.ts";
 
 export interface WorkbooksResponse {
-  workbooks: Workbook[];
   /** @nullable */
   nextCursor: string | null;
+  workbooks: Workbook[];
 }

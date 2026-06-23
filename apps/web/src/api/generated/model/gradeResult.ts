@@ -9,10 +9,10 @@ import type { GradeResultSchemaVersion } from "./gradeResultSchemaVersion.ts";
 import type { GradeResultStatus } from "./gradeResultStatus.ts";
 
 export interface GradeResult {
-  schemaVersion: GradeResultSchemaVersion;
-  totalPoints: number;
-  earnedPoints: number;
-  status: GradeResultStatus;
   details: GradeResultDetailsItem[];
+  earnedPoints: number;
   graderVersion: string;
+  schemaVersion: GradeResultSchemaVersion;
+  status: GradeResultStatus;
+  totalPoints: number;
 }

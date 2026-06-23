@@ -9,11 +9,11 @@ import type { PublicQuestionBlueprintTableContentCellType } from "./publicQuesti
 
 export interface PublicQuestionBlueprintTableContentCell {
   /** @minLength 1 */
+  columnId: string;
+  content: BlueprintInlineText[];
+  /** @minLength 1 */
   id: string;
   /** @minLength 1 */
   rowId: string;
-  /** @minLength 1 */
-  columnId: string;
   type: PublicQuestionBlueprintTableContentCellType;
-  content: BlueprintInlineText[];
 }

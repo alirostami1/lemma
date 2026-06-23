@@ -8,9 +8,9 @@ import type { BlueprintInlineReferenceRangeCell } from "./blueprintInlineReferen
 import type { BlueprintInlineReferenceType } from "./blueprintInlineReferenceType.ts";
 
 export interface BlueprintInlineReference {
-  type: BlueprintInlineReferenceType;
+  fallbackText?: string;
+  rangeCell?: BlueprintInlineReferenceRangeCell;
   /** @minLength 1 */
   referenceId: string;
-  rangeCell?: BlueprintInlineReferenceRangeCell;
-  fallbackText?: string;
+  type: BlueprintInlineReferenceType;
 }

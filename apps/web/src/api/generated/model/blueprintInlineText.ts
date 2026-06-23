@@ -7,6 +7,6 @@
 import type { BlueprintInlineTextType } from "./blueprintInlineTextType.ts";
 
 export interface BlueprintInlineText {
-  type: BlueprintInlineTextType;
   text: string;
+  type: BlueprintInlineTextType;
 }

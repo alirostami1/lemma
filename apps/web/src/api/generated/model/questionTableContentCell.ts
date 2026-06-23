@@ -8,11 +8,11 @@ import type { QuestionTableContentCellType } from "./questionTableContentCellTyp
 
 export interface QuestionTableContentCell {
   /** @minLength 1 */
+  columnId: string;
+  /** @minLength 1 */
   id: string;
   /** @minLength 1 */
   rowId: string;
-  /** @minLength 1 */
-  columnId: string;
-  type: QuestionTableContentCellType;
   text: string;
+  type: QuestionTableContentCellType;
 }

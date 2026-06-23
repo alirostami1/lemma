@@ -7,13 +7,13 @@
 
 export interface CreateQuestionSetRequest {
   /**
-   * @minLength 1
-   * @maxLength 160
-   */
-  name: string;
-  /**
    * @maxLength 1000
    * @nullable
    */
   description?: string | null;
+  /**
+   * @minLength 1
+   * @maxLength 160
+   */
+  name: string;
 }

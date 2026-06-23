@@ -9,9 +9,9 @@ export type WorkbookStatus =
   (typeof WorkbookStatus)[keyof typeof WorkbookStatus];
 
 export const WorkbookStatus = {
-  pending_validation: "pending_validation",
-  valid: "valid",
-  invalid: "invalid",
   archived: "archived",
   deleted: "deleted",
+  invalid: "invalid",
+  pending_validation: "pending_validation",
+  valid: "valid",
 } as const;

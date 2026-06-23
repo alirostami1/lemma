@@ -11,11 +11,11 @@ import type { RichOrderedListNode } from "./richOrderedListNode.ts";
 import type { RichParagraphNode } from "./richParagraphNode.ts";
 
 export interface RichContent {
-  type: RichContentType;
   content: (
     | RichParagraphNode
     | RichHeadingNode
     | RichBulletListNode
     | RichOrderedListNode
   )[];
+  type: RichContentType;
 }
