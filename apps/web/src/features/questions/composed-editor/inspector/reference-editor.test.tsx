@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   type ComponentProps,
@@ -21,48 +21,52 @@ describe("ReferenceEditor", () => {
     render(
       <ReferenceEditor
         model={createModel()}
-        referenceId="revenue"
-        previewSourceId={null}
-        workbookEnabled={false}
         onModelChange={() => {}}
         onSelectionChange={() => {}}
+        referenceId="revenue"
+        sources={[]}
+        workbookEnabled={false}
+        workbookSheetNamesBySourceId={{}}
       />,
     );
 
-    await user.click(screen.getByRole("combobox", { name: "Source" }));
+    await user.click(screen.getByRole("combobox", { name: "Source type" }));
     expect(screen.getByRole("option", { name: "Literal value" })).toBeTruthy();
     expect(screen.getByRole("option", { name: "Workbook cell" })).toBeTruthy();
     expect(screen.getByRole("option", { name: "Workbook range" })).toBeTruthy();
   });
 
   it("keeps existing workbook source id when editing workbook reference text", async () => {
-    const user = userEvent.setup();
     const onModelChange = vi.fn();
 
     renderReferenceEditor(
       <ReferenceEditor
         model={createWorkbookModel()}
-        referenceId="revenue"
-        workbookEnabled={true}
-        previewSourceId="source_2"
         onModelChange={onModelChange}
         onSelectionChange={() => {}}
+        referenceId="revenue"
+        sources={workbookSources()}
+        workbookEnabled={true}
+        workbookSheetNamesBySourceId={{}}
       />,
       onModelChange,
     );
 
-    await user.clear(screen.getByLabelText("Source cell"));
-    await user.type(screen.getByLabelText("Source cell"), "'Sheet1'!B2");
+    const sourceCellInput = screen.getByRole("textbox", {
+      name: "Cell or range",
+    });
+    fireEvent.change(sourceCellInput, { target: { value: "B2" } });
+    fireEvent.blur(sourceCellInput);
 
     expect(onModelChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         references: expect.arrayContaining([
           expect.objectContaining({
-            id: "revenue",
+            id: "workbook:source_2:cell:Sheet1:B2",
             source: {
-              type: "workbook_cell",
+              ref: "Sheet1!B2",
               sourceId: "source_2",
-              ref: "'Sheet1'!B2",
+              type: "workbook_cell",
             },
           }),
         ]),
@@ -77,38 +81,21 @@ describe("ReferenceEditor", () => {
     renderReferenceEditor(
       <ReferenceEditor
         model={createWorkbookModel()}
-        referenceId="revenue"
-        workbookEnabled={true}
-        previewSourceId="source_2"
         onModelChange={onModelChange}
         onSelectionChange={() => {}}
+        referenceId="revenue"
+        sources={workbookSources()}
+        workbookEnabled={true}
+        workbookSheetNamesBySourceId={{}}
       />,
       onModelChange,
       ({ onSelect }) => {
         onSelect({
-          sourceId: "source_3",
           reference: "'Source Three'!C4",
+          sourceId: "source_3",
           values: [],
         });
       },
-    );
-
-    await user.clear(screen.getByLabelText("Source cell"));
-    await user.type(screen.getByLabelText("Source cell"), "'Sheet1'!B2");
-
-    expect(onModelChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        references: expect.arrayContaining([
-          expect.objectContaining({
-            id: "revenue",
-            source: {
-              type: "workbook_cell",
-              sourceId: "source_2",
-              ref: "'Sheet1'!B2",
-            },
-          }),
-        ]),
-      }),
     );
 
     await user.click(
@@ -119,11 +106,11 @@ describe("ReferenceEditor", () => {
       expect.objectContaining({
         references: expect.arrayContaining([
           expect.objectContaining({
-            id: "revenue",
+            id: "workbook:source_3:cell:Source%20Three:C4",
             source: {
-              type: "workbook_cell",
-              sourceId: "source_3",
               ref: "'Source Three'!C4",
+              sourceId: "source_3",
+              type: "workbook_cell",
             },
           }),
         ]),
@@ -138,20 +125,21 @@ describe("ReferenceEditor", () => {
     renderReferenceEditor(
       <ReferenceEditor
         model={createModel()}
-        referenceId="revenue"
-        workbookEnabled={true}
-        previewSourceId={null}
         onModelChange={onModelChange}
         onSelectionChange={() => {}}
+        referenceId="revenue"
+        sources={[]}
+        workbookEnabled={true}
+        workbookSheetNamesBySourceId={{}}
       />,
     );
 
-    await user.click(screen.getByRole("combobox", { name: "Source" }));
+    await user.click(screen.getByRole("combobox", { name: "Source type" }));
     await user.click(screen.getByRole("option", { name: "Workbook cell" }));
 
     expect(
-      screen.getByText(
-        "Select a source before using workbook references.",
+      await screen.findByText(
+        "Attach a source before using workbook references.",
       ),
     ).toBeTruthy();
     expect(onModelChange).not.toHaveBeenCalled();
@@ -160,34 +148,49 @@ describe("ReferenceEditor", () => {
 
 function createModel(): ComposedEditorModel {
   return {
-    schemaVersion: 1,
     blocks: [],
-    responseFields: [],
     references: [
       {
         id: "revenue",
         source: { type: "literal", value: 0 },
       },
     ],
+    responseFields: [],
+    schemaVersion: 1,
   };
 }
 
 function createWorkbookModel(): ComposedEditorModel {
   return {
-    schemaVersion: 1,
     blocks: [],
-    responseFields: [],
     references: [
       {
         id: "revenue",
         source: {
-          type: "workbook_cell",
-          sourceId: "source_2",
           ref: "'Sheet1'!A1",
+          sourceId: "source_2",
+          type: "workbook_cell",
         },
       },
     ],
+    responseFields: [],
+    schemaVersion: 1,
   };
+}
+
+function workbookSources() {
+  return [
+    {
+      name: "Source Two",
+      sourceId: "source_2",
+      workbookId: "workbook_2",
+    },
+    {
+      name: "Source Three",
+      sourceId: "source_3",
+      workbookId: "workbook_3",
+    },
+  ];
 }
 
 function renderReferenceEditor(
@@ -204,7 +207,7 @@ function renderReferenceEditor(
 ) {
   return render(
     <WorkbookPickerProvider value={{ openWorkbookPicker }}>
-      <ReferenceEditorHarness ui={ui} onModelChangeSpy={onModelChangeSpy} />
+      <ReferenceEditorHarness onModelChangeSpy={onModelChangeSpy} ui={ui} />
     </WorkbookPickerProvider>,
   );
 }

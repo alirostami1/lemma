@@ -35,7 +35,7 @@ export type ReferencePickerPopoverProps = {
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
   sources: QuestionBlueprintWorkbookSource[];
-  previewSourceId: string | null;
+  workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
   disabled?: boolean;
   defaultMode?: "existing" | "create";
   allowedSourceTypes?: ReferenceSourceDraft["type"][];
@@ -57,7 +57,7 @@ export function ReferencePickerPopover({
   referencePreviewCache,
   workbookEnabled,
   sources,
-  previewSourceId,
+  workbookSheetNamesBySourceId,
   disabled,
   defaultMode = "existing",
   allowedSourceTypes,
@@ -91,7 +91,7 @@ export function ReferencePickerPopover({
   );
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover onOpenChange={setOpen} open={open}>
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent
         align="end"
@@ -116,18 +116,18 @@ export function ReferencePickerPopover({
           </PopoverHeader>
 
           <Tabs
-            value={mode}
+            className="grid gap-4"
             onValueChange={(value) =>
               setMode(value === "create" ? "create" : "existing")
             }
-            className="grid gap-4"
+            value={mode}
           >
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="existing">Use existing</TabsTrigger>
               <TabsTrigger value="create">Create new</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="existing" className="m-0 grid gap-3">
+            <TabsContent className="m-0 grid gap-3" value="existing">
               {visibleReferences.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No references yet. Create one to use it here.
@@ -139,20 +139,20 @@ export function ReferencePickerPopover({
                     const preview = referencePreviewCache[reference.id];
                     return (
                       <Button
-                        key={reference.id}
-                        type="button"
-                        variant={selected ? "default" : "outline"}
                         className={cn(
                           "h-auto justify-start py-3 text-left",
                           selected && "border-primary",
                         )}
+                        key={reference.id}
                         onClick={() => {
                           onSelectReference(reference.id);
                           setOpen(false);
                         }}
+                        type="button"
+                        variant={selected ? "default" : "outline"}
                       >
                         <span className="grid min-w-0 gap-0.5">
-                        <span className="truncate font-medium">
+                          <span className="truncate font-medium">
                             {getReferenceDisplayName(reference)}
                           </span>
                           <span className="truncate text-xs font-normal opacity-80">
@@ -172,31 +172,34 @@ export function ReferencePickerPopover({
               )}
             </TabsContent>
 
-            <TabsContent value="create" className="m-0">
+            <TabsContent className="m-0" value="create">
               <ReferenceCreateForm
-                model={model}
-                workbookEnabled={workbookEnabled}
-                sources={sources}
-                previewSourceId={previewSourceId}
                 allowedSourceTypes={allowedSourceTypes}
-                initialSourceType={createSourceTypeDefault}
-                disabled={disabled}
                 autoFocus
-                submitLabel="Create and use reference"
-                onCreated={(reference) => {
-                  const nextModel = addReferenceToModel(model, reference);
+                disabled={disabled}
+                initialSourceType={createSourceTypeDefault}
+                model={model}
+                onCancel={() => setMode("existing")}
+                onCreated={({ mode, reference, referenceId }) => {
+                  const nextModel =
+                    mode === "created" && reference
+                      ? addReferenceToModel(model, reference)
+                      : model;
                   if (onCreateAndSelectReference) {
                     onCreateAndSelectReference({
                       nextModel,
-                      referenceId: reference.id,
+                      referenceId,
                     });
                   } else {
                     onModelChange(nextModel);
-                    onSelectReference(reference.id);
+                    onSelectReference(referenceId);
                   }
                   setOpen(false);
                 }}
-                onCancel={() => setMode("existing")}
+                sources={sources}
+                submitLabel="Create and use reference"
+                workbookEnabled={workbookEnabled}
+                workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
               />
             </TabsContent>
           </Tabs>

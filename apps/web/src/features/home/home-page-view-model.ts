@@ -68,8 +68,20 @@ export function buildHomePageViewModel({
     recentBlueprints.length > 0 || recentQuestionSets.length > 0;
 
   return {
+    emptyState: hasRecentWork
+      ? null
+      : {
+          action: {
+            label: "Create blueprint",
+            to: "/create",
+            variant: "primary",
+          },
+          description:
+            "Start in Studio, save your blueprint, then generate questions into a question set.",
+          title: "Create your first blueprint",
+        },
+    hasRecentWork,
     hero: {
-      title: "Lemma",
       description:
         "Create reusable blueprints and generate questions into question sets.",
       primaryAction: {
@@ -82,22 +94,10 @@ export function buildHomePageViewModel({
         to: "/question-sets",
         variant: "secondary",
       },
+      title: "Lemma",
     },
     recentBlueprints,
     recentQuestionSets,
-    hasRecentWork,
-    emptyState: hasRecentWork
-      ? null
-      : {
-          title: "Create your first blueprint",
-          description:
-            "Start in Studio, save your blueprint, then generate questions into a question set.",
-          action: {
-            label: "Create blueprint",
-            to: "/create",
-            variant: "primary",
-          },
-        },
   };
 }
 
@@ -110,13 +110,13 @@ export function buildRecentBlueprintItems(
         blueprint.status !== "deleted" && blueprint.visibility !== "system",
     )
     .map((item) => ({
+      description: "Open in Studio",
       id: item.id,
       label: item.name,
-      description: "Open in Studio",
-      to: "/studio" as const,
       search: {
         blueprintId: item.id,
       },
+      to: "/studio" as const,
     }));
 }
 
@@ -124,12 +124,12 @@ export function buildRecentQuestionSetItems(
   questionSets: QuestionSet[],
 ): RecentHomeItem[] {
   return questionSets.map((item) => ({
+    description: item.description ?? undefined,
     id: item.id,
     label: item.name,
-    description: item.description ?? undefined,
-    to: "/question-sets/$questionSetId" as const,
     params: {
       questionSetId: item.id,
     },
+    to: "/question-sets/$questionSetId" as const,
   }));
 }

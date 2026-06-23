@@ -32,9 +32,9 @@ export function CreateHeroSection({
 }) {
   return (
     <PageHeader
-      title={hero.title}
       description={hero.description}
       size="launcher"
+      title={hero.title}
     />
   );
 }
@@ -46,9 +46,6 @@ export function BlankBlueprintPanel({
 }) {
   return (
     <PrimaryActionPanel
-      eyebrow="Recommended starting point"
-      title={blankBlueprint.title}
-      description={blankBlueprint.description}
       action={
         <LauncherActionButton
           action={blankBlueprint.action}
@@ -56,6 +53,9 @@ export function BlankBlueprintPanel({
           size="lg"
         />
       }
+      description={blankBlueprint.description}
+      eyebrow="Recommended starting point"
+      title={blankBlueprint.title}
     />
   );
 }
@@ -75,19 +75,19 @@ export function SavedBlueprintPanel({
 }) {
   return (
     <SecondaryLauncherPanel
-      title={savedBlueprints.title}
       description={savedBlueprints.description}
-      items={savedBlueprints.recentItems}
-      isLoading={isLoading}
-      errorMessage={errorMessage}
       emptyMessage={savedBlueprints.emptyMessage}
+      errorMessage={errorMessage}
       footer={
-        <Button type="button" variant="outline" onClick={onChoose}>
+        <Button onClick={onChoose} type="button" variant="outline">
           <FolderOpen />
           {savedBlueprints.chooseLabel}
         </Button>
       }
+      isLoading={isLoading}
+      items={savedBlueprints.recentItems}
       onRetry={onRetry}
+      title={savedBlueprints.title}
     />
   );
 }
@@ -120,14 +120,13 @@ function SecondaryLauncherPanel({
       <CardContent className="flex-1">
         <div className="grid gap-3">
           <AsyncPanel
-            isLoading={isLoading && items.length === 0}
-            errorMessage={errorMessage}
-            isEmpty={items.length === 0}
-            loading={<CreateRecentListSkeleton />}
+            empty={<EmptyState className="p-4" description={emptyMessage} />}
             error={(message) => (
               <InlineError message={message} onRetry={onRetry} />
             )}
-            empty={<EmptyState description={emptyMessage} className="p-4" />}
+            errorMessage={errorMessage}
+            isEmpty={items.length === 0}
+            isLoading={isLoading && items.length === 0}
           >
             <CreateLauncherItemList items={items} />
           </AsyncPanel>
@@ -149,7 +148,7 @@ export function CreateLauncherItemList({
   return (
     <ResourceList>
       {items.map((item) => (
-        <CreateLauncherItem key={item.id} item={item} />
+        <CreateLauncherItem item={item} key={item.id} />
       ))}
     </ResourceList>
   );
@@ -158,22 +157,22 @@ export function CreateLauncherItemList({
 export function CreateLauncherItem({ item }: { item: CreateLauncherListItem }) {
   return (
     <ResourceListItem
-      variant="navigation"
-      title={item.title}
       description={item.description}
       navigationAccessory={
         <ArrowRight className="size-4 text-muted-foreground" />
       }
       renderLink={(children, className) => (
         <Link
-          to={item.action.to}
-          search={item.action.search}
           aria-label={item.action.label}
           className={className}
+          search={item.action.search}
+          to={item.action.to}
         >
           {children}
         </Link>
       )}
+      title={item.title}
+      variant="navigation"
     />
   );
 }
@@ -201,7 +200,7 @@ function LauncherActionButton({
   return (
     <Button asChild size={size}>
       {"search" in action ? (
-        <Link to={action.to} search={action.search}>
+        <Link search={action.search} to={action.to}>
           {icon}
           {action.label}
         </Link>

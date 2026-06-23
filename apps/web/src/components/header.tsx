@@ -58,18 +58,18 @@ export function SiteNavigation() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
             aria-label="Open navigation menu"
+            className="md:hidden"
+            size="icon"
+            variant="ghost"
           >
             <Menu />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-44" align="start">
+        <DropdownMenuContent align="start" className="w-44">
           <DropdownMenuGroup>
             {primaryNavigation.map((link) => (
-              <DropdownMenuItem key={link.to} asChild>
+              <DropdownMenuItem asChild key={link.to}>
                 <Link to={link.to}>{link.label}</Link>
               </DropdownMenuItem>
             ))}
@@ -100,7 +100,6 @@ export function AccountNavigation() {
     return (
       <ButtonGroup>
         <Button
-          variant="outline"
           className="cursor-pointer align-middle"
           onClick={() =>
             oidc.login({
@@ -109,14 +108,15 @@ export function AccountNavigation() {
                 keycloakUtils.transformUrlBeforeRedirectForRegister,
             })
           }
+          variant="outline"
         >
           <UserRoundPlus />
           Register
         </Button>
         <Button
-          variant="default"
           className="cursor-pointer align-middle"
           onClick={() => oidc.login()}
+          variant="default"
         >
           <LogIn />
           Login
@@ -135,20 +135,20 @@ export function AccountNavigation() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-full"
           aria-label="Open account menu"
+          className="rounded-full"
+          size="icon"
+          variant="ghost"
         >
           <Avatar>
             {decodedIdToken.picture ? (
-              <AvatarImage src={decodedIdToken.picture} className="size-10" />
+              <AvatarImage className="size-10" src={decodedIdToken.picture} />
             ) : null}
             <AvatarFallback>{avatarLabel}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-40" align="end">
+      <DropdownMenuContent align="end" className="w-40">
         <DropdownMenuGroup>
           <DropdownMenuLabel>My Account</DropdownMenuLabel>
           <DropdownMenuItem asChild>

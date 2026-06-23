@@ -16,10 +16,10 @@ export function SavedBlueprintChooserDialog({
 }) {
   return (
     <CreateChooserDialog
-      open={controller.open}
-      title="Choose blueprint"
       description="Open a saved blueprint in Studio."
       onOpenChange={controller.onOpenChange}
+      open={controller.open}
+      title="Choose blueprint"
     >
       <CreatePaginatedList
         {...controller}
@@ -45,7 +45,7 @@ function CreateChooserDialog({
   onOpenChange(open: boolean): void;
 }) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

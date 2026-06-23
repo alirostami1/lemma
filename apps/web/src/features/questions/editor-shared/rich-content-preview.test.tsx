@@ -9,37 +9,37 @@ describe("RichContentPreview", () => {
 
   it("renders list marker classes for unordered and ordered lists", () => {
     const content: ComposedRichContent = {
-      type: "doc",
       content: [
         {
-          type: "bullet_list",
           items: [
             {
-              type: "list_item",
               content: [
                 {
+                  content: [{ text: "Bullet", type: "text" }],
                   type: "paragraph",
-                  content: [{ type: "text", text: "Bullet" }],
                 },
               ],
+              type: "list_item",
             },
           ],
+          type: "bullet_list",
         },
         {
-          type: "ordered_list",
           items: [
             {
-              type: "list_item",
               content: [
                 {
+                  content: [{ text: "Numbered", type: "text" }],
                   type: "paragraph",
-                  content: [{ type: "text", text: "Numbered" }],
                 },
               ],
+              type: "list_item",
             },
           ],
+          type: "ordered_list",
         },
       ],
+      type: "doc",
     };
 
     const { container } = render(<RichContentPreview content={content} />);

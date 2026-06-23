@@ -19,9 +19,9 @@ function blueprint(
   return {
     id,
     name: `Blueprint ${id}`,
+    sources: input?.sources ?? [],
     status: input?.status ?? "active",
     visibility: input?.visibility ?? "private",
-    sources: input?.sources ?? [],
   };
 }
 
@@ -55,8 +55,8 @@ describe("create page view model", () => {
       blueprint("blueprint-2", {
         sources: [
           {
-            sourceId: "source-1",
             name: "Workbook 1",
+            sourceId: "source-1",
             workbookId: "workbook-1",
           },
         ],

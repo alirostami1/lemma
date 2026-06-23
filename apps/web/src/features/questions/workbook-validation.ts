@@ -45,10 +45,10 @@ export function buildWorkbookRangeSelection(
   }
 
   const referenceRange = {
-    startRowIndex: range.startRowIndex + (options.rowStartIndex ?? 0),
+    endColumnIndex: range.endColumnIndex + (options.columnStartIndex ?? 0),
     endRowIndex: range.endRowIndex + (options.rowStartIndex ?? 0),
     startColumnIndex: range.startColumnIndex + (options.columnStartIndex ?? 0),
-    endColumnIndex: range.endColumnIndex + (options.columnStartIndex ?? 0),
+    startRowIndex: range.startRowIndex + (options.rowStartIndex ?? 0),
   };
 
   return {
@@ -96,11 +96,11 @@ export function validateWorkbookRangeSelection(
   }
 
   return {
-    ok: false,
     message: `${messages.join(" ")} Current selection is ${formatDimensionCount(
       rowCount,
       "row",
     )} by ${formatDimensionCount(columnCount, "column")}.`,
+    ok: false,
   };
 }
 

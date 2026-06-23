@@ -18,24 +18,24 @@ vi.mock("./reference-picker-popover", () => ({
   }) => (
     <div>
       {trigger}
-      <button type="button" onClick={() => onSelectReference("reference_1")}>
+      <button onClick={() => onSelectReference("reference_1")} type="button">
         Mock select reference
       </button>
       <button
-        type="button"
         onClick={() =>
           onModelChange({
-            schemaVersion: 1,
             blocks: [],
-            responseFields: [],
             references: [
               {
                 id: "reference_1",
                 source: { type: "literal", value: "x" },
               },
             ],
+            responseFields: [],
+            schemaVersion: 1,
           })
         }
+        type="button"
       >
         Mock create reference
       </button>
@@ -51,13 +51,14 @@ describe("ValueExpressionInput", () => {
 
     render(
       <ValueExpressionInput
-        value={{ type: "literal", value: 42 }}
         model={createModel()}
-        referencePreviewCache={{}}
-        workbookEnabled={false}
-        previewSourceId={null}
-        onModelChange={() => {}}
         onChange={() => {}}
+        onModelChange={() => {}}
+        referencePreviewCache={{}}
+        sources={[]}
+        value={{ type: "literal", value: 42 }}
+        workbookEnabled={false}
+        workbookSheetNamesBySourceId={{}}
       />,
     );
 
@@ -75,13 +76,14 @@ describe("ValueExpressionInput", () => {
 
     render(
       <ValueExpressionInput
-        value={{ type: "reference", referenceId: "" }}
         model={createModel()}
-        referencePreviewCache={{}}
-        workbookEnabled={true}
-        previewSourceId={null}
-        onModelChange={onModelChange}
         onChange={onChange}
+        onModelChange={onModelChange}
+        referencePreviewCache={{}}
+        sources={[]}
+        value={{ referenceId: "", type: "reference" }}
+        workbookEnabled={true}
+        workbookSheetNamesBySourceId={{}}
       />,
     );
 
@@ -90,8 +92,8 @@ describe("ValueExpressionInput", () => {
       screen.getByRole("button", { name: "Mock select reference" }),
     );
     expect(onChange).toHaveBeenCalledWith({
-      type: "reference",
       referenceId: "reference_1",
+      type: "reference",
     });
 
     await user.click(screen.getByRole("button", { name: "Choose reference" }));
@@ -110,21 +112,22 @@ describe("ValueExpressionInput", () => {
       }),
     );
     expect(onChange).toHaveBeenCalledWith({
-      type: "reference",
       referenceId: "reference_1",
+      type: "reference",
     });
   });
 
   it("warns when a reference is missing", () => {
     render(
       <ValueExpressionInput
-        value={{ type: "reference", referenceId: "missing" }}
         model={createModel()}
-        referencePreviewCache={{}}
-        workbookEnabled={false}
-        previewSourceId={null}
-        onModelChange={() => {}}
         onChange={() => {}}
+        onModelChange={() => {}}
+        referencePreviewCache={{}}
+        sources={[]}
+        value={{ referenceId: "missing", type: "reference" }}
+        workbookEnabled={false}
+        workbookSheetNamesBySourceId={{}}
       />,
     );
 
@@ -136,9 +139,9 @@ describe("ValueExpressionInput", () => {
 
 function createModel(): ComposedEditorModel {
   return {
-    schemaVersion: 1,
     blocks: [],
-    responseFields: [],
     references: [],
+    responseFields: [],
+    schemaVersion: 1,
   };
 }

@@ -57,7 +57,7 @@ function RichContentNodePreview({
   return (
     <ListTag className={cn("my-2 space-y-0.5 pl-6 leading-6", listStyle)}>
       {node.items.map((item, itemIndex) => (
-        <li key={itemIndex} className="pl-1 marker:text-muted-foreground">
+        <li className="pl-1 marker:text-muted-foreground" key={itemIndex}>
           {item.content.map((child, childIndex) => (
             <RichContentNodePreview
               key={childIndex}

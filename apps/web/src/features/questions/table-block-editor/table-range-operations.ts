@@ -52,9 +52,9 @@ export function createTableFromWorkbookRangeReference(input: {
       rowValues.map((value, columnIndex) => {
         if (
           !getWorkbookCellRefAtOffset({
+            columnOffset: columnIndex,
             rangeRef: input.rangeReference.source.ref,
             rowOffset: rowIndex,
-            columnOffset: columnIndex,
           })
         ) {
           throw new Error("Selected range reference is invalid.");
@@ -66,21 +66,21 @@ export function createTableFromWorkbookRangeReference(input: {
         }
 
         return {
-          id: `cell_${rowIndex + 1}_${columnIndex + 1}`,
-          rowId: row.id,
           columnId: column.id,
-          type: "content",
           content: [
             {
-              type: "reference",
-              referenceId: input.rangeReference.id,
-              rangeCell: {
-                rowOffset: rowIndex,
-                columnOffset: columnIndex,
-              },
               fallbackText: value,
+              rangeCell: {
+                columnOffset: columnIndex,
+                rowOffset: rowIndex,
+              },
+              referenceId: input.rangeReference.id,
+              type: "reference",
             },
           ],
+          id: `cell_${rowIndex + 1}_${columnIndex + 1}`,
+          rowId: row.id,
+          type: "content",
         };
       }),
   );
@@ -89,10 +89,10 @@ export function createTableFromWorkbookRangeReference(input: {
     references: [],
     table: {
       ...input.currentModel,
-      rows,
-      columns,
       cells,
+      columns,
       responseFields: [],
+      rows,
     },
   };
 }
@@ -115,71 +115,71 @@ export function applyWorkbookRangeReferenceToTableBlock(input: {
     (candidate) => candidate.id === input.rangeReferenceId,
   );
   if (!reference) {
-    return { ok: false, message: "Selected range reference was not found." };
+    return { message: "Selected range reference was not found.", ok: false };
   }
   if (!isWorkbookRangeReferenceDraft(reference)) {
     return {
-      ok: false,
       message: "Selected reference is not a workbook range.",
+      ok: false,
     };
   }
 
   const preview = input.referencePreviewCache[reference.id];
   if (!preview) {
     return {
-      ok: false,
       message: "Select a ready source to preview this range.",
+      ok: false,
     };
   }
   if (preview.status !== "resolved") {
     return {
-      ok: false,
       message: "Selected range is not ready to apply.",
+      ok: false,
     };
   }
   if (!isStringMatrix(preview.rawValue)) {
     return {
-      ok: false,
       message: "Selected range must be a rectangular 2D array of values.",
+      ok: false,
     };
   }
 
   const tableBlock = input.editorModel.blocks.find(
     (block) => block.id === input.tableBlockId && block.type === "table",
   );
-  if (!tableBlock || tableBlock.type !== "table") {
-    return { ok: false, message: "Selected table was not found." };
+  if (tableBlock?.type !== "table") {
+    return { message: "Selected table was not found.", ok: false };
   }
 
   let result: TableFromWorkbookRangeResult;
   try {
     result = createTableFromWorkbookRangeReference({
       currentModel: tableBlock.table,
+      existingReferenceIds: input.editorModel.references.map((item) => item.id),
       rangeReference: reference,
       values: preview.rawValue,
-      existingReferenceIds: input.editorModel.references.map((item) => item.id),
     });
   } catch (error) {
     return {
-      ok: false,
       message:
         error instanceof Error
           ? error.message
           : "Unable to create table from the selected range.",
+      ok: false,
     };
   }
 
   return {
-    ok: true,
     model: {
       ...input.editorModel,
-      references: [...input.editorModel.references, ...result.references],
       blocks: input.editorModel.blocks.map((block) =>
         block.id === input.tableBlockId && block.type === "table"
           ? { ...block, table: result.table }
           : block,
       ),
+      references: [...input.editorModel.references, ...result.references],
     },
+    ok: true,
   };
 }
 
@@ -209,8 +209,8 @@ function validateWorkbookRangeMatrix(values: WorkbookRangeMatrix): {
   }
 
   return {
-    rowCount: values.length,
     columnCount,
+    rowCount: values.length,
   };
 }
 

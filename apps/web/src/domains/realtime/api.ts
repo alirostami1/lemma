@@ -14,9 +14,9 @@ export function createRealtimeSubscriptionToken(input: {
   return authedFetch<RealtimeTokenResult>(
     "/api/v1/notifications/subscription-token",
     {
-      method: "POST",
-      headers: { "content-type": "application/json" },
       body: JSON.stringify(input),
+      headers: { "content-type": "application/json" },
+      method: "POST",
     },
   );
 }

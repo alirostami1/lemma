@@ -31,12 +31,12 @@ export function CreatePaginatedList({
 }) {
   return (
     <AsyncPanel
-      isLoading={isInitialLoading}
+      empty={<EmptyState description={emptyMessage} />}
+      error={(message) => <InlineError message={message} onRetry={onRetry} />}
       errorMessage={errorMessage}
       isEmpty={items.length === 0}
+      isLoading={isInitialLoading}
       loading={<CreateRecentListSkeleton />}
-      error={(message) => <InlineError message={message} onRetry={onRetry} />}
-      empty={<EmptyState description={emptyMessage} />}
     >
       <PaginatedList
         hasMore={hasMore}

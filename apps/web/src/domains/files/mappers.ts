@@ -20,8 +20,8 @@ import type {
 export function mapFile(dto: FileDto): File {
   return {
     ...dto,
-    deletedAt: dto.deletedAt ? new Date(dto.deletedAt) : null,
     createdAt: new Date(dto.createdAt),
+    deletedAt: dto.deletedAt ? new Date(dto.deletedAt) : null,
     updatedAt: new Date(dto.updatedAt),
   };
 }
@@ -29,11 +29,11 @@ export function mapFile(dto: FileDto): File {
 export function mapFileUpload(dto: FileUploadDto): FileUpload {
   return {
     ...dto,
-    contentType: dto.contentType,
-    uploadExpiresAt: new Date(dto.uploadExpiresAt),
     completedAt: dto.completedAt ? new Date(dto.completedAt) : null,
+    contentType: dto.contentType,
     createdAt: new Date(dto.createdAt),
     updatedAt: new Date(dto.updatedAt),
+    uploadExpiresAt: new Date(dto.uploadExpiresAt),
   };
 }
 

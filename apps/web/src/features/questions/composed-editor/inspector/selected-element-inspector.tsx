@@ -21,7 +21,7 @@ export function SelectedElementInspector({
   referencePreviewCache,
   workbookEnabled,
   sources,
-  previewSourceId,
+  workbookSheetNamesBySourceId,
   disabled,
   onModelChange,
   onSelectionChange,
@@ -32,7 +32,7 @@ export function SelectedElementInspector({
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
   sources: QuestionBlueprintWorkbookSource[];
-  previewSourceId: string | null;
+  workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onSelectionChange(selection: EditorSelection): void;
@@ -53,16 +53,16 @@ export function SelectedElementInspector({
     <BlockInspector block={selectedBlock}>
       {selectedBlock.type === "table" ? (
         <TableSelectionInspector
-          model={model}
           block={selectedBlock}
-          selection={selection}
-          referencePreviewCache={referencePreviewCache}
-          workbookEnabled={workbookEnabled}
-          sources={sources}
-          previewSourceId={previewSourceId}
           disabled={disabled}
+          model={model}
           onModelChange={onModelChange}
           onSelectionChange={onSelectionChange}
+          referencePreviewCache={referencePreviewCache}
+          selection={selection}
+          sources={sources}
+          workbookEnabled={workbookEnabled}
+          workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
         />
       ) : null}
       {selectedBlock.type === "text" ? <NoExtraElementSettings /> : null}
@@ -70,14 +70,14 @@ export function SelectedElementInspector({
       {selectedBlock.type === "separator" ? <NoExtraElementSettings /> : null}
       {selectedBlock.type === "response" ? (
         <ResponseBlockInspector
-          model={model}
           block={selectedBlock}
-          referencePreviewCache={referencePreviewCache}
-          workbookEnabled={workbookEnabled}
-          sources={sources}
-          previewSourceId={previewSourceId}
           disabled={disabled}
+          model={model}
           onModelChange={onModelChange}
+          referencePreviewCache={referencePreviewCache}
+          sources={sources}
+          workbookEnabled={workbookEnabled}
+          workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
         />
       ) : null}
     </BlockInspector>
@@ -99,7 +99,7 @@ function TableSelectionInspector({
   referencePreviewCache,
   workbookEnabled,
   sources,
-  previewSourceId,
+  workbookSheetNamesBySourceId,
   disabled,
   onModelChange,
   onSelectionChange,
@@ -110,7 +110,7 @@ function TableSelectionInspector({
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
   sources: QuestionBlueprintWorkbookSource[];
-  previewSourceId: string | null;
+  workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onSelectionChange(selection: EditorSelection): void;
@@ -128,29 +128,29 @@ function TableSelectionInspector({
 
   function setTableSelection(tableSelection: TableEditorSelection) {
     if (tableSelection.type === "table") {
-      onSelectionChange({ type: "table", blockId: block.id });
+      onSelectionChange({ blockId: block.id, type: "table" });
       return;
     }
     if (tableSelection.type === "row") {
       onSelectionChange({
-        type: "table_row",
         blockId: block.id,
         rowId: tableSelection.rowId,
+        type: "table_row",
       });
       return;
     }
     if (tableSelection.type === "column") {
       onSelectionChange({
-        type: "table_column",
         blockId: block.id,
         columnId: tableSelection.columnId,
+        type: "table_column",
       });
       return;
     }
     onSelectionChange({
-      type: "table_cell",
       blockId: block.id,
       cellId: tableSelection.cellId,
+      type: "table_cell",
     });
   }
 
@@ -159,23 +159,23 @@ function TableSelectionInspector({
       <div className="grid gap-5">
         <TableInspector
           blockId={block.id}
-          model={block.table}
-          editorModel={model}
-          referencePreviewCache={referencePreviewCache}
-          workbookEnabled={workbookEnabled}
-          sources={sources}
-          previewSourceId={previewSourceId}
           disabled={disabled}
-          onModelChange={updateTable}
+          editorModel={model}
+          model={block.table}
           onEditorModelChange={onModelChange}
+          onModelChange={updateTable}
           onSelectionChange={setTableSelection}
+          referencePreviewCache={referencePreviewCache}
+          sources={sources}
+          workbookEnabled={workbookEnabled}
+          workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
         />
         <TableRowInspector
-          model={block.table}
-          rowId={selection.rowId}
           disabled={disabled}
+          model={block.table}
           onModelChange={updateTable}
           onSelectionChange={setTableSelection}
+          rowId={selection.rowId}
         />
       </div>
     );
@@ -186,21 +186,21 @@ function TableSelectionInspector({
       <div className="grid gap-5">
         <TableInspector
           blockId={block.id}
-          model={block.table}
-          editorModel={model}
-          referencePreviewCache={referencePreviewCache}
-          workbookEnabled={workbookEnabled}
-          sources={sources}
-          previewSourceId={previewSourceId}
           disabled={disabled}
-          onModelChange={updateTable}
+          editorModel={model}
+          model={block.table}
           onEditorModelChange={onModelChange}
+          onModelChange={updateTable}
           onSelectionChange={setTableSelection}
+          referencePreviewCache={referencePreviewCache}
+          sources={sources}
+          workbookEnabled={workbookEnabled}
+          workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
         />
         <TableColumnInspector
-          model={block.table}
           columnId={selection.columnId}
           disabled={disabled}
+          model={block.table}
           onModelChange={updateTable}
           onSelectionChange={setTableSelection}
         />
@@ -213,29 +213,29 @@ function TableSelectionInspector({
       <div className="grid gap-5">
         <TableInspector
           blockId={block.id}
-          model={block.table}
-          editorModel={model}
-          referencePreviewCache={referencePreviewCache}
-          workbookEnabled={workbookEnabled}
-          sources={sources}
-          previewSourceId={previewSourceId}
           disabled={disabled}
-          onModelChange={updateTable}
+          editorModel={model}
+          model={block.table}
           onEditorModelChange={onModelChange}
+          onModelChange={updateTable}
           onSelectionChange={setTableSelection}
+          referencePreviewCache={referencePreviewCache}
+          sources={sources}
+          workbookEnabled={workbookEnabled}
+          workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
         />
         <TableCellInspector
-          model={block.table}
-          tableBlockId={block.id}
           cellId={selection.cellId}
-          editorModel={model}
-          referencePreviewCache={referencePreviewCache}
-          workbookEnabled={workbookEnabled}
-          sources={sources}
-          previewSourceId={previewSourceId}
           disabled={disabled}
-          onModelChange={updateTable}
+          editorModel={model}
+          model={block.table}
           onEditorModelChange={onModelChange}
+          onModelChange={updateTable}
+          referencePreviewCache={referencePreviewCache}
+          sources={sources}
+          tableBlockId={block.id}
+          workbookEnabled={workbookEnabled}
+          workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
         />
       </div>
     );
@@ -244,16 +244,16 @@ function TableSelectionInspector({
   return (
     <TableInspector
       blockId={block.id}
-      model={block.table}
-      editorModel={model}
-      referencePreviewCache={referencePreviewCache}
-      workbookEnabled={workbookEnabled}
-      sources={sources}
-      previewSourceId={previewSourceId}
       disabled={disabled}
-      onModelChange={updateTable}
+      editorModel={model}
+      model={block.table}
       onEditorModelChange={onModelChange}
+      onModelChange={updateTable}
       onSelectionChange={setTableSelection}
+      referencePreviewCache={referencePreviewCache}
+      sources={sources}
+      workbookEnabled={workbookEnabled}
+      workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
     />
   );
 }

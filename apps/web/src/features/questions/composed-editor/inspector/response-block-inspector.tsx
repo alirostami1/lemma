@@ -20,7 +20,7 @@ export function ResponseBlockInspector({
   referencePreviewCache,
   workbookEnabled,
   sources,
-  previewSourceId,
+  workbookSheetNamesBySourceId,
   disabled,
   onModelChange,
 }: {
@@ -29,7 +29,7 @@ export function ResponseBlockInspector({
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
   sources: QuestionBlueprintWorkbookSource[];
-  previewSourceId: string | null;
+  workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
 }) {
@@ -72,12 +72,8 @@ export function ResponseBlockInspector({
     <div className="grid gap-5">
       <InspectorSection title="Input">
         <AnswerFieldSettings
-          responseField={responseField}
-          label={block.label}
-          placeholder={block.placeholder}
           disabled={disabled}
-          showPromptFields={false}
-          onResponseFieldChange={(field) => updateField(() => field)}
+          label={block.label}
           onLabelChange={(label) =>
             updateBlock((current) => ({
               ...current,
@@ -90,41 +86,38 @@ export function ResponseBlockInspector({
               placeholder,
             }))
           }
+          onResponseFieldChange={(field) => updateField(() => field)}
+          placeholder={block.placeholder}
+          responseField={responseField}
+          showPromptFields={false}
         />
       </InspectorSection>
 
       <InspectorSection title="Scoring">
         <GradingSettings
           blockId={block.id}
-          points={block.points}
-          grading={block.grading}
           disabled={disabled}
-          onPointsChange={(points) =>
-            updateBlock((current) => ({
-              ...current,
-              points,
-            }))
-          }
+          grading={block.grading}
           onGradingChange={(grading) =>
             updateBlock((current) => ({
               ...current,
               grading,
             }))
           }
+          onPointsChange={(points) =>
+            updateBlock((current) => ({
+              ...current,
+              points,
+            }))
+          }
+          points={block.points}
         />
       </InspectorSection>
 
       <InspectorSection title="Correct answer">
         <CorrectAnswerSettings
-          value={block.correctValueSource}
-          model={model}
-          referencePreviewCache={referencePreviewCache}
-          valueType={responseField.type}
-          workbookEnabled={workbookEnabled}
-          sources={sources}
-          previewSourceId={previewSourceId}
           disabled={disabled}
-          onModelChange={onModelChange}
+          model={model}
           onChange={(correctValueSource) =>
             updateBlock((current) => ({
               ...current,
@@ -141,13 +134,20 @@ export function ResponseBlockInspector({
                 return {
                   ...current,
                   correctValueSource: {
-                    type: "reference",
                     referenceId,
+                    type: "reference",
                   },
                 };
               }),
             );
           }}
+          onModelChange={onModelChange}
+          referencePreviewCache={referencePreviewCache}
+          sources={sources}
+          value={block.correctValueSource}
+          valueType={responseField.type}
+          workbookEnabled={workbookEnabled}
+          workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
         />
       </InspectorSection>
     </div>

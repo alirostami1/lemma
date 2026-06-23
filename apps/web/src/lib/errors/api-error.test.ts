@@ -11,14 +11,14 @@ import {
 
 function createApiError(status: number) {
   return new AppApiError({
-    status,
-    headers: new Headers(),
     body: null,
+    headers: new Headers(),
     payload: {
       code: `HTTP_${status}`,
       message: `API message for ${status}`,
       requestId: "request-1",
     },
+    status,
   });
 }
 

@@ -46,7 +46,15 @@ export function useHomePageController(): HomePageController {
   );
 
   return {
-    viewModel: buildHomePageViewModel({ questionSets, blueprints }),
+    blueprints: {
+      errorMessage: blueprintsQuery.isError
+        ? "Saved blueprints could not be loaded right now."
+        : null,
+      isLoading: blueprintsQuery.isLoading,
+      onRetry: () => {
+        void blueprintsQuery.refetch();
+      },
+    },
     pageError:
       questionSets.length === 0 && blueprints.length === 0 && accessError
         ? isUnauthorizedError(accessError)
@@ -59,23 +67,15 @@ export function useHomePageController(): HomePageController {
               requestId: getApiErrorRequestId(accessError),
             }
         : null,
-    blueprints: {
-      isLoading: blueprintsQuery.isLoading,
-      errorMessage: blueprintsQuery.isError
-        ? "Saved blueprints could not be loaded right now."
-        : null,
-      onRetry: () => {
-        void blueprintsQuery.refetch();
-      },
-    },
     questionSets: {
-      isLoading: questionSetsQuery.isLoading,
       errorMessage: questionSetsQuery.isError
         ? "Recent question sets could not be loaded right now."
         : null,
+      isLoading: questionSetsQuery.isLoading,
       onRetry: () => {
         void questionSetsQuery.refetch();
       },
     },
+    viewModel: buildHomePageViewModel({ blueprints, questionSets }),
   };
 }

@@ -36,10 +36,10 @@ export function createRoleGuard(input: {
     const user = { roles: getRolesFromDecodedToken(oidc.getDecodedIdToken()) };
     const requirements: AccessRequirement[] = [];
     if (input.all) {
-      requirements.push({ type: "all_roles", roles: input.all });
+      requirements.push({ roles: input.all, type: "all_roles" });
     }
     if (input.any) {
-      requirements.push({ type: "any_role", roles: input.any });
+      requirements.push({ roles: input.any, type: "any_role" });
     }
 
     if (!requirements.every((requirement) => canAccess(user, requirement))) {

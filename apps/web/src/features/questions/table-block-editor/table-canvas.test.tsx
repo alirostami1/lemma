@@ -13,10 +13,10 @@ describe("TableCanvas", () => {
     render(
       <TableCanvas
         model={model}
-        selection={{ type: "table" }}
-        referencePreviewCache={{}}
         onModelChange={() => {}}
         onSelectionChange={() => {}}
+        referencePreviewCache={{}}
+        selection={{ type: "table" }}
       />,
     );
 

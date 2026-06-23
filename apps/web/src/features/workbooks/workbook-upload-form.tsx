@@ -55,11 +55,11 @@ export function WorkbookUploadForm({
           <Input
             id="workbook-name"
             name="name"
-            placeholder="Source name"
-            value={controller.name}
             onChange={(event) =>
               controller.onNameChange(event.currentTarget.value)
             }
+            placeholder="Source name"
+            value={controller.name}
           />
           {controller.viewModel.nameError ? (
             <FieldError>{controller.viewModel.nameError}</FieldError>
@@ -84,10 +84,8 @@ export function WorkbookUploadForm({
           </div>
         </div>
         <input
-          ref={fileInputRef}
           accept=".xlsx"
           className="hidden"
-          type="file"
           onChange={(event) => {
             const nextFile = event.currentTarget.files?.[0] ?? null;
             const result = controller.onFileChange(nextFile);
@@ -95,12 +93,14 @@ export function WorkbookUploadForm({
               event.currentTarget.value = "";
             }
           }}
+          ref={fileInputRef}
+          type="file"
         />
         <Button
-          type="button"
-          variant="outline"
           disabled={controller.viewModel.isFileSelectDisabled}
           onClick={() => fileInputRef.current?.click()}
+          type="button"
+          variant="outline"
         >
           <Upload />
           Select .xlsx
@@ -114,20 +114,20 @@ export function WorkbookUploadForm({
       <div className="flex flex-wrap items-center justify-end gap-2">
         {onCancel ? (
           <Button
-            type="button"
-            variant="outline"
+            className="gap-2"
             disabled={controller.viewModel.isCancelDisabled}
             onClick={onCancel}
-            className="gap-2"
+            type="button"
+            variant="outline"
           >
             {cancelIcon ?? <ArrowLeft className="size-4" />}
             {controller.viewModel.cancelLabel}
           </Button>
         ) : null}
         <Button
-          type="submit"
-          disabled={controller.viewModel.isSubmitDisabled}
           className="gap-2"
+          disabled={controller.viewModel.isSubmitDisabled}
+          type="submit"
         >
           {submitIcon}
           {controller.viewModel.submitLabel}

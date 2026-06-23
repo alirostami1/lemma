@@ -12,11 +12,11 @@ import type {
   ComposedEditorModel,
   ComposedInlineContent,
 } from "#/domains/questions/authoring";
-import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import {
   formatInlineBlueprint,
   parseInlineBlueprint,
 } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import { InlineContentRenderer } from "../inline-content-renderer";
 import { ReferencePickerPopover } from "../inspector/reference-picker-popover";
@@ -28,7 +28,7 @@ type TextAuthoringContentProps = {
   model: ComposedEditorModel;
   workbookEnabled: boolean;
   sources: QuestionBlueprintWorkbookSource[];
-  previewSourceId: string | null;
+  workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
   disabled?: boolean;
   onChange(content: ComposedInlineContent[]): void;
   onModelChange(model: ComposedEditorModel): void;
@@ -46,7 +46,7 @@ export function TextAuthoringContent({
   model,
   workbookEnabled,
   sources,
-  previewSourceId,
+  workbookSheetNamesBySourceId,
   disabled,
   onChange,
   onModelChange,
@@ -56,15 +56,15 @@ export function TextAuthoringContent({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const ignoreNextPickerCloseRef = useRef(false);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [selection, setSelection] = useState({ start: 0, end: 0 });
+  const [selection, setSelection] = useState({ end: 0, start: 0 });
   const textValue = useMemo(() => formatInlineBlueprint(content), [content]);
 
   function updateSelection() {
     const textarea = textareaRef.current;
     if (!textarea) return;
     setSelection({
-      start: textarea.selectionStart,
       end: textarea.selectionEnd,
+      start: textarea.selectionStart,
     });
   }
 
@@ -85,14 +85,14 @@ export function TextAuthoringContent({
   ) {
     const textarea = textareaRef.current;
     const result = insertReferenceSyntaxAtSelection({
-      text: textValue,
+      referenceId,
       selection: textarea
         ? {
-            start: textarea.selectionStart,
             end: textarea.selectionEnd,
+            start: textarea.selectionStart,
           }
         : selection,
-      referenceId,
+      text: textValue,
     });
     const nextContent = parseInlineBlueprint(result.text);
     if (options.emitChange !== false) {
@@ -122,19 +122,19 @@ export function TextAuthoringContent({
       <ContextMenu>
         <ContextMenuTrigger asChild disabled={disabled}>
           <Textarea
-            ref={textareaRef}
-            value={textValue}
-            disabled={disabled}
             className="min-h-28 resize-y"
-            placeholder="Write text..."
+            disabled={disabled}
             onBlur={updateSelection}
+            onChange={(event) =>
+              onChange(parseInlineBlueprint(event.currentTarget.value))
+            }
             onClick={updateSelection}
             onContextMenu={updateSelection}
             onKeyUp={updateSelection}
             onSelect={updateSelection}
-            onChange={(event) =>
-              onChange(parseInlineBlueprint(event.currentTarget.value))
-            }
+            placeholder="Write text..."
+            ref={textareaRef}
+            value={textValue}
           />
         </ContextMenuTrigger>
         <ContextMenuContent>
@@ -150,16 +150,8 @@ export function TextAuthoringContent({
       </ContextMenu>
       <div className="flex flex-wrap items-center gap-2">
         <ReferencePickerPopover
-          model={model}
-          referencePreviewCache={referencePreviewCache}
-          workbookEnabled={workbookEnabled}
-          sources={sources}
-          previewSourceId={previewSourceId}
           disabled={disabled}
-          open={pickerOpen}
-          onOpenChange={setReferencePickerOpen}
-          onModelChange={onModelChange}
-          onSelectReference={insertReference}
+          model={model}
           onCreateAndSelectReference={({ nextModel, referenceId }) => {
             const nextContent = insertReference(referenceId, {
               emitChange: false,
@@ -167,9 +159,9 @@ export function TextAuthoringContent({
 
             if (onCreatedReference) {
               onCreatedReference({
+                nextContent,
                 nextModel,
                 referenceId,
-                nextContent,
               });
               return;
             }
@@ -177,28 +169,36 @@ export function TextAuthoringContent({
             onModelChange(nextModel);
             onChange(nextContent);
           }}
+          onModelChange={onModelChange}
+          onOpenChange={setReferencePickerOpen}
+          onSelectReference={insertReference}
+          open={pickerOpen}
+          referencePreviewCache={referencePreviewCache}
+          sources={sources}
           trigger={
             <Button
-              type="button"
-              size="sm"
-              variant="outline"
               disabled={disabled}
               onMouseDown={(event) => {
                 event.preventDefault();
                 updateSelection();
               }}
+              size="sm"
+              type="button"
+              variant="outline"
             >
               Insert reference
             </Button>
           }
+          workbookEnabled={workbookEnabled}
+          workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
         />
       </div>
       <div className="rounded-md border bg-muted/20 p-3 text-sm">
         <InlineContentRenderer
           content={content}
           mode="editing"
-          referencePreviewValues={referencePreviewCache}
           onSelectReference={onSelectReference}
+          referencePreviewValues={referencePreviewCache}
         />
       </div>
     </FieldGroup>

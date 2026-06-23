@@ -41,7 +41,7 @@ export function RichTextEditor({
   referencePreviewCache,
   workbookEnabled,
   sources,
-  previewSourceId,
+  workbookSheetNamesBySourceId,
   disabled,
   onModelChange,
   onChange,
@@ -52,7 +52,7 @@ export function RichTextEditor({
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
   sources: QuestionBlueprintWorkbookSource[];
-  previewSourceId: string | null;
+  workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onChange(value: ComposedRichContent): void;
@@ -108,14 +108,14 @@ export function RichTextEditor({
   ) {
     const textarea = textareaRef.current;
     const result = insertReferenceSyntaxAtSelection({
-      text: markdown,
+      referenceId,
       selection: textarea
         ? {
-            start: textarea.selectionStart,
             end: textarea.selectionEnd,
+            start: textarea.selectionStart,
           }
-        : { start: selectionStart, end: selectionEnd },
-      referenceId,
+        : { end: selectionEnd, start: selectionStart },
+      text: markdown,
     });
     const nextContent = markdownToRichContent(result.text);
     emittedValueMarkdownRef.current = richContentToMarkdown(nextContent);
@@ -145,16 +145,16 @@ export function RichTextEditor({
   function applyFormat(format: MarkdownFormat) {
     const textarea = textareaRef.current;
     const result = toggleMarkdownFormat({
-      markdown,
-      selectionStart: textarea?.selectionStart ?? selectionStart,
-      selectionEnd: textarea?.selectionEnd ?? selectionEnd,
       format,
+      markdown,
+      selectionEnd: textarea?.selectionEnd ?? selectionEnd,
+      selectionStart: textarea?.selectionStart ?? selectionStart,
     });
 
     updateMarkdown(result.markdown);
     restoreSelection({
-      start: result.selectionStart,
       end: result.selectionEnd,
+      start: result.selectionStart,
     });
   }
 
@@ -165,99 +165,99 @@ export function RichTextEditor({
       <div className="space-y-3">
         <div className="flex flex-wrap gap-2">
           <ToolbarButton
-            label="Paragraph"
             active={activeFormat === "paragraph"}
             disabled={disabled}
-            onClick={() => applyFormat("paragraph")}
             icon={<Pilcrow />}
+            label="Paragraph"
+            onClick={() => applyFormat("paragraph")}
           />
           <ToolbarButton
-            label="Heading 1"
             active={activeFormat === "heading1"}
             disabled={disabled}
-            onClick={() => applyFormat("heading1")}
             icon={<Heading1 />}
+            label="Heading 1"
+            onClick={() => applyFormat("heading1")}
           />
           <ToolbarButton
-            label="Heading 2"
             active={activeFormat === "heading2"}
             disabled={disabled}
-            onClick={() => applyFormat("heading2")}
             icon={<Heading2 />}
+            label="Heading 2"
+            onClick={() => applyFormat("heading2")}
           />
           <ToolbarButton
-            label="Heading 3"
             active={activeFormat === "heading3"}
             disabled={disabled}
-            onClick={() => applyFormat("heading3")}
             icon={<Heading3 />}
+            label="Heading 3"
+            onClick={() => applyFormat("heading3")}
           />
           <ToolbarButton
-            label="Bullet list"
             active={activeFormat === "bulletList"}
             disabled={disabled}
-            onClick={() => applyFormat("bulletList")}
             icon={<List />}
+            label="Bullet list"
+            onClick={() => applyFormat("bulletList")}
           />
           <ToolbarButton
-            label="Ordered list"
             active={activeFormat === "orderedList"}
             disabled={disabled}
-            onClick={() => applyFormat("orderedList")}
             icon={<ListOrdered />}
+            label="Ordered list"
+            onClick={() => applyFormat("orderedList")}
           />
           <ReferencePickerPopover
-            model={model}
-            referencePreviewCache={referencePreviewCache}
-            workbookEnabled={workbookEnabled}
-            sources={sources}
-            previewSourceId={previewSourceId}
             disabled={disabled}
-            open={pickerOpen}
-            onOpenChange={setReferencePickerOpen}
-            onModelChange={onModelChange}
-            onSelectReference={insertReference}
+            model={model}
             onCreateAndSelectReference={({ nextModel, referenceId }) => {
               const nextContent = insertReference(referenceId, {
                 emitChange: false,
               });
               if (onCreatedReference) {
-                onCreatedReference({ nextModel, nextContent });
+                onCreatedReference({ nextContent, nextModel });
                 return;
               }
               onModelChange(nextModel);
               onChange(nextContent);
             }}
+            onModelChange={onModelChange}
+            onOpenChange={setReferencePickerOpen}
+            onSelectReference={insertReference}
+            open={pickerOpen}
+            referencePreviewCache={referencePreviewCache}
+            sources={sources}
             trigger={
               <Button
-                type="button"
-                size="sm"
-                variant="outline"
                 disabled={disabled}
                 onMouseDown={(event) => {
                   event.preventDefault();
                   updateSelection();
                 }}
+                size="sm"
+                type="button"
+                variant="outline"
               >
                 Insert reference
               </Button>
             }
+            workbookEnabled={workbookEnabled}
+            workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
           />
         </div>
 
         <ContextMenu>
           <ContextMenuTrigger asChild disabled={disabled}>
             <Textarea
-              ref={textareaRef}
-              value={markdown}
-              disabled={disabled}
               className="min-h-40 font-mono text-sm"
+              disabled={disabled}
               onBlur={updateSelection}
+              onChange={(event) => updateMarkdown(event.currentTarget.value)}
               onClick={updateSelection}
               onContextMenu={updateSelection}
               onKeyUp={updateSelection}
               onSelect={updateSelection}
-              onChange={(event) => updateMarkdown(event.currentTarget.value)}
+              ref={textareaRef}
+              value={markdown}
             />
           </ContextMenuTrigger>
           <ContextMenuContent>
@@ -293,14 +293,14 @@ function ToolbarButton({
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
-          type="button"
-          variant={active ? "secondary" : "outline"}
-          size="icon-sm"
           aria-label={label}
           aria-pressed={active}
           disabled={disabled}
-          onMouseDown={(event) => event.preventDefault()}
           onClick={onClick}
+          onMouseDown={(event) => event.preventDefault()}
+          size="icon-sm"
+          type="button"
+          variant={active ? "secondary" : "outline"}
         >
           {icon}
         </Button>

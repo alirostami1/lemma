@@ -38,11 +38,11 @@ export function TableContextMenu({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
+          aria-label="Open table actions"
+          disabled={disabled}
+          size="icon"
           type="button"
           variant="ghost"
-          size="icon"
-          disabled={disabled}
-          aria-label="Open table actions"
         >
           <MoreHorizontal />
         </Button>
@@ -56,7 +56,7 @@ export function TableContextMenu({
                 onModelChange(nextModel);
                 const row = nextModel.rows.at(-1);
                 if (row) {
-                  onSelectionChange({ type: "row", rowId: row.id });
+                  onSelectionChange({ rowId: row.id, type: "row" });
                 }
               }}
             >
@@ -68,7 +68,7 @@ export function TableContextMenu({
                 onModelChange(nextModel);
                 const column = nextModel.columns.at(-1);
                 if (column) {
-                  onSelectionChange({ type: "column", columnId: column.id });
+                  onSelectionChange({ columnId: column.id, type: "column" });
                 }
               }}
             >

@@ -10,19 +10,19 @@ import {
 describe("reorderComposedBlocks", () => {
   it("reorders blocks without changing ids", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         createTextBlock("text_1", "Prompt"),
         createSeparatorBlock("separator_1"),
         createResponseBlock("response_1", "answer_1"),
       ],
+      references: [],
       responseFields: [
         {
           id: "answer_1",
           type: "text",
         },
       ],
-      references: [],
+      schemaVersion: 1,
     };
 
     const textBlock = model.blocks[0];

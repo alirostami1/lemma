@@ -15,35 +15,35 @@ export function RootErrorBoundary({ error, reset }: ErrorComponentProps) {
     case "sign_in_required":
       return (
         <SignInRequiredPage
-          title={viewModel.title}
           description={viewModel.description}
           onSignIn={() => {
             void signIn();
           }}
+          title={viewModel.title}
         />
       );
     case "forbidden":
       return (
         <AccessDeniedPage
-          title={viewModel.title}
           description={viewModel.description}
           requestId={viewModel.requestId}
+          title={viewModel.title}
         />
       );
     case "not_found":
       return (
         <NotFoundPage
-          title={viewModel.title}
           description={viewModel.description}
+          title={viewModel.title}
         />
       );
     case "unexpected":
       return (
         <UnexpectedErrorPage
-          title={viewModel.title}
           description={viewModel.description}
           requestId={viewModel.requestId}
           reset={reset}
+          title={viewModel.title}
         />
       );
   }

@@ -25,7 +25,7 @@ export function ComposedQuestionEditor({
   model,
   onModelChange,
   sources,
-  previewSourceId,
+  workbookSheetNamesBySourceId,
   referencePreviewCache = {},
   disabled,
   inspectorStickyOffset,
@@ -33,7 +33,7 @@ export function ComposedQuestionEditor({
   model: ComposedEditorModel;
   onModelChange(model: ComposedEditorModel): void;
   sources: QuestionBlueprintWorkbookSource[];
-  previewSourceId: string | null;
+  workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
   referencePreviewCache?: ReferencePreviewCache;
   disabled?: boolean;
   inspectorStickyOffset?: number;
@@ -55,7 +55,7 @@ export function ComposedQuestionEditor({
   }
 
   function selectReference(referenceId: string) {
-    setSelection({ type: "reference", referenceId });
+    setSelection({ referenceId, type: "reference" });
   }
 
   function setTableSelection(
@@ -63,23 +63,23 @@ export function ComposedQuestionEditor({
     tableSelection: TableEditorSelection,
   ) {
     if (tableSelection.type === "table")
-      return setSelection({ type: "table", blockId });
+      return setSelection({ blockId, type: "table" });
     if (tableSelection.type === "row")
       return setSelection({
-        type: "table_row",
         blockId,
         rowId: tableSelection.rowId,
+        type: "table_row",
       });
     if (tableSelection.type === "column")
       return setSelection({
-        type: "table_column",
         blockId,
         columnId: tableSelection.columnId,
+        type: "table_column",
       });
     setSelection({
-      type: "table_cell",
       blockId,
       cellId: tableSelection.cellId,
+      type: "table_cell",
     });
   }
 
@@ -87,20 +87,20 @@ export function ComposedQuestionEditor({
     if (selection.type === "table" && selection.blockId === blockId)
       return { type: "table" };
     if (selection.type === "table_row" && selection.blockId === blockId)
-      return { type: "row", rowId: selection.rowId };
+      return { rowId: selection.rowId, type: "row" };
     if (selection.type === "table_column" && selection.blockId === blockId)
-      return { type: "column", columnId: selection.columnId };
+      return { columnId: selection.columnId, type: "column" };
     if (selection.type === "table_cell" && selection.blockId === blockId)
-      return { type: "cell", cellId: selection.cellId };
+      return { cellId: selection.cellId, type: "cell" };
     return { type: "table" };
   }
 
   function insertBlock(type: InsertComposedBlockType, index: number) {
     const afterBlockId = model.blocks[index - 1]?.id ?? null;
     const next = insertComposedBlock({
+      afterBlockId,
       model,
       type,
-      afterBlockId,
     });
     onModelChange(next.model);
     setSelection(next.selection);
@@ -120,9 +120,9 @@ export function ComposedQuestionEditor({
 
   function moveBlock(blockId: string, direction: "up" | "down") {
     const next = moveComposedBlockInEditor({
-      model,
       blockId,
       direction,
+      model,
     });
     onModelChange(next.model);
     setSelection(next.selection);
@@ -132,34 +132,34 @@ export function ComposedQuestionEditor({
     <TooltipProvider>
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <BlockList
-          model={model}
-          selectedBlockId={selectedBlockId}
           disabled={disabled}
-          referencePreviewCache={referencePreviewCache}
-          workbookEnabled={workbookToolsEnabled}
-          sources={sources}
-          previewSourceId={previewSourceId}
+          getTableSelectionForBlock={getTableSelectionForBlock}
+          model={model}
+          onDeleteBlock={deleteBlock}
+          onDuplicateBlock={duplicateBlock}
+          onInsertBlock={insertBlock}
           onModelChange={onModelChange}
+          onMoveBlock={moveBlock}
           onSelectBlock={selectBlock}
           onSelectReference={selectReference}
           onTableSelectionChange={setTableSelection}
-          getTableSelectionForBlock={getTableSelectionForBlock}
-          onInsertBlock={insertBlock}
-          onDuplicateBlock={duplicateBlock}
-          onDeleteBlock={deleteBlock}
-          onMoveBlock={moveBlock}
+          referencePreviewCache={referencePreviewCache}
+          selectedBlockId={selectedBlockId}
+          sources={sources}
+          workbookEnabled={workbookToolsEnabled}
+          workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
         />
         <InspectorPanel
-          model={model}
-          selection={selection}
-          referencePreviewCache={referencePreviewCache}
-          workbookEnabled={workbookEnabled}
-          sources={sources}
-          previewSourceId={previewSourceId}
           disabled={disabled}
+          model={model}
           onModelChange={onModelChange}
           onSelectionChange={setSelection}
+          referencePreviewCache={referencePreviewCache}
+          selection={selection}
+          sources={sources}
           stickyOffset={inspectorStickyOffset}
+          workbookEnabled={workbookEnabled}
+          workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
         />
       </div>
     </TooltipProvider>

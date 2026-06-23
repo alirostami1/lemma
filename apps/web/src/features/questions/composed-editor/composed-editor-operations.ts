@@ -38,8 +38,8 @@ export function selectBlockInComposedEditor(
   }
 
   return block.type === "table"
-    ? { type: "table", blockId: block.id }
-    : { type: "block", blockId: block.id };
+    ? { blockId: block.id, type: "table" }
+    : { blockId: block.id, type: "block" };
 }
 
 export function selectFirstBlockOrDocument(
@@ -73,7 +73,7 @@ export function normalizeComposedEditorSelection(
       }
 
       return block.type === "table"
-        ? { type: "table", blockId: block.id }
+        ? { blockId: block.id, type: "table" }
         : selection;
     }
     case "table": {
@@ -84,21 +84,21 @@ export function normalizeComposedEditorSelection(
 
       return block.type === "table"
         ? selection
-        : { type: "block", blockId: block.id };
+        : { blockId: block.id, type: "block" };
     }
     case "table_row": {
       const block = findBlock(model, selection.blockId);
-      if (!block || block.type !== "table") {
+      if (block?.type !== "table") {
         return selectFirstBlockOrDocument(model);
       }
 
       return block.table.rows.some((row) => row.id === selection.rowId)
         ? selection
-        : { type: "table", blockId: block.id };
+        : { blockId: block.id, type: "table" };
     }
     case "table_column": {
       const block = findBlock(model, selection.blockId);
-      if (!block || block.type !== "table") {
+      if (block?.type !== "table") {
         return selectFirstBlockOrDocument(model);
       }
 
@@ -106,17 +106,17 @@ export function normalizeComposedEditorSelection(
         (column) => column.id === selection.columnId,
       )
         ? selection
-        : { type: "table", blockId: block.id };
+        : { blockId: block.id, type: "table" };
     }
     case "table_cell": {
       const block = findBlock(model, selection.blockId);
-      if (!block || block.type !== "table") {
+      if (block?.type !== "table") {
         return selectFirstBlockOrDocument(model);
       }
 
       return block.table.cells.some((cell) => cell.id === selection.cellId)
         ? selection
-        : { type: "table", blockId: block.id };
+        : { blockId: block.id, type: "table" };
     }
     default:
       return assertNever(selection);
@@ -305,16 +305,16 @@ function cloneBlockWithFreshIds(
       return {
         block: {
           ...block,
-          id: nextAvailableComposedBlockId(model, "text"),
           content: block.content.map((part) => ({ ...part })),
+          id: nextAvailableComposedBlockId(model, "text"),
         },
       };
     case "rich_text":
       return {
         block: {
           ...block,
-          id: nextAvailableComposedBlockId(model, "rich_text"),
           content: structuredClone(block.content),
+          id: nextAvailableComposedBlockId(model, "rich_text"),
         },
       };
     case "response": {
@@ -373,9 +373,9 @@ function insertBlockAfter(
 function createResponseField(id: string): ComposedResponseField {
   return {
     id,
-    type: "text",
     label: "Answer",
     required: true,
+    type: "text",
   };
 }
 

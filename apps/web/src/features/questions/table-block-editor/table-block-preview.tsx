@@ -47,8 +47,8 @@ export function TableBlockPreview({
               ) : null}
               {model.columns.map((column) => (
                 <th
-                  key={column.id}
                   className="min-w-28 px-2 py-2 text-left font-medium"
+                  key={column.id}
                 >
                   {model.showColumnNames ? column.label : ""}
                 </th>
@@ -57,7 +57,7 @@ export function TableBlockPreview({
           </thead>
           <tbody>
             {model.rows.map((row) => (
-              <tr key={row.id} className="border-b last:border-0">
+              <tr className="border-b last:border-0" key={row.id}>
                 {model.showRowNames ? (
                   <th className="bg-muted/20 px-2 py-2 text-left font-medium">
                     {row.label}
@@ -66,11 +66,11 @@ export function TableBlockPreview({
                 {model.columns.map((column) => {
                   const cell = cellGrid.get(`${row.id}:${column.id}`);
                   if (!cell) {
-                    return <td key={column.id} className="px-2 py-2" />;
+                    return <td className="px-2 py-2" key={column.id} />;
                   }
                   if (cell.type === "content") {
                     return (
-                      <td key={cell.id} className="px-2 py-2">
+                      <td className="px-2 py-2" key={cell.id}>
                         {cell.content.length > 0 ? (
                           <InlineContentRenderer
                             content={cell.content}
@@ -86,19 +86,19 @@ export function TableBlockPreview({
                   const field = responseFieldsById.get(cell.responseFieldId);
                   const currentAnswer = answer[cell.responseFieldId];
                   return (
-                    <td key={cell.id} className="px-2 py-2">
+                    <td className="px-2 py-2" key={cell.id}>
                       <TableAnswerInput
-                        rowLabel={row.label}
                         columnLabel={column.label}
-                        field={field}
-                        value={currentAnswer}
                         disabled={disabled}
+                        field={field}
                         onChange={(nextValue) =>
                           onAnswerChange({
                             ...answer,
                             [cell.responseFieldId]: nextValue,
                           })
                         }
+                        rowLabel={row.label}
+                        value={currentAnswer}
                       />
                     </td>
                   );
@@ -139,16 +139,16 @@ function TableAnswerInput({
   return (
     <div className="grid gap-1">
       <Input
-        id={field?.id ?? makeFallbackInputId(rowLabel, columnLabel)}
-        name={field?.id}
-        type="text"
-        inputMode={field?.type === "number" ? "decimal" : undefined}
         aria-label={label}
         disabled={disabled}
-        value={value == null ? "" : formatAnswerInputValue(value)}
+        id={field?.id ?? makeFallbackInputId(rowLabel, columnLabel)}
+        inputMode={field?.type === "number" ? "decimal" : undefined}
+        name={field?.id}
         onChange={(event) =>
           onChange(coerceAnswerValue(event.currentTarget.value, field))
         }
+        type="text"
+        value={value == null ? "" : formatAnswerInputValue(value)}
       />
     </div>
   );

@@ -8,6 +8,9 @@ import {
 export function getContext() {
   const queryClient = new QueryClient({
     defaultOptions: {
+      mutations: {
+        retry: false,
+      },
       queries: {
         retry: (failureCount, error) => {
           if (
@@ -19,9 +22,6 @@ export function getContext() {
           }
           return failureCount < 2;
         },
-      },
-      mutations: {
-        retry: false,
       },
     },
   });

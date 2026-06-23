@@ -15,11 +15,11 @@ export function ComposedQuestionPreview({
 }) {
   return (
     <QuestionPlayer
-      question={composedPreviewToPresentableQuestion(model)}
       answer={createEmptyQuestionAnswer()}
       mode="authoring-preview"
-      referencePreviewCache={referencePreviewCache}
       onAnswerChange={() => {}}
+      question={composedPreviewToPresentableQuestion(model)}
+      referencePreviewCache={referencePreviewCache}
     />
   );
 }

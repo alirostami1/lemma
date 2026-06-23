@@ -19,23 +19,23 @@ interface MyRouterContext {
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
+  component: RootRouteComponent,
+  errorComponent: RootErrorBoundary,
   head: () => ({
     meta: [
       {
         charSet: "utf-8",
       },
       {
-        name: "viewport",
         content: "width=device-width, initial-scale=1",
+        name: "viewport",
       },
       {
         title: "Lemma",
       },
     ],
   }),
-  errorComponent: RootErrorBoundary,
   notFoundComponent: () => <NotFoundPage />,
-  component: RootRouteComponent,
   shellComponent: RootDocument,
 });
 
@@ -56,7 +56,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
-        <Toaster richColors closeButton />
+        <Toaster closeButton richColors />
         {import.meta.env.DEV ? (
           <TanStackDevtools
             config={{

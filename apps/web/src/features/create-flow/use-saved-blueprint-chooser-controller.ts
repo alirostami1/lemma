@@ -20,23 +20,22 @@ export function useSavedBlueprintChooserController(): SavedBlueprintChooserContr
   );
 
   return {
-    open,
-    items,
-    isInitialLoading: query.isLoading && items.length === 0,
-    isLoadingMore: query.isFetchingNextPage,
     errorMessage:
       query.isError && items.length === 0
         ? "Some blueprints could not be loaded."
         : null,
+    hasMore: Boolean(query.hasNextPage),
+    isInitialLoading: query.isLoading && items.length === 0,
+    isLoadingMore: query.isFetchingNextPage,
+    items,
     loadMoreErrorMessage:
       query.isFetchNextPageError && items.length > 0
         ? "More blueprints could not be loaded."
         : null,
-    hasMore: Boolean(query.hasNextPage),
-    onOpenChange: setOpen,
     onLoadMore: () => {
       void query.fetchNextPage();
     },
+    onOpenChange: setOpen,
     onRetry: () => {
       if (items.length > 0) {
         void query.fetchNextPage();
@@ -44,5 +43,6 @@ export function useSavedBlueprintChooserController(): SavedBlueprintChooserContr
       }
       void query.refetch();
     },
+    open,
   };
 }

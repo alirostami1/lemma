@@ -1,6 +1,9 @@
 import "@testing-library/jest-dom/vitest";
 
-if (!("scrollIntoView" in Element.prototype)) {
+if (
+  typeof Element !== "undefined" &&
+  !("scrollIntoView" in Element.prototype)
+) {
   Object.defineProperty(Element.prototype, "scrollIntoView", {
     configurable: true,
     value() {
@@ -9,14 +12,20 @@ if (!("scrollIntoView" in Element.prototype)) {
   });
 }
 
-if (!("hasPointerCapture" in Element.prototype)) {
+if (
+  typeof Element !== "undefined" &&
+  !("hasPointerCapture" in Element.prototype)
+) {
   Object.defineProperty(Element.prototype, "hasPointerCapture", {
     configurable: true,
     value: () => false,
   });
 }
 
-if (!("setPointerCapture" in Element.prototype)) {
+if (
+  typeof Element !== "undefined" &&
+  !("setPointerCapture" in Element.prototype)
+) {
   Object.defineProperty(Element.prototype, "setPointerCapture", {
     configurable: true,
     value() {
@@ -25,7 +34,10 @@ if (!("setPointerCapture" in Element.prototype)) {
   });
 }
 
-if (!("releasePointerCapture" in Element.prototype)) {
+if (
+  typeof Element !== "undefined" &&
+  !("releasePointerCapture" in Element.prototype)
+) {
   Object.defineProperty(Element.prototype, "releasePointerCapture", {
     configurable: true,
     value() {

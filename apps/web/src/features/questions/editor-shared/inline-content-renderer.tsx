@@ -38,9 +38,9 @@ export function InlineContentRenderer({
         }
 
         const previewValue = resolveInlineReferencePreview({
-          referenceId: item.referenceId,
-          rangeCell: item.rangeCell,
           fallbackText: item.fallbackText,
+          rangeCell: item.rangeCell,
+          referenceId: item.referenceId,
           referencePreviewCache: referencePreviewValues,
         });
         const fallbackLabel = formatReferenceFallback(
@@ -52,10 +52,10 @@ export function InlineContentRenderer({
           return (
             <ReferenceChip
               key={`reference-${item.referenceId}-${index}`}
-              referenceId={item.referenceId}
-              status={previewValue.status}
               label={fallbackLabel}
               onSelect={onSelectReference}
+              referenceId={item.referenceId}
+              status={previewValue.status}
             />
           );
         }
@@ -71,10 +71,10 @@ export function InlineContentRenderer({
         return (
           <ReferenceChip
             key={`reference-${item.referenceId}-${index}`}
-            referenceId={item.referenceId}
-            status={previewValue.status}
             label={previewValue.displayValue}
             onSelect={onSelectReference}
+            referenceId={item.referenceId}
+            status={previewValue.status}
           />
         );
       })}

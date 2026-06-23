@@ -29,7 +29,7 @@ export function TableInspector({
   referencePreviewCache,
   workbookEnabled,
   sources,
-  previewSourceId,
+  workbookSheetNamesBySourceId,
   disabled,
   onModelChange,
   onEditorModelChange,
@@ -41,7 +41,7 @@ export function TableInspector({
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
   sources: QuestionBlueprintWorkbookSource[];
-  previewSourceId: string | null;
+  workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
   disabled?: boolean;
   onModelChange(model: TableEditorModel): void;
   onEditorModelChange(model: ComposedEditorModel): void;
@@ -73,10 +73,10 @@ export function TableInspector({
       <InspectorSection title="Layout">
         <FieldGroup>
           <InspectorSwitchField
-            label="Show column labels"
-            description="Display column labels above the table."
             checked={model.showColumnNames}
+            description="Display column labels above the table."
             disabled={disabled}
+            label="Show column labels"
             onCheckedChange={(checked) =>
               onModelChange(
                 updateTableLayout(model, {
@@ -87,10 +87,10 @@ export function TableInspector({
             }
           />
           <InspectorSwitchField
-            label="Show row labels"
-            description="Display row labels beside the table."
             checked={model.showRowNames}
+            description="Display row labels beside the table."
             disabled={disabled}
+            label="Show row labels"
             onCheckedChange={(checked) =>
               onModelChange(
                 updateTableLayout(model, {
@@ -104,31 +104,31 @@ export function TableInspector({
       </InspectorSection>
       <InspectorSection title="Source range">
         <ReferencePickerPopover
-          model={editorModel}
-          selectedReferenceId={selectedRangeReferenceId ?? undefined}
-          referencePreviewCache={referencePreviewCache}
-          workbookEnabled={workbookEnabled}
-          sources={sources}
-          previewSourceId={previewSourceId}
-          disabled={disabled}
           allowedSourceTypes={["workbook_range"]}
           createSourceTypeDefault="workbook_range"
           defaultMode={selectedRangeReferenceId ? "existing" : "create"}
+          disabled={disabled}
+          model={editorModel}
           onModelChange={onEditorModelChange}
           onSelectReference={(referenceId) => {
             setRangeError(null);
             setSelectedRangeReferenceId(referenceId);
           }}
+          referencePreviewCache={referencePreviewCache}
+          selectedReferenceId={selectedRangeReferenceId ?? undefined}
+          sources={sources}
           trigger={
-            <Button type="button" variant="outline" disabled={disabled}>
+            <Button disabled={disabled} type="button" variant="outline">
               Choose range reference
             </Button>
           }
+          workbookEnabled={workbookEnabled}
+          workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
         />
         {selectedReference ? (
           <RangePreview
-            reference={selectedReference}
             preview={selectedPreview}
+            reference={selectedReference}
           />
         ) : (
           <p className="text-xs text-muted-foreground">
@@ -139,7 +139,6 @@ export function TableInspector({
           <p className="text-xs text-destructive">{rangeError}</p>
         ) : null}
         <Button
-          type="button"
           disabled={disabled || !canApplyRange}
           onClick={() => {
             if (!selectedReference) {
@@ -148,9 +147,9 @@ export function TableInspector({
 
             const result = applyWorkbookRangeReferenceToTableBlock({
               editorModel,
-              tableBlockId: blockId,
               rangeReferenceId: selectedReference.id,
               referencePreviewCache,
+              tableBlockId: blockId,
             });
 
             if (result.ok) {
@@ -162,6 +161,7 @@ export function TableInspector({
 
             setRangeError(result.message);
           }}
+          type="button"
         >
           <Plus />
           Create table from range
@@ -170,43 +170,43 @@ export function TableInspector({
       <InspectorSection title="Table actions">
         <div className="grid grid-cols-2 gap-2">
           <Button
-            type="button"
-            variant="outline"
             disabled={disabled}
             onClick={() => {
               const nextModel = addTableRow(model);
               onModelChange(nextModel);
               const row = nextModel.rows.at(-1);
               if (row) {
-                onSelectionChange({ type: "row", rowId: row.id });
+                onSelectionChange({ rowId: row.id, type: "row" });
               }
             }}
+            type="button"
+            variant="outline"
           >
             <Plus />
             Row
           </Button>
           <Button
-            type="button"
-            variant="outline"
             disabled={disabled}
             onClick={() => {
               const nextModel = addTableColumn(model);
               onModelChange(nextModel);
               const column = nextModel.columns.at(-1);
               if (column) {
-                onSelectionChange({ type: "column", columnId: column.id });
+                onSelectionChange({ columnId: column.id, type: "column" });
               }
             }}
+            type="button"
+            variant="outline"
           >
             <Plus />
             Column
           </Button>
         </div>
         <Button
-          type="button"
-          variant="outline"
           disabled={disabled}
           onClick={() => onModelChange(resetTableLayout(model))}
+          type="button"
+          variant="outline"
         >
           <RotateCcw />
           Reset layout
@@ -229,7 +229,7 @@ function RangePreview({
   if (reference.source.type !== "workbook_range") {
     return (
       <p className="text-xs text-destructive">
-        Selected source is not a workbook range.
+        Chosen reference is not a workbook range.
       </p>
     );
   }

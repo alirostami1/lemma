@@ -23,7 +23,7 @@ export function TableCellView({
 }) {
   return (
     <button
-      type="button"
+      aria-disabled={disabled}
       className={cn(
         "min-h-12 w-full rounded-md border border-border/70 bg-background p-2 text-left text-sm transition",
         disabled
@@ -32,13 +32,13 @@ export function TableCellView({
         isSelected && "border-primary ring-2 ring-primary/20",
       )}
       disabled={disabled}
-      aria-disabled={disabled}
       onClick={(event) => {
         event.stopPropagation();
         if (!disabled) {
           onSelect();
         }
       }}
+      type="button"
     >
       {cell ? (
         cell.type === "response" ? (

@@ -23,15 +23,15 @@ export function HomeHeroSection({ hero }: { hero: HomePageViewModel["hero"] }) {
     <Card>
       <CardHeader>
         <PageHeader
-          title={hero.title}
-          description={hero.description}
-          size="launcher"
           actions={
             <>
               <HomeActionButton action={hero.primaryAction} />
               <HomeActionButton action={hero.secondaryAction} />
             </>
           }
+          description={hero.description}
+          size="launcher"
+          title={hero.title}
         />
       </CardHeader>
     </Card>
@@ -65,14 +65,14 @@ export function RecentWorkSection({
       </CardHeader>
       <CardContent>
         <AsyncPanel
-          isLoading={isLoading && items.length === 0}
-          errorMessage={errorMessage}
-          isEmpty={items.length === 0}
-          loading={<RecentWorkSectionSkeleton />}
+          empty={<EmptyState description={emptyMessage} />}
           error={(message) => (
             <InlineError message={message} onRetry={onRetry} />
           )}
-          empty={<EmptyState description={emptyMessage} />}
+          errorMessage={errorMessage}
+          isEmpty={items.length === 0}
+          isLoading={isLoading && items.length === 0}
+          loading={<RecentWorkSectionSkeleton />}
         >
           <RecentItemList items={items} />
         </AsyncPanel>
@@ -90,7 +90,7 @@ export function RecentItemList({ items }: { items: RecentHomeItem[] }) {
   return (
     <ResourceList>
       {items.map((item) => (
-        <RecentItem key={item.id} item={item} />
+        <RecentItem item={item} key={item.id} />
       ))}
     </ResourceList>
   );
@@ -99,23 +99,23 @@ export function RecentItemList({ items }: { items: RecentHomeItem[] }) {
 function RecentItem({ item }: { item: RecentHomeItem }) {
   return (
     <ResourceListItem
-      variant="navigation"
-      title={item.label}
       description={item.description}
       navigationAccessory={
         <ArrowRight className="size-4 text-muted-foreground" />
       }
       renderLink={(children, className) =>
         item.to === "/studio" ? (
-          <Link to={item.to} search={item.search} className={className}>
+          <Link className={className} search={item.search} to={item.to}>
             {children}
           </Link>
         ) : (
-          <Link to={item.to} params={item.params} className={className}>
+          <Link className={className} params={item.params} to={item.to}>
             {children}
           </Link>
         )
       }
+      title={item.label}
+      variant="navigation"
     />
   );
 }
@@ -127,9 +127,9 @@ export function HomeEmptyState({
 }) {
   return (
     <PrimaryActionPanel
-      title={emptyState.title}
-      description={emptyState.description}
       action={<HomeActionButton action={emptyState.action} />}
+      description={emptyState.description}
+      title={emptyState.title}
     />
   );
 }

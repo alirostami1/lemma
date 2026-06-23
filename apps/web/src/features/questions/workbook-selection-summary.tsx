@@ -52,7 +52,6 @@ export function WorkbookSelectionSummary({
           <TooltipTrigger asChild>
             <span>
               <Button
-                type="button"
                 disabled={
                   isSelectingRange || !selectedRange || !selectionValidation.ok
                 }
@@ -61,6 +60,7 @@ export function WorkbookSelectionSummary({
                     onSelectRange(selectedRange);
                   }
                 }}
+                type="button"
               >
                 {isSelectingRange && (
                   <Spinner className="size-3 text-current" />

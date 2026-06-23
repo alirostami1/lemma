@@ -23,23 +23,23 @@ import {
 const sharedResponseFields: ComposedResponseField[] = [
   {
     id: "answer_1",
-    type: "number",
     label: "Answer",
     required: true,
+    type: "number",
   },
 ];
 
 function createBaseModel(blocks: ComposedEditorBlock[]): ComposedEditorModel {
   return {
-    schemaVersion: 1,
     blocks,
-    responseFields: sharedResponseFields.map((field) => ({ ...field })),
     references: [
       {
         id: "reference_1",
         source: { type: "literal", value: "Alpha" },
       },
     ],
+    responseFields: sharedResponseFields.map((field) => ({ ...field })),
+    schemaVersion: 1,
   };
 }
 
@@ -62,16 +62,16 @@ describe("composed editor operations", () => {
         createBaseModel([createTextBlock("text_1", "Prompt")]),
       ),
     ).toEqual({
-      type: "block",
       blockId: "text_1",
+      type: "block",
     });
     expect(
       selectFirstBlockOrDocument(
         createBaseModel([createTableBlock("table_1")]),
       ),
     ).toEqual({
-      type: "table",
       blockId: "table_1",
+      type: "table",
     });
   });
 
@@ -85,8 +85,8 @@ describe("composed editor operations", () => {
         "table_1",
       ),
     ).toEqual({
-      type: "table",
       blockId: "table_1",
+      type: "table",
     });
     expect(
       selectBlockInComposedEditor(
@@ -94,8 +94,8 @@ describe("composed editor operations", () => {
         "text_1",
       ),
     ).toEqual({
-      type: "block",
       blockId: "text_1",
+      type: "block",
     });
     expect(selectBlockInComposedEditor(createBaseModel([]), "missing")).toEqual(
       {
@@ -119,7 +119,7 @@ describe("composed editor operations", () => {
       "response_1",
       "text_2",
     ]);
-    expect(result.selection).toEqual({ type: "block", blockId: "text_2" });
+    expect(result.selection).toEqual({ blockId: "text_2", type: "block" });
   });
 
   it("inserts a rich text block and selects it", () => {
@@ -137,7 +137,7 @@ describe("composed editor operations", () => {
       "response_1",
       "rich_text_1",
     ]);
-    expect(result.selection).toEqual({ type: "block", blockId: "rich_text_1" });
+    expect(result.selection).toEqual({ blockId: "rich_text_1", type: "block" });
   });
 
   it("inserts an answer block with a matching response field", () => {
@@ -153,7 +153,7 @@ describe("composed editor operations", () => {
       (candidate) => candidate.id === "response_2",
     );
 
-    if (!block || block.type !== "response") {
+    if (block?.type !== "response") {
       throw new Error("Expected response block.");
     }
 
@@ -161,7 +161,7 @@ describe("composed editor operations", () => {
     expect(
       result.model.responseFields.some((field) => field.id === "answer_2"),
     ).toBe(true);
-    expect(result.selection).toEqual({ type: "block", blockId: "response_2" });
+    expect(result.selection).toEqual({ blockId: "response_2", type: "block" });
   });
 
   it("inserts a separator block and selects it", () => {
@@ -179,7 +179,7 @@ describe("composed editor operations", () => {
       "response_1",
       "separator_1",
     ]);
-    expect(result.selection).toEqual({ type: "block", blockId: "separator_1" });
+    expect(result.selection).toEqual({ blockId: "separator_1", type: "block" });
   });
 
   it("inserts a table block and selects it", () => {
@@ -197,7 +197,7 @@ describe("composed editor operations", () => {
       "response_1",
       "table_1",
     ]);
-    expect(result.selection).toEqual({ type: "table", blockId: "table_1" });
+    expect(result.selection).toEqual({ blockId: "table_1", type: "table" });
   });
 
   it("inserts after a specific block when the id exists", () => {
@@ -209,9 +209,9 @@ describe("composed editor operations", () => {
     ]);
 
     const result = insertComposedBlock({
+      afterBlockId: "text_1",
       model,
       type: "text",
-      afterBlockId: "text_1",
     });
 
     expect(result.model.blocks.map((block) => block.id)).toEqual([
@@ -230,9 +230,9 @@ describe("composed editor operations", () => {
     ]);
 
     const result = insertComposedBlock({
+      afterBlockId: "missing",
       model,
       type: "text",
-      afterBlockId: "missing",
     });
 
     expect(result.model.blocks.map((block) => block.id)).toEqual([
@@ -257,7 +257,7 @@ describe("composed editor operations", () => {
       "text_2",
       "response_1",
     ]);
-    expect(result.selection).toEqual({ type: "block", blockId: "text_2" });
+    expect(result.selection).toEqual({ blockId: "text_2", type: "block" });
     expect(model.blocks.map((block) => block.id)).toEqual([
       "text_1",
       "response_1",
@@ -282,8 +282,8 @@ describe("composed editor operations", () => {
       "response_1",
     ]);
     expect(result.selection).toEqual({
-      type: "block",
       blockId: "rich_text_2",
+      type: "block",
     });
   });
 
@@ -305,8 +305,8 @@ describe("composed editor operations", () => {
       "response_1",
     ]);
     expect(result.selection).toEqual({
-      type: "block",
       blockId: "separator_2",
+      type: "block",
     });
   });
 
@@ -327,7 +327,7 @@ describe("composed editor operations", () => {
       "table_2",
       "response_1",
     ]);
-    expect(result.selection).toEqual({ type: "table", blockId: "table_2" });
+    expect(result.selection).toEqual({ blockId: "table_2", type: "table" });
   });
 
   it("duplicates an answer block with a fresh response field id", () => {
@@ -343,7 +343,7 @@ describe("composed editor operations", () => {
       (block) => block.id === "response_2",
     );
 
-    if (!duplicatedBlock || duplicatedBlock.type !== "response") {
+    if (duplicatedBlock?.type !== "response") {
       throw new Error("Expected duplicated response block.");
     }
 
@@ -374,7 +374,7 @@ describe("composed editor operations", () => {
       "response_1",
       "separator_1",
     ]);
-    expect(result.selection).toEqual({ type: "block", blockId: "response_1" });
+    expect(result.selection).toEqual({ blockId: "response_1", type: "block" });
   });
 
   it("deletes the last block and selects the previous block", () => {
@@ -392,7 +392,7 @@ describe("composed editor operations", () => {
       "text_1",
       "response_1",
     ]);
-    expect(result.selection).toEqual({ type: "block", blockId: "response_1" });
+    expect(result.selection).toEqual({ blockId: "response_1", type: "block" });
   });
 
   it("deletes the only block and selects the document", () => {
@@ -437,9 +437,9 @@ describe("composed editor operations", () => {
     expect(result.model.responseFields).toEqual([
       {
         id: "answer_1",
-        type: "number",
         label: "Answer",
         required: true,
+        type: "number",
       },
     ]);
   });
@@ -455,7 +455,7 @@ describe("composed editor operations", () => {
     const result = deleteComposedBlock(model, "missing");
 
     expect(result.model).toBe(model);
-    expect(result.selection).toEqual({ type: "block", blockId: "text_1" });
+    expect(result.selection).toEqual({ blockId: "text_1", type: "block" });
   });
 
   it("moves a block up and keeps the selection on the moved block", () => {
@@ -468,9 +468,9 @@ describe("composed editor operations", () => {
     ]);
 
     const result = moveComposedBlockInEditor({
-      model,
       blockId: "response_1",
       direction: "up",
+      model,
     });
 
     expect(result.model.blocks.map((block) => block.id)).toEqual([
@@ -478,7 +478,7 @@ describe("composed editor operations", () => {
       "text_1",
       "separator_1",
     ]);
-    expect(result.selection).toEqual({ type: "block", blockId: "response_1" });
+    expect(result.selection).toEqual({ blockId: "response_1", type: "block" });
   });
 
   it("moves a block down and keeps the selection on the moved block", () => {
@@ -491,9 +491,9 @@ describe("composed editor operations", () => {
     ]);
 
     const result = moveComposedBlockInEditor({
-      model,
       blockId: "text_1",
       direction: "down",
+      model,
     });
 
     expect(result.model.blocks.map((block) => block.id)).toEqual([
@@ -501,7 +501,7 @@ describe("composed editor operations", () => {
       "text_1",
       "separator_1",
     ]);
-    expect(result.selection).toEqual({ type: "block", blockId: "text_1" });
+    expect(result.selection).toEqual({ blockId: "text_1", type: "block" });
   });
 
   it("cannot move the first block up", () => {
@@ -513,16 +513,16 @@ describe("composed editor operations", () => {
     ]);
 
     const result = moveComposedBlockInEditor({
-      model,
       blockId: "text_1",
       direction: "up",
+      model,
     });
 
     expect(result.model.blocks.map((block) => block.id)).toEqual([
       "text_1",
       "response_1",
     ]);
-    expect(result.selection).toEqual({ type: "block", blockId: "text_1" });
+    expect(result.selection).toEqual({ blockId: "text_1", type: "block" });
   });
 
   it("cannot move the last block down", () => {
@@ -534,25 +534,25 @@ describe("composed editor operations", () => {
     ]);
 
     const result = moveComposedBlockInEditor({
-      model,
       blockId: "response_1",
       direction: "down",
+      model,
     });
 
     expect(result.model.blocks.map((block) => block.id)).toEqual([
       "text_1",
       "response_1",
     ]);
-    expect(result.selection).toEqual({ type: "block", blockId: "response_1" });
+    expect(result.selection).toEqual({ blockId: "response_1", type: "block" });
   });
 
   it("returns the same model and document selection when moving a missing block", () => {
     const model = createBaseModel([createTextBlock("text_1", "Prompt")]);
 
     const result = moveComposedBlockInEditor({
-      model,
       blockId: "missing",
       direction: "up",
+      model,
     });
 
     expect(result.model).toBe(model);
@@ -569,12 +569,12 @@ describe("composed editor operations", () => {
     ]);
 
     const result = moveComposedBlockInEditor({
-      model,
       blockId: "table_1",
       direction: "up",
+      model,
     });
 
-    expect(result.selection).toEqual({ type: "table", blockId: "table_1" });
+    expect(result.selection).toEqual({ blockId: "table_1", type: "table" });
   });
 
   it("preserves document selection", () => {
@@ -596,10 +596,10 @@ describe("composed editor operations", () => {
 
     expect(
       normalizeComposedEditorSelection(model, {
-        type: "block",
         blockId: "text_1",
+        type: "block",
       }),
-    ).toEqual({ type: "block", blockId: "text_1" });
+    ).toEqual({ blockId: "text_1", type: "block" });
   });
 
   it("normalizes a table block selected as a block into a table selection", () => {
@@ -610,10 +610,10 @@ describe("composed editor operations", () => {
 
     expect(
       normalizeComposedEditorSelection(model, {
-        type: "block",
         blockId: "table_1",
+        type: "block",
       }),
-    ).toEqual({ type: "table", blockId: "table_1" });
+    ).toEqual({ blockId: "table_1", type: "table" });
   });
 
   it("normalizes a table selection to a block selection when the block is no longer a table", () => {
@@ -621,10 +621,10 @@ describe("composed editor operations", () => {
 
     expect(
       normalizeComposedEditorSelection(model, {
-        type: "table",
         blockId: "text_1",
+        type: "table",
       }),
-    ).toEqual({ type: "block", blockId: "text_1" });
+    ).toEqual({ blockId: "text_1", type: "block" });
   });
 
   it("preserves an existing table cell selection when the cell exists", () => {
@@ -635,14 +635,14 @@ describe("composed editor operations", () => {
 
     expect(
       normalizeComposedEditorSelection(model, {
-        type: "table_cell",
         blockId: "table_1",
         cellId: "cell_1",
+        type: "table_cell",
       }),
     ).toEqual({
-      type: "table_cell",
       blockId: "table_1",
       cellId: "cell_1",
+      type: "table_cell",
     });
   });
 
@@ -654,11 +654,11 @@ describe("composed editor operations", () => {
 
     expect(
       normalizeComposedEditorSelection(model, {
-        type: "table_cell",
         blockId: "table_1",
         cellId: "missing",
+        type: "table_cell",
       }),
-    ).toEqual({ type: "table", blockId: "table_1" });
+    ).toEqual({ blockId: "table_1", type: "table" });
   });
 
   it("normalizes a missing table row to the table selection when the table still exists", () => {
@@ -669,11 +669,11 @@ describe("composed editor operations", () => {
 
     expect(
       normalizeComposedEditorSelection(model, {
-        type: "table_row",
         blockId: "table_1",
         rowId: "missing",
+        type: "table_row",
       }),
-    ).toEqual({ type: "table", blockId: "table_1" });
+    ).toEqual({ blockId: "table_1", type: "table" });
   });
 
   it("normalizes a missing table column to the table selection when the table still exists", () => {
@@ -684,11 +684,11 @@ describe("composed editor operations", () => {
 
     expect(
       normalizeComposedEditorSelection(model, {
-        type: "table_column",
         blockId: "table_1",
         columnId: "missing",
+        type: "table_column",
       }),
-    ).toEqual({ type: "table", blockId: "table_1" });
+    ).toEqual({ blockId: "table_1", type: "table" });
   });
 
   it("normalizes a missing table to the first block or document", () => {
@@ -696,10 +696,10 @@ describe("composed editor operations", () => {
 
     expect(
       normalizeComposedEditorSelection(model, {
-        type: "table",
         blockId: "table_1",
+        type: "table",
       }),
-    ).toEqual({ type: "block", blockId: "text_1" });
+    ).toEqual({ blockId: "text_1", type: "block" });
   });
 
   it("preserves a reference selection when the reference exists", () => {
@@ -710,10 +710,10 @@ describe("composed editor operations", () => {
 
     expect(
       normalizeComposedEditorSelection(model, {
-        type: "reference",
         referenceId: "reference_1",
+        type: "reference",
       }),
-    ).toEqual({ type: "reference", referenceId: "reference_1" });
+    ).toEqual({ referenceId: "reference_1", type: "reference" });
   });
 
   it("normalizes a missing reference selection to the document", () => {
@@ -724,8 +724,8 @@ describe("composed editor operations", () => {
 
     expect(
       normalizeComposedEditorSelection(model, {
-        type: "reference",
         referenceId: "missing",
+        type: "reference",
       }),
     ).toEqual({ type: "document" });
   });
@@ -738,21 +738,21 @@ describe("composed editor operations", () => {
 
     expect(
       getComposedEditorSelectedBlock(model, {
-        type: "block",
         blockId: "text_1",
+        type: "block",
       }),
     ).toEqual(createTextBlock("text_1", "Prompt"));
     expect(
       getComposedEditorSelectedBlock(model, {
-        type: "table",
         blockId: "table_1",
+        type: "table",
       }),
     ).toEqual(createTableBlock("table_1"));
     expect(
       getComposedEditorSelectedBlock(model, {
-        type: "table_cell",
         blockId: "table_1",
         cellId: "cell_1",
+        type: "table_cell",
       }),
     ).toEqual(createTableBlock("table_1"));
   });
@@ -768,8 +768,8 @@ describe("composed editor operations", () => {
     );
     expect(
       getComposedEditorSelectedBlock(model, {
-        type: "reference",
         referenceId: "reference_1",
+        type: "reference",
       }),
     ).toBe(null);
   });
@@ -782,8 +782,8 @@ describe("composed editor operations", () => {
 
     expect(
       getComposedEditorSelectedBlock(model, {
-        type: "block",
         blockId: "missing",
+        type: "block",
       }),
     ).toBe(null);
   });

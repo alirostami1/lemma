@@ -16,7 +16,7 @@ describe("TableBlockPreview", () => {
     const model = createPreviewModel();
 
     render(
-      <TableBlockPreview model={model} answer={{}} onAnswerChange={() => {}} />,
+      <TableBlockPreview answer={{}} model={model} onAnswerChange={() => {}} />,
     );
 
     const first = screen.getByRole("textbox", {
@@ -40,8 +40,8 @@ describe("TableBlockPreview", () => {
       const [answer, setAnswer] = useState<TableAnswerState>({});
       return (
         <TableBlockPreview
-          model={createPreviewModel()}
           answer={answer}
+          model={createPreviewModel()}
           onAnswerChange={(nextAnswer) => {
             setAnswer(nextAnswer);
             onAnswerChange(nextAnswer);
@@ -84,8 +84,8 @@ describe("TableBlockPreview", () => {
       const [answer, setAnswer] = useState<TableAnswerState>({});
       return (
         <TableBlockPreview
-          model={createPreviewModel()}
           answer={answer}
+          model={createPreviewModel()}
           onAnswerChange={(nextAnswer) => {
             setAnswer(nextAnswer);
             onAnswerChange(nextAnswer);
@@ -114,10 +114,53 @@ describe("TableBlockPreview", () => {
 
 function createPreviewModel(): TableBlockPreviewModel {
   return {
-    prompt: "Prompt",
+    cells: [
+      {
+        columnId: "column_2",
+        id: "cell_1",
+        responseFieldId: "answer_1",
+        rowId: "row_1",
+        type: "response",
+      },
+      {
+        columnId: "column_1",
+        id: "cell_2",
+        responseFieldId: "answer_2",
+        rowId: "row_2",
+        type: "response",
+      },
+      {
+        columnId: "column_2",
+        id: "cell_3",
+        responseFieldId: "answer_3",
+        rowId: "row_2",
+        type: "response",
+      },
+    ],
     columns: [
       { id: "column_1", label: "Column 1" },
       { id: "column_2", label: "Column 2" },
+    ],
+    prompt: "Prompt",
+    responseFields: [
+      {
+        id: "answer_1",
+        label: "Student answer",
+        required: true,
+        type: "text",
+      },
+      {
+        id: "answer_2",
+        label: "Amount",
+        required: true,
+        type: "number",
+      },
+      {
+        id: "answer_3",
+        label: "Payload",
+        required: true,
+        type: "text",
+      },
     ],
     rows: [
       { id: "row_1", label: "Row 1" },
@@ -125,48 +168,5 @@ function createPreviewModel(): TableBlockPreviewModel {
     ],
     showColumnNames: true,
     showRowNames: true,
-    responseFields: [
-      {
-        id: "answer_1",
-        type: "text",
-        label: "Student answer",
-        required: true,
-      },
-      {
-        id: "answer_2",
-        type: "number",
-        label: "Amount",
-        required: true,
-      },
-      {
-        id: "answer_3",
-        type: "text",
-        label: "Payload",
-        required: true,
-      },
-    ],
-    cells: [
-      {
-        id: "cell_1",
-        rowId: "row_1",
-        columnId: "column_2",
-        type: "response",
-        responseFieldId: "answer_1",
-      },
-      {
-        id: "cell_2",
-        rowId: "row_2",
-        columnId: "column_1",
-        type: "response",
-        responseFieldId: "answer_2",
-      },
-      {
-        id: "cell_3",
-        rowId: "row_2",
-        columnId: "column_2",
-        type: "response",
-        responseFieldId: "answer_3",
-      },
-    ],
   };
 }

@@ -14,30 +14,30 @@ function blueprint(
   },
 ): QuestionBlueprint {
   return {
-    id,
-    ownerUserId: "owner",
-    createdByUserId: "creator",
-    name: `Blueprint ${id}`,
-    description: null,
-    document: { schemaVersion: 1, blocks: [], responseFields: [] },
-    workbookId: null,
-    visibility: input?.visibility ?? "private",
-    status: input?.status ?? "active",
     archivedAt: null,
     createdAt: new Date("2026-01-01T00:00:00Z"),
+    createdByUserId: "creator",
+    description: null,
+    document: { blocks: [], responseFields: [], schemaVersion: 1 },
+    id,
+    name: `Blueprint ${id}`,
+    ownerUserId: "owner",
+    sources: [],
+    status: input?.status ?? "active",
     updatedAt: new Date("2026-01-01T00:00:00Z"),
+    visibility: input?.visibility ?? "private",
   };
 }
 
 function questionSet(id: string) {
   return {
-    id,
-    ownerUserId: "owner",
-    createdByUserId: "creator",
-    name: `Question Set ${id}`,
-    description: `Desc ${id}`,
-    status: "active" as const,
     createdAt: new Date("2026-01-01T00:00:00Z"),
+    createdByUserId: "creator",
+    description: `Desc ${id}`,
+    id,
+    name: `Question Set ${id}`,
+    ownerUserId: "owner",
+    status: "active" as const,
     updatedAt: new Date("2026-01-01T00:00:00Z"),
   };
 }
@@ -76,14 +76,14 @@ describe("home page view model", () => {
     });
 
     expect(viewModel.emptyState).toEqual({
-      title: "Create your first blueprint",
-      description:
-        "Start in Studio, save your blueprint, then generate questions into a question set.",
       action: {
         label: "Create blueprint",
         to: "/create",
         variant: "primary",
       },
+      description:
+        "Start in Studio, save your blueprint, then generate questions into a question set.",
+      title: "Create your first blueprint",
     });
   });
 

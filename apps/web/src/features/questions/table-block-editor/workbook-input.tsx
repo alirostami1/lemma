@@ -98,31 +98,31 @@ export function WorkbookInput({
 
   function openWorkbook() {
     workbookPicker.openWorkbookPicker({
-      sourceId,
-      selectionRequirement: workbookSelectionRequirement,
       onSelect: onWorkbookSelect,
+      selectionRequirement: workbookSelectionRequirement,
+      sourceId,
     });
   }
 
   return (
     <div
-      data-slot="workbook-input"
       className={cn("relative", containerClassName)}
+      data-slot="workbook-input"
       {...restContainerProps}
     >
       <Input className={cn("pr-9", className)} disabled={disabled} {...props} />
       <Button
         aria-label="Open workbook range picker"
-        type="button"
-        variant="ghost"
-        size="icon-xs"
-        disabled={disabled}
         className="absolute top-1/2 right-1 -translate-y-1/2 cursor-pointer"
+        disabled={disabled}
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
           openWorkbook();
         }}
+        size="icon-xs"
+        type="button"
+        variant="ghost"
       >
         <Crosshair />
       </Button>
@@ -149,32 +149,32 @@ export function WorkbookInputGroup({
   const workbookPicker = useWorkbookPicker();
   function openWorkbook() {
     workbookPicker.openWorkbookPicker({
-      sourceId,
-      selectionRequirement: workbookSelectionRequirement,
       onSelect: onWorkbookSelect,
+      selectionRequirement: workbookSelectionRequirement,
+      sourceId,
     });
   }
 
   return (
     <InputGroup
-      data-slot="workbook-input-group"
       className={inputGroupClassName}
+      data-slot="workbook-input-group"
       {...restInputGroupProps}
     >
       <InputGroupInput className={className} disabled={disabled} {...props} />
       <InputGroupAddon align="inline-end">
         <InputGroupButton
           aria-label="Open workbook range picker"
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          disabled={disabled}
           className="cursor-pointer"
+          disabled={disabled}
           onClick={(event) => {
             event.preventDefault();
             event.stopPropagation();
             openWorkbook();
           }}
+          size="icon-xs"
+          type="button"
+          variant="ghost"
         >
           <Crosshair />
         </InputGroupButton>

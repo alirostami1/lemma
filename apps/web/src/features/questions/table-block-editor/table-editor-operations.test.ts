@@ -11,95 +11,95 @@ import {
 
 function createBaseModel(): TableEditorModel {
   return {
-    prompt: "",
+    cells: [
+      {
+        columnId: "column_1",
+        content: [{ text: "Alpha", type: "text" }],
+        id: "cell_1",
+        rowId: "row_1",
+        type: "content",
+      },
+      {
+        columnId: "column_2",
+        content: [{ text: "Beta", type: "text" }],
+        id: "cell_2",
+        rowId: "row_1",
+        type: "content",
+      },
+      {
+        columnId: "column_1",
+        content: [{ text: "Gamma", type: "text" }],
+        id: "cell_3",
+        rowId: "row_2",
+        type: "content",
+      },
+      {
+        columnId: "column_2",
+        content: [{ text: "Delta", type: "text" }],
+        id: "cell_4",
+        rowId: "row_2",
+        type: "content",
+      },
+    ],
     columns: [
       { id: "column_1", label: "Column 1" },
       { id: "column_2", label: "Column 2" },
     ],
+    prompt: "",
+    responseFields: [],
     rows: [
       { id: "row_1", label: "Row 1" },
       { id: "row_2", label: "Row 2" },
     ],
     showColumnNames: true,
     showRowNames: true,
-    responseFields: [],
-    cells: [
-      {
-        id: "cell_1",
-        rowId: "row_1",
-        columnId: "column_1",
-        type: "content",
-        content: [{ type: "text", text: "Alpha" }],
-      },
-      {
-        id: "cell_2",
-        rowId: "row_1",
-        columnId: "column_2",
-        type: "content",
-        content: [{ type: "text", text: "Beta" }],
-      },
-      {
-        id: "cell_3",
-        rowId: "row_2",
-        columnId: "column_1",
-        type: "content",
-        content: [{ type: "text", text: "Gamma" }],
-      },
-      {
-        id: "cell_4",
-        rowId: "row_2",
-        columnId: "column_2",
-        type: "content",
-        content: [{ type: "text", text: "Delta" }],
-      },
-    ],
   };
 }
 
 function createAnswerModel(): TableEditorModel {
   return {
     ...createBaseModel(),
+    cells: [
+      {
+        columnId: "column_1",
+        correctValueSource: { type: "literal", value: "Alpha" },
+        grading: { mode: "exact" },
+        id: "cell_1",
+        label: "Student answer",
+        placeholder: "Student answer",
+        points: 2,
+        responseFieldId: "answer_1",
+        rowId: "row_1",
+        type: "response",
+      },
+      {
+        columnId: "column_2",
+        content: [{ text: "Beta", type: "text" }],
+        id: "cell_2",
+        rowId: "row_1",
+        type: "content",
+      },
+      {
+        columnId: "column_1",
+        content: [{ text: "Gamma", type: "text" }],
+        id: "cell_3",
+        rowId: "row_2",
+        type: "content",
+      },
+      {
+        columnId: "column_2",
+        content: [{ text: "Delta", type: "text" }],
+        id: "cell_4",
+        rowId: "row_2",
+        type: "content",
+      },
+    ],
     responseFields: [
       {
         id: "answer_1",
-        type: "text",
         label: "Student answer",
         required: false,
-      },
-    ],
-    cells: [
-      {
-        id: "cell_1",
-        rowId: "row_1",
-        columnId: "column_1",
-        type: "response",
-        responseFieldId: "answer_1",
-        label: "Student answer",
-        placeholder: "Student answer",
-        correctValueSource: { type: "literal", value: "Alpha" },
-        points: 2,
-        grading: { mode: "exact" },
-      },
-      {
-        id: "cell_2",
-        rowId: "row_1",
-        columnId: "column_2",
-        type: "content",
-        content: [{ type: "text", text: "Beta" }],
-      },
-      {
-        id: "cell_3",
-        rowId: "row_2",
-        columnId: "column_1",
-        type: "content",
-        content: [{ type: "text", text: "Gamma" }],
-      },
-      {
-        id: "cell_4",
-        rowId: "row_2",
-        columnId: "column_2",
-        type: "content",
-        content: [{ type: "text", text: "Delta" }],
+        type: "text",
       },
     ],
   };
@@ -140,16 +140,16 @@ describe("table editor operations", () => {
       cells: [
         sourceCell,
         {
-          id: "cell_5",
-          rowId: "row_2",
           columnId: "column_2",
-          type: "response",
-          responseFieldId: "answer_1",
+          correctValueSource: { type: "literal", value: "Delta" },
+          grading: { mode: "exact" },
+          id: "cell_5",
           label: "Student answer",
           placeholder: "Student answer",
-          correctValueSource: { type: "literal", value: "Delta" },
           points: 2,
-          grading: { mode: "exact" },
+          responseFieldId: "answer_1",
+          rowId: "row_2",
+          type: "response",
         },
       ],
     };
@@ -171,9 +171,9 @@ describe("table editor operations", () => {
     expect(nextModel.responseFields).toEqual([
       expect.objectContaining({
         id: "answer_1",
-        type: "number",
         label: "Student answer",
         required: true,
+        type: "number",
       }),
     ]);
     expect(() => validateTableEditorModelAnswers(nextModel)).not.toThrow();
@@ -182,22 +182,22 @@ describe("table editor operations", () => {
   it("duplicates a row answer cell with a fresh field and metadata", () => {
     const model: TableEditorModel = {
       ...createBaseModel(),
-      responseFields: [
-        { id: "answer_1", type: "text", label: "Payload", required: false },
-      ],
       cells: [
         {
-          id: "cell_1",
-          rowId: "row_1",
           columnId: "column_1",
-          type: "response",
-          responseFieldId: "answer_1",
+          correctValueSource: { type: "literal", value: { a: 1 } },
+          grading: { mode: "exact" },
+          id: "cell_1",
           label: "Payload",
           placeholder: "Student answer",
-          correctValueSource: { type: "literal", value: { a: 1 } },
           points: 2,
-          grading: { mode: "exact" },
+          responseFieldId: "answer_1",
+          rowId: "row_1",
+          type: "response",
         },
+      ],
+      responseFields: [
+        { id: "answer_1", label: "Payload", required: false, type: "text" },
       ],
     };
 
@@ -205,38 +205,38 @@ describe("table editor operations", () => {
     const duplicate = nextModel.cells.find((cell) => cell.id !== "cell_1");
 
     expect(duplicate).toMatchObject({
-      type: "response",
       responseFieldId: "answer_2",
+      type: "response",
     });
     expect(nextModel.responseFields).toEqual([
-      { id: "answer_1", type: "text", label: "Payload", required: false },
-      { id: "answer_2", type: "text", label: "Payload", required: false },
+      { id: "answer_1", label: "Payload", required: false, type: "text" },
+      { id: "answer_2", label: "Payload", required: false, type: "text" },
     ]);
   });
 
   it("duplicates a column answer cell with a fresh field and metadata", () => {
     const model: TableEditorModel = {
       ...createBaseModel(),
+      cells: [
+        {
+          columnId: "column_1",
+          correctValueSource: { type: "literal", value: true },
+          grading: { mode: "exact" },
+          id: "cell_1",
+          label: "Checked",
+          placeholder: "Student answer",
+          points: 1,
+          responseFieldId: "answer_1",
+          rowId: "row_1",
+          type: "response",
+        },
+      ],
       columns: [
         { id: "column_1", label: "Column 1" },
         { id: "column_2", label: "Column 2" },
       ],
       responseFields: [
-        { id: "answer_1", type: "boolean", label: "Checked", required: true },
-      ],
-      cells: [
-        {
-          id: "cell_1",
-          rowId: "row_1",
-          columnId: "column_1",
-          type: "response",
-          responseFieldId: "answer_1",
-          label: "Checked",
-          placeholder: "Student answer",
-          correctValueSource: { type: "literal", value: true },
-          points: 1,
-          grading: { mode: "exact" },
-        },
+        { id: "answer_1", label: "Checked", required: true, type: "boolean" },
       ],
     };
 
@@ -244,12 +244,12 @@ describe("table editor operations", () => {
     const duplicate = nextModel.cells.find((cell) => cell.id !== "cell_1");
 
     expect(duplicate).toMatchObject({
-      type: "response",
       responseFieldId: "answer_2",
+      type: "response",
     });
     expect(nextModel.responseFields).toEqual([
-      { id: "answer_1", type: "boolean", label: "Checked", required: true },
-      { id: "answer_2", type: "boolean", label: "Checked", required: true },
+      { id: "answer_1", label: "Checked", required: true, type: "boolean" },
+      { id: "answer_2", label: "Checked", required: true, type: "boolean" },
     ]);
     expect(() => validateTableEditorModelAnswers(nextModel)).not.toThrow();
   });

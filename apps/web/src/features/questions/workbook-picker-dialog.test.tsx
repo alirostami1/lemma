@@ -1,13 +1,21 @@
 // @vitest-environment jsdom
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { workbookKeys } from "#/domains/workbooks/keys";
-import { WorkbookPickerDialog } from "./workbook-picker-dialog";
+import type { LocalWorkbookParseResult } from "#/domains/workbooks/local-xlsx";
+import {
+  buildLocalWorkbookPickerCells,
+  WorkbookPickerDialog,
+} from "./workbook-picker-dialog";
 
 describe("workbook picker dialog", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it("shows loading when a workbook filename is known but the file is not ready", () => {
     const queryClient = new QueryClient();
 
@@ -15,11 +23,11 @@ describe("workbook picker dialog", () => {
       <QueryClientProvider client={queryClient}>
         <WorkbookPickerDialog
           fileName="source.xlsx"
-          previewSourceId={null}
-          open
           onOpenChange={() => {}}
-          selectionRequirement={{}}
           onSelectRange={() => {}}
+          open
+          selectionRequirement={{}}
+          sourceId={null}
         />
       </QueryClientProvider>,
     );
@@ -41,40 +49,40 @@ describe("workbook picker dialog", () => {
 
     queryClient.setQueryData(
       workbookKeys.snapshotCells(workbookSnapshotId, {
-        sheetIndex: 0,
-        startRow: 1,
-        startColumn: 1,
-        rowCount: 50,
         columnCount: 20,
+        rowCount: 50,
+        sheetIndex: 0,
+        startColumn: 1,
+        startRow: 1,
       }),
       {
+        cellTypes: [["string"]],
+        columnCount: 1,
+        rowCount: 1,
+        rows: [["First value"]],
         sheetIndex: 0,
         sheetName: "First",
-        startRow: 1,
         startColumn: 1,
-        rowCount: 1,
-        columnCount: 1,
-        rows: [["First value"]],
-        cellTypes: [["string"]],
+        startRow: 1,
       },
     );
     queryClient.setQueryData(
       workbookKeys.snapshotCells(workbookSnapshotId, {
-        sheetIndex: 1,
-        startRow: 1,
-        startColumn: 1,
-        rowCount: 50,
         columnCount: 20,
+        rowCount: 50,
+        sheetIndex: 1,
+        startColumn: 1,
+        startRow: 1,
       }),
       {
+        cellTypes: [["string"]],
+        columnCount: 1,
+        rowCount: 1,
+        rows: [["Second value"]],
         sheetIndex: 1,
         sheetName: "Second",
-        startRow: 1,
         startColumn: 1,
-        rowCount: 1,
-        columnCount: 1,
-        rows: [["Second value"]],
-        cellTypes: [["string"]],
+        startRow: 1,
       },
     );
 
@@ -82,28 +90,28 @@ describe("workbook picker dialog", () => {
       <QueryClientProvider client={queryClient}>
         <WorkbookPickerDialog
           fileName="source.xlsx"
-          previewSourceId={null}
-          open
           onOpenChange={() => {}}
-          selectionRequirement={{}}
           onSelectRange={() => {}}
-          workbookSnapshotId={workbookSnapshotId}
+          open
+          selectionRequirement={{}}
+          sourceId={null}
           workbookSheets={[
             {
-              sheetIndex: 0,
-              name: "First",
-              rowCount: 1,
               columnCount: 1,
+              name: "First",
               nonEmptyCellCount: 1,
+              rowCount: 1,
+              sheetIndex: 0,
             },
             {
-              sheetIndex: 1,
-              name: "Second",
-              rowCount: 1,
               columnCount: 1,
+              name: "Second",
               nonEmptyCellCount: 1,
+              rowCount: 1,
+              sheetIndex: 1,
             },
           ]}
+          workbookSnapshotId={workbookSnapshotId}
         />
       </QueryClientProvider>,
     );
@@ -130,21 +138,21 @@ describe("workbook picker dialog", () => {
 
     queryClient.setQueryData(
       workbookKeys.snapshotCells(workbookSnapshotId, {
-        sheetIndex: 0,
-        startRow: 1,
-        startColumn: 1,
-        rowCount: 50,
         columnCount: 20,
+        rowCount: 50,
+        sheetIndex: 0,
+        startColumn: 1,
+        startRow: 1,
       }),
       {
+        cellTypes: [["string"]],
+        columnCount: 1,
+        rowCount: 1,
+        rows: [["First value"]],
         sheetIndex: 0,
         sheetName: "First",
-        startRow: 1,
         startColumn: 1,
-        rowCount: 1,
-        columnCount: 1,
-        rows: [["First value"]],
-        cellTypes: [["string"]],
+        startRow: 1,
       },
     );
 
@@ -152,23 +160,23 @@ describe("workbook picker dialog", () => {
       <QueryClientProvider client={queryClient}>
         <WorkbookPickerDialog
           fileName="source.xlsx"
-          previewSourceId="source_1"
-          open
-          onOpenChange={() => {}}
-          selectionRequirement={{}}
-          onSelectRange={() => {}}
-          workbookSnapshotId={workbookSnapshotId}
-          workbookSheets={[
-            {
-              sheetIndex: 0,
-              name: "First",
-              rowCount: 1,
-              columnCount: 1,
-              nonEmptyCellCount: 1,
-            },
-          ]}
           hasMoreSheets
           onLoadMoreSheets={onLoadMoreSheets}
+          onOpenChange={() => {}}
+          onSelectRange={() => {}}
+          open
+          selectionRequirement={{}}
+          sourceId="source_1"
+          workbookSheets={[
+            {
+              columnCount: 1,
+              name: "First",
+              nonEmptyCellCount: 1,
+              rowCount: 1,
+              sheetIndex: 0,
+            },
+          ]}
+          workbookSnapshotId={workbookSnapshotId}
         />
       </QueryClientProvider>,
     );
@@ -177,4 +185,81 @@ describe("workbook picker dialog", () => {
 
     expect(onLoadMoreSheets).toHaveBeenCalledTimes(1);
   });
+
+  it("builds local workbook picker cells without a snapshot", () => {
+    const cells = buildLocalWorkbookPickerCells({
+      columnCount: 2,
+      rowCount: 2,
+      sheet: {
+        columnCount: 2,
+        name: "Rates",
+        nonEmptyCellCount: 2,
+        rowCount: 2,
+        sheetIndex: 0,
+      },
+      startColumn: 1,
+      startRow: 1,
+      workbook: localWorkbook(),
+    });
+
+    expect(cells.rows).toEqual([
+      ["Name", ""],
+      ["Alpha", ""],
+    ]);
+    expect(cells.cellTypes).toEqual([
+      ["string", "blank"],
+      ["string", "blank"],
+    ]);
+  });
 });
+
+function localWorkbook(): LocalWorkbookParseResult {
+  return {
+    byteSize: 12,
+    cellsByKey: new Map([
+      [
+        "Rates::A1",
+        {
+          address: "A1",
+          displayValue: "Name",
+          formula: null,
+          hasCachedValue: true,
+          rawValue: "Name",
+          sheetName: "Rates",
+          type: "string",
+        },
+      ],
+      [
+        "Rates::A2",
+        {
+          address: "A2",
+          displayValue: "Alpha",
+          formula: null,
+          hasCachedValue: true,
+          rawValue: "Alpha",
+          sheetName: "Rates",
+          type: "string",
+        },
+      ],
+      [
+        "Notes::A1",
+        {
+          address: "A1",
+          displayValue: "Hello",
+          formula: null,
+          hasCachedValue: true,
+          rawValue: "Hello",
+          sheetName: "Notes",
+          type: "string",
+        },
+      ],
+    ]),
+    fileName: "local.xlsx",
+    parsedAt: new Date("2026-06-21T00:00:00.000Z"),
+    sheetCount: 2,
+    sheets: [
+      { columnCount: 2, name: "Rates", rowCount: 2, usedRange: "Rates!A1:B2" },
+      { columnCount: 1, name: "Notes", rowCount: 1, usedRange: "Notes!A1" },
+    ],
+  };
+}

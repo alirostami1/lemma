@@ -25,6 +25,8 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { LocalWorkbookParseResult } from "#/domains/workbooks/local-xlsx";
+import type { WorkbookCellType } from "#/domains/workbooks/model";
 import type {
   WorkbookRangeSelection,
   WorkbookSelectionRequirement,
@@ -66,12 +68,13 @@ const DEFAULT_WORKBOOK_PICKER_CELL_WINDOW = {
 } satisfies WorkbookPickerCellWindow;
 
 type WorkbookPickerDialogProps = {
+  localWorkbook?: LocalWorkbookParseResult | null;
   workbookSnapshotId?: string | null;
   workbookSheets?: WorkbookPickerSheet[];
   hasMoreSheets?: boolean;
   isLoadingMoreSheets?: boolean;
   fileName: string;
-  previewSourceId: string | null;
+  sourceId: string | null;
   open: boolean;
   onOpenChange(open: boolean): void;
   onLoadMoreSheets?(): void;
@@ -80,34 +83,51 @@ type WorkbookPickerDialogProps = {
 };
 
 export function WorkbookPickerDialog({
+  localWorkbook,
   workbookSnapshotId,
   workbookSheets = [],
   hasMoreSheets = false,
   isLoadingMoreSheets = false,
   fileName,
-  previewSourceId,
+  sourceId,
   open,
   onOpenChange,
   onLoadMoreSheets,
   selectionRequirement,
   onSelectRange,
 }: WorkbookPickerDialogProps) {
-  const hasSource = Boolean(workbookSnapshotId);
-  const sourceKey = workbookSnapshotId ?? "";
+  const localWorkbookSheets = useMemo(
+    () =>
+      localWorkbook?.sheets.map((sheet, index) => ({
+        columnCount: sheet.columnCount,
+        name: sheet.name,
+        nonEmptyCellCount: 0,
+        rowCount: sheet.rowCount,
+        sheetIndex: index,
+      })) ?? [],
+    [localWorkbook],
+  );
+  const effectiveWorkbookSheets = localWorkbook
+    ? localWorkbookSheets
+    : workbookSheets;
+  const hasSource = Boolean(workbookSnapshotId || localWorkbook);
+  const sourceKey =
+    workbookSnapshotId ??
+    (localWorkbook ? `local:${localWorkbook.fileName}` : "");
   const sheetTabs = useMemo(
     () =>
-      workbookSheets.map((sheet) => ({
+      effectiveWorkbookSheets.map((sheet) => ({
+        columnCount: Math.min(sheet.columnCount, WORKBOOK_PICKER_COLUMN_COUNT),
         name: sheet.name,
         rows: [],
-        columnCount: Math.min(sheet.columnCount, WORKBOOK_PICKER_COLUMN_COUNT),
       })),
-    [workbookSheets],
+    [effectiveWorkbookSheets],
   );
   const { activeSheetName, setActiveSheetName } =
     useSpreadsheetSheet(sheetTabs);
   const activeSheetSummary =
-    workbookSheets.find((sheet) => sheet.name === activeSheetName) ??
-    workbookSheets[0] ??
+    effectiveWorkbookSheets.find((sheet) => sheet.name === activeSheetName) ??
+    effectiveWorkbookSheets[0] ??
     null;
   const [cachedCellsCache, setCachedCellsCache] =
     useState<WorkbookPickerCellCache>({
@@ -118,8 +138,8 @@ export function WorkbookPickerDialog({
     Record<string, WorkbookPickerCellWindow>
   >({});
   const sheetSelectionKey =
-    workbookSnapshotId && activeSheetSummary
-      ? `${workbookSnapshotId}:${activeSheetSummary.name}`
+    sourceKey && activeSheetSummary
+      ? `${sourceKey}:${activeSheetSummary.name}`
       : "";
   const activeSheetRowCount = Math.max(activeSheetSummary?.rowCount ?? 1, 1);
   const activeSheetColumnCount = Math.max(
@@ -157,6 +177,19 @@ export function WorkbookPickerDialog({
     workbookSnapshotId,
   });
   const cellsBySheetIndex = useMemo(() => {
+    if (localWorkbook && activeSheetSummary) {
+      return {
+        [activeSheetSummary.sheetIndex]: buildLocalWorkbookPickerCells({
+          columnCount: WORKBOOK_PICKER_COLUMN_COUNT,
+          rowCount: WORKBOOK_PICKER_ROW_COUNT,
+          sheet: activeSheetSummary,
+          startColumn: activeCellWindow.startColumn,
+          startRow: activeCellWindow.startRow,
+          workbook: localWorkbook,
+        }),
+      };
+    }
+
     if (!cellsQuery.data) {
       return sourceCachedCellsBySheetIndex;
     }
@@ -165,13 +198,18 @@ export function WorkbookPickerDialog({
       ...sourceCachedCellsBySheetIndex,
       [cellsQuery.data.sheetIndex]: cellsQuery.data,
     };
-  }, [cellsQuery.data, sourceCachedCellsBySheetIndex]);
+  }, [
+    activeCellWindow.startColumn,
+    activeCellWindow.startRow,
+    activeSheetSummary,
+    cellsQuery.data,
+    localWorkbook,
+    sourceCachedCellsBySheetIndex,
+  ]);
   const sheets = useMemo(
     () =>
-      workbookSheets.map((sheet) => {
-        const sheetKey = workbookSnapshotId
-          ? `${workbookSnapshotId}:${sheet.name}`
-          : "";
+      effectiveWorkbookSheets.map((sheet) => {
+        const sheetKey = sourceKey ? `${sourceKey}:${sheet.name}` : "";
         const sheetWindow = clampWorkbookPickerCellWindow(
           getWorkbookPickerCellWindow(cellWindowBySheetKey, sheetKey),
           sheet.rowCount,
@@ -183,18 +221,18 @@ export function WorkbookPickerDialog({
           : undefined;
 
         return {
-          name: sheet.name,
-          rows: cells?.rows ?? [],
           columnCount:
             cells?.columnCount ??
             Math.min(sheet.columnCount, WORKBOOK_PICKER_COLUMN_COUNT),
+          name: sheet.name,
+          rows: cells?.rows ?? [],
         };
       }),
     [
       cellWindowBySheetKey,
       cellsBySheetIndex,
-      workbookSheets,
-      workbookSnapshotId,
+      effectiveWorkbookSheets,
+      sourceKey,
     ],
   );
   const activeSheet =
@@ -297,11 +335,11 @@ export function WorkbookPickerDialog({
       : placeholderRows;
   const selectionRange = rangeSelection.selectionRange;
   const previewSelectedRange =
-    activeSheet && selectionRange && previewSourceId !== null
+    activeSheet && selectionRange && sourceId !== null
       ? buildWorkbookRangeSelection(activeSheet.name, rows, selectionRange, {
-          sourceId: previewSourceId,
           columnStartIndex: activeCellWindow.startColumn - 1,
           rowStartIndex: activeCellWindow.startRow - 1,
+          sourceId,
         })
       : null;
   const selectedRangeReference = previewSelectedRange?.reference ?? null;
@@ -342,14 +380,14 @@ export function WorkbookPickerDialog({
     activeCellWindow.startColumn < maxColumnStart;
   const selectionValidation = isActiveSheetLoading
     ? {
-        ok: false,
         message: "Loading source cells.",
+        ok: false,
       }
     : selectedRange
       ? validateWorkbookRangeSelection(selectedRange, selectionRequirement)
       : {
-          ok: false,
           message: "Select a source range first.",
+          ok: false,
         };
   const selectionRequirementLabel =
     describeWorkbookSelectionRequirement(selectionRequirement);
@@ -407,9 +445,7 @@ export function WorkbookPickerDialog({
       };
     }
 
-    const nextSheetSelectionKey = workbookSnapshotId
-      ? `${workbookSnapshotId}:${sheetName}`
-      : "";
+    const nextSheetSelectionKey = sourceKey ? `${sourceKey}:${sheetName}` : "";
     rangeSelection.setSelectionRange(
       nextSheetSelectionKey
         ? (selectionBySheetKeyRef.current[nextSheetSelectionKey] ?? null)
@@ -421,9 +457,9 @@ export function WorkbookPickerDialog({
     if (!selectedRange) {
       return;
     }
-    if (previewSourceId === null) {
+    if (sourceId === null) {
       setSelectedRangeErrorMessage(
-        "Select a preview source before selecting this range.",
+        "Select a source before selecting this range.",
       );
       return;
     }
@@ -432,6 +468,15 @@ export function WorkbookPickerDialog({
     setIsSelectingRange(true);
 
     try {
+      if (localWorkbook) {
+        onSelectRange({
+          reference: selectedRange.reference,
+          sourceId,
+          values: selectedRange.values,
+        });
+        return;
+      }
+
       const result = await selectedRangeQuery.refetch();
 
       if (!result.data) {
@@ -444,8 +489,8 @@ export function WorkbookPickerDialog({
           result.data,
           selectionRequirement,
         ),
+        sourceId,
         values: result.data.rows,
-        sourceId: previewSourceId,
       });
     } catch {
       setSelectedRangeErrorMessage("Selected range could not be loaded.");
@@ -455,10 +500,10 @@ export function WorkbookPickerDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent
-        data-workbook-picker-dialog="true"
         className="flex h-[92vh] w-[90vw] max-w-[90vw] flex-col overflow-hidden p-0"
+        data-workbook-picker-dialog="true"
       >
         <DialogHeader className="border-b px-5 py-4">
           <DialogTitle>Source</DialogTitle>
@@ -468,19 +513,19 @@ export function WorkbookPickerDialog({
         </DialogHeader>
 
         <div className="flex min-h-0 flex-1 flex-col bg-muted/20">
-          {!hasSource && fileName === "Selected source could not be found." ? (
+          {!hasSource && fileName === "Attached source could not be found." ? (
             <div className="flex flex-1 items-center justify-center p-8 text-sm text-destructive">
-              Selected source could not be found.
+              Attached source could not be found.
             </div>
           ) : !hasSource ? (
             <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
-              {fileName ? "Loading source..." : "No preview source selected."}
+              {fileName ? "Loading source..." : "No source selected."}
             </div>
           ) : cellsQuery.isError && !activeSheetCells ? (
             <div className="flex flex-1 items-center justify-center p-8 text-sm text-destructive">
               Source preview could not be loaded.
             </div>
-          ) : workbookSheets.length === 0 ? (
+          ) : effectiveWorkbookSheets.length === 0 ? (
             <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
               Loading source...
             </div>
@@ -506,71 +551,71 @@ export function WorkbookPickerDialog({
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
                     aria-label="Previous rows"
-                    title="Previous rows"
                     disabled={isActiveSheetLoading || !canMoveRowsBackward}
                     onClick={() =>
                       updateActiveCellWindow({
                         rowDelta: -WORKBOOK_PICKER_ROW_COUNT,
                       })
                     }
+                    size="icon-sm"
+                    title="Previous rows"
+                    type="button"
+                    variant="outline"
                   >
                     <ChevronUp />
                   </Button>
                   <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
                     aria-label="Next rows"
-                    title="Next rows"
                     disabled={isActiveSheetLoading || !canMoveRowsForward}
                     onClick={() =>
                       updateActiveCellWindow({
                         rowDelta: WORKBOOK_PICKER_ROW_COUNT,
                       })
                     }
+                    size="icon-sm"
+                    title="Next rows"
+                    type="button"
+                    variant="outline"
                   >
                     <ChevronDown />
                   </Button>
                   <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
                     aria-label="Previous columns"
-                    title="Previous columns"
                     disabled={isActiveSheetLoading || !canMoveColumnsBackward}
                     onClick={() =>
                       updateActiveCellWindow({
                         columnDelta: -WORKBOOK_PICKER_COLUMN_COUNT,
                       })
                     }
+                    size="icon-sm"
+                    title="Previous columns"
+                    type="button"
+                    variant="outline"
                   >
                     <ChevronLeft />
                   </Button>
                   <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
                     aria-label="Next columns"
-                    title="Next columns"
                     disabled={isActiveSheetLoading || !canMoveColumnsForward}
                     onClick={() =>
                       updateActiveCellWindow({
                         columnDelta: WORKBOOK_PICKER_COLUMN_COUNT,
                       })
                     }
+                    size="icon-sm"
+                    title="Next columns"
+                    type="button"
+                    variant="outline"
                   >
                     <ChevronRight />
                   </Button>
                   <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
                     disabled={!selectionRange || isActiveSheetLoading}
                     onClick={rangeSelection.clearSelection}
+                    size="sm"
+                    type="button"
+                    variant="ghost"
                   >
                     Clear
                   </Button>
@@ -601,11 +646,11 @@ export function WorkbookPickerDialog({
                 {hasMoreSheets ? (
                   <div className="shrink-0 border-l px-2">
                     <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
                       disabled={isLoadingMoreSheets}
                       onClick={onLoadMoreSheets}
+                      size="sm"
+                      type="button"
+                      variant="outline"
                     >
                       {isLoadingMoreSheets ? (
                         <Spinner className="size-3" />
@@ -617,15 +662,15 @@ export function WorkbookPickerDialog({
               </div>
               <WorkbookSelectionSummary
                 isSelectingRange={isSelectingRange}
+                onSelectRange={handleSelectRange}
+                selectedRange={selectedRange}
                 selectedRangeErrorMessage={
                   selectedRangeErrorMessage ??
-                  (previewSourceId === null
-                    ? "Select a preview source before selecting this range."
+                  (sourceId === null
+                    ? "Select a source before selecting this range."
                     : null)
                 }
-                selectedRange={selectedRange}
                 selectionValidation={selectionValidation}
-                onSelectRange={handleSelectRange}
               />
             </>
           ) : (
@@ -663,10 +708,10 @@ function getWorkbookPickerSelectionReference(
     range.columnCount === 1
   ) {
     return formatSpreadsheetRange(range.sheetName, {
-      startRowIndex: range.startRow - 1,
+      endColumnIndex: range.startColumn - 1,
       endRowIndex: range.startRow - 1,
       startColumnIndex: range.startColumn - 1,
-      endColumnIndex: range.startColumn - 1,
+      startRowIndex: range.startRow - 1,
     });
   }
 
@@ -689,6 +734,87 @@ function areSpreadsheetRangesEqual(
     left.startColumnIndex === right.startColumnIndex &&
     left.endColumnIndex === right.endColumnIndex
   );
+}
+
+export function buildLocalWorkbookPickerCells(input: {
+  workbook: LocalWorkbookParseResult;
+  sheet: WorkbookPickerSheet;
+  startColumn: number;
+  startRow: number;
+  columnCount: number;
+  rowCount: number;
+}): WorkbookPickerCells {
+  const rows: string[][] = [];
+  const cellTypes: WorkbookCellType[][] = [];
+
+  for (
+    let rowIndex = input.startRow;
+    rowIndex < input.startRow + input.rowCount;
+    rowIndex += 1
+  ) {
+    const row: string[] = [];
+    const rowCellTypes: WorkbookCellType[] = [];
+
+    for (
+      let columnIndex = input.startColumn;
+      columnIndex < input.startColumn + input.columnCount;
+      columnIndex += 1
+    ) {
+      const address = `${spreadsheetColumnName(columnIndex - 1)}${rowIndex}`;
+      const cell =
+        input.workbook.cellsByKey.get(
+          `${input.sheet.name}::${address.toUpperCase()}`,
+        ) ?? null;
+
+      row.push(cell?.displayValue ?? "");
+      rowCellTypes.push(mapLocalWorkbookCellType(cell?.type ?? "blank"));
+    }
+
+    rows.push(row);
+    cellTypes.push(rowCellTypes);
+  }
+
+  return {
+    cellTypes,
+    columnCount: input.columnCount,
+    rowCount: input.rowCount,
+    rows,
+    sheetIndex: input.sheet.sheetIndex,
+    sheetName: input.sheet.name,
+    startColumn: input.startColumn,
+    startRow: input.startRow,
+  };
+}
+
+function mapLocalWorkbookCellType(
+  type:
+    | "blank"
+    | "string"
+    | "number"
+    | "boolean"
+    | "date"
+    | "error"
+    | "formula"
+    | "unknown",
+): WorkbookCellType {
+  switch (type) {
+    case "blank":
+      return "blank";
+    case "string":
+      return "string";
+    case "number":
+      return "number";
+    case "boolean":
+      return "boolean";
+    case "date":
+      return "date_like";
+    case "error":
+      return "error";
+    case "formula":
+      return "formula_cached";
+    case "unknown":
+      return "blank";
+  }
 }
 
 function workbookPickerCellsMatchWindow(

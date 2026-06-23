@@ -38,13 +38,13 @@ export function getTableCellInspectorViewModel(
       : null;
 
   return {
-    status: "selected",
     cell,
+    context: [row?.label, column?.label].filter(Boolean).join(" | "),
+    responseField,
+    status: "selected",
     title:
       cell.type === "response"
         ? "Selected answer cell"
         : "Selected content cell",
-    context: [row?.label, column?.label].filter(Boolean).join(" | "),
-    responseField,
   };
 }

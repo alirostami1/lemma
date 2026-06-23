@@ -56,11 +56,11 @@ export function CreatePage() {
         />
         <div className="grid gap-4">
           <SavedBlueprintPanel
-            savedBlueprints={controller.viewModel.savedBlueprints}
-            isLoading={controller.isBlueprintsLoading}
             errorMessage={controller.blueprintsErrorMessage}
+            isLoading={controller.isBlueprintsLoading}
             onChoose={() => controller.savedBlueprintChooser.onOpenChange(true)}
             onRetry={controller.onRetryBlueprints}
+            savedBlueprints={controller.viewModel.savedBlueprints}
           />
         </div>
       </PageContainer>

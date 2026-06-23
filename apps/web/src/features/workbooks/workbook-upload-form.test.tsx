@@ -15,20 +15,20 @@ const completeFileUpload = vi.fn();
 const createWorkbook = vi.fn();
 
 vi.mock("#/domains/files/hooks", () => ({
-  useCreateFileUpload: () => ({
-    mutateAsync: createFileUpload,
-    isPending: false,
-  }),
   useCompleteFileUpload: () => ({
-    mutateAsync: completeFileUpload,
     isPending: false,
+    mutateAsync: completeFileUpload,
+  }),
+  useCreateFileUpload: () => ({
+    isPending: false,
+    mutateAsync: createFileUpload,
   }),
 }));
 
 vi.mock("#/domains/workbooks/hooks", () => ({
   useCreateWorkbook: () => ({
-    mutateAsync: createWorkbook,
     isPending: false,
+    mutateAsync: createWorkbook,
   }),
 }));
 
@@ -60,11 +60,11 @@ describe("WorkbookUploadForm", () => {
       0: invalidFile,
       item: () => invalidFile,
       length: 1,
-    } as unknown as FileList;
+    };
 
     fireEvent.change(fileInput, {
-      target: { files: fileList },
       currentTarget: { files: fileList },
+      target: { files: fileList },
     });
 
     await waitFor(() =>
@@ -86,42 +86,42 @@ describe("WorkbookUploadForm", () => {
     createFileUpload.mockResolvedValue({
       upload: { id: "upload_1" },
       uploadUrl: {
-        url: "https://upload.example",
-        method: "PUT",
         headers: {},
+        method: "PUT",
+        url: "https://upload.example",
       },
     });
     completeFileUpload.mockResolvedValue({
-      id: "file_1",
-      ownerUserId: "user_1",
-      createdByUserId: "user_1",
-      name: "source.xlsx",
-      fileId: "file_1",
       checksumSha256: "abc",
-      originalName: "source.xlsx",
+      createdAt: new Date("2026-06-08T00:00:00.000Z"),
+      createdByUserId: "user_1",
       engine: "cached",
       engineVersion: null,
-      status: "valid",
+      fileId: "file_1",
+      id: "file_1",
       inspection: null,
-      validationError: null,
-      createdAt: new Date("2026-06-08T00:00:00.000Z"),
+      name: "source.xlsx",
+      originalName: "source.xlsx",
+      ownerUserId: "user_1",
+      status: "valid",
       updatedAt: new Date("2026-06-08T00:00:00.000Z"),
+      validationError: null,
     });
     createWorkbook.mockResolvedValue({
-      id: "workbook_1",
-      ownerUserId: "user_1",
-      createdByUserId: "user_1",
-      name: "Q1 Workbook",
-      fileId: "file_1",
       checksumSha256: "abc",
-      originalName: "source.xlsx",
+      createdAt: new Date("2026-06-08T00:00:00.000Z"),
+      createdByUserId: "user_1",
       engine: "cached",
       engineVersion: null,
-      status: "pending_validation",
+      fileId: "file_1",
+      id: "workbook_1",
       inspection: null,
-      validationError: null,
-      createdAt: new Date("2026-06-08T00:00:00.000Z"),
+      name: "Q1 Workbook",
+      originalName: "source.xlsx",
+      ownerUserId: "user_1",
+      status: "pending_validation",
       updatedAt: new Date("2026-06-08T00:00:00.000Z"),
+      validationError: null,
     });
 
     render(<WorkbookUploadForm onCreated={onCreated} />);
@@ -141,8 +141,8 @@ describe("WorkbookUploadForm", () => {
     expect(createFileUpload).toHaveBeenCalled();
     expect(completeFileUpload).toHaveBeenCalledWith({ uploadId: "upload_1" });
     expect(createWorkbook).toHaveBeenCalledWith({
-      name: "Q1 Workbook",
       fileId: "file_1",
+      name: "Q1 Workbook",
     });
     expect(onCreated).toHaveBeenCalledWith(
       expect.objectContaining({ id: "workbook_1", name: "Q1 Workbook" }),
@@ -160,9 +160,9 @@ describe("WorkbookUploadForm", () => {
     createFileUpload.mockResolvedValue({
       upload: { id: "upload_1" },
       uploadUrl: {
-        url: "https://upload.example",
-        method: "PUT",
         headers: {},
+        method: "PUT",
+        url: "https://upload.example",
       },
     });
 
@@ -180,6 +180,6 @@ describe("WorkbookUploadForm", () => {
     );
     await user.click(screen.getByRole("button", { name: "Create source" }));
 
-    expect(screen.getByText("Source file upload failed.")).toBeTruthy();
+    expect(screen.getByText("File upload failed.")).toBeTruthy();
   });
 });

@@ -29,8 +29,8 @@ export function useFilesQuery(
   options?: Omit<UseQueryOptions<FilesPage>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: filesKeys.list(input),
     queryFn: () => listFiles(input),
+    queryKey: filesKeys.list(input),
     ...options,
   });
 }
@@ -40,9 +40,9 @@ export function useFileQuery(
   options?: Omit<UseQueryOptions<File>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: filesKeys.detail(fileId),
-    queryFn: () => getFile(fileId),
     enabled: Boolean(fileId),
+    queryFn: () => getFile(fileId),
+    queryKey: filesKeys.detail(fileId),
     ...options,
   });
 }

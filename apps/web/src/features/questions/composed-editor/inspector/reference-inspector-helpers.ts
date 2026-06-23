@@ -4,11 +4,18 @@ import {
   type ComposedReferenceDraft,
   createReferenceDraft,
   isValidReferenceId,
+  mergeReferenceIdInComposedEditorModel,
   normalizeReferenceId,
   renameReferenceIdInComposedEditorModel,
   updateComposedBlock,
 } from "#/domains/questions/authoring";
 import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
+import {
+  formatReferenceToken,
+  getReferenceIdForSource,
+  getWorkbookReferenceDisplayName,
+  isCanonicalWorkbookReferenceKey,
+} from "#/domains/questions/reference-names";
 import type { EditorSelection } from "../editor-selection";
 
 export type RenameReferenceResult =
@@ -36,7 +43,7 @@ export function getReferenceDisplayName(reference: ComposedReferenceDraft) {
 }
 
 export function getReferenceSyntax(referenceId: string) {
-  return `{{ .${referenceId} }}`;
+  return formatReferenceToken(referenceId);
 }
 
 export function createUniqueReferenceDraft(
@@ -71,21 +78,21 @@ export function renameReferenceInModel({
   );
   if (issue) {
     return {
-      status: issue.type === "invalid" ? "invalid_name" : "duplicate_name",
       message: issue.message,
+      status: issue.type === "invalid" ? "invalid_name" : "duplicate_name",
     };
   }
 
   const normalized = normalizeReferenceId(nextReferenceId);
 
   return {
-    status: "renamed",
-    referenceId: normalized,
     model: renameReferenceIdInComposedEditorModel(
       model,
       previousReferenceId,
       normalized,
     ),
+    referenceId: normalized,
+    status: "renamed",
   };
 }
 
@@ -96,15 +103,18 @@ export function getReferenceIdIssue(
 ): { type: "invalid" | "duplicate"; message: string } | null {
   const normalized = normalizeReferenceId(nextReferenceId);
 
-  if (!isValidReferenceId(normalized)) {
-    return { type: "invalid", message: referenceIdValidationMessage };
+  if (
+    !isValidReferenceId(normalized) &&
+    !isCanonicalWorkbookReferenceKey(normalized)
+  ) {
+    return { message: referenceIdValidationMessage, type: "invalid" };
   }
 
   if (
     normalized !== previousReferenceId &&
     model.references.some((reference) => reference.id === normalized)
   ) {
-    return { type: "duplicate", message: referenceIdDuplicateMessage };
+    return { message: referenceIdDuplicateMessage, type: "duplicate" };
   }
 
   return null;
@@ -143,10 +153,10 @@ export function appendReferenceToInlineContent(
       text: `${previous.text} `,
     };
   } else if (nextContent.length > 0 && previous?.type !== "text") {
-    nextContent.push({ type: "text", text: " " });
+    nextContent.push({ text: " ", type: "text" });
   }
 
-  nextContent.push({ type: "reference", referenceId });
+  nextContent.push({ referenceId, type: "reference" });
 
   return nextContent;
 }
@@ -188,11 +198,34 @@ export function createReferenceDraftFromSource({
   source: ComposedReferenceDraft["source"];
   label?: string;
 }): ComposedReferenceDraft {
+  const workbookReferenceId = getReferenceIdForSource(source);
+
   return {
-    ...createUniqueReferenceDraft(model),
-    source,
+    ...(workbookReferenceId
+      ? {
+          id: workbookReferenceId,
+          source,
+        }
+      : createUniqueReferenceDraft(model)),
     label,
+    source,
   };
+}
+
+export function mergeReferenceIntoExistingModel({
+  model,
+  previousReferenceId,
+  nextReferenceId,
+}: {
+  model: ComposedEditorModel;
+  previousReferenceId: string;
+  nextReferenceId: string;
+}): ComposedEditorModel {
+  return mergeReferenceIdInComposedEditorModel(
+    model,
+    previousReferenceId,
+    nextReferenceId,
+  );
 }
 
 export function insertReferenceIntoSelectedTextBlock({
@@ -249,10 +282,9 @@ export function getReferenceSourceSummary(
   if (reference.source.type === "literal") {
     return "Literal value";
   }
+  const sourceId = reference.source.sourceId;
 
-  const source = sources.find(
-    (candidate) => candidate.sourceId === reference.source.sourceId,
-  );
+  const source = sources.find((candidate) => candidate.sourceId === sourceId);
   const sourceLabel = source ? getSourceDisplayName(source) : "Missing source";
-  return `${sourceLabel} · ${getReferenceSourceLabel(reference)}`;
+  return `${sourceLabel} · ${getWorkbookReferenceDisplayName(reference.source)}`;
 }

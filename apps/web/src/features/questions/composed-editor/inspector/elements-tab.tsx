@@ -14,7 +14,7 @@ export function ElementsTab({
   referencePreviewCache,
   workbookEnabled,
   sources,
-  previewSourceId,
+  workbookSheetNamesBySourceId,
   disabled,
   onModelChange,
   onSelectionChange,
@@ -25,23 +25,23 @@ export function ElementsTab({
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
   sources: QuestionBlueprintWorkbookSource[];
-  previewSourceId: string | null;
+  workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onSelectionChange(selection: EditorSelection): void;
 }) {
   return (
     <SelectedElementInspector
-      model={model}
-      selection={selection}
-      selectedBlock={selectedBlock}
-      referencePreviewCache={referencePreviewCache}
-      workbookEnabled={workbookEnabled}
-      sources={sources}
-      previewSourceId={previewSourceId}
       disabled={disabled}
+      model={model}
       onModelChange={onModelChange}
       onSelectionChange={onSelectionChange}
+      referencePreviewCache={referencePreviewCache}
+      selectedBlock={selectedBlock}
+      selection={selection}
+      sources={sources}
+      workbookEnabled={workbookEnabled}
+      workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
     />
   );
 }

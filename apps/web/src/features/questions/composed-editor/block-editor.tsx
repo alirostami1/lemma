@@ -20,7 +20,7 @@ export function BlockEditor({
   model,
   workbookEnabled,
   sources,
-  previewSourceId,
+  workbookSheetNamesBySourceId,
   onModelChange,
   onSelectReference,
   onTableSelectionChange,
@@ -32,7 +32,7 @@ export function BlockEditor({
   model: ComposedEditorModel;
   workbookEnabled: boolean;
   sources: QuestionBlueprintWorkbookSource[];
-  previewSourceId: string | null;
+  workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
   onModelChange(model: ComposedEditorModel): void;
   onSelectReference(referenceId: string): void;
   onTableSelectionChange(
@@ -46,13 +46,7 @@ export function BlockEditor({
       <TextBlockEditor
         block={block}
         disabled={disabled}
-        referencePreviewCache={referencePreviewCache}
         model={model}
-        workbookEnabled={workbookEnabled}
-        sources={sources}
-        previewSourceId={previewSourceId}
-        onModelChange={onModelChange}
-        onSelectReference={onSelectReference}
         onCreatedReference={({ nextModel, nextContent }) =>
           onModelChange(
             updateComposedBlock(nextModel, block.id, (current) => {
@@ -66,6 +60,12 @@ export function BlockEditor({
             }),
           )
         }
+        onModelChange={onModelChange}
+        onSelectReference={onSelectReference}
+        referencePreviewCache={referencePreviewCache}
+        sources={sources}
+        workbookEnabled={workbookEnabled}
+        workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
       />
     );
   }
@@ -73,14 +73,8 @@ export function BlockEditor({
     return (
       <div className="grid gap-3">
         <RichTextEditor
-          value={block.content}
-          model={model}
-          referencePreviewCache={referencePreviewCache}
-          workbookEnabled={workbookEnabled}
-          sources={sources}
-          previewSourceId={previewSourceId}
           disabled={disabled}
-          onModelChange={onModelChange}
+          model={model}
           onChange={(content) =>
             onModelChange({
               ...model,
@@ -101,6 +95,12 @@ export function BlockEditor({
               ) as ComposedEditorBlock[],
             })
           }
+          onModelChange={onModelChange}
+          referencePreviewCache={referencePreviewCache}
+          sources={sources}
+          value={block.content}
+          workbookEnabled={workbookEnabled}
+          workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
         />
       </div>
     );
@@ -109,12 +109,8 @@ export function BlockEditor({
   if (block.type === "table") {
     return (
       <TableBlockEditor
+        disabled={disabled}
         model={block.table}
-        selection={getTableSelectionForBlock(block.id)}
-        referencePreviewCache={referencePreviewCache}
-        onSelectionChange={(nextSelection) =>
-          onTableSelectionChange(block.id, nextSelection)
-        }
         onModelChange={(table) =>
           onModelChange(
             updateComposedBlock(model, block.id, (current) => ({
@@ -123,8 +119,12 @@ export function BlockEditor({
             })),
           )
         }
+        onSelectionChange={(nextSelection) =>
+          onTableSelectionChange(block.id, nextSelection)
+        }
+        referencePreviewCache={referencePreviewCache}
+        selection={getTableSelectionForBlock(block.id)}
         workbookTools={{ hasWorkbookFile: workbookEnabled }}
-        disabled={disabled}
       />
     );
   }
@@ -145,7 +145,7 @@ function TextBlockEditor({
   model,
   workbookEnabled,
   sources,
-  previewSourceId,
+  workbookSheetNamesBySourceId,
   onModelChange,
   onSelectReference,
   onCreatedReference,
@@ -156,7 +156,7 @@ function TextBlockEditor({
   model: ComposedEditorModel;
   workbookEnabled: boolean;
   sources: QuestionBlueprintWorkbookSource[];
-  previewSourceId: string | null;
+  workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
   onModelChange(model: ComposedEditorModel): void;
   onSelectReference(referenceId: string): void;
   onCreatedReference(input: {
@@ -168,12 +168,8 @@ function TextBlockEditor({
     <div className="grid gap-3">
       <TextAuthoringContent
         content={block.content}
-        referencePreviewCache={referencePreviewCache}
-        model={model}
-        workbookEnabled={workbookEnabled}
-        sources={sources}
-        previewSourceId={previewSourceId}
         disabled={disabled}
+        model={model}
         onChange={(content) =>
           onModelChange(
             updateComposedBlock(model, block.id, (current) => {
@@ -187,9 +183,13 @@ function TextBlockEditor({
             }),
           )
         }
+        onCreatedReference={onCreatedReference}
         onModelChange={onModelChange}
         onSelectReference={onSelectReference}
-        onCreatedReference={onCreatedReference}
+        referencePreviewCache={referencePreviewCache}
+        sources={sources}
+        workbookEnabled={workbookEnabled}
+        workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
       />
     </div>
   );
@@ -220,15 +220,13 @@ function ResponseBlockEditor({
     <div className="grid gap-3">
       <div className="grid gap-3 sm:grid-cols-2">
         <label
-          htmlFor={`${block.id}-label`}
           className="grid gap-1 text-sm font-medium"
+          htmlFor={`${block.id}-label`}
         >
           Label
           <Input
-            id={`${block.id}-label`}
-            value={block.label ?? ""}
             disabled={disabled}
-            placeholder={responseField.label ?? "Answer"}
+            id={`${block.id}-label`}
             onChange={(event) =>
               onModelChange(
                 updateComposedBlock(model, block.id, (current) => ({
@@ -237,18 +235,18 @@ function ResponseBlockEditor({
                 })),
               )
             }
+            placeholder={responseField.label ?? "Answer"}
+            value={block.label ?? ""}
           />
         </label>
         <label
-          htmlFor={`${block.id}-placeholder`}
           className="grid gap-1 text-sm font-medium"
+          htmlFor={`${block.id}-placeholder`}
         >
           Placeholder
           <Input
-            id={`${block.id}-placeholder`}
-            value={block.placeholder ?? ""}
             disabled={disabled}
-            placeholder="Student answer"
+            id={`${block.id}-placeholder`}
             onChange={(event) =>
               onModelChange(
                 updateComposedBlock(model, block.id, (current) => ({
@@ -257,6 +255,8 @@ function ResponseBlockEditor({
                 })),
               )
             }
+            placeholder="Student answer"
+            value={block.placeholder ?? ""}
           />
         </label>
       </div>

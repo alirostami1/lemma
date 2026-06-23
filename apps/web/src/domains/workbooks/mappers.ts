@@ -47,8 +47,8 @@ export function mapWorkbookInspection(
 export function mapWorkbook(dto: WorkbookDto): Workbook {
   return {
     ...dto,
-    inspection: dto.inspection ? mapWorkbookInspection(dto.inspection) : null,
     createdAt: new Date(dto.createdAt),
+    inspection: dto.inspection ? mapWorkbookInspection(dto.inspection) : null,
     updatedAt: new Date(dto.updatedAt),
   };
 }
@@ -58,9 +58,9 @@ export function mapWorkbookCalculation(
 ): WorkbookCalculation {
   return {
     ...dto,
-    startedAt: dto.startedAt ? new Date(dto.startedAt) : null,
-    finishedAt: dto.finishedAt ? new Date(dto.finishedAt) : null,
     createdAt: new Date(dto.createdAt),
+    finishedAt: dto.finishedAt ? new Date(dto.finishedAt) : null,
+    startedAt: dto.startedAt ? new Date(dto.startedAt) : null,
     updatedAt: new Date(dto.updatedAt),
   };
 }
@@ -94,10 +94,10 @@ export function mapWorkbookSnapshotCells(
 ): WorkbookSnapshotCells {
   return {
     ...dto,
-    rows: dto.rows.map((row) => [...row]),
     cellTypes: dto.cellTypes.map((row) =>
       row.map((cellType) => cellType as WorkbookCellType),
     ),
+    rows: dto.rows.map((row) => [...row]),
   };
 }
 
@@ -106,9 +106,9 @@ export function mapWorkbookSnapshotRange(
 ): WorkbookSnapshotRange {
   return {
     ...mapWorkbookSnapshotCells(dto),
+    endCellAddress: dto.endCellAddress,
     ref: dto.ref,
     startCellAddress: dto.startCellAddress,
-    endCellAddress: dto.endCellAddress,
   };
 }
 
@@ -117,18 +117,18 @@ export function mapWorkbookSnapshotRangeBatchItem(
 ): WorkbookSnapshotRangeBatchItem {
   if (dto.status === "ok" && dto.range) {
     return {
+      errorMessage: null,
+      range: mapWorkbookSnapshotRange(dto.range),
       ref: dto.ref,
       status: "ok",
-      range: mapWorkbookSnapshotRange(dto.range),
-      errorMessage: null,
     };
   }
 
   return {
+    errorMessage: dto.errorMessage ?? "Range could not be loaded.",
+    range: null,
     ref: dto.ref,
     status: "error",
-    range: null,
-    errorMessage: dto.errorMessage ?? "Range could not be loaded.",
   };
 }
 
@@ -146,8 +146,8 @@ export function mapWorkbooksResponse(
   response: WorkbooksResponse,
 ): WorkbooksPage {
   return {
-    workbooks: response.workbooks.map(mapWorkbook),
     nextCursor: response.nextCursor,
+    workbooks: response.workbooks.map(mapWorkbook),
   };
 }
 
@@ -159,10 +159,10 @@ export function mapWorkbookCalculationsResponse(
   response: WorkbookCalculationsResponse,
 ): WorkbookCalculationsPage {
   return {
+    nextCursor: response.nextCursor,
     workbookCalculations: response.workbookCalculations.map(
       mapWorkbookCalculation,
     ),
-    nextCursor: response.nextCursor,
   };
 }
 
@@ -176,8 +176,8 @@ export function mapWorkbookSnapshotsResponse(
   response: WorkbookSnapshotsResponse,
 ): WorkbookSnapshotsPage {
   return {
-    workbookSnapshots: response.workbookSnapshots.map(mapWorkbookSnapshot),
     nextCursor: response.nextCursor,
+    workbookSnapshots: response.workbookSnapshots.map(mapWorkbookSnapshot),
   };
 }
 
@@ -197,10 +197,10 @@ export function mapWorkbookSnapshotSheetsResponse(
   response: WorkbookSnapshotSheetsResponse,
 ): WorkbookSnapshotSheetsPage {
   return {
+    nextCursor: response.nextCursor,
     workbookSnapshotSheets: response.workbookSnapshotSheets.map(
       mapWorkbookSnapshotSheet,
     ),
-    nextCursor: response.nextCursor,
   };
 }
 
