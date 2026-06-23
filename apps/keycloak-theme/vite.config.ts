@@ -18,7 +18,6 @@ export default defineConfig({
     }),
   ],
   resolve: {
-    conditions: ["source"],
     tsconfigPaths: true,
   },
 });

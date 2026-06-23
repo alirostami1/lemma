@@ -5,8 +5,8 @@
   "noUpdateNotifier": true,
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "dependsOn": ["^build"],
       "outputs": ["dist/**", ".output/**"]
     },
     "lint": {},

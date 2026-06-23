@@ -22,7 +22,6 @@ const config = defineConfig({
     babel({ presets: [reactCompilerPreset()] }),
   ],
   resolve: {
-    conditions: ["source"],
     tsconfigPaths: true,
   },
 });

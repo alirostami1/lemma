@@ -37,7 +37,9 @@
     },
     "./openapi": {
       "types": "./openapi/openapi.ts",
-      "import": "./openapi/openapi.ts"
+      "source": "./openapi/openapi.ts",
+      "import": "./openapi/openapi.ts",
+      "default": "./openapi/openapi.ts"
     }
   },
   "scripts": {

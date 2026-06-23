@@ -9,51 +9,41 @@
   "imports": {
     "#components/*": {
       "types": "./src/components/*.tsx",
-      "source": "./src/components/*.tsx",
-      "import": "./dist/components/*.js",
-      "default": "./dist/components/*.js"
+      "import": "./src/components/*.tsx",
+      "default": "./src/components/*.tsx"
     },
     "#hooks/*": {
       "types": "./src/hooks/*.ts",
-      "source": "./src/hooks/*.ts",
-      "import": "./dist/hooks/*.js",
-      "default": "./dist/hooks/*.js"
+      "import": "./src/hooks/*.ts",
+      "default": "./src/hooks/*.ts"
     },
     "#lib/*": {
       "types": "./src/lib/*.ts",
-      "source": "./src/lib/*.ts",
-      "import": "./dist/lib/*.js",
-      "default": "./dist/lib/*.js"
+      "import": "./src/lib/*.ts",
+      "default": "./src/lib/*.ts"
     }
   },
   "exports": {
-    "./styles.css": {
-      "source": "./src/styles.css",
-      "default": "./src/styles.css"
-    },
+    "./styles.css": "./src/styles.css",
     "./lib/utils": {
       "types": "./src/lib/utils.ts",
-      "source": "./src/lib/utils.ts",
-      "import": "./dist/lib/utils.js",
-      "default": "./dist/lib/utils.js"
+      "import": "./src/lib/utils.ts",
+      "default": "./src/lib/utils.ts"
     },
     "./hooks/*": {
       "types": "./src/hooks/*.ts",
-      "source": "./src/hooks/*.ts",
-      "import": "./dist/hooks/*.js",
-      "default": "./dist/hooks/*.js"
+      "import": "./src/hooks/*.ts",
+      "default": "./src/hooks/*.ts"
     },
     "./lib/*": {
       "types": "./src/lib/*.ts",
-      "source": "./src/lib/*.ts",
-      "import": "./dist/lib/*.js",
-      "default": "./dist/lib/*.js"
+      "import": "./src/lib/*.ts",
+      "default": "./src/lib/*.ts"
     },
     "./components/*": {
       "types": "./src/components/*.tsx",
-      "source": "./src/components/*.tsx",
-      "import": "./dist/components/*.js",
-      "default": "./dist/components/*.js"
+      "import": "./src/components/*.tsx",
+      "default": "./src/components/*.tsx"
     }
   },
   "scripts": {

@@ -11,6 +11,12 @@
       "import": "./dist/domain/index.js",
       "default": "./dist/domain/index.js"
     },
+    "./browser": {
+      "types": "./src/browser/index.ts",
+      "source": "./src/browser/index.ts",
+      "import": "./src/browser/index.ts",
+      "default": "./src/browser/index.ts"
+    },
     "./application": {
       "types": "./src/application/index.ts",
       "source": "./src/application/index.ts",

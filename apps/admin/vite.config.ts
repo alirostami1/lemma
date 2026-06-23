@@ -5,7 +5,6 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   resolve: {
-    conditions: ["source"],
     tsconfigPaths: true,
   },
   envPrefix: "LEMMA_ADMIN",

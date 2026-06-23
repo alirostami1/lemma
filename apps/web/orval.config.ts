@@ -1,4 +1,4 @@
-import { webOpenapi } from "@lemma/api-contract";
+import { webOpenapi } from "@lemma/api-contract/source";
 import { defineConfig } from "orval";
 
 export default defineConfig({

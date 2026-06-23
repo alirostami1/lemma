@@ -60,7 +60,6 @@ function isUiSourceFile(importer: string) {
 
 export default defineConfig({
   resolve: {
-    conditions: ["source"],
     tsconfigPaths: true,
     alias: {
       "#": webRoot,

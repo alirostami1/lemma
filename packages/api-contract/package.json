@@ -10,6 +10,12 @@
       "source": "./src/openapi.ts",
       "import": "./src/openapi.ts",
       "default": "./src/openapi.ts"
+    },
+    "./source": {
+      "types": "./src/openapi.ts",
+      "source": "./src/openapi.ts",
+      "import": "./src/openapi.ts",
+      "default": "./src/openapi.ts"
     }
   },
   "scripts": {
