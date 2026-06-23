@@ -7,11 +7,12 @@ import type {
   Question,
   QuestionAnswer,
   QuestionBlueprint,
+  QuestionBlueprintDraft,
+  QuestionBlueprintDraftId,
+  QuestionBlueprintDraftStatus,
   QuestionBlueprintId,
+  QuestionBlueprintSource,
   QuestionBlueprintStatus,
-  QuestionBlueprintVersion,
-  QuestionBlueprintVersionAsset,
-  QuestionBlueprintVersionId,
   QuestionGenerationRun,
   QuestionGenerationRunId,
   QuestionGenerationRunStatus,
@@ -29,43 +30,50 @@ import type {
 } from "../domain/index.js";
 
 export interface QuestionsRepository {
-  findQuestionSetById(id: QuestionSetId): Promise<QuestionSet | null>;
-  listQuestionSetsByOwnerUserId(input: {
-    ownerUserId: UserId;
-    statuses?: readonly QuestionSetStatus[];
-    limit: number;
-    cursor?: Date;
-  }): Promise<QuestionSet[]>;
+  attachQuestionBlueprintDraftSourceFile(input: {
+    draft: QuestionBlueprintDraft;
+    sourceId: string;
+    file: DraftSourceFileMetadata;
+  }): Promise<QuestionBlueprintDraft | null>;
+  completeQuestionGenerationRun(input: {
+    run: QuestionGenerationRun;
+    questions: readonly Question[];
+    memberships: readonly QuestionSetQuestion[];
+  }): Promise<QuestionGenerationRun | null>;
+  createQuestionBlueprint(
+    blueprint: QuestionBlueprint,
+  ): Promise<QuestionBlueprint>;
+  createQuestionBlueprintDraft(
+    draft: QuestionBlueprintDraft,
+  ): Promise<QuestionBlueprintDraft>;
+  createQuestionGenerationRun(
+    run: QuestionGenerationRun,
+  ): Promise<QuestionGenerationRun>;
   createQuestionSet(set: QuestionSet): Promise<QuestionSet>;
-  updateQuestionSet(set: QuestionSet): Promise<QuestionSet | null>;
-  removeQuestionFromSet(input: {
-    questionSetId: QuestionSetId;
-    questionId: QuestionId;
-  }): Promise<void>;
-  listQuestionsBySetId(input: {
-    questionSetId: QuestionSetId;
-    limit: number;
-    cursor?: Date;
-  }): Promise<Question[]>;
+  deleteQuestion(question: Question): Promise<Question | null>;
 
   findQuestionBlueprintById(
     id: QuestionBlueprintId,
   ): Promise<QuestionBlueprint | null>;
-  findQuestionBlueprintVersionById(
-    id: QuestionBlueprintVersionId,
-  ): Promise<QuestionBlueprintVersion | null>;
-  findCurrentQuestionBlueprintVersion(
-    blueprintId: QuestionBlueprintId,
-  ): Promise<QuestionBlueprintVersion | null>;
-  listQuestionBlueprintVersions(input: {
-    blueprintId: QuestionBlueprintId;
-  }): Promise<QuestionBlueprintVersion[]>;
-  listQuestionBlueprintVersionAssets(input: {
-    blueprintVersionId: QuestionBlueprintVersionId;
-  }): Promise<QuestionBlueprintVersionAsset[]>;
-  listQuestionBlueprintVersionAssetsByVersionIds(input: {
-    blueprintVersionIds: readonly QuestionBlueprintVersionId[];
-  }): Promise<QuestionBlueprintVersionAsset[]>;
+  findQuestionBlueprintDraftById(
+    id: QuestionBlueprintDraftId,
+  ): Promise<QuestionBlueprintDraft | null>;
+
+  findQuestionById(id: QuestionId): Promise<Question | null>;
+
+  findQuestionGenerationRunById(
+    id: QuestionGenerationRunId,
+  ): Promise<QuestionGenerationRun | null>;
+  findQuestionGenerationRunByWorkbookCalculationId(
+    id: WorkbookCalculationId,
+  ): Promise<QuestionGenerationRun | null>;
+  findQuestionSetById(id: QuestionSetId): Promise<QuestionSet | null>;
+  listQuestionBlueprintDraftsByOwnerUserId(input: {
+    ownerUserId: UserId;
+    statuses?: readonly QuestionBlueprintDraftStatus[];
+    limit: number;
+    cursor?: Date;
+  }): Promise<QuestionBlueprintDraft[]>;
   listQuestionBlueprintsByOwnerUserId(input: {
     ownerUserId: UserId;
     statuses?: readonly QuestionBlueprintStatus[];
@@ -73,33 +81,18 @@ export interface QuestionsRepository {
     cursor?: Date;
     includeSystem?: boolean;
   }): Promise<QuestionBlueprint[]>;
-  createQuestionBlueprint(
-    blueprint: QuestionBlueprint,
-  ): Promise<QuestionBlueprint>;
-  createQuestionBlueprintVersion(
-    version: QuestionBlueprintVersion,
-  ): Promise<QuestionBlueprintVersion>;
-  createQuestionBlueprintWithVersion(input: {
-    blueprint: QuestionBlueprint;
-    version: QuestionBlueprintVersion;
-    assets: readonly QuestionBlueprintVersionAsset[];
-  }): Promise<QuestionBlueprint>;
-  updateQuestionBlueprint(
-    blueprint: QuestionBlueprint,
-  ): Promise<QuestionBlueprint | null>;
-  updateQuestionBlueprintCurrentVersion(input: {
-    blueprintId: QuestionBlueprintId;
-    currentVersionId: QuestionBlueprintVersionId;
-    sources: QuestionBlueprint["sources"];
-    updatedAt: Date;
-  }): Promise<QuestionBlueprint | null>;
-  updateQuestionBlueprintWithNewVersion(input: {
-    blueprint: QuestionBlueprint;
-    version: QuestionBlueprintVersion;
-    assets: readonly QuestionBlueprintVersionAsset[];
-  }): Promise<QuestionBlueprint | null>;
-
-  findQuestionById(id: QuestionId): Promise<Question | null>;
+  listQuestionGenerationRunsByOwnerUserId(input: {
+    ownerUserId: UserId;
+    statuses?: readonly QuestionGenerationRunStatus[];
+    limit: number;
+    cursor?: Date;
+  }): Promise<QuestionGenerationRun[]>;
+  listQuestionSetsByOwnerUserId(input: {
+    ownerUserId: UserId;
+    statuses?: readonly QuestionSetStatus[];
+    limit: number;
+    cursor?: Date;
+  }): Promise<QuestionSet[]>;
   listQuestionsByOwnerUserId(input: {
     ownerUserId: UserId;
     statuses?: readonly QuestionStatus[];
@@ -108,35 +101,30 @@ export interface QuestionsRepository {
     limit: number;
     cursor?: Date;
   }): Promise<Question[]>;
-  deleteQuestion(question: Question): Promise<Question | null>;
-
-  findQuestionGenerationRunById(
-    id: QuestionGenerationRunId,
-  ): Promise<QuestionGenerationRun | null>;
-  findQuestionGenerationRunByWorkbookCalculationId(
-    id: WorkbookCalculationId,
-  ): Promise<QuestionGenerationRun | null>;
-  listQuestionGenerationRunsByOwnerUserId(input: {
-    ownerUserId: UserId;
-    statuses?: readonly QuestionGenerationRunStatus[];
+  listQuestionsBySetId(input: {
+    questionSetId: QuestionSetId;
     limit: number;
     cursor?: Date;
-  }): Promise<QuestionGenerationRun[]>;
-  createQuestionGenerationRun(
-    run: QuestionGenerationRun,
-  ): Promise<QuestionGenerationRun>;
+  }): Promise<Question[]>;
+  removeQuestionFromSet(input: {
+    questionSetId: QuestionSetId;
+    questionId: QuestionId;
+  }): Promise<void>;
+  updateQuestionBlueprint(
+    blueprint: QuestionBlueprint,
+  ): Promise<QuestionBlueprint | null>;
+  updateQuestionBlueprintDraft(
+    draft: QuestionBlueprintDraft,
+  ): Promise<QuestionBlueprintDraft | null>;
   updateQuestionGenerationRun(
     run: QuestionGenerationRun,
   ): Promise<QuestionGenerationRun | null>;
-  completeQuestionGenerationRun(input: {
-    run: QuestionGenerationRun;
-    questions: readonly Question[];
-    memberships: readonly QuestionSetQuestion[];
-  }): Promise<QuestionGenerationRun | null>;
+  updateQuestionSet(set: QuestionSet): Promise<QuestionSet | null>;
 }
 
 export interface WorkbookCalculationPort {
   requestCalculation(input: {
+    ownerUserId: UserId;
     createdByUserId: UserId;
     sources: readonly {
       sourceId: string;
@@ -146,6 +134,30 @@ export interface WorkbookCalculationPort {
     correlationId?: string | null;
     lineage: OperationLineage;
   }): Promise<{ workbookCalculationId: WorkbookCalculationId }>;
+}
+
+export type WorkbookSnapshotForQuestionGeneration = {
+  id: WorkbookSnapshotId;
+  calculationId: WorkbookCalculationId;
+  sourceId: string;
+  workbookId: WorkbookId;
+  questionIndex: number;
+  snapshotIndex: number;
+};
+
+export interface WorkbookSnapshotReadPort {
+  listSnapshotMetadataForCalculation(input: {
+    workbookCalculationId: WorkbookCalculationId;
+  }): Promise<readonly WorkbookSnapshotForQuestionGeneration[]>;
+}
+
+export type QuestionGenerationSnapshotKey = `${string}:${number}`;
+
+export function questionGenerationSnapshotKey(input: {
+  sourceId: QuestionBlueprintSource["sourceId"];
+  questionIndex: number;
+}): QuestionGenerationSnapshotKey {
+  return `${input.sourceId}:${input.questionIndex}`;
 }
 
 export type WorkbookValueSource =
@@ -190,6 +202,32 @@ export interface WorkbookAccessPort {
   }): Promise<boolean>;
 }
 
+export type DraftSourceFileMetadata = {
+  fileId: string;
+  ownerUserId: UserId;
+  originalName: string;
+  contentType: string;
+  byteSize: number;
+  checksumSha256: string;
+  purpose: string;
+};
+
+export interface DraftSourceFilePort {
+  getFileMetadata(input: {
+    currentUser: CurrentUser;
+    fileId: string;
+  }): Promise<DraftSourceFileMetadata>;
+}
+
+export interface WorkbookRegistrationPort {
+  registerWorkbookFromFile(input: {
+    currentUser: CurrentUser;
+    fileId: string;
+    name: string;
+    lineage: OperationLineage;
+  }): Promise<{ workbookId: WorkbookId }>;
+}
+
 export interface QuestionGenerationTransactionPort {
   transaction<T>(
     fn: (deps: {
@@ -200,12 +238,12 @@ export interface QuestionGenerationTransactionPort {
 }
 
 export interface IdGenerator {
-  questionSetId(): QuestionSetId;
-  questionBlueprintId(): QuestionBlueprintId;
-  questionBlueprintVersionId(): QuestionBlueprintVersionId;
-  questionId(): QuestionId;
-  questionGenerationRunId(): QuestionGenerationRunId;
   eventId(): EventId;
+  questionBlueprintDraftId(): QuestionBlueprintDraftId;
+  questionBlueprintId(): QuestionBlueprintId;
+  questionGenerationRunId(): QuestionGenerationRunId;
+  questionId(): QuestionId;
+  questionSetId(): QuestionSetId;
 }
 
 export interface Clock {

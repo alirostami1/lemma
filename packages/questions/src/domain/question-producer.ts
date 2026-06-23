@@ -21,8 +21,8 @@ export function questionProducer(input: unknown): QuestionProducer {
     assertJsonValue(input.source, "producer source", fail);
   }
   return {
-    schemaVersion: 1,
     compiler: input.compiler,
+    schemaVersion: 1,
     ...(input.source === undefined ? {} : { source: input.source }),
   };
 }

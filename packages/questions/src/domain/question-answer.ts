@@ -47,7 +47,7 @@ export function questionAnswer(
       value: response.value,
     });
   }
-  return { schemaVersion: 1, responses };
+  return { responses, schemaVersion: 1 };
 }
 
 function fail(message: string): never {

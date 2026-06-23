@@ -56,17 +56,17 @@ export class QuestionSetService {
     const limit = normalizeListLimit(command.limit);
     const questionSets =
       await this.deps.questionsRepository.listQuestionSetsByOwnerUserId({
+        cursor: decodeListCursor(command.cursor),
+        limit: limit + 1,
         ownerUserId: toUserId(command.currentUser.user.id),
         statuses: ["active", "archived"],
-        limit: limit + 1,
-        cursor: decodeListCursor(command.cursor),
       });
     return {
-      questionSets: questionSets.slice(0, limit),
       nextCursor:
         questionSets.length > limit
           ? encodeListCursor(questionSets[limit - 1]?.createdAt)
           : null,
+      questionSets: questionSets.slice(0, limit),
     };
   }
 
@@ -80,11 +80,11 @@ export class QuestionSetService {
     const at = this.deps.clock.now();
     const questionSet = createQuestionSet(
       {
-        id: toQuestionSetId(this.deps.idGenerator.questionSetId()),
-        ownerUserId: toUserId(command.currentUser.user.id),
         createdByUserId: toUserId(command.currentUser.user.id),
-        name: questionSetName(command.name),
         description: questionSetDescription(command.description ?? null),
+        id: toQuestionSetId(this.deps.idGenerator.questionSetId()),
+        name: questionSetName(command.name),
+        ownerUserId: toUserId(command.currentUser.user.id),
       },
       at,
     );
@@ -141,8 +141,8 @@ export class QuestionSetService {
       "You cannot update this question set.",
     );
     await this.deps.questionsRepository.removeQuestionFromSet({
-      questionSetId: toQuestionSetId(command.questionSetId),
       questionId: toQuestionId(command.questionId),
+      questionSetId: toQuestionSetId(command.questionSetId),
     });
   }
 
@@ -156,16 +156,16 @@ export class QuestionSetService {
     );
     const limit = normalizeListLimit(command.limit);
     const questions = await this.deps.questionsRepository.listQuestionsBySetId({
-      questionSetId: questionSet.id,
-      limit: limit + 1,
       cursor: decodeListCursor(command.cursor),
+      limit: limit + 1,
+      questionSetId: questionSet.id,
     });
     return {
-      questions: questions.slice(0, limit),
       nextCursor:
         questions.length > limit
           ? encodeListCursor(questions[limit - 1]?.createdAt)
           : null,
+      questions: questions.slice(0, limit),
     };
   }
 

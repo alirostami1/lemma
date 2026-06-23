@@ -1,19 +1,17 @@
 import type { DomainEventEnvelope } from "@lemma/events/domain";
 import { instrumentService } from "@lemma/observability";
 import {
-  assertQuestionGenerationRunCanRetry,
   cancelQuestionGenerationRun,
-  createQuestionGenerationRun,
+  createInitialQuestionGenerationRun,
+  createQuestionBlueprintSnapshot,
+  createRetryQuestionGenerationRun,
   type QuestionBlueprint,
-  type QuestionBlueprintVersion,
   type QuestionGenerationRun,
   questionBlueprintId as toQuestionBlueprintId,
-  questionBlueprintVersionId as toQuestionBlueprintVersionId,
   questionGenerationRunId as toQuestionGenerationRunId,
   questionGenerationRunStatus as toQuestionGenerationRunStatus,
   questionSetId as toQuestionSetId,
   userId as toUserId,
-  workbookQuestionSource,
 } from "../domain/index.js";
 import type {
   CreateQuestionGenerationRunCommand,
@@ -75,20 +73,20 @@ export class QuestionGenerationService {
     const runs =
       await this.deps.questionsRepository.listQuestionGenerationRunsByOwnerUserId(
         {
+          cursor: decodeListCursor(command.cursor),
+          limit: limit + 1,
           ownerUserId: toUserId(command.currentUser.user.id),
           statuses: command.status
             ? [toQuestionGenerationRunStatus(command.status)]
             : undefined,
-          limit: limit + 1,
-          cursor: decodeListCursor(command.cursor),
         },
       );
     return {
-      questionGenerationRuns: runs.slice(0, limit),
       nextCursor:
         runs.length > limit
           ? encodeListCursor(runs[limit - 1]?.createdAt)
           : null,
+      questionGenerationRuns: runs.slice(0, limit),
     };
   }
 
@@ -99,29 +97,7 @@ export class QuestionGenerationService {
       "create_question_generation_run",
       command.lineage,
       async () => {
-        const { blueprint, version } =
-          await this.loadGenerationBlueprintAndVersion(command);
-        const explicitSource =
-          command.source !== undefined && command.source !== null
-            ? workbookQuestionSource(command.source)
-            : null;
-        const sourceResolver = new QuestionGenerationSourceResolver({
-          workbookAccessPort: this.deps.workbookAccessPort,
-        });
-        sourceResolver.assertExplicitSourceIsAllowed({
-          version,
-          explicitSource,
-        });
-        const source = sourceResolver.resolve({
-          version,
-          explicitSource,
-        });
-        await sourceResolver.assertAccess({
-          currentUser: command.currentUser,
-          version,
-          source,
-        });
-
+        const blueprint = await this.loadGenerationBlueprint(command);
         const targetQuestionSetId = toQuestionSetId(
           command.targetQuestionSetId,
         );
@@ -138,21 +114,25 @@ export class QuestionGenerationService {
           );
         }
 
-        sourceResolver.assertRequiredSourcePresent({ version, source });
-
         const at = this.deps.clock.now();
-        const run = createQuestionGenerationRun(
+        const run = createInitialQuestionGenerationRun(
           {
+            blueprintId: blueprint.id,
+            blueprintSnapshot: createQuestionBlueprintSnapshot({
+              blueprintId: blueprint.id,
+              capturedAt: at,
+              description: blueprint.description,
+              document: blueprint.document,
+              name: blueprint.name,
+              sources: blueprint.sources,
+            }),
+            createdByUserId: toUserId(command.currentUser.user.id),
             id: toQuestionGenerationRunId(
               this.deps.idGenerator.questionGenerationRunId(),
             ),
             ownerUserId: toUserId(command.currentUser.user.id),
-            createdByUserId: toUserId(command.currentUser.user.id),
-            blueprintId: blueprint.id,
-            blueprintVersionId: version.id,
-            targetQuestionSetId,
             requestedCount: command.count,
-            source,
+            targetQuestionSetId,
           },
           at,
         );
@@ -201,9 +181,9 @@ export class QuestionGenerationService {
           (persisted) => [
             questionGenerationRunCancelledEvent({
               id: this.deps.idGenerator.eventId(),
-              run: persisted,
               lineage: command.lineage,
               occurredAt: at,
+              run: persisted,
             }),
           ],
         );
@@ -226,20 +206,12 @@ export class QuestionGenerationService {
             "You cannot retry this generation run.",
           );
         }
-        assertQuestionGenerationRunCanRetry(run);
         const at = this.deps.clock.now();
-        const retry = createQuestionGenerationRun(
+        const retry = createRetryQuestionGenerationRun(
           {
-            id: toQuestionGenerationRunId(
-              this.deps.idGenerator.questionGenerationRunId(),
-            ),
-            ownerUserId: run.ownerUserId,
             createdByUserId: toUserId(command.currentUser.user.id),
-            blueprintId: run.blueprintId,
-            blueprintVersionId: run.blueprintVersionId,
-            targetQuestionSetId: run.targetQuestionSetId,
-            requestedCount: run.requestedCount,
-            source: run.source,
+            id: this.deps.idGenerator.questionGenerationRunId(),
+            original: run,
           },
           at,
         );
@@ -266,9 +238,9 @@ export class QuestionGenerationService {
         await outboxRepository.appendEvents([
           questionGenerationRunRequestedEvent({
             id: this.deps.idGenerator.eventId(),
-            run: created,
             lineage,
             occurredAt: at,
+            run: created,
           }),
         ]);
         return created;
@@ -276,12 +248,9 @@ export class QuestionGenerationService {
     );
   }
 
-  private async loadGenerationBlueprintAndVersion(
+  private async loadGenerationBlueprint(
     command: CreateQuestionGenerationRunCommand,
-  ): Promise<{
-    blueprint: QuestionBlueprint;
-    version: QuestionBlueprintVersion;
-  }> {
+  ): Promise<QuestionBlueprint> {
     const blueprint = await this.findQuestionBlueprintByIdOrThrow(
       command.blueprintId,
     );
@@ -289,19 +258,13 @@ export class QuestionGenerationService {
       canViewQuestionBlueprint(command.currentUser, blueprint),
       "You cannot use this question blueprint.",
     );
-
-    const version = command.blueprintVersionId
-      ? await this.deps.questionsRepository.findQuestionBlueprintVersionById(
-          toQuestionBlueprintVersionId(command.blueprintVersionId),
-        )
-      : await this.deps.questionsRepository.findCurrentQuestionBlueprintVersion(
-          blueprint.id,
-        );
-    if (!version || version.questionBlueprintId !== blueprint.id) {
-      throw new QuestionBlueprintNotFoundError();
-    }
-
-    return { blueprint, version };
+    await new QuestionGenerationSourceResolver({
+      workbookAccessPort: this.deps.workbookAccessPort,
+    }).assertAccess({
+      blueprint,
+      currentUser: command.currentUser,
+    });
+    return blueprint;
   }
 
   private async findRunByIdOrThrow(id: string) {

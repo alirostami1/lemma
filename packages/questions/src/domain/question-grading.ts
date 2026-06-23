@@ -110,14 +110,14 @@ export function questionSolution(
         fail,
       );
       rules.push({
-        type: "number",
-        responseFieldId: rule.responseFieldId,
         correctValue: rule.correctValue,
         points: rule.points,
+        responseFieldId: rule.responseFieldId,
         tolerance: {
           type: toleranceType,
           value: rule.tolerance.value,
         },
+        type: "number",
       });
       continue;
     }
@@ -126,31 +126,31 @@ export function questionSolution(
         fail("manual solution rules must not include correctValue");
       }
       rules.push({
-        type: "manual",
-        responseFieldId: rule.responseFieldId,
         points: rule.points,
+        responseFieldId: rule.responseFieldId,
+        type: "manual",
       });
       continue;
     }
     if (ruleType === "case_insensitive_text") {
       assertString(rule.correctValue, "correctValue", fail);
       rules.push({
-        type: "case_insensitive_text",
-        responseFieldId: rule.responseFieldId,
         correctValue: rule.correctValue,
         points: rule.points,
+        responseFieldId: rule.responseFieldId,
+        type: "case_insensitive_text",
       });
       continue;
     }
     assertJsonValue(rule.correctValue, "correctValue", fail);
     rules.push({
-      type: ruleType,
-      responseFieldId: rule.responseFieldId,
       correctValue: rule.correctValue,
       points: rule.points,
+      responseFieldId: rule.responseFieldId,
+      type: ruleType,
     });
   }
-  return { schemaVersion: 1, rules };
+  return { rules, schemaVersion: 1 };
 }
 
 function fail(message: string): never {

@@ -1,5 +1,5 @@
 import type { JsonValue } from "@lemma/domain";
-import { WorkbookQuestionSourceError } from "../application/errors.js";
+import { WorkbookQuestionReferenceError } from "../application/errors.js";
 import type {
   WorkbookAccessPort,
   WorkbookInternalSnapshotResolverPort,
@@ -16,7 +16,7 @@ export class UnsupportedWorkbookSnapshotResolverPort
   implements WorkbookSnapshotResolverPort
 {
   async resolveValueSource(): Promise<JsonValue> {
-    throw new WorkbookQuestionSourceError(
+    throw new WorkbookQuestionReferenceError(
       "Workbook snapshot resolver port is not configured.",
     );
   }
@@ -26,7 +26,7 @@ export class UnsupportedWorkbookInternalSnapshotResolverPort
   implements WorkbookInternalSnapshotResolverPort
 {
   async resolveValueSource(): Promise<JsonValue> {
-    throw new WorkbookQuestionSourceError(
+    throw new WorkbookQuestionReferenceError(
       "Workbook internal snapshot resolver port is not configured.",
     );
   }

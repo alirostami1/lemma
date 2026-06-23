@@ -3,19 +3,12 @@ import type {
   QuestionBlueprint,
   QuestionBlueprintId,
   QuestionBlueprintStatus,
-  QuestionBlueprintVersion,
-  QuestionBlueprintVersionAsset,
-  QuestionBlueprintVersionId,
   UserId,
 } from "../domain/index.js";
 import {
   mapQuestionBlueprintRowToDomain,
   mapQuestionBlueprintToInsert,
   mapQuestionBlueprintToUpdate,
-  mapQuestionBlueprintVersionAssetRowToDomain,
-  mapQuestionBlueprintVersionAssetToInsert,
-  mapQuestionBlueprintVersionRowToDomain,
-  mapQuestionBlueprintVersionToInsert,
 } from "./KyselyQuestionMappers.js";
 
 export class KyselyQuestionBlueprintRepository {
@@ -24,79 +17,10 @@ export class KyselyQuestionBlueprintRepository {
   async findQuestionBlueprintById(
     id: QuestionBlueprintId,
   ): Promise<QuestionBlueprint | null> {
-    const row = await this.db
-      .selectFrom("questionBlueprints")
-      .selectAll()
-      .where("id", "=", id)
+    const row = await this.baseBlueprintQuery()
+      .where("questionBlueprints.id", "=", id)
       .executeTakeFirst();
     return row ? mapQuestionBlueprintRowToDomain(row) : null;
-  }
-
-  async findQuestionBlueprintVersionById(
-    id: QuestionBlueprintVersionId,
-  ): Promise<QuestionBlueprintVersion | null> {
-    const row = await this.db
-      .selectFrom("questionBlueprintVersions")
-      .selectAll()
-      .where("id", "=", id)
-      .executeTakeFirst();
-    return row ? mapQuestionBlueprintVersionRowToDomain(row) : null;
-  }
-
-  async findCurrentQuestionBlueprintVersion(
-    blueprintId: QuestionBlueprintId,
-  ): Promise<QuestionBlueprintVersion | null> {
-    const row = await this.db
-      .selectFrom("questionBlueprints")
-      .innerJoin(
-        "questionBlueprintVersions",
-        "questionBlueprintVersions.id",
-        "questionBlueprints.currentVersionId",
-      )
-      .selectAll("questionBlueprintVersions")
-      .where("questionBlueprints.id", "=", blueprintId)
-      .executeTakeFirst();
-    return row ? mapQuestionBlueprintVersionRowToDomain(row) : null;
-  }
-
-  async listQuestionBlueprintVersions(input: {
-    blueprintId: QuestionBlueprintId;
-  }): Promise<QuestionBlueprintVersion[]> {
-    const rows = await this.db
-      .selectFrom("questionBlueprintVersions")
-      .selectAll()
-      .where("questionBlueprintId", "=", input.blueprintId)
-      .orderBy("versionNumber", "asc")
-      .execute();
-    return rows.map(mapQuestionBlueprintVersionRowToDomain);
-  }
-
-  async listQuestionBlueprintVersionAssets(input: {
-    blueprintVersionId: QuestionBlueprintVersion["id"];
-  }): Promise<QuestionBlueprintVersionAsset[]> {
-    const rows = await this.db
-      .selectFrom("questionBlueprintVersionAssets")
-      .selectAll()
-      .where("questionBlueprintVersionId", "=", input.blueprintVersionId)
-      .orderBy("position", "asc")
-      .execute();
-    return rows.map(mapQuestionBlueprintVersionAssetRowToDomain);
-  }
-
-  async listQuestionBlueprintVersionAssetsByVersionIds(input: {
-    blueprintVersionIds: readonly QuestionBlueprintVersion["id"][];
-  }): Promise<QuestionBlueprintVersionAsset[]> {
-    if (input.blueprintVersionIds.length === 0) {
-      return [];
-    }
-    const rows = await this.db
-      .selectFrom("questionBlueprintVersionAssets")
-      .selectAll()
-      .where("questionBlueprintVersionId", "in", input.blueprintVersionIds)
-      .orderBy("questionBlueprintVersionId", "asc")
-      .orderBy("position", "asc")
-      .execute();
-    return rows.map(mapQuestionBlueprintVersionAssetRowToDomain);
   }
 
   async listQuestionBlueprintsByOwnerUserId(input: {
@@ -106,26 +30,28 @@ export class KyselyQuestionBlueprintRepository {
     cursor?: Date;
     includeSystem?: boolean;
   }): Promise<QuestionBlueprint[]> {
-    let query = this.db.selectFrom("questionBlueprints").selectAll();
+    let query = this.baseBlueprintQuery();
     query = input.includeSystem
       ? query.where((eb) =>
           eb.or([
-            eb("ownerUserId", "=", input.ownerUserId),
-            eb("visibility", "=", "system"),
+            eb("questionBlueprints.ownerUserId", "=", input.ownerUserId),
+            eb("questionBlueprints.visibility", "=", "system"),
           ]),
         )
-      : query.where("ownerUserId", "=", input.ownerUserId);
+      : query.where("questionBlueprints.ownerUserId", "=", input.ownerUserId);
+
     if (input.statuses?.length) {
-      query = query.where("status", "in", input.statuses);
+      query = query.where("questionBlueprints.status", "in", input.statuses);
     }
     if (input.cursor) {
-      query = query.where("createdAt", "<", input.cursor);
+      query = query.where("questionBlueprints.createdAt", "<", input.cursor);
     }
+
     const rows = await query
-      .orderBy("createdAt", "desc")
+      .orderBy("questionBlueprints.createdAt", "desc")
       .limit(input.limit)
       .execute();
-    return rows.map(mapQuestionBlueprintRowToDomain);
+    return rows.map((row) => mapQuestionBlueprintRowToDomain(row));
   }
 
   async createQuestionBlueprint(
@@ -137,17 +63,6 @@ export class KyselyQuestionBlueprintRepository {
       .returningAll()
       .executeTakeFirstOrThrow();
     return mapQuestionBlueprintRowToDomain(row);
-  }
-
-  async createQuestionBlueprintVersion(
-    version: QuestionBlueprintVersion,
-  ): Promise<QuestionBlueprintVersion> {
-    const row = await this.db
-      .insertInto("questionBlueprintVersions")
-      .values(mapQuestionBlueprintVersionToInsert(version))
-      .returningAll()
-      .executeTakeFirstOrThrow();
-    return mapQuestionBlueprintVersionRowToDomain(row);
   }
 
   async updateQuestionBlueprint(
@@ -162,112 +77,7 @@ export class KyselyQuestionBlueprintRepository {
     return row ? mapQuestionBlueprintRowToDomain(row) : null;
   }
 
-  async updateQuestionBlueprintCurrentVersion(input: {
-    blueprintId: QuestionBlueprintId;
-    currentVersionId: QuestionBlueprintVersionId;
-    sources: QuestionBlueprint["sources"];
-    updatedAt: Date;
-  }): Promise<QuestionBlueprint | null> {
-    const row = await this.db
-      .updateTable("questionBlueprints")
-      .set({
-        currentVersionId: input.currentVersionId,
-        sources: input.sources as never,
-        updatedAt: input.updatedAt,
-      })
-      .where("id", "=", input.blueprintId)
-      .returningAll()
-      .executeTakeFirst();
-    return row ? mapQuestionBlueprintRowToDomain(row) : null;
-  }
-
-  async createQuestionBlueprintWithVersion(input: {
-    blueprint: QuestionBlueprint;
-    version: QuestionBlueprintVersion;
-    assets: readonly QuestionBlueprintVersionAsset[];
-  }): Promise<QuestionBlueprint> {
-    return this.db.transaction().execute(async (tx) => {
-      const blueprintRow = await tx
-        .insertInto("questionBlueprints")
-        .values({
-          ...mapQuestionBlueprintToInsert(input.blueprint),
-          currentVersionId: null,
-        })
-        .returningAll()
-        .executeTakeFirstOrThrow();
-      const versionRow = await tx
-        .insertInto("questionBlueprintVersions")
-        .values({
-          ...mapQuestionBlueprintVersionToInsert(input.version),
-          questionBlueprintId: blueprintRow.id,
-        })
-        .returningAll()
-        .executeTakeFirstOrThrow();
-      if (input.assets.length > 0) {
-        await tx
-          .insertInto("questionBlueprintVersionAssets")
-          .values(
-            input.assets.map((asset) => ({
-              ...mapQuestionBlueprintVersionAssetToInsert(asset),
-              questionBlueprintVersionId: versionRow.id,
-            })),
-          )
-          .execute();
-      }
-      const updatedBlueprintRow = await tx
-        .updateTable("questionBlueprints")
-        .set({
-          currentVersionId: versionRow.id,
-          sources: versionRow.sources,
-        })
-        .where("id", "=", blueprintRow.id)
-        .returningAll()
-        .executeTakeFirstOrThrow();
-      return mapQuestionBlueprintRowToDomain(updatedBlueprintRow);
-    });
-  }
-
-  async updateQuestionBlueprintWithNewVersion(input: {
-    blueprint: QuestionBlueprint;
-    version: QuestionBlueprintVersion;
-    assets: readonly QuestionBlueprintVersionAsset[];
-  }): Promise<QuestionBlueprint | null> {
-    return this.db.transaction().execute(async (tx) => {
-      const blueprintRow = await tx
-        .updateTable("questionBlueprints")
-        .set(mapQuestionBlueprintToUpdate(input.blueprint))
-        .where("id", "=", input.blueprint.id)
-        .returningAll()
-        .executeTakeFirst();
-      if (!blueprintRow) {
-        return null;
-      }
-      const versionRow = await tx
-        .insertInto("questionBlueprintVersions")
-        .values(mapQuestionBlueprintVersionToInsert(input.version))
-        .returningAll()
-        .executeTakeFirstOrThrow();
-      if (input.assets.length > 0) {
-        await tx
-          .insertInto("questionBlueprintVersionAssets")
-          .values(
-            input.assets.map((asset) => ({
-              ...mapQuestionBlueprintVersionAssetToInsert(asset),
-              questionBlueprintVersionId: versionRow.id,
-            })),
-          )
-          .execute();
-      }
-      const updatedBlueprintRow = await tx
-        .updateTable("questionBlueprints")
-        .set({
-          currentVersionId: versionRow.id,
-          sources: versionRow.sources,
-        })
-        .where("id", "=", blueprintRow.id)
-        .returningAll()
-        .executeTakeFirstOrThrow();
-      return mapQuestionBlueprintRowToDomain(updatedBlueprintRow);
-    });
+  private baseBlueprintQuery() {
+    return this.db.selectFrom("questionBlueprints").selectAll();
   }
 }

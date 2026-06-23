@@ -1,28 +1,32 @@
 export { CanonicalQuestionMaterializer } from "./CanonicalQuestionMaterializer.js";
 export type {
+  AttachQuestionBlueprintDraftSourceFileCommand,
   CreateQuestionBlueprintCommand,
+  CreateQuestionBlueprintDraftCommand,
   CreateQuestionGenerationRunCommand,
   CreateQuestionSetCommand,
   GradeQuestionCommand,
   ListCommand,
+  PublishQuestionBlueprintDraftCommand,
   QuestionBlueprintByIdCommand,
-  QuestionBlueprintVersionByIdCommand,
+  QuestionBlueprintDraftByIdCommand,
   QuestionByIdCommand,
   QuestionGenerationRunByIdCommand,
   QuestionGenerationRunMutationCommand,
   QuestionSetByIdCommand,
   RemoveQuestionFromSetCommand,
   UpdateQuestionBlueprintCommand,
+  UpdateQuestionBlueprintDraftCommand,
   UpdateQuestionSetCommand,
 } from "./commands.js";
 export type {
   GradeQuestionResult,
-  HydratedQuestionBlueprint,
-  HydratedQuestionBlueprintVersion,
+  PublishedQuestionBlueprintDraftResult,
   QuestionBlueprintAuthoringResult,
+  QuestionBlueprintDraftResult,
+  QuestionBlueprintDraftsResult,
   QuestionBlueprintResult,
   QuestionBlueprintsResult,
-  QuestionBlueprintVersionsResult,
   QuestionGenerationRunResultDto,
   QuestionGenerationRunsResult,
   QuestionResult,
@@ -33,13 +37,14 @@ export type {
 export {
   ForbiddenQuestionActionError,
   InvalidQuestionBlueprintError,
+  QuestionBlueprintDraftNotFoundError,
   QuestionBlueprintNotFoundError,
   QuestionGenerationRunNotFoundError,
   QuestionNotFoundError,
   QuestionSetNotFoundError,
   QuestionsApplicationError,
   UnsupportedQuestionValueExpressionError,
-  WorkbookQuestionSourceError,
+  WorkbookQuestionReferenceError,
 } from "./errors.js";
 export {
   decodeListCursor,
@@ -64,16 +69,23 @@ export {
 export type {
   Clock,
   CustomQuestionGraderPort,
+  DraftSourceFileMetadata,
+  DraftSourceFilePort,
   IdGenerator,
+  QuestionGenerationSnapshotKey,
   QuestionGenerationTransactionPort,
   QuestionsRepository,
   QuestionValueResolverPort,
   WorkbookAccessPort,
   WorkbookCalculationPort,
   WorkbookInternalSnapshotResolverPort,
+  WorkbookRegistrationPort,
+  WorkbookSnapshotForQuestionGeneration,
+  WorkbookSnapshotReadPort,
   WorkbookSnapshotResolverPort,
   WorkbookValueSource,
 } from "./ports.js";
+export { QuestionBlueprintDraftService } from "./QuestionBlueprintDraftService.js";
 export { QuestionBlueprintService } from "./QuestionBlueprintService.js";
 export { QuestionGenerationService } from "./QuestionGenerationService.js";
 export type {

@@ -9,7 +9,6 @@ import {
   workbookCalculationId,
   workbookId,
   workbookSnapshotId,
-  workbookVersionId,
 } from "./ids.js";
 
 const uuidV7 = "019e9315-6a87-715f-9861-8654df070c4c";
@@ -23,7 +22,6 @@ describe("question IDs", () => {
     questionGenerationRunId,
     userId,
     workbookId,
-    workbookVersionId,
     workbookCalculationId,
     workbookSnapshotId,
   ];

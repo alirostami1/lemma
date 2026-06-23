@@ -1,160 +1,214 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  InvalidQuestionBlueprintDocumentError,
-  InvalidQuestionFieldError,
-} from "../domain/errors.js";
-import {
-  mapQuestionBlueprintVersionRowToDomain,
+  mapQuestionBlueprintRowToDomain,
+  mapQuestionBlueprintToInsert,
+  mapQuestionBlueprintToUpdate,
+  mapQuestionGenerationRunRowToDomain,
+  mapQuestionGenerationRunToInsert,
   mapQuestionRowToDomain,
+  mapQuestionToInsert,
 } from "./KyselyQuestionMappers.js";
 
-type QuestionBlueprintVersionRow = Parameters<
-  typeof mapQuestionBlueprintVersionRowToDomain
->[0];
+const id = "019e9315-6a87-715f-9861-8654df074010";
+const userId = "019e9315-6a87-715f-9861-8654df074011";
+const workbookId = "019e9315-6a87-715f-9861-8654df074012";
+const calculationId = "019e9315-6a87-715f-9861-8654df074013";
+const snapshotId = "019e9315-6a87-715f-9861-8654df074014";
+const questionSetId = "019e9315-6a87-715f-9861-8654df074015";
+const createdAt = new Date("2026-06-18T00:00:00.000Z");
 
 describe("KyselyQuestionMappers", () => {
-  it("normalizes legacy rows with null sources", () => {
-    const versionRow = createLegacyVersionRow({
-      sources: null,
-      document: legacyBlueprintDocumentWithSourceId("source_2"),
-    });
+  it("maps blueprint rows with document and sources on the blueprint", () => {
+    const blueprint = mapQuestionBlueprintRowToDomain(blueprintRow());
 
-    assert.deepEqual(mapQuestionBlueprintVersionRowToDomain(versionRow).sources, []);
-  });
-
-  it("normalizes legacy rows missing sources", () => {
-    const versionRow = createLegacyVersionRow({
-      sources: undefined,
-      document: legacyBlueprintDocumentWithSourceId("source_2"),
-    });
-
-    assert.deepEqual(mapQuestionBlueprintVersionRowToDomain(versionRow).sources, []);
-  });
-
-  it("rejects missing sourceId when workbook source metadata is explicitly provided", () => {
-    const versionRow = createLegacyVersionRow({
-      sources: [
-        {
-          type: "workbook",
-          sourceId: "source_2",
-          name: "Source 2",
-          workbookId: legacyWorkbookId,
-        },
-      ],
-      document: legacyBlueprintDocumentWithoutSourceId(),
-    });
-
-    assert.throws(
-      () => mapQuestionBlueprintVersionRowToDomain(versionRow),
-      (error: unknown) => {
-        return (
-          error instanceof InvalidQuestionBlueprintDocumentError &&
-          /sourceId must be a non-empty string/.test(error.message)
-        );
-      },
-      "Expected strict path to reject missing workbook reference sourceId",
+    assert.equal(blueprint.document.schemaVersion, 1);
+    assert.equal(blueprint.sources[0]?.sourceId, "source_1");
+    assert.equal(
+      typeof mapQuestionBlueprintToInsert(blueprint).sources,
+      "object",
+    );
+    assert.equal(
+      typeof mapQuestionBlueprintToUpdate(blueprint).sources,
+      "object",
     );
   });
 
-  it("normalizes legacy question rows with empty workbook source ids", () => {
-    const questionRow = {
-      id: legacyVersionId,
-      ownerUserId: legacyBlueprintOwnerId,
-      createdByUserId: legacyBlueprintOwnerId,
-      blueprintId: legacyBlueprintId,
-      blueprintVersionId: legacyVersionId,
-      generationRunId: legacyVersionId,
-      body: {
-        schemaVersion: 1,
-        responseFields: [],
-        blocks: [],
-      },
-      solution: { schemaVersion: 1, rules: [] },
-      sourcePlan: {
-        schemaVersion: 1,
-        references: [
-          {
-            id: "revenue",
-            source: {
-              schemaVersion: 1,
-              type: "workbook_cell",
-              sourceId: "",
-              ref: "Sheet1!A1",
-            },
-            resolved: true,
-          },
-        ],
-      },
-      producer: { schemaVersion: 1, compiler: "test" },
-      source: null,
-      status: "active",
-      createdAt: legacyVersionCreatedAt,
-      updatedAt: legacyVersionCreatedAt,
-    } as Parameters<typeof mapQuestionRowToDomain>[0];
+  it("maps generation run rows with blueprintSnapshot and workbookCalculationId", () => {
+    const run = mapQuestionGenerationRunRowToDomain(generationRunRow());
 
+    assert.equal(run.blueprintSnapshot.blueprintId, id);
+    assert.equal(run.workbookCalculationId, calculationId);
     assert.equal(
-      mapQuestionRowToDomain(questionRow).sourcePlan.references[0]?.source.sourceId,
-      "",
+      mapQuestionGenerationRunToInsert(run).workbookCalculationId,
+      calculationId,
+    );
+  });
+
+  it("maps question rows with durable source evidence and private source plan", () => {
+    const question = mapQuestionRowToDomain(questionRow());
+
+    assert.equal(question.sourceEvidence.sources[0]?.sourceId, "source_1");
+    assert.equal(
+      mapQuestionToInsert(question).sourceEvidence,
+      question.sourceEvidence,
+    );
+    assert.deepEqual(
+      mapQuestionToInsert(question).sourcePlan,
+      question.sourcePlan,
+    );
+  });
+
+  it("rejects persisted questions missing source evidence or source plan", () => {
+    assert.throws(
+      () => mapQuestionRowToDomain(withInvalidQuestionRow("sourceEvidence")),
+      /source evidence must be an object/,
+    );
+    assert.throws(
+      () => mapQuestionRowToDomain(withInvalidQuestionRow("sourcePlan")),
+      /source plan must be an object/,
     );
   });
 });
 
-const legacyBlueprintId = "019e9315-6a87-715f-9861-8654df074010";
-const legacyVersionId = "019e9315-6a87-715f-9861-8654df074011";
-const legacyBlueprintOwnerId = "019e9315-6a87-715f-9861-8654df074012";
-const legacyWorkbookId = "019e9315-6a87-715f-9861-8654df074013";
-const legacyVersionCreatedAt = new Date("2026-06-18T00:00:00.000Z");
-
-function createLegacyVersionRow(overrides: {
-  sources: QuestionBlueprintVersionRow["sources"] | null | undefined;
-  document: QuestionBlueprintVersionRow["document"];
-}): QuestionBlueprintVersionRow {
+function blueprintRow(): Parameters<typeof mapQuestionBlueprintRowToDomain>[0] {
   return {
-    id: legacyVersionId,
-    questionBlueprintId: legacyBlueprintId,
-    versionNumber: 1,
-    document: overrides.document,
-    ...(overrides.sources === undefined
-      ? {}
-      : { sources: overrides.sources }),
-    createdByUserId: legacyBlueprintOwnerId,
-    createdAt: legacyVersionCreatedAt,
-  } as QuestionBlueprintVersionRow;
-}
-
-function legacyBlueprintDocumentWithSourceId(sourceId: string) {
-  return {
-    schemaVersion: 1,
-    responseFields: [],
-    blocks: [],
-    references: [
-      {
-        id: "revenue",
-        source: {
-          schemaVersion: 1,
-          type: "workbook_cell",
-          sourceId,
-          ref: "Sheet1!A1",
-        },
-      },
-    ],
+    archivedAt: null,
+    createdAt,
+    createdByUserId: userId,
+    description: null,
+    document: document(),
+    id,
+    name: "Blueprint",
+    ownerUserId: userId,
+    sources: [source()],
+    status: "active",
+    updatedAt: createdAt,
+    visibility: "private",
   };
 }
 
-function legacyBlueprintDocumentWithoutSourceId() {
+function generationRunRow(): Parameters<
+  typeof mapQuestionGenerationRunRowToDomain
+>[0] {
   return {
-    schemaVersion: 1,
-    responseFields: [],
+    attemptNumber: 1,
+    attempts: 0,
+    blueprintId: id,
+    blueprintSnapshot: {
+      blueprintId: id,
+      capturedAt: createdAt.toISOString(),
+      description: null,
+      document: document(),
+      documentHash: "hash",
+      name: "Blueprint",
+      schemaVersion: 1,
+      sources: [source()],
+    },
+    createdAt,
+    createdByUserId: userId,
+    errorMessage: null,
+    finishedAt: null,
+    id,
+    ownerUserId: userId,
+    requestedCount: 1,
+    result: null,
+    retryOfRunId: null,
+    startedAt: null,
+    status: "queued",
+    targetQuestionSetId: questionSetId,
+    updatedAt: createdAt,
+    workbookCalculationId: calculationId,
+  };
+}
+
+function questionRow(): Parameters<typeof mapQuestionRowToDomain>[0] {
+  return {
+    blueprintId: id,
+    body: {
+      blocks: [],
+      responseFields: [],
+      schemaVersion: 1,
+    },
+    createdAt,
+    createdByUserId: userId,
+    generationRunId: id,
+    id,
+    ownerUserId: userId,
+    producer: { compiler: "test", schemaVersion: 1 },
+    solution: { rules: [], schemaVersion: 1 },
+    sourceEvidence: evidence(),
+    sourcePlan: {
+      references: [
+        {
+          ref: "Sheet1!A1",
+          referenceId: "revenue",
+          sourceId: "source_1",
+          value: 1200,
+          workbookSnapshotId: snapshotId,
+        },
+      ],
+      schemaVersion: 1,
+    },
+    status: "active",
+    updatedAt: createdAt,
+  } as Parameters<typeof mapQuestionRowToDomain>[0];
+}
+
+function withInvalidQuestionRow(
+  field: "sourceEvidence" | "sourcePlan",
+): Parameters<typeof mapQuestionRowToDomain>[0] {
+  const row = questionRow();
+  return {
+    ...row,
+    sourceEvidence:
+      field === "sourceEvidence" ? (undefined as unknown) : row.sourceEvidence,
+    sourcePlan:
+      field === "sourcePlan" ? (undefined as unknown) : row.sourcePlan,
+  } as Parameters<typeof mapQuestionRowToDomain>[0];
+}
+
+function document() {
+  return {
     blocks: [],
     references: [
       {
-        id: "revenue",
+        id: "workbook:source_1:cell:Sheet1:A1",
         source: {
-          schemaVersion: 1,
-          type: "workbook_cell",
           ref: "Sheet1!A1",
+          schemaVersion: 1,
+          sourceId: "source_1",
+          type: "workbook_cell",
         },
+      },
+    ],
+    responseFields: [],
+    schemaVersion: 1,
+  };
+}
+
+function source() {
+  return {
+    name: "Source 1",
+    sourceId: "source_1",
+    type: "workbook" as const,
+    workbookId,
+  };
+}
+
+function evidence() {
+  return {
+    schemaVersion: 1,
+    sources: [
+      {
+        questionIndex: 0,
+        references: ["workbook:source_1:cell:Sheet1:A1"],
+        snapshotIndex: 0,
+        sourceId: "source_1",
+        sourceName: "Source 1",
+        workbookCalculationId: calculationId,
+        workbookId,
+        workbookSnapshotId: snapshotId,
       },
     ],
   };

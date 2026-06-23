@@ -1,5 +1,4 @@
 import type { DatabaseExecutor } from "@lemma/db";
-import { sql } from "kysely";
 import type {
   Question,
   QuestionGenerationRun,
@@ -36,7 +35,7 @@ export class KyselyQuestionGenerationRunRepository {
     const row = await this.db
       .selectFrom("questionGenerationRuns")
       .selectAll()
-      .where(sql<boolean>`source ->> 'workbookCalculationId' = ${id}`)
+      .where("workbookCalculationId", "=", id)
       .executeTakeFirst();
     return row ? mapQuestionGenerationRunRowToDomain(row) : null;
   }
@@ -114,11 +113,11 @@ export class KyselyQuestionGenerationRunRepository {
         .insertInto("questionSetQuestions")
         .values(
           input.memberships.map((membership) => ({
-            questionSetId: membership.questionSetId,
-            questionId: membership.questionId,
             addedByUserId: membership.addedByUserId,
-            position: membership.position,
             createdAt: membership.createdAt,
+            position: membership.position,
+            questionId: membership.questionId,
+            questionSetId: membership.questionSetId,
           })),
         )
         .onConflict((oc) =>

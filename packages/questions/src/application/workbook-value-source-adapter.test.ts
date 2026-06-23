@@ -6,12 +6,12 @@ describe("workbook value source adapter", () => {
   it("maps workbook ranges to range sources", () => {
     assert.deepEqual(
       toWorkbookValueSource({
-        schemaVersion: 1,
-        type: "workbook_range",
-        sourceId: "source_1",
         ref: "Sheet1!A1:B2",
+        schemaVersion: 1,
+        sourceId: "source_1",
+        type: "workbook_range",
       }),
-      { type: "range", sourceId: "source_1", ref: "Sheet1!A1:B2" },
+      { ref: "Sheet1!A1:B2", sourceId: "source_1", type: "range" },
     );
   });
 });

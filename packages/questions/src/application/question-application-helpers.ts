@@ -1,6 +1,5 @@
 import {
   type QuestionBlueprint,
-  type QuestionBlueprintVersion,
   type QuestionSet,
   questionBlueprintDocument,
   questionBlueprintSources,
@@ -9,10 +8,6 @@ import {
   questionId as toQuestionId,
   questionSetId as toQuestionSetId,
 } from "../domain/index.js";
-import type {
-  HydratedQuestionBlueprint,
-  HydratedQuestionBlueprintVersion,
-} from "./dto.js";
 import {
   ForbiddenQuestionActionError,
   QuestionBlueprintNotFoundError,
@@ -89,70 +84,8 @@ export async function persistQuestionBlueprint(
   return updated;
 }
 
-export async function hydrateQuestionBlueprint(
-  questionsRepository: QuestionsRepository,
-  blueprint: QuestionBlueprint,
-): Promise<HydratedQuestionBlueprint> {
-  if (blueprint.currentVersionId === null) {
-    throw new QuestionBlueprintNotFoundError(
-      "question blueprint has no current version",
-    );
-  }
-  const currentVersion =
-    await questionsRepository.findQuestionBlueprintVersionById(
-      blueprint.currentVersionId,
-    );
-  if (!currentVersion) {
-    throw new QuestionBlueprintNotFoundError();
-  }
-  const hydratedVersion = await hydrateQuestionBlueprintVersion(
-    questionsRepository,
-    currentVersion,
-  );
-  return {
-    ...blueprint,
-    currentVersion: hydratedVersion,
-  };
-}
-
-export async function hydrateQuestionBlueprintVersion(
-  questionsRepository: QuestionsRepository,
-  version: QuestionBlueprintVersion,
-): Promise<HydratedQuestionBlueprintVersion> {
-  const sourceAssets =
-    await questionsRepository.listQuestionBlueprintVersionAssets({
-      blueprintVersionId: version.id,
-    });
-  return {
-    ...version,
-    sourceAssets,
-  };
-}
-
-export async function hydrateQuestionBlueprintVersions(
-  questionsRepository: QuestionsRepository,
-  versions: QuestionBlueprintVersion[],
-): Promise<HydratedQuestionBlueprintVersion[]> {
-  const assets =
-    await questionsRepository.listQuestionBlueprintVersionAssetsByVersionIds({
-      blueprintVersionIds: versions.map((version) => version.id),
-    });
-  const assetsByVersionId = new Map<
-    string,
-    HydratedQuestionBlueprintVersion["sourceAssets"]
-  >();
-  for (const asset of assets) {
-    const current = assetsByVersionId.get(asset.questionBlueprintVersionId);
-    if (current) {
-      current.push(asset);
-    } else {
-      assetsByVersionId.set(asset.questionBlueprintVersionId, [asset]);
-    }
-  }
-  return versions.map((version) => ({
-    ...version,
-    sourceAssets: assetsByVersionId.get(version.id) ?? [],
-  }));
+export async function hydrateQuestionBlueprint(blueprint: QuestionBlueprint) {
+  return blueprint;
 }
 
 export function normalizeCanonicalBlueprintInput(input: {

@@ -3,13 +3,16 @@ import { createKyselyOutboxRepository } from "@lemma/events/infrastructure";
 import {
   type Clock,
   type CustomQuestionGraderPort,
+  type DraftSourceFilePort,
   type IdGenerator,
+  QuestionBlueprintDraftService,
   QuestionBlueprintService,
   QuestionGenerationService,
   QuestionGradingService,
   QuestionLibraryService,
   QuestionSetService,
   type WorkbookAccessPort,
+  type WorkbookRegistrationPort,
 } from "./application/index.js";
 import type { RequireIdentity } from "./http/index.js";
 import { questionsRoutes } from "./http/index.js";
@@ -25,6 +28,8 @@ export function createQuestionsModule(deps: {
   clock: Clock;
   customQuestionGraderPort?: CustomQuestionGraderPort;
   workbookAccessPort?: WorkbookAccessPort;
+  draftSourceFilePort: DraftSourceFilePort;
+  workbookRegistrationPort: WorkbookRegistrationPort;
 }) {
   const questionsRepository = new KyselyQuestionsRepository(deps.db.executor);
   const questionGradingService = new QuestionGradingService({
@@ -32,51 +37,60 @@ export function createQuestionsModule(deps: {
   });
 
   const questionSetService = new QuestionSetService({
-    questionsRepository,
-    idGenerator: deps.idGenerator,
     clock: deps.clock,
+    idGenerator: deps.idGenerator,
+    questionsRepository,
   });
   const questionBlueprintService = new QuestionBlueprintService({
-    questionsRepository,
-    idGenerator: deps.idGenerator,
     clock: deps.clock,
+    idGenerator: deps.idGenerator,
+    questionsRepository,
+  });
+  const questionBlueprintDraftService = new QuestionBlueprintDraftService({
+    clock: deps.clock,
+    draftSourceFilePort: deps.draftSourceFilePort,
+    idGenerator: deps.idGenerator,
+    questionsRepository,
+    workbookRegistrationPort: deps.workbookRegistrationPort,
   });
   const questionLibraryService = new QuestionLibraryService({
-    questionsRepository,
-    questionGradingService,
     clock: deps.clock,
+    questionGradingService,
+    questionsRepository,
   });
 
   const questionGenerationService = new QuestionGenerationService({
-    questionsRepository,
-    workbookAccessPort: deps.workbookAccessPort ?? new DenyWorkbookAccessPort(),
+    clock: deps.clock,
+    idGenerator: deps.idGenerator,
     questionGenerationTransaction: {
       transaction: (fn) =>
         deps.db.transaction((tx) =>
           fn({
-            questionsRepository: new KyselyQuestionsRepository(tx),
             outboxRepository: createKyselyOutboxRepository(tx),
+            questionsRepository: new KyselyQuestionsRepository(tx),
           }),
         ),
     },
-    idGenerator: deps.idGenerator,
-    clock: deps.clock,
+    questionsRepository,
+    workbookAccessPort: deps.workbookAccessPort ?? new DenyWorkbookAccessPort(),
   });
 
   const routes = questionsRoutes({
-    requireIdentity: deps.requireIdentity,
-    questionSetService,
+    questionBlueprintDraftService,
     questionBlueprintService,
-    questionLibraryService,
     questionGenerationService,
+    questionLibraryService,
+    questionSetService,
+    requireIdentity: deps.requireIdentity,
   });
 
   return {
-    routes,
-    questionSetService,
+    questionBlueprintDraftService,
     questionBlueprintService,
-    questionLibraryService,
     questionGenerationService,
+    questionLibraryService,
+    questionSetService,
+    routes,
   };
 }
 

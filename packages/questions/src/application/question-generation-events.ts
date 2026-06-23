@@ -24,21 +24,19 @@ export {
   QUESTION_SET_QUESTIONS_ADDED_EVENT,
 };
 
+function toMutableJsonObject(value: unknown): JsonObject {
+  return JSON.parse(JSON.stringify(value)) as JsonObject;
+}
+
 export type QuestionGenerationRunRequestedPayload = JsonObject & {
   questionGenerationRunId: string;
   blueprintId: string;
-  blueprintVersionId: string;
+  blueprintSnapshot: JsonObject;
   targetQuestionSetId: string;
   requestedCount: number;
-  source:
-    | (JsonObject & {
-        type: "workbook_snapshot";
-        workbookId: string;
-        workbookVersionId: string | null;
-        workbookCalculationId: string | null;
-        workbookSnapshotId: string | null;
-      })
-    | null;
+  workbookCalculationId: string | null;
+  retryOfRunId: string | null;
+  attemptNumber: number;
 };
 
 export function questionGenerationRunRequestedEvent(input: {
@@ -48,34 +46,28 @@ export function questionGenerationRunRequestedEvent(input: {
   occurredAt: Date;
 }): DomainEventEnvelope<QuestionGenerationRunRequestedPayload> {
   const payload = {
-    questionGenerationRunId: input.run.id,
+    attemptNumber: input.run.attemptNumber,
     blueprintId: input.run.blueprintId,
-    blueprintVersionId: input.run.blueprintVersionId,
-    targetQuestionSetId: input.run.targetQuestionSetId,
+    blueprintSnapshot: toMutableJsonObject(input.run.blueprintSnapshot),
+    questionGenerationRunId: input.run.id,
     requestedCount: input.run.requestedCount,
-    source: input.run.source
-      ? {
-          type: input.run.source.type,
-          workbookId: input.run.source.workbookId,
-          workbookVersionId: input.run.source.workbookVersionId,
-          workbookCalculationId: input.run.source.workbookCalculationId,
-          workbookSnapshotId: input.run.source.workbookSnapshotId,
-        }
-      : null,
+    retryOfRunId: input.run.retryOfRunId,
+    targetQuestionSetId: input.run.targetQuestionSetId,
+    workbookCalculationId: input.run.workbookCalculationId,
   } satisfies QuestionGenerationRunRequestedPayload;
 
   return domainEventEnvelope({
-    id: input.id,
-    type: QUESTION_GENERATION_RUN_REQUESTED_EVENT,
-    schemaVersion: 1,
     aggregate: {
-      type: "question_generation_run",
       id: input.run.id,
+      type: "question_generation_run",
     },
-    ownerUserId: input.run.ownerUserId,
+    id: input.id,
     lineage: input.lineage,
     occurredAt: input.occurredAt,
+    ownerUserId: input.run.ownerUserId,
     payload,
+    schemaVersion: 1,
+    type: QUESTION_GENERATION_RUN_REQUESTED_EVENT,
   });
 }
 
@@ -83,6 +75,8 @@ export type QuestionGenerationRunStateChangedPayload = JsonObject & {
   questionGenerationRunId: string;
   status: QuestionGenerationRun["status"];
   workbookCalculationId: string | null;
+  retryOfRunId: string | null;
+  attemptNumber: number;
 };
 
 export type QuestionGenerationRunSucceededPayload = JsonObject & {
@@ -109,10 +103,10 @@ export function questionGenerationRunWaitingForWorkbookCalculationEvent(input: {
 }): DomainEventEnvelope<QuestionGenerationRunStateChangedPayload> {
   return questionGenerationRunStateChangedEvent({
     id: input.id,
-    type: QUESTION_GENERATION_RUN_WAITING_FOR_WORKBOOK_CALCULATION_EVENT,
-    run: input.run,
     lineage: input.lineage,
     occurredAt: input.occurredAt,
+    run: input.run,
+    type: QUESTION_GENERATION_RUN_WAITING_FOR_WORKBOOK_CALCULATION_EVENT,
   });
 }
 
@@ -124,10 +118,10 @@ export function questionGenerationRunMaterializingEvent(input: {
 }): DomainEventEnvelope<QuestionGenerationRunStateChangedPayload> {
   return questionGenerationRunStateChangedEvent({
     id: input.id,
-    type: QUESTION_GENERATION_RUN_MATERIALIZING_EVENT,
-    run: input.run,
     lineage: input.lineage,
     occurredAt: input.occurredAt,
+    run: input.run,
+    type: QUESTION_GENERATION_RUN_MATERIALIZING_EVENT,
   });
 }
 
@@ -144,11 +138,11 @@ export function questionGenerationRunSucceededEvent(input: {
 
   return questionGenerationRunEventEnvelope({
     id: input.id,
-    type: QUESTION_GENERATION_RUN_SUCCEEDED_EVENT,
-    run: input.run,
     lineage: input.lineage,
     occurredAt: input.occurredAt,
     payload,
+    run: input.run,
+    type: QUESTION_GENERATION_RUN_SUCCEEDED_EVENT,
   });
 }
 
@@ -159,17 +153,17 @@ export function questionGenerationRunFailedEvent(input: {
   occurredAt: Date;
 }): DomainEventEnvelope<QuestionGenerationRunFailedPayload> {
   const payload = {
-    questionGenerationRunId: input.run.id,
     errorMessage: input.run.errorMessage ?? "Question generation failed.",
+    questionGenerationRunId: input.run.id,
   } satisfies QuestionGenerationRunFailedPayload;
 
   return questionGenerationRunEventEnvelope({
     id: input.id,
-    type: QUESTION_GENERATION_RUN_FAILED_EVENT,
-    run: input.run,
     lineage: input.lineage,
     occurredAt: input.occurredAt,
     payload,
+    run: input.run,
+    type: QUESTION_GENERATION_RUN_FAILED_EVENT,
   });
 }
 
@@ -181,10 +175,10 @@ export function questionGenerationRunCancelledEvent(input: {
 }): DomainEventEnvelope<QuestionGenerationRunStateChangedPayload> {
   return questionGenerationRunStateChangedEvent({
     id: input.id,
-    type: QUESTION_GENERATION_RUN_CANCELLED_EVENT,
-    run: input.run,
     lineage: input.lineage,
     occurredAt: input.occurredAt,
+    run: input.run,
+    type: QUESTION_GENERATION_RUN_CANCELLED_EVENT,
   });
 }
 
@@ -196,23 +190,23 @@ export function questionSetQuestionsAddedEvent(input: {
   occurredAt: Date;
 }): DomainEventEnvelope<QuestionSetQuestionsAddedPayload> {
   const payload = {
-    questionSetId: input.run.targetQuestionSetId,
     questionGenerationRunId: input.run.id,
     questionIds: [...input.questionIds],
+    questionSetId: input.run.targetQuestionSetId,
   } satisfies QuestionSetQuestionsAddedPayload;
 
   return domainEventEnvelope({
-    id: input.id,
-    type: QUESTION_SET_QUESTIONS_ADDED_EVENT,
-    schemaVersion: 1,
     aggregate: {
-      type: "question_set",
       id: input.run.targetQuestionSetId,
+      type: "question_set",
     },
-    ownerUserId: input.run.ownerUserId,
+    id: input.id,
     lineage: input.lineage,
     occurredAt: input.occurredAt,
+    ownerUserId: input.run.ownerUserId,
     payload,
+    schemaVersion: 1,
+    type: QUESTION_SET_QUESTIONS_ADDED_EVENT,
   });
 }
 
@@ -224,18 +218,20 @@ function questionGenerationRunStateChangedEvent(input: {
   occurredAt: Date;
 }): DomainEventEnvelope<QuestionGenerationRunStateChangedPayload> {
   const payload = {
+    attemptNumber: input.run.attemptNumber,
     questionGenerationRunId: input.run.id,
+    retryOfRunId: input.run.retryOfRunId,
     status: input.run.status,
-    workbookCalculationId: input.run.source?.workbookCalculationId ?? null,
+    workbookCalculationId: input.run.workbookCalculationId,
   } satisfies QuestionGenerationRunStateChangedPayload;
 
   return questionGenerationRunEventEnvelope({
     id: input.id,
-    type: input.type,
-    run: input.run,
     lineage: input.lineage,
     occurredAt: input.occurredAt,
     payload,
+    run: input.run,
+    type: input.type,
   });
 }
 
@@ -250,16 +246,16 @@ function questionGenerationRunEventEnvelope<
   payload: TPayload;
 }): DomainEventEnvelope<TPayload> {
   return domainEventEnvelope({
-    id: input.id,
-    type: input.type,
-    schemaVersion: 1,
     aggregate: {
-      type: "question_generation_run",
       id: input.run.id,
+      type: "question_generation_run",
     },
-    ownerUserId: input.run.ownerUserId,
+    id: input.id,
     lineage: input.lineage,
     occurredAt: input.occurredAt,
+    ownerUserId: input.run.ownerUserId,
     payload: input.payload,
+    schemaVersion: 1,
+    type: input.type,
   });
 }

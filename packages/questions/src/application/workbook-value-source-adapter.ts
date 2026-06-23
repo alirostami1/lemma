@@ -4,7 +4,7 @@ import type {
   QuestionReferenceSource,
   WorkbookSnapshotId,
 } from "../domain/index.js";
-import { WorkbookQuestionSourceError } from "./errors.js";
+import { WorkbookQuestionReferenceError } from "./errors.js";
 import type {
   QuestionValueResolverPort,
   WorkbookInternalSnapshotResolverPort,
@@ -42,7 +42,7 @@ export class WorkbookQuestionValueResolverAdapter
           return input.source.value;
         }
         if (!input.workbookSnapshotId) {
-          throw new WorkbookQuestionSourceError(
+          throw new WorkbookQuestionReferenceError(
             "workbook references require a workbook snapshot",
           );
         }
@@ -50,14 +50,14 @@ export class WorkbookQuestionValueResolverAdapter
         if (input.currentUser) {
           return this.deps.workbookSnapshotResolverPort.resolveValueSource({
             currentUser: input.currentUser,
-            workbookSnapshotId: input.workbookSnapshotId,
             source,
+            workbookSnapshotId: input.workbookSnapshotId,
           });
         }
         return this.deps.workbookInternalSnapshotResolverPort.resolveValueSource(
           {
-            workbookSnapshotId: input.workbookSnapshotId,
             source,
+            workbookSnapshotId: input.workbookSnapshotId,
           },
         );
       },
@@ -69,15 +69,15 @@ export function toWorkbookValueSource(
   source: QuestionReferenceSource,
 ): WorkbookValueSource {
   if (source.type === "workbook_cell") {
-    return { type: "cell", sourceId: source.sourceId, ref: source.ref };
+    return { ref: source.ref, sourceId: source.sourceId, type: "cell" };
   }
   if (source.type === "workbook_range") {
-    return { type: "range", sourceId: source.sourceId, ref: source.ref };
+    return { ref: source.ref, sourceId: source.sourceId, type: "range" };
   }
   if (source.type === "literal") {
     return { type: "literal", value: source.value };
   }
-  throw new WorkbookQuestionSourceError(
+  throw new WorkbookQuestionReferenceError(
     "question reference source is not supported",
   );
 }

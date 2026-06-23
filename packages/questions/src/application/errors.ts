@@ -23,6 +23,13 @@ export class QuestionBlueprintNotFoundError extends QuestionsApplicationError {
   }
 }
 
+export class QuestionBlueprintDraftNotFoundError extends QuestionsApplicationError {
+  readonly applicationCode = "QUESTION_BLUEPRINT_DRAFT_NOT_FOUND";
+  constructor(message = "question blueprint draft not found") {
+    super(message);
+  }
+}
+
 export class QuestionNotFoundError extends QuestionsApplicationError {
   readonly applicationCode = "QUESTION_NOT_FOUND";
   constructor(message = "question not found") {
@@ -53,10 +60,10 @@ export class InvalidQuestionBlueprintError extends QuestionsApplicationError {
   }
 }
 
-export class WorkbookQuestionSourceError extends QuestionsApplicationError {
-  readonly applicationCode = "WORKBOOK_QUESTION_SOURCE_ERROR";
+export class WorkbookQuestionReferenceError extends QuestionsApplicationError {
+  readonly applicationCode = "WORKBOOK_QUESTION_REFERENCE_ERROR";
   constructor(
-    message = "workbook question source failed",
+    message = "workbook question reference failed",
     options?: ErrorOptions,
   ) {
     super(message, options);

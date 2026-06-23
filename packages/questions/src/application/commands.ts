@@ -1,9 +1,6 @@
 import type { OperationLineage } from "@lemma/domain";
 import type { CurrentUser } from "@lemma/identity/application";
-import type {
-  CreateWorkbookQuestionSourceInput,
-  QuestionAnswer,
-} from "../domain/index.js";
+import type { QuestionAnswer } from "../domain/index.js";
 
 export type ListCommand = {
   currentUser: CurrentUser;
@@ -42,9 +39,34 @@ export type UpdateQuestionBlueprintCommand = ListCommand & {
 export type QuestionBlueprintByIdCommand = ListCommand & {
   questionBlueprintId: string;
 };
-export type QuestionBlueprintVersionByIdCommand =
-  QuestionBlueprintByIdCommand & {
-    questionBlueprintVersionId: string;
+
+export type CreateQuestionBlueprintDraftCommand = ListCommand & {
+  blueprintId?: string | null;
+  name: string;
+  description?: string | null;
+  document: unknown;
+  sources: unknown;
+};
+export type QuestionBlueprintDraftByIdCommand = ListCommand & {
+  draftId: string;
+};
+export type UpdateQuestionBlueprintDraftCommand =
+  QuestionBlueprintDraftByIdCommand & {
+    patch: {
+      name: string;
+      description: string | null;
+      document: unknown;
+      sources: unknown;
+    };
+  };
+export type AttachQuestionBlueprintDraftSourceFileCommand =
+  QuestionBlueprintDraftByIdCommand & {
+    sourceId: string;
+    fileId: string;
+  };
+export type PublishQuestionBlueprintDraftCommand =
+  QuestionBlueprintDraftByIdCommand & {
+    lineage: OperationLineage;
   };
 
 export type QuestionByIdCommand = ListCommand & { questionId: string };
@@ -60,10 +82,8 @@ export type RemoveQuestionFromSetCommand = ListCommand & {
 
 export type CreateQuestionGenerationRunCommand = ListCommand & {
   blueprintId: string;
-  blueprintVersionId?: string | null;
   targetQuestionSetId: string;
   count: number;
-  source?: CreateWorkbookQuestionSourceInput | null;
   lineage: OperationLineage;
 };
 
