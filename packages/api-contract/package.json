@@ -12,7 +12,7 @@
     "check:write": "biome check --write",
     "format": "biome format",
     "format:write": "biome format --write",
-    "lint": "tsx src/lint.ts"
+    "lint": "node --conditions=development --import tsx scripts/lint.ts"
   },
   "dependencies": {
     "@lemma/files": "workspace:*",

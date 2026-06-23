@@ -1,5 +1,5 @@
 import { createConfig, lintFromString } from "@redocly/openapi-core";
-import { openapi } from "./openapi.js";
+import { openapi } from "../src/openapi.js";
 
 const config = await createConfig({
   extends: ["recommended"],
