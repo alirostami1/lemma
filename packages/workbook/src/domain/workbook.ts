@@ -43,20 +43,20 @@ export function createWorkbook(
   at: Date,
 ): Workbook {
   return {
-    id: input.id,
-    ownerUserId: input.ownerUserId,
-    createdByUserId: input.createdByUserId,
-    name: workbookName(input.name),
-    fileId: input.fileId,
     checksumSha256: input.checksumSha256,
-    originalName: input.originalName,
+    createdAt: at,
+    createdByUserId: input.createdByUserId,
     engine: input.engine,
     engineVersion: null,
-    status: "pending_validation",
+    fileId: input.fileId,
+    id: input.id,
     inspection: null,
-    validationError: null,
-    createdAt: at,
+    name: workbookName(input.name),
+    originalName: input.originalName,
+    ownerUserId: input.ownerUserId,
+    status: "pending_validation",
     updatedAt: at,
+    validationError: null,
   };
 }
 
@@ -88,11 +88,11 @@ export function markWorkbookValid(
   assertWorkbookCanBeModified(workbook);
   return {
     ...workbook,
-    inspection,
     engineVersion,
+    inspection,
     status: "valid",
-    validationError: null,
     updatedAt: at,
+    validationError: null,
   };
 }
 
@@ -104,8 +104,8 @@ export function requestWorkbookValidation(
   return {
     ...workbook,
     status: "pending_validation",
-    validationError: null,
     updatedAt: at,
+    validationError: null,
   };
 }
 
@@ -120,8 +120,8 @@ export function markWorkbookInvalid(
     ...workbook,
     inspection,
     status: "invalid",
-    validationError,
     updatedAt: at,
+    validationError,
   };
 }
 

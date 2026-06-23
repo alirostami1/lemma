@@ -33,7 +33,8 @@ export type ListWorkbookCalculationsCommand = ListCommand & {
   status?: string;
 };
 
-export type CreateWorkbookCalculationCommand = WorkbookByIdCommand & {
+export type CreateWorkbookCalculationCommand = {
+  currentUser: CurrentUser;
   sources: readonly WorkbookCalculationSource[];
   requestedCount: number;
   correlationId?: string | null;
@@ -45,13 +46,11 @@ export type WorkbookCalculationByIdCommand = ListCommand & {
 };
 
 export type RetryWorkbookCalculationCommand = WorkbookCalculationByIdCommand & {
-  sources: readonly WorkbookCalculationSource[];
   lineage: OperationLineage;
 };
 
 export type ProcessWorkbookCalculationCommand = {
   workbookCalculationId: string;
-  sources: readonly WorkbookCalculationSource[];
   lineage: OperationLineage;
 };
 

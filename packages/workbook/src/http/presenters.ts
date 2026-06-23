@@ -36,7 +36,7 @@ import type {
   WorkbookSnapshotsResponse,
   WorkbookSnapshotValueResponse,
   WorkbooksResponse,
-} from "../gen/types/index.js";
+} from "../generated/types/index.js";
 
 export function presentWorkbook(result: WorkbookResult): WorkbookResponse {
   return { workbook: toWorkbookDto(result.workbook) };
@@ -44,8 +44,8 @@ export function presentWorkbook(result: WorkbookResult): WorkbookResponse {
 
 export function presentWorkbooks(result: WorkbooksResult): WorkbooksResponse {
   return {
-    workbooks: result.workbooks.map(toWorkbookDto),
     nextCursor: result.nextCursor,
+    workbooks: result.workbooks.map(toWorkbookDto),
   };
 }
 
@@ -61,10 +61,10 @@ export function presentWorkbookCalculations(
   result: WorkbookCalculationsResult,
 ): WorkbookCalculationsResponse {
   return {
+    nextCursor: result.nextCursor,
     workbookCalculations: result.workbookCalculations.map(
       toWorkbookCalculationDto,
     ),
-    nextCursor: result.nextCursor,
   };
 }
 
@@ -110,8 +110,8 @@ export function presentWorkbookSnapshots(
   result: WorkbookSnapshotsResult,
 ): WorkbookSnapshotsResponse {
   return {
-    workbookSnapshots: result.workbookSnapshots.map(toWorkbookSnapshotDto),
     nextCursor: result.nextCursor,
+    workbookSnapshots: result.workbookSnapshots.map(toWorkbookSnapshotDto),
   };
 }
 
@@ -140,9 +140,9 @@ function toWorkbookCalculationDto(
 ): WorkbookCalculationResponseDto {
   return {
     ...calculation,
-    startedAt: presentNullableDate(calculation.startedAt),
-    finishedAt: presentNullableDate(calculation.finishedAt),
     createdAt: presentDate(calculation.createdAt),
+    finishedAt: presentNullableDate(calculation.finishedAt),
+    startedAt: presentNullableDate(calculation.startedAt),
     updatedAt: presentDate(calculation.updatedAt),
   };
 }
@@ -151,10 +151,12 @@ function toWorkbookSnapshotDto(
   snapshot: WorkbookSnapshot,
 ): WorkbookSnapshotDto {
   return {
-    id: snapshot.id,
-    workbookId: snapshot.workbookId,
     calculationId: snapshot.calculationId,
-    snapshotIndex: snapshot.snapshotIndex,
     createdAt: presentDate(snapshot.createdAt),
+    id: snapshot.id,
+    questionIndex: snapshot.questionIndex,
+    snapshotIndex: snapshot.snapshotIndex,
+    sourceId: snapshot.sourceId,
+    workbookId: snapshot.workbookId,
   };
 }

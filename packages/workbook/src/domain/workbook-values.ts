@@ -143,11 +143,11 @@ export function workbookInspection(value: unknown): WorkbookInspection {
     throw new InvalidWorkbookInspectionError("inspection has invalid shape.");
   }
   return {
-    sheetCount,
     cellCount,
-    formulaCount,
     forbiddenFeatureFindings,
+    formulaCount,
     libreOfficeVersion,
+    sheetCount,
   };
 }
 
@@ -235,11 +235,11 @@ export function workbookSparseValues(value: unknown): WorkbookSparseValues {
         ? parseCellTypes(sparseSheet.cellTypes, index)
         : undefined;
       return {
-        name: sparseSheet.name,
         cells,
+        name: sparseSheet.name,
         ...(cellTypes ? { cellTypes } : {}),
-        rowCount: sparseSheet.rowCount,
         columnCount: sparseSheet.columnCount,
+        rowCount: sparseSheet.rowCount,
       };
     }),
   };

@@ -45,47 +45,47 @@ export default defineConfig({
   identity: {
     hooks: {
       afterAllFilesWrite: async () => {
-        await addNodeNextImportExtensions("./src/gen/types");
+        await addNodeNextImportExtensions("./src/generated/types");
         await writeHonoRoutesSource({
-          input: openapi,
-          output: "./src/gen/hono/index.ts",
-          routeName: "Identity",
           envType: "IdentityAppEnv",
           envTypeImport: "@lemma/identity/http",
+          input: openapi,
+          output: "./src/generated/hono/index.ts",
           requireIdentityType: "RequireIdentity",
           requireIdentityTypeImport: "@lemma/identity/http",
+          routeName: "Identity",
           validationHook: "validationHook",
           validationHookImport: "@lemma/http",
           zValidatorImport: "@lemma/http",
         });
-        await formatGeneratedFiles("./src/gen");
+        await formatGeneratedFiles("./src/generated");
       },
     },
     input: {
       target: openapi,
     },
     output: {
-      target: "./src/gen/zod/index.ts",
-      schemas: "./src/gen/types",
-      client: "zod",
       clean: true,
+      client: "zod",
       formatter: "biome",
       override: {
         zod: {
-          strict: {
-            body: true,
-            param: true,
-            response: true,
-          },
-          generateEachHttpStatus: true,
           coerce: {
             query: ["number"],
           },
           dateTimeOptions: {
             offset: true,
           },
+          generateEachHttpStatus: true,
+          strict: {
+            body: true,
+            param: true,
+            response: true,
+          },
         },
       },
+      schemas: "./src/generated/types",
+      target: "./src/generated/zod/index.ts",
     },
   },
 });

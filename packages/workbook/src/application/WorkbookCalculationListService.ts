@@ -24,14 +24,14 @@ export class WorkbookCalculationListService {
   ) {}
 
   async listWorkbookCalculations(
-    command: ListWorkbookCalculationsCommand,
+    input: ListWorkbookCalculationsCommand,
   ): Promise<WorkbookCalculationsResult> {
-    const limit = normalizeListLimit(command.limit);
-    const statuses = command.status
-      ? [workbookCalculationStatus(command.status)]
+    const limit = normalizeListLimit(input.limit);
+    const statuses = input.status
+      ? [workbookCalculationStatus(input.status)]
       : undefined;
-    const workbookId = command.workbookId
-      ? toWorkbookId(command.workbookId)
+    const workbookId = input.workbookId
+      ? toWorkbookId(input.workbookId)
       : undefined;
     if (workbookId) {
       const workbook =
@@ -40,39 +40,39 @@ export class WorkbookCalculationListService {
         throw new WorkbookNotFoundError();
       }
       this.assertAuthorized(
-        canRequestWorkbookCalculation(command.currentUser, workbook),
+        canRequestWorkbookCalculation(input.currentUser, workbook),
         "You cannot view workbook calculations.",
       );
       const calculations =
         await this.deps.workbookRepository.listWorkbookCalculationsByWorkbookId(
           {
-            workbookId,
-            statuses,
+            cursor: decodeListCursor(input.cursor),
             limit: limit + 1,
-            cursor: decodeListCursor(command.cursor),
+            statuses,
+            workbookId,
           },
         );
       return {
-        workbookCalculations: calculations.slice(0, limit),
         nextCursor:
           calculations.length > limit
             ? encodeListCursor(calculations[limit - 1]?.createdAt)
             : null,
+        workbookCalculations: calculations.slice(0, limit),
       };
     }
     const calculations =
       await this.deps.workbookRepository.listWorkbookCalculationsByOwnerUserId({
-        ownerUserId: command.currentUser.user.id,
-        statuses,
+        cursor: decodeListCursor(input.cursor),
         limit: limit + 1,
-        cursor: decodeListCursor(command.cursor),
+        ownerUserId: input.currentUser.user.id,
+        statuses,
       });
     return {
-      workbookCalculations: calculations.slice(0, limit),
       nextCursor:
         calculations.length > limit
           ? encodeListCursor(calculations[limit - 1]?.createdAt)
           : null,
+      workbookCalculations: calculations.slice(0, limit),
     };
   }
 

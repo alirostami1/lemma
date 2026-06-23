@@ -75,19 +75,19 @@ export class WorkbookService {
       const limit = normalizeListLimit(command.limit);
       const workbooks =
         await this.deps.workbookRepository.listWorkbooksByOwnerUserId({
+          cursor: decodeListCursor(command.cursor),
+          limit: limit + 1,
           ownerUserId: command.currentUser.user.id,
           statuses: command.status
             ? [workbookStatus(command.status)]
             : undefined,
-          limit: limit + 1,
-          cursor: decodeListCursor(command.cursor),
         });
       return {
-        workbooks: workbooks.slice(0, limit),
         nextCursor:
           workbooks.length > limit
             ? encodeListCursor(workbooks[limit - 1]?.createdAt)
             : null,
+        workbooks: workbooks.slice(0, limit),
       };
     });
   }
@@ -107,16 +107,26 @@ export class WorkbookService {
         },
       );
       assertWorkbookFileMetadata(file);
+      const existing =
+        await this.deps.workbookRepository.findWorkbookByOwnerUserIdAndFileId?.(
+          {
+            fileId: file.fileId,
+            ownerUserId: command.currentUser.user.id,
+          },
+        );
+      if (existing) {
+        return { workbook: existing };
+      }
       const workbook = createWorkbookDomain(
         {
-          id: this.deps.idGenerator.workbookId(),
-          ownerUserId: command.currentUser.user.id,
-          createdByUserId: command.currentUser.user.id,
-          name: command.name,
-          fileId: file.fileId,
           checksumSha256: file.checksumSha256,
-          originalName: file.originalName,
+          createdByUserId: command.currentUser.user.id,
           engine: "libreoffice",
+          fileId: file.fileId,
+          id: this.deps.idGenerator.workbookId(),
+          name: command.name,
+          originalName: file.originalName,
+          ownerUserId: command.currentUser.user.id,
         },
         this.deps.clock.now(),
       );
@@ -126,9 +136,9 @@ export class WorkbookService {
           await outboxRepository.appendEvents([
             workbookValidationRequestedEvent({
               id: this.deps.idGenerator.eventId(),
-              workbook: persisted,
               lineage: command.lineage,
               occurredAt: persisted.createdAt,
+              workbook: persisted,
             }),
           ]);
           return persisted;
@@ -139,32 +149,30 @@ export class WorkbookService {
     });
   }
 
-  async getWorkbook(command: WorkbookByIdCommand): Promise<WorkbookResult> {
+  async getWorkbook(input: WorkbookByIdCommand): Promise<WorkbookResult> {
     return this.operation("get_workbook", null, async () => {
-      const workbook = await this.findWorkbookByIdOrThrow(command.workbookId);
+      const workbook = await this.findWorkbookByIdOrThrow(input.workbookId);
       this.assertAuthorized(
-        canViewWorkbook(command.currentUser, workbook),
+        canViewWorkbook(input.currentUser, workbook),
         "You cannot view this workbook.",
       );
       return { workbook };
     });
   }
 
-  async updateWorkbook(
-    command: UpdateWorkbookCommand,
-  ): Promise<WorkbookResult> {
+  async updateWorkbook(input: UpdateWorkbookCommand): Promise<WorkbookResult> {
     return this.operation("update_workbook", null, async () => {
-      const workbook = await this.findWorkbookByIdOrThrow(command.workbookId);
+      const workbook = await this.findWorkbookByIdOrThrow(input.workbookId);
       this.assertAuthorized(
-        canManageWorkbook(command.currentUser, workbook),
+        canManageWorkbook(input.currentUser, workbook),
         "You cannot update this workbook.",
       );
       const updated = updateWorkbookDomain(
         workbook,
         {
-          name: command.patch.name,
-          status: command.patch.status
-            ? workbookStatus(command.patch.status)
+          name: input.patch.name,
+          status: input.patch.status
+            ? workbookStatus(input.patch.status)
             : undefined,
         },
         this.deps.clock.now(),
@@ -178,11 +186,11 @@ export class WorkbookService {
     });
   }
 
-  async deleteWorkbook(command: WorkbookByIdCommand): Promise<void> {
+  async deleteWorkbook(input: WorkbookByIdCommand): Promise<void> {
     await this.operation("delete_workbook", null, async () => {
-      const workbook = await this.findWorkbookByIdOrThrow(command.workbookId);
+      const workbook = await this.findWorkbookByIdOrThrow(input.workbookId);
       this.assertAuthorized(
-        canManageWorkbook(command.currentUser, workbook),
+        canManageWorkbook(input.currentUser, workbook),
         "You cannot delete this workbook.",
       );
       await this.deps.workbookRepository.updateWorkbook(
@@ -192,18 +200,15 @@ export class WorkbookService {
   }
 
   async validateWorkbook(
-    command: ValidateWorkbookCommand,
+    input: ValidateWorkbookCommand,
   ): Promise<WorkbookResult> {
-    return this.operation("validate_workbook", command.lineage, async () => {
-      const workbook = await this.findWorkbookByIdOrThrow(command.workbookId);
+    return this.operation("validate_workbook", input.lineage, async () => {
+      const workbook = await this.findWorkbookByIdOrThrow(input.workbookId);
       this.assertAuthorized(
-        canValidateWorkbook(command.currentUser, workbook),
+        canValidateWorkbook(input.currentUser, workbook),
         "You cannot validate this workbook.",
       );
-      return this.requestAndPersistWorkbookValidation(
-        workbook,
-        command.lineage,
-      );
+      return this.requestAndPersistWorkbookValidation(workbook, input.lineage);
     });
   }
 
@@ -250,9 +255,9 @@ export class WorkbookService {
         await outboxRepository.appendEvents([
           workbookValidationFinishedEvent({
             id: this.deps.idGenerator.eventId(),
-            workbook: updated,
             lineage,
             occurredAt: updated.updatedAt,
+            workbook: updated,
           }),
         ]);
         return updated;
@@ -279,9 +284,9 @@ export class WorkbookService {
         await outboxRepository.appendEvents([
           workbookValidationRequestedEvent({
             id: this.deps.idGenerator.eventId(),
-            workbook: updated,
             lineage,
             occurredAt: updated.updatedAt,
+            workbook: updated,
           }),
         ]);
         return updated;
@@ -310,8 +315,8 @@ export class WorkbookService {
     const file =
       await this.deps.workbookFileProvider.readWorkbookFileContentForOwnerUserId(
         {
-          ownerUserId: workbook.ownerUserId,
           fileId: workbook.fileId,
+          ownerUserId: workbook.ownerUserId,
         },
       );
     return withWorkbookTempFile(file, async (path) => {

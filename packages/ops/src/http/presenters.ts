@@ -11,7 +11,7 @@ import type {
   OpsOutboxEventResponse as OpsOutboxEventResponseDto,
   OpsOverview as OpsOverviewDto,
   OpsQueueJob as OpsQueueJobDto,
-} from "../gen/types/index.js";
+} from "../generated/types/index.js";
 
 export function presentOpsOverview(
   overview: OpsOverviewResult,
@@ -22,22 +22,22 @@ export function presentOpsOverview(
 function toOpsOverviewDto(overview: OpsOverviewResult): OpsOverviewDto {
   return {
     outbox: {
-      pendingCount: overview.outbox.pendingCount,
-      publishingCount: overview.outbox.publishingCount,
-      publishedCount: overview.outbox.publishedCount,
       failedCount: overview.outbox.failedCount,
       oldestPendingCreatedAt: presentNullableDate(
         overview.outbox.oldestPendingCreatedAt,
       ),
+      pendingCount: overview.outbox.pendingCount,
+      publishedCount: overview.outbox.publishedCount,
+      publishingCount: overview.outbox.publishingCount,
     },
     queue: {
       available: overview.queue.available,
-      pendingCount: overview.queue.pendingCount,
       completedCount: overview.queue.completedCount,
       failedCount: overview.queue.failedCount,
       oldestPendingCreatedAt: presentNullableDate(
         overview.queue.oldestPendingCreatedAt,
       ),
+      pendingCount: overview.queue.pendingCount,
     },
   };
 }
@@ -74,46 +74,46 @@ export function presentOpsQueueJobs(
 
 function toOutboxEventDto(event: OpsOutboxEventResult): OpsOutboxEventDto {
   return {
-    id: event.id,
-    eventType: event.eventType,
-    aggregateType: event.aggregateType,
     aggregateId: event.aggregateId,
-    ownerUserId: event.ownerUserId,
-    requestId: event.requestId,
-    correlationId: event.correlationId,
-    causationId: event.causationId,
-    status: event.status,
+    aggregateType: event.aggregateType,
     attempts: event.attempts,
     availableAt: presentDate(event.availableAt),
-    lockedBy: event.lockedBy,
-    lockedAt: presentNullableDate(event.lockedAt),
-    publishedAt: presentNullableDate(event.publishedAt),
-    lastError: event.lastError,
+    causationId: event.causationId,
+    correlationId: event.correlationId,
     createdAt: presentDate(event.createdAt),
-    updatedAt: presentDate(event.updatedAt),
+    eventType: event.eventType,
+    id: event.id,
+    lastError: event.lastError,
     latestReview: event.latestReview
       ? {
           action: event.latestReview.action,
-          note: event.latestReview.note,
-          actorUserId: event.latestReview.actorUserId,
           actorEmail: event.latestReview.actorEmail,
+          actorUserId: event.latestReview.actorUserId,
           createdAt: presentDate(event.latestReview.createdAt),
+          note: event.latestReview.note,
         }
       : null,
+    lockedAt: presentNullableDate(event.lockedAt),
+    lockedBy: event.lockedBy,
+    ownerUserId: event.ownerUserId,
+    publishedAt: presentNullableDate(event.publishedAt),
+    requestId: event.requestId,
+    status: event.status,
+    updatedAt: presentDate(event.updatedAt),
   };
 }
 
 function toQueueJobDto(job: OpsQueueJobResult): OpsQueueJobDto {
   return {
+    completedOn: presentNullableDate(job.completedOn),
+    createdOn: presentNullableDate(job.createdOn),
+    data: job.data,
     id: job.id,
     name: job.name,
-    state: job.state,
+    output: job.output,
     retryCount: job.retryCount,
     retryLimit: job.retryLimit,
-    data: job.data,
-    output: job.output,
-    createdOn: presentNullableDate(job.createdOn),
     startedOn: presentNullableDate(job.startedOn),
-    completedOn: presentNullableDate(job.completedOn),
+    state: job.state,
   };
 }

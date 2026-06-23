@@ -27,7 +27,7 @@ function resolveHashImport(baseDirectory: string, source: string) {
     }
   })();
 
-  if (!stat || !stat.isDirectory()) return absolutePath;
+  if (!stat?.isDirectory()) return absolutePath;
 
   const indexFile = RESOLVED_EXTENSIONS.find((extension) =>
     fs.existsSync(path.join(absolutePath, `index${extension}`)),
@@ -61,8 +61,8 @@ function isUiSourceFile(importer: string) {
 export default defineConfig({
   plugins: [
     {
-      name: "web-shared-alias",
       enforce: "pre",
+      name: "web-shared-alias",
       resolveId(source, importer) {
         if (!source.startsWith("#/") || !importer) return null;
         const baseDirectory = isUiSourceFile(importer)
@@ -74,6 +74,6 @@ export default defineConfig({
   ],
   test: {
     environment: "jsdom",
-    setupFiles: ["./src/test/setup.ts"],
+    setupFiles: ["./src/test/setup-env.ts", "./src/test/setup.ts"],
   },
 });

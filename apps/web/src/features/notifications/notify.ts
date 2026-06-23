@@ -19,12 +19,12 @@ export function notifyQuestionsGenerated(input: {
   onOpenQuestionSet(): void;
 }): void {
   toast.success("Questions generated.", {
-    id: input.toastId,
-    description: formatQuestionsGeneratedDescription(input),
     action: {
       label: "Open question set",
       onClick: input.onOpenQuestionSet,
     },
+    description: formatQuestionsGeneratedDescription(input),
+    id: input.toastId,
   });
 }
 
@@ -36,14 +36,14 @@ export function notifyQuestionGenerationFailed(
   },
 ): void {
   toast.error("Generation failed.", {
-    id: options?.toastId ?? undefined,
-    description: message ?? undefined,
     action: options?.onRetry
       ? {
           label: "Retry",
           onClick: options.onRetry,
         }
       : undefined,
+    description: message ?? undefined,
+    id: options?.toastId ?? undefined,
   });
 }
 
@@ -57,7 +57,7 @@ export function notifyQuestionGenerationStarted(input: {
 }
 
 export function notifyQuestionGenerationRetryStarted(): ToastId {
-  return toast.loading("Retrying generation...");
+  return toast.loading("Generation retry started...");
 }
 
 export function notifyQuestionGenerationRetrySucceeded(input: {
@@ -67,12 +67,12 @@ export function notifyQuestionGenerationRetrySucceeded(input: {
   onOpenQuestionSet(): void;
 }): void {
   toast.success("Questions generated.", {
-    id: input.toastId,
-    description: formatQuestionsGeneratedDescription(input),
     action: {
       label: "Open question set",
       onClick: input.onOpenQuestionSet,
     },
+    description: formatQuestionsGeneratedDescription(input),
+    id: input.toastId,
   });
 }
 
@@ -81,8 +81,8 @@ export function notifyQuestionGenerationRetryFailed(input: {
   message?: string | null;
 }): void {
   toast.error("Generation failed.", {
-    id: input.toastId,
     description: input.message ?? undefined,
+    id: input.toastId,
   });
 }
 

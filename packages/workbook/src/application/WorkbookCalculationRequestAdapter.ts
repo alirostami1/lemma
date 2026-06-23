@@ -1,8 +1,8 @@
 import {
-  assertWorkbookIsUsable,
-  createWorkbookCalculation,
+  createInitialWorkbookCalculation,
+  type WorkbookCalculation,
 } from "../domain/index.js";
-import { WorkbookNotFoundError } from "./errors.js";
+import { InvalidWorkbookCalculationRequestError } from "./errors.js";
 import type {
   Clock,
   IdGenerator,
@@ -37,26 +37,21 @@ export class WorkbookCalculationRequestAdapter
           input.correlationId,
         )
       : null;
-    if (existing) {
-      return { workbookCalculationId: existing.id };
+    const idempotent = resolveIdempotentCalculationRequestByCorrelationId({
+      correlationId: input.correlationId,
+      existing,
+    });
+    if (idempotent) {
+      return idempotent;
     }
 
-    const workbook = await this.deps.workbookRepository.findWorkbookById(
-      input.workbookId,
-    );
-    if (!workbook) {
-      throw new WorkbookNotFoundError();
-    }
-    assertWorkbookIsUsable(workbook);
-
-    const calculation = createWorkbookCalculation(
+    const calculation = createInitialWorkbookCalculation(
       {
-        id: this.deps.idGenerator.workbookCalculationId(),
-        ownerUserId: workbook.ownerUserId,
+        correlationId: input.correlationId ?? null,
         createdByUserId: input.createdByUserId,
-        workbookId: workbook.id,
+        id: this.deps.idGenerator.workbookCalculationId(),
+        ownerUserId: input.ownerUserId,
         requestedCount: input.requestedCount,
-        correlationId: input.correlationId,
       },
       this.deps.clock.now(),
     );
@@ -64,14 +59,17 @@ export class WorkbookCalculationRequestAdapter
     const created = await this.deps.workbookTransaction.transaction(
       async ({ workbookRepository, outboxRepository }) => {
         const persisted =
-          await workbookRepository.createWorkbookCalculation(calculation);
+          await workbookRepository.createWorkbookCalculationWithSources({
+            calculation,
+            sources,
+          });
         await outboxRepository.appendEvents([
           workbookCalculationRequestedEvent({
-            id: this.deps.idGenerator.eventId(),
             calculation: persisted,
-            sources,
+            id: this.deps.idGenerator.eventId(),
             lineage: input.lineage,
             occurredAt: persisted.createdAt,
+            sources,
           }),
         ]);
         return persisted;
@@ -80,4 +78,23 @@ export class WorkbookCalculationRequestAdapter
 
     return { workbookCalculationId: created.id };
   }
+}
+
+export function resolveIdempotentCalculationRequestByCorrelationId(input: {
+  correlationId: string | null | undefined;
+  existing: WorkbookCalculation | null;
+}): { workbookCalculationId: WorkbookCalculation["id"] } | null {
+  if (!input.existing) {
+    return null;
+  }
+  if (
+    input.existing.status === "queued" ||
+    input.existing.status === "running" ||
+    input.existing.status === "succeeded"
+  ) {
+    return { workbookCalculationId: input.existing.id };
+  }
+  throw new InvalidWorkbookCalculationRequestError(
+    `Workbook calculation correlationId ${input.correlationId} already belongs to ${input.existing.status} calculation ${input.existing.id}. Create a replacement operation with a new correlationId.`,
+  );
 }

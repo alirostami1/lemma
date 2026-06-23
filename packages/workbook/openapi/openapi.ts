@@ -16,6 +16,7 @@ import {
   schemaRef,
   type Tag,
   tagRef,
+  UUID_V7_OPENAPI_PATTERN,
   unauthorizedResponse,
   uuidV7Param,
   uuidV7StringSchemaObject,
@@ -50,10 +51,15 @@ type QueryParameter = {
   schema: QuerySchema;
 };
 
+const nullableUuid = {
+  pattern: UUID_V7_OPENAPI_PATTERN,
+  type: ["string", "null"],
+} satisfies OpenApiSchema;
+
 const tag: Tag = {
-  name: "Workbook",
   description:
     "Workbook import, validation, calculation, snapshot, and engine health operations.",
+  name: "Workbook",
 };
 
 const workbookIdParam: Param = {
@@ -71,17 +77,23 @@ const snapshotIdParam: Param = {
 const sheetIndexParam: Param = {
   name: "sheetIndex",
   schema: {
-    name: "sheetIndex",
     in: "path",
+    name: "sheetIndex",
     required: true,
-    schema: { type: "string", pattern: "^[0-9]+$" },
+    schema: { pattern: "^[0-9]+$", type: "string" },
   },
 };
 
 const inspectionSchema: Schema = {
   name: "WorkbookInspection",
   schema: {
-    type: "object",
+    properties: {
+      cellCount: { minimum: 0, type: "integer" },
+      forbiddenFeatureFindings: { items: { type: "string" }, type: "array" },
+      formulaCount: { minimum: 0, type: "integer" },
+      libreOfficeVersion: { type: ["string", "null"] },
+      sheetCount: { minimum: 0, type: "integer" },
+    },
     required: [
       "sheetCount",
       "cellCount",
@@ -89,20 +101,36 @@ const inspectionSchema: Schema = {
       "forbiddenFeatureFindings",
       "libreOfficeVersion",
     ],
-    properties: {
-      sheetCount: { type: "integer", minimum: 0 },
-      cellCount: { type: "integer", minimum: 0 },
-      formulaCount: { type: "integer", minimum: 0 },
-      forbiddenFeatureFindings: { type: "array", items: { type: "string" } },
-      libreOfficeVersion: { type: ["string", "null"] },
-    },
+    type: "object",
   },
 };
 
 const workbookSchema: Schema = {
   name: "Workbook",
   schema: {
-    type: "object",
+    properties: {
+      checksumSha256: { pattern: "^[A-Fa-f0-9]{64}$", type: "string" },
+      createdAt: { format: "date-time", type: "string" },
+      createdByUserId: uuidV7StringSchemaObject(),
+      engine: { enum: ["cached", "libreoffice"], type: "string" },
+      engineVersion: { type: ["string", "null"] },
+      fileId: uuidV7StringSchemaObject(),
+      id: uuidV7StringSchemaObject(),
+      inspection: { anyOf: [schemaRef(inspectionSchema), { type: "null" }] },
+      name: {
+        maxLength: MAX_WORKBOOK_NAME_LENGTH,
+        minLength: 1,
+        type: "string",
+      },
+      originalName: { minLength: 1, type: "string" },
+      ownerUserId: uuidV7StringSchemaObject(),
+      status: {
+        enum: [...WORKBOOK_STATUS_ACCEPTED_VALUES],
+        type: "string",
+      },
+      updatedAt: { format: "date-time", type: "string" },
+      validationError: { type: ["string", "null"] },
+    },
     required: [
       "id",
       "ownerUserId",
@@ -119,44 +147,45 @@ const workbookSchema: Schema = {
       "createdAt",
       "updatedAt",
     ],
-    properties: {
-      id: uuidV7StringSchemaObject(),
-      ownerUserId: uuidV7StringSchemaObject(),
-      createdByUserId: uuidV7StringSchemaObject(),
-      name: {
-        type: "string",
-        minLength: 1,
-        maxLength: MAX_WORKBOOK_NAME_LENGTH,
-      },
-      fileId: uuidV7StringSchemaObject(),
-      checksumSha256: { type: "string", pattern: "^[A-Fa-f0-9]{64}$" },
-      originalName: { type: "string", minLength: 1 },
-      engine: { type: "string", enum: ["cached", "libreoffice"] },
-      engineVersion: { type: ["string", "null"] },
-      status: {
-        type: "string",
-        enum: WORKBOOK_STATUS_ACCEPTED_VALUES as unknown as string[],
-      },
-      inspection: { anyOf: [schemaRef(inspectionSchema), { type: "null" }] },
-      validationError: { type: ["string", "null"] },
-      createdAt: { type: "string", format: "date-time" },
-      updatedAt: { type: "string", format: "date-time" },
-    },
+    type: "object",
   },
 };
 
 const calculationSchema: Schema = {
   name: "WorkbookCalculation",
   schema: {
-    type: "object",
+    properties: {
+      attemptNumber: { minimum: 1, type: "integer" },
+      attempts: { minimum: 0, type: "integer" },
+      correlationId: { type: ["string", "null"] },
+      createdAt: { format: "date-time", type: "string" },
+      createdByUserId: uuidV7StringSchemaObject(),
+      errorMessage: { type: ["string", "null"] },
+      finishedAt: { format: "date-time", type: ["string", "null"] },
+      id: uuidV7StringSchemaObject(),
+      ownerUserId: uuidV7StringSchemaObject(),
+      requestedCount: {
+        maximum: MAX_WORKBOOK_CALCULATION_COUNT,
+        minimum: 1,
+        type: "integer",
+      },
+      retryOfCalculationId: nullableUuid,
+      startedAt: { format: "date-time", type: ["string", "null"] },
+      status: {
+        enum: [...WORKBOOK_CALCULATION_STATUS_ACCEPTED_VALUES],
+        type: "string",
+      },
+      updatedAt: { format: "date-time", type: "string" },
+    },
     required: [
       "id",
       "ownerUserId",
       "createdByUserId",
-      "workbookId",
       "requestedCount",
       "status",
       "correlationId",
+      "retryOfCalculationId",
+      "attemptNumber",
       "errorMessage",
       "attempts",
       "startedAt",
@@ -164,69 +193,61 @@ const calculationSchema: Schema = {
       "createdAt",
       "updatedAt",
     ],
-    properties: {
-      id: uuidV7StringSchemaObject(),
-      ownerUserId: uuidV7StringSchemaObject(),
-      createdByUserId: uuidV7StringSchemaObject(),
-      workbookId: uuidV7StringSchemaObject(),
-      requestedCount: {
-        type: "integer",
-        minimum: 1,
-        maximum: MAX_WORKBOOK_CALCULATION_COUNT,
-      },
-      status: {
-        type: "string",
-        enum: WORKBOOK_CALCULATION_STATUS_ACCEPTED_VALUES as unknown as string[],
-      },
-      correlationId: { type: ["string", "null"] },
-      errorMessage: { type: ["string", "null"] },
-      attempts: { type: "integer", minimum: 0 },
-      startedAt: { type: ["string", "null"], format: "date-time" },
-      finishedAt: { type: ["string", "null"], format: "date-time" },
-      createdAt: { type: "string", format: "date-time" },
-      updatedAt: { type: "string", format: "date-time" },
-    },
+    type: "object",
   },
 };
 
 const snapshotSchema: Schema = {
   name: "WorkbookSnapshot",
   schema: {
-    type: "object",
+    properties: {
+      calculationId: uuidV7StringSchemaObject(),
+      createdAt: { format: "date-time", type: "string" },
+      id: uuidV7StringSchemaObject(),
+      questionIndex: { minimum: 0, type: "integer" },
+      snapshotIndex: { minimum: 0, type: "integer" },
+      sourceId: {
+        pattern: "^[A-Za-z][A-Za-z0-9_-]*$",
+        type: "string",
+      },
+      workbookId: uuidV7StringSchemaObject(),
+    },
     required: [
       "id",
+      "sourceId",
       "workbookId",
       "calculationId",
+      "questionIndex",
       "snapshotIndex",
       "createdAt",
     ],
-    properties: {
-      id: uuidV7StringSchemaObject(),
-      workbookId: uuidV7StringSchemaObject(),
-      calculationId: uuidV7StringSchemaObject(),
-      snapshotIndex: { type: "integer", minimum: 0 },
-      createdAt: { type: "string", format: "date-time" },
-    },
+    type: "object",
   },
 };
 
 const snapshotMetadataSchema: Schema = {
   name: "WorkbookSnapshotMetadata",
   schema: {
-    type: "object",
-    required: ["status", "sheetCount", "cellCount"],
     properties: {
-      status: { type: "string", enum: ["ready"] },
-      sheetCount: { type: "integer", minimum: 0 },
-      cellCount: { type: "integer", minimum: 0 },
+      cellCount: { minimum: 0, type: "integer" },
+      sheetCount: { minimum: 0, type: "integer" },
+      status: { enum: ["ready"], type: "string" },
     },
+    required: ["status", "sheetCount", "cellCount"],
+    type: "object",
   },
 };
 
 const snapshotSheetSchema: Schema = {
   name: "WorkbookSnapshotSheet",
   schema: {
-    type: "object",
+    properties: {
+      columnCount: { minimum: 0, type: "integer" },
+      name: { minLength: 1, type: "string" },
+      nonEmptyCellCount: { minimum: 0, type: "integer" },
+      rowCount: { minimum: 0, type: "integer" },
+      sheetIndex: { minimum: 0, type: "integer" },
+    },
     required: [
       "sheetIndex",
       "name",
@@ -234,20 +255,42 @@ const snapshotSheetSchema: Schema = {
       "columnCount",
       "nonEmptyCellCount",
     ],
-    properties: {
-      sheetIndex: { type: "integer", minimum: 0 },
-      name: { type: "string", minLength: 1 },
-      rowCount: { type: "integer", minimum: 0 },
-      columnCount: { type: "integer", minimum: 0 },
-      nonEmptyCellCount: { type: "integer", minimum: 0 },
-    },
+    type: "object",
   },
 };
 
 const snapshotCellsSchema: Schema = {
   name: "WorkbookSnapshotCells",
   schema: {
-    type: "object",
+    properties: {
+      cellTypes: {
+        items: {
+          items: {
+            enum: [...WORKBOOK_CELL_TYPE_ACCEPTED_VALUES],
+            type: "string",
+          },
+          maxItems: MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_COLUMNS,
+          type: "array",
+        },
+        maxItems: MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_ROWS,
+        type: "array",
+      },
+      columnCount: { minimum: 0, type: "integer" },
+      rowCount: { minimum: 0, type: "integer" },
+      rows: {
+        items: {
+          items: { type: "string" },
+          maxItems: MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_COLUMNS,
+          type: "array",
+        },
+        maxItems: MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_ROWS,
+        type: "array",
+      },
+      sheetIndex: { minimum: 0, type: "integer" },
+      sheetName: { minLength: 1, type: "string" },
+      startColumn: { minimum: 1, type: "integer" },
+      startRow: { minimum: 1, type: "integer" },
+    },
     required: [
       "sheetIndex",
       "sheetName",
@@ -258,35 +301,7 @@ const snapshotCellsSchema: Schema = {
       "rows",
       "cellTypes",
     ],
-    properties: {
-      sheetIndex: { type: "integer", minimum: 0 },
-      sheetName: { type: "string", minLength: 1 },
-      startRow: { type: "integer", minimum: 1 },
-      startColumn: { type: "integer", minimum: 1 },
-      rowCount: { type: "integer", minimum: 0 },
-      columnCount: { type: "integer", minimum: 0 },
-      rows: {
-        type: "array",
-        maxItems: MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_ROWS,
-        items: {
-          type: "array",
-          maxItems: MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_COLUMNS,
-          items: { type: "string" },
-        },
-      },
-      cellTypes: {
-        type: "array",
-        maxItems: MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_ROWS,
-        items: {
-          type: "array",
-          maxItems: MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_COLUMNS,
-          items: {
-            type: "string",
-            enum: WORKBOOK_CELL_TYPE_ACCEPTED_VALUES as unknown as string[],
-          },
-        },
-      },
-    },
+    type: "object",
   },
 };
 
@@ -296,13 +311,13 @@ const snapshotRangeSchema: Schema = {
     allOf: [
       schemaRef(snapshotCellsSchema),
       {
-        type: "object",
-        required: ["ref", "startCellAddress", "endCellAddress"],
         properties: {
-          ref: { type: "string", minLength: 1 },
-          startCellAddress: { type: "string", minLength: 1 },
-          endCellAddress: { type: "string", minLength: 1 },
+          endCellAddress: { minLength: 1, type: "string" },
+          ref: { minLength: 1, type: "string" },
+          startCellAddress: { minLength: 1, type: "string" },
         },
+        required: ["ref", "startCellAddress", "endCellAddress"],
+        type: "object",
       },
     ],
   },
@@ -311,128 +326,95 @@ const snapshotRangeSchema: Schema = {
 const snapshotRangeBatchItemSchema: Schema = {
   name: "WorkbookSnapshotRangeBatchItem",
   schema: {
-    type: "object",
-    required: ["ref", "status", "range", "errorMessage"],
     properties: {
-      ref: { type: "string", minLength: 1 },
-      status: { type: "string", enum: ["ok", "error"] },
+      errorMessage: { type: ["string", "null"] },
       range: {
         anyOf: [schemaRef(snapshotRangeSchema), { type: "null" }],
       },
-      errorMessage: { type: ["string", "null"] },
+      ref: { minLength: 1, type: "string" },
+      status: { enum: ["ok", "error"], type: "string" },
     },
+    required: ["ref", "status", "range", "errorMessage"],
+    type: "object",
   },
 };
 
 const snapshotRangeBatchSchema: Schema = {
   name: "WorkbookSnapshotRangeBatch",
   schema: {
-    type: "object",
-    required: ["ranges"],
     properties: {
       ranges: {
-        type: "array",
-        maxItems: MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_REFS,
         items: schemaRef(snapshotRangeBatchItemSchema),
+        maxItems: MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_REFS,
+        type: "array",
       },
     },
+    required: ["ranges"],
+    type: "object",
   },
 };
 
 const healthSchema: Schema = {
   name: "WorkbookEngineHealth",
   schema: {
-    type: "object",
-    required: ["ok", "engine", "version"],
     properties: {
+      engine: { enum: ["cached", "libreoffice"], type: "string" },
       ok: { type: "boolean" },
-      engine: { type: "string", enum: ["cached", "libreoffice"] },
       version: { type: ["string", "null"] },
     },
+    required: ["ok", "engine", "version"],
+    type: "object",
   },
 };
 
 const createWorkbookRequestSchema = named("CreateWorkbookRequest", {
-  type: "object",
   additionalProperties: false,
-  required: ["name", "fileId"],
   properties: {
-    name: { type: "string", minLength: 1, maxLength: MAX_WORKBOOK_NAME_LENGTH },
     fileId: uuidV7StringSchemaObject(),
+    name: { maxLength: MAX_WORKBOOK_NAME_LENGTH, minLength: 1, type: "string" },
   },
+  required: ["name", "fileId"],
+  type: "object",
 });
 const updateWorkbookRequestSchema = named("UpdateWorkbookRequest", {
-  type: "object",
   additionalProperties: false,
   minProperties: 1,
   properties: {
-    name: { type: "string", minLength: 1, maxLength: MAX_WORKBOOK_NAME_LENGTH },
-    status: { type: "string", enum: ["archived"] },
+    name: { maxLength: MAX_WORKBOOK_NAME_LENGTH, minLength: 1, type: "string" },
+    status: { enum: ["archived"], type: "string" },
   },
+  type: "object",
 });
 const createCalculationRequestSchema = named(
   "CreateWorkbookCalculationRequest",
   {
-    type: "object",
     additionalProperties: false,
-    required: ["sources", "requestedCount"],
     properties: {
-      sources: {
-        type: "array",
-        minItems: 1,
-        items: {
-          type: "object",
-          additionalProperties: false,
-          required: ["sourceId", "workbookId"],
-          properties: {
-            sourceId: { type: "string" },
-            workbookId: uuidV7StringSchemaObject(),
-          },
-        },
-      },
-      requestedCount: {
-        type: "integer",
-        minimum: 1,
-        maximum: MAX_WORKBOOK_CALCULATION_COUNT,
-      },
       correlationId: { type: ["string", "null"] },
+      requestedCount: {
+        maximum: MAX_WORKBOOK_CALCULATION_COUNT,
+        minimum: 1,
+        type: "integer",
+      },
     },
+    required: ["requestedCount"],
+    type: "object",
   },
 );
-const retryCalculationRequestSchema = named("RetryWorkbookCalculationRequest", {
-  type: "object",
-  additionalProperties: false,
-  required: ["sources"],
-  properties: {
-    sources: {
-      type: "array",
-      minItems: 1,
-      items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["sourceId", "workbookId"],
-        properties: {
-          sourceId: { type: "string" },
-          workbookId: uuidV7StringSchemaObject(),
-        },
-      },
-    },
-  },
-});
 const getSnapshotRangeBatchRequestSchema = named(
   "GetWorkbookSnapshotRangeBatchRequest",
   {
-    type: "object",
     additionalProperties: false,
-    required: ["refs"],
     properties: {
       refs: {
-        type: "array",
-        minItems: 1,
+        items: { minLength: 1, type: "string" },
         maxItems: MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_REFS,
-        items: { type: "string", minLength: 1 },
+        minItems: 1,
+        type: "array",
       },
     },
+    required: ["refs"],
+    type: "object",
   },
 );
 const workbookResponseSchema = named(
@@ -480,9 +462,9 @@ const snapshotsResponseSchema = named(
   listWith("workbookSnapshots", schemaRef(snapshotSchema)),
 );
 const valueResponseSchema = named("WorkbookSnapshotValueResponse", {
-  type: "object",
-  required: ["value"],
   properties: { value: {} },
+  required: ["value"],
+  type: "object",
 });
 const healthResponseSchema = named(
   "WorkbookEngineHealthResponse",
@@ -509,7 +491,6 @@ const schemas = [
   createWorkbookRequestSchema,
   updateWorkbookRequestSchema,
   createCalculationRequestSchema,
-  retryCalculationRequestSchema,
   getSnapshotRangeBatchRequestSchema,
   workbookResponseSchema,
   workbooksResponseSchema,
@@ -540,6 +521,168 @@ const params = [
 ];
 
 const paths: Paths = {
+  "/workbook-calculations/{workbookCalculationId}": {
+    get: op(
+      "getWorkbookCalculation",
+      "Get workbook calculation",
+      "200",
+      calculationResponseSchema,
+    ),
+    parameters: [paramRef(calculationIdParam)],
+  },
+  "/workbook-calculations/{workbookCalculationId}/cancellations": {
+    parameters: [paramRef(calculationIdParam)],
+    post: opNoBody(
+      "cancelWorkbookCalculation",
+      "Cancel workbook calculation",
+      "204",
+    ),
+  },
+  "/workbook-calculations/{workbookCalculationId}/retry": {
+    parameters: [paramRef(calculationIdParam)],
+    post: op(
+      "retryWorkbookCalculation",
+      "Retry workbook calculation",
+      "201",
+      calculationResponseSchema,
+    ),
+  },
+  "/workbook-calculations/{workbookCalculationId}/snapshots": {
+    get: op(
+      "listWorkbookSnapshots",
+      "List workbook snapshots",
+      "200",
+      snapshotsResponseSchema,
+      undefined,
+      [
+        query("limit", { maximum: 100, minimum: 1, type: "integer" }),
+        query("cursor", { type: "string" }),
+      ],
+    ),
+    parameters: [paramRef(calculationIdParam)],
+  },
+  "/workbook-engine/health": {
+    get: op(
+      "getWorkbookEngineHealth",
+      "Get workbook engine health",
+      "200",
+      healthResponseSchema,
+    ),
+  },
+  "/workbook-snapshots/{workbookSnapshotId}": {
+    get: op(
+      "getWorkbookSnapshot",
+      "Get workbook snapshot",
+      "200",
+      snapshotResponseSchema,
+    ),
+    parameters: [paramRef(snapshotIdParam)],
+  },
+  "/workbook-snapshots/{workbookSnapshotId}/metadata": {
+    get: op(
+      "getWorkbookSnapshotMetadata",
+      "Get workbook snapshot metadata",
+      "200",
+      snapshotMetadataResponseSchema,
+    ),
+    parameters: [paramRef(snapshotIdParam)],
+  },
+  "/workbook-snapshots/{workbookSnapshotId}/range": {
+    get: op(
+      "getWorkbookSnapshotRange",
+      "Get workbook snapshot range",
+      "200",
+      snapshotRangeResponseSchema,
+      undefined,
+      [
+        {
+          in: "query",
+          name: "ref",
+          required: true,
+          schema: { minLength: 1, type: "string" },
+        },
+      ],
+    ),
+    parameters: [paramRef(snapshotIdParam)],
+  },
+  "/workbook-snapshots/{workbookSnapshotId}/ranges": {
+    parameters: [paramRef(snapshotIdParam)],
+    post: op(
+      "getWorkbookSnapshotRangeBatch",
+      "Get workbook snapshot ranges",
+      "200",
+      snapshotRangeBatchResponseSchema,
+      getSnapshotRangeBatchRequestSchema,
+    ),
+  },
+  "/workbook-snapshots/{workbookSnapshotId}/sheets": {
+    get: op(
+      "listWorkbookSnapshotSheets",
+      "List workbook snapshot sheets",
+      "200",
+      snapshotSheetsResponseSchema,
+      undefined,
+      [
+        query("limit", {
+          maximum: MAX_WORKBOOK_SNAPSHOT_SHEET_PAGE_SIZE,
+          minimum: 1,
+          type: "integer",
+        }),
+        query("cursor", { type: "string" }),
+      ],
+    ),
+    parameters: [paramRef(snapshotIdParam)],
+  },
+  "/workbook-snapshots/{workbookSnapshotId}/sheets/{sheetIndex}/cells": {
+    get: op(
+      "getWorkbookSnapshotCells",
+      "Get workbook snapshot cells",
+      "200",
+      snapshotCellsResponseSchema,
+      undefined,
+      [
+        query("startRow", { minimum: 1, type: "integer" }, true),
+        query("startColumn", { minimum: 1, type: "integer" }, true),
+        query(
+          "rowCount",
+          {
+            maximum: MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_ROWS,
+            minimum: 1,
+            type: "integer",
+          },
+          true,
+        ),
+        query(
+          "columnCount",
+          {
+            maximum: MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_COLUMNS,
+            minimum: 1,
+            type: "integer",
+          },
+          true,
+        ),
+      ],
+    ),
+    parameters: [paramRef(snapshotIdParam), paramRef(sheetIndexParam)],
+  },
+  "/workbook-snapshots/{workbookSnapshotId}/values": {
+    get: op(
+      "resolveWorkbookSnapshotValue",
+      "Resolve workbook snapshot value",
+      "200",
+      valueResponseSchema,
+      undefined,
+      [
+        {
+          in: "query",
+          name: "ref",
+          required: true,
+          schema: { minLength: 1, type: "string" },
+        },
+      ],
+    ),
+    parameters: [paramRef(snapshotIdParam)],
+  },
   "/workbooks": {
     get: op(
       "listWorkbooks",
@@ -548,11 +691,11 @@ const paths: Paths = {
       workbooksResponseSchema,
       undefined,
       [
-        query("limit", { type: "integer", minimum: 1, maximum: 100 }),
+        query("limit", { maximum: 100, minimum: 1, type: "integer" }),
         query("cursor", { type: "string" }),
         query("status", {
+          enum: [...WORKBOOK_STATUS_ACCEPTED_VALUES],
           type: "string",
-          enum: WORKBOOK_STATUS_ACCEPTED_VALUES as unknown as string[],
         }),
       ],
     ),
@@ -565,8 +708,9 @@ const paths: Paths = {
     ),
   },
   "/workbooks/{workbookId}": {
-    parameters: [paramRef(workbookIdParam)],
+    delete: opNoBody("deleteWorkbook", "Delete workbook", "204"),
     get: op("getWorkbook", "Get workbook", "200", workbookResponseSchema),
+    parameters: [paramRef(workbookIdParam)],
     patch: op(
       "updateWorkbook",
       "Update workbook",
@@ -574,7 +718,31 @@ const paths: Paths = {
       workbookResponseSchema,
       updateWorkbookRequestSchema,
     ),
-    delete: opNoBody("deleteWorkbook", "Delete workbook", "204"),
+  },
+  "/workbooks/{workbookId}/calculations": {
+    get: op(
+      "listWorkbookCalculations",
+      "List workbook calculations",
+      "200",
+      calculationsResponseSchema,
+      undefined,
+      [
+        query("limit", { maximum: 100, minimum: 1, type: "integer" }),
+        query("cursor", { type: "string" }),
+        query("status", {
+          enum: [...WORKBOOK_CALCULATION_STATUS_ACCEPTED_VALUES],
+          type: "string",
+        }),
+      ],
+    ),
+    parameters: [paramRef(workbookIdParam)],
+    post: op(
+      "createWorkbookCalculation",
+      "Create workbook calculation",
+      "201",
+      calculationResponseSchema,
+      createCalculationRequestSchema,
+    ),
   },
   "/workbooks/{workbookId}/validations": {
     parameters: [paramRef(workbookIdParam)],
@@ -585,217 +753,29 @@ const paths: Paths = {
       workbookResponseSchema,
     ),
   },
-  "/workbooks/{workbookId}/calculations": {
-    parameters: [paramRef(workbookIdParam)],
-    get: op(
-      "listWorkbookCalculations",
-      "List workbook calculations",
-      "200",
-      calculationsResponseSchema,
-      undefined,
-      [
-        query("limit", { type: "integer", minimum: 1, maximum: 100 }),
-        query("cursor", { type: "string" }),
-        query("status", {
-          type: "string",
-          enum: WORKBOOK_CALCULATION_STATUS_ACCEPTED_VALUES as unknown as string[],
-        }),
-      ],
-    ),
-    post: op(
-      "createWorkbookCalculation",
-      "Create workbook calculation",
-      "201",
-      calculationResponseSchema,
-      createCalculationRequestSchema,
-    ),
-  },
-  "/workbook-calculations/{workbookCalculationId}": {
-    parameters: [paramRef(calculationIdParam)],
-    get: op(
-      "getWorkbookCalculation",
-      "Get workbook calculation",
-      "200",
-      calculationResponseSchema,
-    ),
-  },
-  "/workbook-calculations/{workbookCalculationId}/cancellations": {
-    parameters: [paramRef(calculationIdParam)],
-    post: opNoBody(
-      "cancelWorkbookCalculation",
-      "Cancel workbook calculation",
-      "204",
-    ),
-  },
-  "/workbook-calculations/{workbookCalculationId}/retries": {
-    parameters: [paramRef(calculationIdParam)],
-    post: op(
-      "retryWorkbookCalculation",
-      "Retry workbook calculation",
-      "201",
-      calculationResponseSchema,
-      retryCalculationRequestSchema,
-    ),
-  },
-  "/workbook-calculations/{workbookCalculationId}/snapshots": {
-    parameters: [paramRef(calculationIdParam)],
-    get: op(
-      "listWorkbookSnapshots",
-      "List workbook snapshots",
-      "200",
-      snapshotsResponseSchema,
-      undefined,
-      [
-        query("limit", { type: "integer", minimum: 1, maximum: 100 }),
-        query("cursor", { type: "string" }),
-      ],
-    ),
-  },
-  "/workbook-snapshots/{workbookSnapshotId}": {
-    parameters: [paramRef(snapshotIdParam)],
-    get: op(
-      "getWorkbookSnapshot",
-      "Get workbook snapshot",
-      "200",
-      snapshotResponseSchema,
-    ),
-  },
-  "/workbook-snapshots/{workbookSnapshotId}/metadata": {
-    parameters: [paramRef(snapshotIdParam)],
-    get: op(
-      "getWorkbookSnapshotMetadata",
-      "Get workbook snapshot metadata",
-      "200",
-      snapshotMetadataResponseSchema,
-    ),
-  },
-  "/workbook-snapshots/{workbookSnapshotId}/sheets": {
-    parameters: [paramRef(snapshotIdParam)],
-    get: op(
-      "listWorkbookSnapshotSheets",
-      "List workbook snapshot sheets",
-      "200",
-      snapshotSheetsResponseSchema,
-      undefined,
-      [
-        query("limit", {
-          type: "integer",
-          minimum: 1,
-          maximum: MAX_WORKBOOK_SNAPSHOT_SHEET_PAGE_SIZE,
-        }),
-        query("cursor", { type: "string" }),
-      ],
-    ),
-  },
-  "/workbook-snapshots/{workbookSnapshotId}/sheets/{sheetIndex}/cells": {
-    parameters: [paramRef(snapshotIdParam), paramRef(sheetIndexParam)],
-    get: op(
-      "getWorkbookSnapshotCells",
-      "Get workbook snapshot cells",
-      "200",
-      snapshotCellsResponseSchema,
-      undefined,
-      [
-        query("startRow", { type: "integer", minimum: 1 }, true),
-        query("startColumn", { type: "integer", minimum: 1 }, true),
-        query(
-          "rowCount",
-          {
-            type: "integer",
-            minimum: 1,
-            maximum: MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_ROWS,
-          },
-          true,
-        ),
-        query(
-          "columnCount",
-          {
-            type: "integer",
-            minimum: 1,
-            maximum: MAX_WORKBOOK_SNAPSHOT_CELL_WINDOW_COLUMNS,
-          },
-          true,
-        ),
-      ],
-    ),
-  },
-  "/workbook-snapshots/{workbookSnapshotId}/range": {
-    parameters: [paramRef(snapshotIdParam)],
-    get: op(
-      "getWorkbookSnapshotRange",
-      "Get workbook snapshot range",
-      "200",
-      snapshotRangeResponseSchema,
-      undefined,
-      [
-        {
-          name: "ref",
-          in: "query",
-          required: true,
-          schema: { type: "string", minLength: 1 },
-        },
-      ],
-    ),
-  },
-  "/workbook-snapshots/{workbookSnapshotId}/ranges": {
-    parameters: [paramRef(snapshotIdParam)],
-    post: op(
-      "getWorkbookSnapshotRangeBatch",
-      "Get workbook snapshot ranges",
-      "200",
-      snapshotRangeBatchResponseSchema,
-      getSnapshotRangeBatchRequestSchema,
-    ),
-  },
-  "/workbook-snapshots/{workbookSnapshotId}/values": {
-    parameters: [paramRef(snapshotIdParam)],
-    get: op(
-      "resolveWorkbookSnapshotValue",
-      "Resolve workbook snapshot value",
-      "200",
-      valueResponseSchema,
-      undefined,
-      [
-        {
-          name: "ref",
-          in: "query",
-          required: true,
-          schema: { type: "string", minLength: 1 },
-        },
-      ],
-    ),
-  },
-  "/workbook-engine/health": {
-    get: op(
-      "getWorkbookEngineHealth",
-      "Get workbook engine health",
-      "200",
-      healthResponseSchema,
-    ),
-  },
 };
 
 export const openapi: OpenAPI = {
-  openapi: "3.1.0",
-  info: { title: "Lemma Workbook API", version: "0.1.0" },
-  tags: [tag],
   components: {
-    securitySchemes: Object.fromEntries([
-      [keycloakSecurityScheme.name, keycloakSecurityScheme.securitySchema],
-    ]),
     parameters: Object.fromEntries(
       params.map((param) => [param.name, param.schema]),
     ),
-    schemas: Object.fromEntries([
-      ...schemas.map((schema) => [schema.name, schema.schema]),
-      [errorResponseSchema.name, errorResponseSchema.schema],
-    ]),
     responses: Object.fromEntries([
       ...responses.map((resp) => [resp.name, resp.schema]),
       [unauthorizedResponse.name, unauthorizedResponse.schema],
     ]),
+    schemas: Object.fromEntries([
+      ...schemas.map((schema) => [schema.name, schema.schema]),
+      [errorResponseSchema.name, errorResponseSchema.schema],
+    ]),
+    securitySchemes: Object.fromEntries([
+      [keycloakSecurityScheme.name, keycloakSecurityScheme.securitySchema],
+    ]),
   },
+  info: { title: "Lemma Workbook API", version: "0.1.0" },
+  openapi: "3.1.0",
   paths,
+  tags: [tag],
 };
 
 function named(name: string, schema: Schema["schema"]): Schema {
@@ -806,30 +786,30 @@ function response(name: string, description: string): Response {
   return {
     name,
     schema: {
-      description,
       content: {
         "application/json": { schema: schemaRef(errorResponseSchema) },
       },
+      description,
     },
   };
 }
 
 function objectWith(name: string, schema: SchemaOrRef): OpenApiSchema {
   return {
-    type: "object",
-    required: [name],
     properties: { [name]: schema },
+    required: [name],
+    type: "object",
   } satisfies OpenApiSchema;
 }
 
 function listWith(name: string, schema: SchemaOrRef): OpenApiSchema {
   return {
-    type: "object",
-    required: [name, "nextCursor"],
     properties: {
-      [name]: { type: "array", items: schema },
+      [name]: { items: schema, type: "array" },
       nextCursor: { type: ["string", "null"] },
     },
+    required: [name, "nextCursor"],
+    type: "object",
   } satisfies OpenApiSchema;
 }
 
@@ -838,7 +818,7 @@ function query(
   schema: QuerySchema,
   required = false,
 ): QueryParameter {
-  return { name, in: "query", required, schema };
+  return { in: "query", name, required, schema };
 }
 
 function op(
@@ -850,27 +830,24 @@ function op(
   parameters?: QueryParameter[],
 ) {
   return {
-    tags: [tagRef(tag)],
-    summary,
     operationId,
-    security: [keycloakSecurityRequirement],
     parameters,
     requestBody: requestSchema
       ? {
-          required: true,
           content: { "application/json": { schema: schemaRef(requestSchema) } },
+          required: true,
         }
       : undefined,
     responses: responseMap(status, responseSchema),
+    security: [keycloakSecurityRequirement],
+    summary,
+    tags: [tagRef(tag)],
   };
 }
 
 function opNoBody(operationId: string, summary: string, status: string) {
   return {
-    tags: [tagRef(tag)],
-    summary,
     operationId,
-    security: [keycloakSecurityRequirement],
     responses: {
       [status]: { description: summary },
       "401": responseRef(unauthorizedResponse),
@@ -878,14 +855,17 @@ function opNoBody(operationId: string, summary: string, status: string) {
       "404": responseRef(notFoundResponse),
       "409": responseRef(conflictResponse),
     },
+    security: [keycloakSecurityRequirement],
+    summary,
+    tags: [tagRef(tag)],
   };
 }
 
 function responseMap(status: string, responseSchema: Schema) {
   return {
     [status]: {
-      description: responseSchema.name,
       content: { "application/json": { schema: schemaRef(responseSchema) } },
+      description: responseSchema.name,
     },
     "400": responseRef(badRequestResponse),
     "401": responseRef(unauthorizedResponse),

@@ -33,11 +33,11 @@ export const validationHook: ValidationHook = (result, c) => {
       {
         error: {
           code: "VALIDATION_ERROR",
-          message: "Request validation failed.",
           details: result.error.issues.map((issue) => ({
-            path: issue.path.join("."),
             message: issue.message,
+            path: issue.path.join("."),
           })),
+          message: "Request validation failed.",
         },
       } satisfies HttpErrorResponse,
       400,
@@ -51,9 +51,9 @@ export function createHttpErrorResponse<C extends HttpErrorCode>(
   return {
     error: {
       code: input.code,
+      details: input.details,
       message: input.message,
       requestId: input.requestId,
-      details: input.details,
     },
   };
 }

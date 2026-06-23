@@ -28,8 +28,10 @@ export const MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_VALUE_BYTES = 512_000;
 
 export type WorkbookSnapshot = {
   id: WorkbookSnapshotId;
+  sourceId: string;
   workbookId: WorkbookId;
   calculationId: WorkbookCalculationId;
+  questionIndex: number;
   snapshotIndex: number;
   values: WorkbookSparseValues;
   createdAt: Date;
@@ -92,25 +94,42 @@ export type WorkbookSnapshotRangeBatch = {
 export function createWorkbookSnapshot(
   input: {
     id: WorkbookSnapshotId;
+    sourceId: string;
     workbookId: WorkbookId;
     calculationId: WorkbookCalculationId;
+    questionIndex: number;
     snapshotIndex: number;
     values: WorkbookSparseValues;
   },
   at: Date,
 ): WorkbookSnapshot {
+  if (
+    typeof input.sourceId !== "string" ||
+    !/^[A-Za-z][A-Za-z0-9_-]*$/u.test(input.sourceId)
+  ) {
+    throw new InvalidWorkbookSnapshotDataError(
+      "sourceId must start with a letter and contain only letters, numbers, underscores, or hyphens.",
+    );
+  }
+  if (!Number.isInteger(input.questionIndex) || input.questionIndex < 0) {
+    throw new InvalidWorkbookSnapshotDataError(
+      "questionIndex must be non-negative.",
+    );
+  }
   if (!Number.isInteger(input.snapshotIndex) || input.snapshotIndex < 0) {
     throw new InvalidWorkbookSnapshotDataError(
       "snapshotIndex must be non-negative.",
     );
   }
   return {
-    id: input.id,
-    workbookId: input.workbookId,
     calculationId: input.calculationId,
-    snapshotIndex: input.snapshotIndex,
-    values: workbookSparseValues(input.values),
     createdAt: at,
+    id: input.id,
+    questionIndex: input.questionIndex,
+    snapshotIndex: input.snapshotIndex,
+    sourceId: input.sourceId,
+    values: workbookSparseValues(input.values),
+    workbookId: input.workbookId,
   };
 }
 
@@ -118,12 +137,12 @@ export function createWorkbookSnapshotMetadata(
   snapshot: WorkbookSnapshot,
 ): WorkbookSnapshotMetadata {
   return {
-    status: "ready",
-    sheetCount: snapshot.values.sheets.length,
     cellCount: snapshot.values.sheets.reduce(
       (total, sheet) => total + Object.keys(sheet.cells).length,
       0,
     ),
+    sheetCount: snapshot.values.sheets.length,
+    status: "ready",
   };
 }
 
@@ -145,8 +164,8 @@ export function listWorkbookSnapshotSheets(
       : null;
 
   return {
-    workbookSnapshotSheets: visible,
     nextCursor,
+    workbookSnapshotSheets: visible,
   };
 }
 
@@ -173,12 +192,12 @@ export function createWorkbookSnapshotCells(
   );
 
   return createWorkbookSnapshotCellsForWindow({
+    columnCount,
+    rowCount,
     sheet,
     sheetIndex: input.sheetIndex,
-    startRow,
     startColumn,
-    rowCount,
-    columnCount,
+    startRow,
   });
 }
 
@@ -201,21 +220,21 @@ export function createWorkbookSnapshotRange(
   const startColumn = Math.min(start.column, end.column);
   const endColumn = Math.max(start.column, end.column);
   const cells = createWorkbookSnapshotCellsForWindow({
+    columnCount: endColumn - startColumn + 1,
+    rowCount: endRow - startRow + 1,
     sheet,
     sheetIndex,
-    startRow,
     startColumn,
-    rowCount: endRow - startRow + 1,
-    columnCount: endColumn - startColumn + 1,
+    startRow,
   });
 
   return {
     ...cells,
+    endCellAddress: `${columnNumberToName(endColumn)}${endRow}`,
     ref: `${formatSheetNameForRef(sheet.name)}!${columnNumberToName(
       startColumn,
     )}${startRow}:${columnNumberToName(endColumn)}${endRow}`,
     startCellAddress: `${columnNumberToName(startColumn)}${startRow}`,
-    endCellAddress: `${columnNumberToName(endColumn)}${endRow}`,
   };
 }
 
@@ -248,36 +267,36 @@ export function createWorkbookSnapshotRangeBatch(
 
       if (nextTotalCells > MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_CELLS) {
         ranges.push({
+          errorMessage: `Batch ranges must return at most ${MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_CELLS} cells.`,
+          range: null,
           ref,
           status: "error",
-          range: null,
-          errorMessage: `Batch ranges must return at most ${MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_CELLS} cells.`,
         });
         continue;
       }
 
       if (nextTotalValueBytes > MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_VALUE_BYTES) {
         ranges.push({
+          errorMessage: `Batch range values must be at most ${MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_VALUE_BYTES} bytes.`,
+          range: null,
           ref,
           status: "error",
-          range: null,
-          errorMessage: `Batch range values must be at most ${MAX_WORKBOOK_SNAPSHOT_RANGE_BATCH_VALUE_BYTES} bytes.`,
         });
         continue;
       }
 
       totalCells = nextTotalCells;
       totalValueBytes = nextTotalValueBytes;
-      ranges.push({ ref, status: "ok", range, errorMessage: null });
+      ranges.push({ errorMessage: null, range, ref, status: "ok" });
     } catch (error) {
       ranges.push({
-        ref,
-        status: "error",
-        range: null,
         errorMessage:
           error instanceof InvalidWorkbookSnapshotReferenceError
             ? error.message
             : "Range could not be loaded.",
+        range: null,
+        ref,
+        status: "error",
       });
     }
   }
@@ -345,7 +364,7 @@ function parseWorkbookCellRef(ref: unknown): WorkbookCellRef {
   }
   const sheetName = parseSheetName(ref.slice(0, separatorIndex));
   const cellAddress = parseCellAddress(ref.slice(separatorIndex + 1));
-  return { sheetName, cellAddress };
+  return { cellAddress, sheetName };
 }
 
 function findSheetSeparatorIndex(ref: string): number {
@@ -432,9 +451,9 @@ function parseWorkbookRangeRef(ref: unknown): WorkbookRangeRef {
   const endCellAddress = parseCellAddress(end);
 
   return {
+    endCellAddress,
     sheetName,
     startCellAddress,
-    endCellAddress,
   };
 }
 
@@ -476,11 +495,11 @@ function createWorkbookSnapshotSheet(
   sheetIndex: number,
 ): WorkbookSnapshotMetadataSheet {
   return {
-    sheetIndex,
-    name: sheet.name,
-    rowCount: sheet.rowCount,
     columnCount: sheet.columnCount,
+    name: sheet.name,
     nonEmptyCellCount: Object.keys(sheet.cells).length,
+    rowCount: sheet.rowCount,
+    sheetIndex,
   };
 }
 
@@ -536,14 +555,14 @@ function createWorkbookSnapshotCellsForWindow(input: {
   }
 
   return {
+    cellTypes,
+    columnCount: input.columnCount,
+    rowCount: input.rowCount,
+    rows,
     sheetIndex: input.sheetIndex,
     sheetName: input.sheet.name,
-    startRow: input.startRow,
     startColumn: input.startColumn,
-    rowCount: input.rowCount,
-    columnCount: input.columnCount,
-    rows,
-    cellTypes,
+    startRow: input.startRow,
   };
 }
 

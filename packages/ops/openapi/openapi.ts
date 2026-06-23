@@ -22,48 +22,53 @@ import {
 type OpenApiSchema = Schema["schema"];
 
 const opsTag: Tag = {
-  name: "Ops",
   description: "Operational outbox and queue review tools.",
+  name: "Ops",
 };
 
 const dateTime = {
-  type: "string",
   format: "date-time",
+  type: "string",
 } satisfies OpenApiSchema;
 const nullableDateTime = {
-  type: ["string", "null"],
   format: "date-time",
+  type: ["string", "null"],
 } satisfies OpenApiSchema;
 const nullableJsonObject = {
-  type: ["object", "null"],
   additionalProperties: true,
+  type: ["object", "null"],
 } satisfies OpenApiSchema;
 const nullableString = { type: ["string", "null"] } satisfies OpenApiSchema;
 const uuidString = {
-  type: "string",
   pattern:
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  type: "string",
 } satisfies OpenApiSchema;
 const nullableUuid = {
-  type: ["string", "null"],
   pattern:
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  type: ["string", "null"],
 } satisfies OpenApiSchema;
 const nullableUuidV7 = {
-  type: ["string", "null"],
   pattern:
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+  type: ["string", "null"],
 } satisfies OpenApiSchema;
 
 const opsOverviewSchema: Schema = {
   name: "OpsOverview",
   schema: {
-    type: "object",
-    required: ["outbox", "queue"],
     additionalProperties: false,
     properties: {
       outbox: {
-        type: "object",
+        additionalProperties: false,
+        properties: {
+          failedCount: { minimum: 0, type: "integer" },
+          oldestPendingCreatedAt: nullableDateTime,
+          pendingCount: { minimum: 0, type: "integer" },
+          publishedCount: { minimum: 0, type: "integer" },
+          publishingCount: { minimum: 0, type: "integer" },
+        },
         required: [
           "pendingCount",
           "publishingCount",
@@ -71,17 +76,17 @@ const opsOverviewSchema: Schema = {
           "failedCount",
           "oldestPendingCreatedAt",
         ],
-        additionalProperties: false,
-        properties: {
-          pendingCount: { type: "integer", minimum: 0 },
-          publishingCount: { type: "integer", minimum: 0 },
-          publishedCount: { type: "integer", minimum: 0 },
-          failedCount: { type: "integer", minimum: 0 },
-          oldestPendingCreatedAt: nullableDateTime,
-        },
+        type: "object",
       },
       queue: {
-        type: "object",
+        additionalProperties: false,
+        properties: {
+          available: { type: "boolean" },
+          completedCount: { minimum: 0, type: "integer" },
+          failedCount: { minimum: 0, type: "integer" },
+          oldestPendingCreatedAt: nullableDateTime,
+          pendingCount: { minimum: 0, type: "integer" },
+        },
         required: [
           "available",
           "pendingCount",
@@ -89,42 +94,62 @@ const opsOverviewSchema: Schema = {
           "failedCount",
           "oldestPendingCreatedAt",
         ],
-        additionalProperties: false,
-        properties: {
-          available: { type: "boolean" },
-          pendingCount: { type: "integer", minimum: 0 },
-          completedCount: { type: "integer", minimum: 0 },
-          failedCount: { type: "integer", minimum: 0 },
-          oldestPendingCreatedAt: nullableDateTime,
-        },
+        type: "object",
       },
     },
+    required: ["outbox", "queue"],
+    type: "object",
   },
 };
 
 const opsOutboxEventReviewSchema: Schema = {
   name: "OpsOutboxEventReview",
   schema: {
-    type: "object",
-    required: ["action", "note", "actorUserId", "actorEmail", "createdAt"],
     additionalProperties: false,
     properties: {
       action: {
-        type: "string",
         enum: ["reviewed", "ignored", "replayed"],
+        type: "string",
       },
-      note: nullableString,
-      actorUserId: nullableUuidV7,
       actorEmail: nullableString,
+      actorUserId: nullableUuidV7,
       createdAt: dateTime,
+      note: nullableString,
     },
+    required: ["action", "note", "actorUserId", "actorEmail", "createdAt"],
+    type: "object",
   },
 };
 
 const opsOutboxEventSchema: Schema = {
   name: "OpsOutboxEvent",
   schema: {
-    type: "object",
+    additionalProperties: false,
+    properties: {
+      aggregateId: { minLength: 1, type: "string" },
+      aggregateType: { minLength: 1, type: "string" },
+      attempts: { minimum: 0, type: "integer" },
+      availableAt: dateTime,
+      causationId: nullableUuid,
+      correlationId: uuidString,
+      createdAt: dateTime,
+      eventType: { minLength: 1, type: "string" },
+      id: uuidV7StringSchemaObject(),
+      lastError: nullableString,
+      latestReview: {
+        oneOf: [schemaRef(opsOutboxEventReviewSchema), { type: "null" }],
+      },
+      lockedAt: nullableDateTime,
+      lockedBy: nullableString,
+      ownerUserId: nullableUuidV7,
+      publishedAt: nullableDateTime,
+      requestId: uuidString,
+      status: {
+        enum: ["pending", "publishing", "published", "failed"],
+        type: "string",
+      },
+      updatedAt: dateTime,
+    },
     required: [
       "id",
       "eventType",
@@ -145,66 +170,53 @@ const opsOutboxEventSchema: Schema = {
       "updatedAt",
       "latestReview",
     ],
-    additionalProperties: false,
-    properties: {
-      id: uuidV7StringSchemaObject(),
-      eventType: { type: "string", minLength: 1 },
-      aggregateType: { type: "string", minLength: 1 },
-      aggregateId: { type: "string", minLength: 1 },
-      ownerUserId: nullableUuidV7,
-      requestId: uuidString,
-      correlationId: uuidString,
-      causationId: nullableUuid,
-      status: {
-        type: "string",
-        enum: ["pending", "publishing", "published", "failed"],
-      },
-      attempts: { type: "integer", minimum: 0 },
-      availableAt: dateTime,
-      lockedBy: nullableString,
-      lockedAt: nullableDateTime,
-      publishedAt: nullableDateTime,
-      lastError: nullableString,
-      createdAt: dateTime,
-      updatedAt: dateTime,
-      latestReview: {
-        oneOf: [schemaRef(opsOutboxEventReviewSchema), { type: "null" }],
-      },
-    },
+    type: "object",
   },
 };
 
 const listOpsOutboxEventsResponseSchema: Schema = {
   name: "ListOpsOutboxEventsResponse",
   schema: {
-    type: "object",
-    required: ["events"],
     additionalProperties: false,
     properties: {
       events: {
-        type: "array",
         items: schemaRef(opsOutboxEventSchema),
+        type: "array",
       },
     },
+    required: ["events"],
+    type: "object",
   },
 };
 
 const opsOutboxEventResponseSchema: Schema = {
   name: "OpsOutboxEventResponse",
   schema: {
-    type: "object",
-    required: ["event"],
     additionalProperties: false,
     properties: {
       event: schemaRef(opsOutboxEventSchema),
     },
+    required: ["event"],
+    type: "object",
   },
 };
 
 const opsQueueJobSchema: Schema = {
   name: "OpsQueueJob",
   schema: {
-    type: "object",
+    additionalProperties: false,
+    properties: {
+      completedOn: nullableDateTime,
+      createdOn: nullableDateTime,
+      data: nullableJsonObject,
+      id: { minLength: 1, type: "string" },
+      name: { minLength: 1, type: "string" },
+      output: nullableJsonObject,
+      retryCount: { minimum: 0, type: "integer" },
+      retryLimit: { minimum: 0, type: "integer" },
+      startedOn: nullableDateTime,
+      state: { minLength: 1, type: "string" },
+    },
     required: [
       "id",
       "name",
@@ -217,67 +229,55 @@ const opsQueueJobSchema: Schema = {
       "startedOn",
       "completedOn",
     ],
-    additionalProperties: false,
-    properties: {
-      id: { type: "string", minLength: 1 },
-      name: { type: "string", minLength: 1 },
-      state: { type: "string", minLength: 1 },
-      retryCount: { type: "integer", minimum: 0 },
-      retryLimit: { type: "integer", minimum: 0 },
-      data: nullableJsonObject,
-      output: nullableJsonObject,
-      createdOn: nullableDateTime,
-      startedOn: nullableDateTime,
-      completedOn: nullableDateTime,
-    },
+    type: "object",
   },
 };
 
 const listOpsFailedQueueJobsResponseSchema: Schema = {
   name: "ListOpsFailedQueueJobsResponse",
   schema: {
-    type: "object",
-    required: ["jobs"],
     additionalProperties: false,
     properties: {
       jobs: {
-        type: "array",
         items: schemaRef(opsQueueJobSchema),
+        type: "array",
       },
     },
+    required: ["jobs"],
+    type: "object",
   },
 };
 
 const reviewOpsOutboxEventRequestSchema: Schema = {
   name: "ReviewOpsOutboxEventRequest",
   schema: {
-    type: "object",
-    required: ["action"],
     additionalProperties: false,
     properties: {
       action: {
-        type: "string",
         enum: ["reviewed", "ignored"],
+        type: "string",
       },
       note: {
-        type: ["string", "null"],
         maxLength: 2000,
+        type: ["string", "null"],
       },
     },
+    required: ["action"],
+    type: "object",
   },
 };
 
 const replayOpsOutboxEventRequestSchema: Schema = {
   name: "ReplayOpsOutboxEventRequest",
   schema: {
-    type: "object",
     additionalProperties: false,
     properties: {
       note: {
-        type: ["string", "null"],
         maxLength: 2000,
+        type: ["string", "null"],
       },
     },
+    type: "object",
   },
 };
 
@@ -287,23 +287,23 @@ const outboxEventParam: Param = {
 };
 
 const limitParameter = {
-  name: "limit",
   in: "query" as const,
+  name: "limit",
   required: false,
   schema: {
-    type: "integer",
-    minimum: 1,
-    maximum: 100,
     default: 50,
+    maximum: 100,
+    minimum: 1,
+    type: "integer",
   },
 } satisfies Param["schema"];
 
 const queueStateParameter = {
-  name: "state",
   in: "query" as const,
+  name: "state",
   required: false,
   schema: {
-    type: "string",
+    default: "all",
     enum: [
       "all",
       "pending",
@@ -316,7 +316,7 @@ const queueStateParameter = {
       "expired",
       "cancelled",
     ],
-    default: "all",
+    type: "string",
   },
 } satisfies Param["schema"];
 
@@ -343,205 +343,204 @@ export const responses = Object.freeze([
 export const params = Object.freeze([outboxEventParam]);
 
 export const paths: Paths = Object.freeze({
-  "/ops/overview": {
-    get: {
-      tags: [tagRef(opsTag)],
-      summary: "Get ops overview",
-      operationId: "getOpsOverview",
-      security: [keycloakSecurityRequirement],
-      responses: {
-        "200": {
-          description: "Operational overview.",
-          content: {
-            "application/json": {
-              schema: schemaRef(opsOverviewSchema),
-            },
-          },
-        },
-        "401": responseRef(unauthorizedResponse),
-        "403": responseRef(forbiddenResponse),
-      },
-    },
-  },
-
   "/ops/outbox-events": {
     get: {
-      tags: [tagRef(opsTag)],
-      summary: "List failed outbox events",
       operationId: "listOpsOutboxEvents",
-      security: [keycloakSecurityRequirement],
       parameters: [
         {
-          name: "status",
           in: "query" as const,
+          name: "status",
           required: false,
           schema: {
-            type: "string" as const,
-            enum: ["all", "pending", "publishing", "published", "failed"],
             default: "failed",
+            enum: ["all", "pending", "publishing", "published", "failed"],
+            type: "string" as const,
           },
         },
         {
-          name: "reviewState",
           in: "query" as const,
+          name: "reviewState",
           required: false,
           schema: {
-            type: "string" as const,
-            enum: ["all", "unreviewed", "reviewed", "ignored"],
             default: "all",
+            enum: ["all", "unreviewed", "reviewed", "ignored"],
+            type: "string" as const,
           },
         },
         limitParameter,
       ],
       responses: {
         "200": {
-          description: "Failed outbox events.",
           content: {
             "application/json": {
               schema: schemaRef(listOpsOutboxEventsResponseSchema),
             },
           },
+          description: "Failed outbox events.",
         },
         "400": responseRef(badRequestResponse),
         "401": responseRef(unauthorizedResponse),
         "403": responseRef(forbiddenResponse),
       },
-    },
-  },
-
-  "/ops/outbox-events/{eventId}/review": {
-    parameters: [paramRef(outboxEventParam)],
-    post: {
-      tags: [tagRef(opsTag)],
-      summary: "Review failed outbox event",
-      operationId: "reviewOpsOutboxEvent",
       security: [keycloakSecurityRequirement],
-      requestBody: {
-        required: true,
-        content: {
-          "application/json": {
-            schema: schemaRef(reviewOpsOutboxEventRequestSchema),
-          },
-        },
-      },
-      responses: {
-        "200": {
-          description: "Outbox event review saved.",
-          content: {
-            "application/json": {
-              schema: schemaRef(opsOutboxEventResponseSchema),
-            },
-          },
-        },
-        "400": responseRef(badRequestResponse),
-        "401": responseRef(unauthorizedResponse),
-        "403": responseRef(forbiddenResponse),
-        "404": responseRef(notFoundResponse),
-      },
+      summary: "List failed outbox events",
+      tags: [tagRef(opsTag)],
     },
   },
 
   "/ops/outbox-events/{eventId}/replay": {
     parameters: [paramRef(outboxEventParam)],
     post: {
-      tags: [tagRef(opsTag)],
-      summary: "Replay failed outbox event",
       operationId: "replayOpsOutboxEvent",
-      security: [keycloakSecurityRequirement],
       requestBody: {
-        required: true,
         content: {
           "application/json": {
             schema: schemaRef(replayOpsOutboxEventRequestSchema),
           },
         },
+        required: true,
       },
       responses: {
         "200": {
-          description: "Outbox event queued for replay.",
           content: {
             "application/json": {
               schema: schemaRef(opsOutboxEventResponseSchema),
             },
           },
+          description: "Outbox event queued for replay.",
         },
         "400": responseRef(badRequestResponse),
         "401": responseRef(unauthorizedResponse),
         "403": responseRef(forbiddenResponse),
         "404": responseRef(notFoundResponse),
       },
+      security: [keycloakSecurityRequirement],
+      summary: "Replay failed outbox event",
+      tags: [tagRef(opsTag)],
     },
   },
 
-  "/ops/queue-jobs/failed": {
-    get: {
-      tags: [tagRef(opsTag)],
-      summary: "List failed queue jobs",
-      operationId: "listOpsFailedQueueJobs",
-      security: [keycloakSecurityRequirement],
-      parameters: [limitParameter],
+  "/ops/outbox-events/{eventId}/review": {
+    parameters: [paramRef(outboxEventParam)],
+    post: {
+      operationId: "reviewOpsOutboxEvent",
+      requestBody: {
+        content: {
+          "application/json": {
+            schema: schemaRef(reviewOpsOutboxEventRequestSchema),
+          },
+        },
+        required: true,
+      },
       responses: {
         "200": {
-          description: "Failed queue jobs.",
           content: {
             "application/json": {
-              schema: schemaRef(listOpsFailedQueueJobsResponseSchema),
+              schema: schemaRef(opsOutboxEventResponseSchema),
             },
           },
+          description: "Outbox event review saved.",
         },
         "400": responseRef(badRequestResponse),
         "401": responseRef(unauthorizedResponse),
         "403": responseRef(forbiddenResponse),
+        "404": responseRef(notFoundResponse),
       },
+      security: [keycloakSecurityRequirement],
+      summary: "Review failed outbox event",
+      tags: [tagRef(opsTag)],
+    },
+  },
+  "/ops/overview": {
+    get: {
+      operationId: "getOpsOverview",
+      responses: {
+        "200": {
+          content: {
+            "application/json": {
+              schema: schemaRef(opsOverviewSchema),
+            },
+          },
+          description: "Operational overview.",
+        },
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+      },
+      security: [keycloakSecurityRequirement],
+      summary: "Get ops overview",
+      tags: [tagRef(opsTag)],
     },
   },
 
   "/ops/queue-jobs": {
     get: {
-      tags: [tagRef(opsTag)],
-      summary: "List queue jobs",
       operationId: "listOpsQueueJobs",
-      security: [keycloakSecurityRequirement],
       parameters: [queueStateParameter, limitParameter],
       responses: {
         "200": {
-          description: "Queue jobs.",
           content: {
             "application/json": {
               schema: schemaRef(listOpsFailedQueueJobsResponseSchema),
             },
           },
+          description: "Queue jobs.",
         },
         "400": responseRef(badRequestResponse),
         "401": responseRef(unauthorizedResponse),
         "403": responseRef(forbiddenResponse),
       },
+      security: [keycloakSecurityRequirement],
+      summary: "List queue jobs",
+      tags: [tagRef(opsTag)],
+    },
+  },
+
+  "/ops/queue-jobs/failed": {
+    get: {
+      operationId: "listOpsFailedQueueJobs",
+      parameters: [limitParameter],
+      responses: {
+        "200": {
+          content: {
+            "application/json": {
+              schema: schemaRef(listOpsFailedQueueJobsResponseSchema),
+            },
+          },
+          description: "Failed queue jobs.",
+        },
+        "400": responseRef(badRequestResponse),
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+      },
+      security: [keycloakSecurityRequirement],
+      summary: "List failed queue jobs",
+      tags: [tagRef(opsTag)],
     },
   },
 });
 
 export const openapi: OpenAPI = {
-  openapi: "3.1.0",
-  info: {
-    title: "Lemma Ops API",
-    version: "0.1.0",
-  },
-  tags: [opsTag],
   components: {
-    securitySchemes: Object.fromEntries([
-      [keycloakSecurityScheme.name, keycloakSecurityScheme.securitySchema],
-    ]),
     parameters: Object.fromEntries(
       params.map((param) => [param.name, param.schema]),
     ),
-    schemas: Object.fromEntries([
-      ...schemas.map((schema) => [schema.name, schema.schema]),
-      [errorResponseSchema.name, errorResponseSchema.schema],
-    ]),
     responses: Object.fromEntries([
       ...responses.map((resp) => [resp.name, resp.schema]),
       [unauthorizedResponse.name, unauthorizedResponse.schema],
     ]),
+    schemas: Object.fromEntries([
+      ...schemas.map((schema) => [schema.name, schema.schema]),
+      [errorResponseSchema.name, errorResponseSchema.schema],
+    ]),
+    securitySchemes: Object.fromEntries([
+      [keycloakSecurityScheme.name, keycloakSecurityScheme.securitySchema],
+    ]),
   },
+  info: {
+    title: "Lemma Ops API",
+    version: "0.1.0",
+  },
+  openapi: "3.1.0",
   paths,
+  tags: [opsTag],
 };

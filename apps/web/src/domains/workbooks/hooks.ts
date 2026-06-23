@@ -20,6 +20,7 @@ import {
   listWorkbookSnapshotSheets,
   listWorkbookSnapshots,
   listWorkbooks,
+  retryWorkbookCalculation,
   updateWorkbook,
   validateWorkbook,
 } from "./api";
@@ -35,6 +36,7 @@ import type {
   ListWorkbookSnapshotSheetsInput,
   ListWorkbookSnapshotsInput,
   ListWorkbooksInput,
+  RetryWorkbookCalculationInput,
   UpdateWorkbookInput,
   ValidateWorkbookInput,
   Workbook,
@@ -57,8 +59,8 @@ export function useWorkbooksQuery(
   options?: Omit<UseQueryOptions<WorkbooksPage>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: workbookKeys.list(input),
     queryFn: () => listWorkbooks(input),
+    queryKey: workbookKeys.list(input),
     ...options,
   });
 }
@@ -68,10 +70,10 @@ export function useWorkbooksInfiniteQuery(
   options?: { enabled?: boolean },
 ) {
   return useInfiniteQuery({
-    queryKey: workbookKeys.infiniteList(input),
-    queryFn: ({ pageParam }) => listWorkbooks({ ...input, cursor: pageParam }),
-    initialPageParam: undefined as string | undefined,
     getNextPageParam: (page) => page.nextCursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) => listWorkbooks({ ...input, cursor: pageParam }),
+    queryKey: workbookKeys.infiniteList(input),
     ...options,
   });
 }
@@ -81,9 +83,9 @@ export function useWorkbookQuery(
   options?: Omit<UseQueryOptions<Workbook>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: workbookKeys.detail(workbookId),
-    queryFn: () => getWorkbook(workbookId),
     enabled: Boolean(workbookId),
+    queryFn: () => getWorkbook(workbookId),
+    queryKey: workbookKeys.detail(workbookId),
     ...options,
   });
 }
@@ -98,9 +100,9 @@ export function useWorkbookCalculationsQuery(
   const { workbookId, ...params } = input;
 
   return useQuery({
-    queryKey: workbookKeys.calculationsList(workbookId, params),
-    queryFn: () => listWorkbookCalculations(input),
     enabled: Boolean(workbookId),
+    queryFn: () => listWorkbookCalculations(input),
+    queryKey: workbookKeys.calculationsList(workbookId, params),
     ...options,
   });
 }
@@ -115,9 +117,9 @@ export function useWorkbookSnapshotsQuery(
   const { workbookCalculationId, ...params } = input;
 
   return useQuery({
-    queryKey: workbookKeys.snapshotsList(workbookCalculationId, params),
-    queryFn: () => listWorkbookSnapshots(input),
     enabled: Boolean(workbookCalculationId),
+    queryFn: () => listWorkbookSnapshots(input),
+    queryKey: workbookKeys.snapshotsList(workbookCalculationId, params),
     ...options,
   });
 }
@@ -130,9 +132,9 @@ export function useWorkbookSnapshotMetadataQuery(
   >,
 ) {
   return useQuery({
-    queryKey: workbookKeys.snapshotMetadata(workbookSnapshotId),
-    queryFn: () => getWorkbookSnapshotMetadata(workbookSnapshotId),
     enabled: Boolean(workbookSnapshotId),
+    queryFn: () => getWorkbookSnapshotMetadata(workbookSnapshotId),
+    queryKey: workbookKeys.snapshotMetadata(workbookSnapshotId),
     staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
     ...options,
   });
@@ -148,9 +150,9 @@ export function useWorkbookSnapshotSheetsQuery(
   const { workbookSnapshotId, ...params } = input;
 
   return useQuery({
-    queryKey: workbookKeys.snapshotSheets(workbookSnapshotId, params),
-    queryFn: () => listWorkbookSnapshotSheets(input),
     enabled: Boolean(workbookSnapshotId),
+    queryFn: () => listWorkbookSnapshotSheets(input),
+    queryKey: workbookKeys.snapshotSheets(workbookSnapshotId, params),
     staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
     ...options,
   });
@@ -164,12 +166,12 @@ export function useWorkbookSnapshotSheetsInfiniteQuery(
   const { enabled = true, ...queryOptions } = options ?? {};
 
   return useInfiniteQuery({
-    queryKey: workbookKeys.snapshotSheetsInfinite(workbookSnapshotId, params),
+    enabled: enabled && Boolean(workbookSnapshotId),
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
     queryFn: ({ pageParam }) =>
       listWorkbookSnapshotSheets({ ...input, cursor: pageParam }),
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (page) => page.nextCursor ?? undefined,
-    enabled: enabled && Boolean(workbookSnapshotId),
+    queryKey: workbookKeys.snapshotSheetsInfinite(workbookSnapshotId, params),
     staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
     ...queryOptions,
   });
@@ -185,9 +187,9 @@ export function useWorkbookSnapshotCellsQuery(
   const { workbookSnapshotId, ...params } = input;
 
   return useQuery({
-    queryKey: workbookKeys.snapshotCells(workbookSnapshotId, params),
-    queryFn: () => getWorkbookSnapshotCells(input),
     enabled: Boolean(workbookSnapshotId),
+    queryFn: () => getWorkbookSnapshotCells(input),
+    queryKey: workbookKeys.snapshotCells(workbookSnapshotId, params),
     staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
     ...options,
   });
@@ -203,9 +205,9 @@ export function useWorkbookSnapshotRangeQuery(
   const { workbookSnapshotId, ...params } = input;
 
   return useQuery({
-    queryKey: workbookKeys.snapshotRange(workbookSnapshotId, params),
-    queryFn: () => getWorkbookSnapshotRange(input),
     enabled: Boolean(workbookSnapshotId),
+    queryFn: () => getWorkbookSnapshotRange(input),
+    queryKey: workbookKeys.snapshotRange(workbookSnapshotId, params),
     staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
     ...options,
   });
@@ -222,9 +224,9 @@ export function useWorkbookSnapshotRangeBatchQuery(
   const { enabled = true, ...queryOptions } = options ?? {};
 
   return useQuery({
-    queryKey: workbookKeys.snapshotRangeBatch(workbookSnapshotId, params),
-    queryFn: () => getWorkbookSnapshotRangeBatch(input),
     enabled: enabled && Boolean(workbookSnapshotId) && input.refs.length > 0,
+    queryFn: () => getWorkbookSnapshotRangeBatch(input),
+    queryKey: workbookKeys.snapshotRangeBatch(workbookSnapshotId, params),
     retry: false,
     staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
     ...queryOptions,
@@ -238,23 +240,23 @@ export function useWorkbookSnapshotRangeBatchQueries(
   const { enabled = true } = options ?? {};
 
   return useQueries({
-    queries: inputs.map((input) => {
-      const { workbookSnapshotId, ...params } = input;
-
-      return {
-        queryKey: workbookKeys.snapshotRangeBatch(workbookSnapshotId, params),
-        queryFn: () => getWorkbookSnapshotRangeBatch(input),
-        enabled:
-          enabled && Boolean(workbookSnapshotId) && input.refs.length > 0,
-        retry: false,
-        staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
-      };
-    }),
     combine: (results): WorkbookSnapshotRangeBatch => ({
       ranges: results.flatMap(
         (result) =>
           (result.data as WorkbookSnapshotRangeBatch | undefined)?.ranges ?? [],
       ),
+    }),
+    queries: inputs.map((input) => {
+      const { workbookSnapshotId, ...params } = input;
+
+      return {
+        enabled:
+          enabled && Boolean(workbookSnapshotId) && input.refs.length > 0,
+        queryFn: () => getWorkbookSnapshotRangeBatch(input),
+        queryKey: workbookKeys.snapshotRangeBatch(workbookSnapshotId, params),
+        retry: false,
+        staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
+      };
     }),
   });
 }
@@ -347,6 +349,30 @@ export function useCreateWorkbookCalculation(
       await queryClient.invalidateQueries({
         queryKey: workbookKeys.snapshots(calculation.id),
       });
+      await options?.onSuccess?.(
+        calculation,
+        variables,
+        onMutateResult,
+        context,
+      );
+    },
+  });
+}
+
+export function useRetryWorkbookCalculation(
+  options?: UseMutationOptions<
+    WorkbookCalculation,
+    Error,
+    RetryWorkbookCalculationInput
+  >,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: retryWorkbookCalculation,
+    ...options,
+    onSuccess: async (calculation, variables, onMutateResult, context) => {
+      await queryClient.invalidateQueries({ queryKey: workbookKeys.all });
       await options?.onSuccess?.(
         calculation,
         variables,

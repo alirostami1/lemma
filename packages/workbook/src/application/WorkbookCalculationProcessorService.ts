@@ -3,6 +3,7 @@ import { instrumentService } from "@lemma/observability";
 import {
   assertWorkbookIsUsable,
   createWorkbookSnapshot,
+  InvalidWorkbookFieldError,
   markWorkbookCalculationFailed,
   markWorkbookCalculationSucceeded,
   workbookCalculationId as toWorkbookCalculationId,
@@ -61,40 +62,41 @@ export class WorkbookCalculationProcessorService {
       return;
     }
 
+    let sources: readonly WorkbookCalculationSource[] = [];
     try {
-      const calculated = await this.calculateSnapshots(
+      sources = await this.loadCalculationSources(running.id);
+      const calculated = await this.calculateSnapshots({
+        lineage: command.lineage,
         running,
-        command.sources,
-        command.lineage,
-      );
+        sources,
+      });
       await this.succeedRunningCalculation({
-        running,
-        snapshots: calculated.snapshots,
-        sources: calculated.sources,
         finishedAt: calculated.finishedAt,
         lineage: command.lineage,
+        running,
+        snapshots: calculated.snapshots,
+        sources,
       });
     } catch (error) {
       await this.failRunningCalculation({
-        running,
-        sources: command.sources,
         error,
         lineage: command.lineage,
+        running,
+        sources,
       });
     }
   }
 
-  private async calculateSnapshots(
-    running: WorkbookCalculation,
-    sources: readonly WorkbookCalculationSource[],
-    lineage: OperationLineage,
-  ): Promise<{
+  private async calculateSnapshots(input: {
+    running: WorkbookCalculation;
+    sources: readonly WorkbookCalculationSource[];
+    lineage: OperationLineage;
+  }): Promise<{
     snapshots: WorkbookSnapshot[];
     finishedAt: Date;
-    sources: readonly WorkbookCalculationSource[];
   }> {
     const normalizedSources = normalizeWorkbookCalculationSources(
-      sources,
+      input.sources,
       "sources",
     );
     const finishedAt = this.deps.clock.now();
@@ -110,32 +112,45 @@ export class WorkbookCalculationProcessorService {
       }
 
       assertWorkbookIsUsable(workbook);
+      if (workbook.ownerUserId !== input.running.ownerUserId) {
+        throw new InvalidWorkbookFieldError(
+          "All calculation source workbooks must belong to calculation owner.",
+        );
+      }
 
       const file =
         await this.deps.workbookFileProvider.readWorkbookFileContentForOwnerUserId(
           {
-            ownerUserId: workbook.ownerUserId,
             fileId: workbook.fileId,
+            ownerUserId: workbook.ownerUserId,
           },
         );
 
       const values = await withWorkbookTempFile(file, (path) =>
         this.deps.workbookCalculator.calculateBatch(
           path,
-          running.requestedCount,
-          { lineage },
+          input.running.requestedCount,
+          { lineage: input.lineage },
         ),
       );
+      if (values.length !== input.running.requestedCount) {
+        throw new InvalidWorkbookFieldError(
+          `Workbook calculator returned ${values.length} snapshots for source ${source.sourceId}; expected ${input.running.requestedCount}.`,
+        );
+      }
 
       snapshots.push(
         ...values.map((snapshotValues, questionIndex) =>
           createWorkbookSnapshot(
             {
+              calculationId: input.running.id,
               id: this.deps.idGenerator.workbookSnapshotId(),
-              workbookId: workbook.id,
-              calculationId: running.id,
-              snapshotIndex: questionIndex * normalizedSources.length + sourceIndex,
+              questionIndex,
+              snapshotIndex:
+                questionIndex * normalizedSources.length + sourceIndex,
+              sourceId: source.sourceId,
               values: snapshotValues,
+              workbookId: workbook.id,
             },
             finishedAt,
           ),
@@ -145,11 +160,25 @@ export class WorkbookCalculationProcessorService {
 
     return {
       finishedAt,
-      sources: normalizedSources,
       snapshots: snapshots.sort((left, right) => {
         return left.snapshotIndex - right.snapshotIndex;
       }),
     };
+  }
+
+  private async loadCalculationSources(
+    calculationId: WorkbookCalculation["id"],
+  ): Promise<WorkbookCalculationSource[]> {
+    const sources =
+      await this.deps.workbookRepository.listWorkbookCalculationSources(
+        calculationId,
+      );
+    return sources
+      .sort((left, right) => left.position - right.position)
+      .map((source) => ({
+        sourceId: source.sourceId,
+        workbookId: source.workbookId,
+      }));
   }
 
   private async succeedRunningCalculation(input: {
@@ -171,9 +200,9 @@ export class WorkbookCalculationProcessorService {
         await outboxRepository.appendEvents([
           this.finishedCalculationEvent({
             calculation: result.calculation,
-            sources: input.sources,
-            snapshots: sortSnapshotsByIndex(result.snapshots),
             lineage: input.lineage,
+            snapshots: sortSnapshotsByIndex(result.snapshots),
+            sources: input.sources,
           }),
         ]);
       },
@@ -200,8 +229,8 @@ export class WorkbookCalculationProcessorService {
         await outboxRepository.appendEvents([
           this.finishedCalculationEvent({
             calculation: updated,
-            sources: input.sources,
             lineage: input.lineage,
+            sources: input.sources,
           }),
         ]);
       },
@@ -215,12 +244,12 @@ export class WorkbookCalculationProcessorService {
     lineage: OperationLineage;
   }) {
     return workbookCalculationFinishedEvent({
-      id: this.deps.idGenerator.eventId(),
       calculation: input.calculation,
-      sources: input.sources,
-      snapshots: input.snapshots,
+      id: this.deps.idGenerator.eventId(),
       lineage: input.lineage,
       occurredAt: input.calculation.updatedAt,
+      snapshots: input.snapshots,
+      sources: input.sources,
     });
   }
 

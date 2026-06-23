@@ -5,6 +5,8 @@ export type WorkbookCalculationSource = {
   workbookId: string;
 };
 
+const WORKBOOK_CALCULATION_SOURCE_ID_PATTERN = /^[A-Za-z][A-Za-z0-9_-]*$/u;
+
 export function normalizeWorkbookCalculationSources(
   input: readonly WorkbookCalculationSource[] | null | undefined,
   fieldName: string,
@@ -27,9 +29,12 @@ export function normalizeWorkbookCalculationSources(
     }
 
     const record = source as Record<string, unknown>;
-    if (typeof record.sourceId !== "string" || record.sourceId.length === 0) {
+    if (
+      typeof record.sourceId !== "string" ||
+      !WORKBOOK_CALCULATION_SOURCE_ID_PATTERN.test(record.sourceId)
+    ) {
       throw new InvalidWorkbookFieldError(
-        `${fieldName}[${index}].sourceId must be a non-empty string.`,
+        `${fieldName}[${index}].sourceId must start with a letter and contain only letters, numbers, underscores, or hyphens.`,
       );
     }
     if (sourceIds.has(record.sourceId)) {
@@ -39,7 +44,10 @@ export function normalizeWorkbookCalculationSources(
     }
     sourceIds.add(record.sourceId);
 
-    if (typeof record.workbookId !== "string" || record.workbookId.length === 0) {
+    if (
+      typeof record.workbookId !== "string" ||
+      record.workbookId.length === 0
+    ) {
       throw new InvalidWorkbookFieldError(
         `${fieldName}[${index}].workbookId must be a non-empty string.`,
       );

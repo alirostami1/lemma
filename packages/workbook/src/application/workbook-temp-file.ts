@@ -14,6 +14,6 @@ export async function withWorkbookTempFile<T>(
     await writeFile(path, input.bytes);
     return await operation(path);
   } finally {
-    await rm(dir, { recursive: true, force: true });
+    await rm(dir, { force: true, recursive: true });
   }
 }

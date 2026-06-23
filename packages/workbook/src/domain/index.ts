@@ -41,14 +41,20 @@ export {
   requestWorkbookValidation,
   updateWorkbook,
 } from "./workbook.js";
-export type { WorkbookCalculation } from "./workbook-calculation.js";
+export type {
+  CreateInitialWorkbookCalculationInput,
+  WorkbookCalculation,
+} from "./workbook-calculation.js";
 export {
+  assertWorkbookCalculationCanRetry,
   cancelWorkbookCalculation,
-  createWorkbookCalculation,
+  createInitialWorkbookCalculation,
+  createRetryWorkbookCalculation,
   isTerminalWorkbookCalculation,
   markWorkbookCalculationFailed,
   markWorkbookCalculationRunning,
   markWorkbookCalculationSucceeded,
+  reconstituteWorkbookCalculation,
 } from "./workbook-calculation.js";
 export {
   WORKBOOK_CALCULATION_FAILED_EVENT,

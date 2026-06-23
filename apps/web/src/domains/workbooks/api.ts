@@ -13,6 +13,7 @@ import {
   listWorkbookSnapshotSheets as listWorkbookSnapshotSheetsGenerated,
   listWorkbookSnapshots as listWorkbookSnapshotsGenerated,
   listWorkbooks as listWorkbooksGenerated,
+  retryWorkbookCalculation as retryWorkbookCalculationGenerated,
   updateWorkbook as updateWorkbookGenerated,
   validateWorkbook as validateWorkbookGenerated,
 } from "#/api/generated/workbook/workbook";
@@ -40,6 +41,7 @@ import type {
   ListWorkbookSnapshotSheetsInput,
   ListWorkbookSnapshotsInput,
   ListWorkbooksInput,
+  RetryWorkbookCalculationInput,
   UpdateWorkbookInput,
   ValidateWorkbookInput,
   Workbook,
@@ -104,10 +106,7 @@ export async function createWorkbookCalculation({
   ...input
 }: CreateWorkbookCalculationInput): Promise<WorkbookCalculation> {
   return mapWorkbookCalculationResponse(
-    await createWorkbookCalculationGenerated(workbookId, {
-      ...input,
-      sources: input.sources,
-    }),
+    await createWorkbookCalculationGenerated(workbookId, input),
   );
 }
 
@@ -116,6 +115,14 @@ export async function getWorkbookCalculation(
 ): Promise<WorkbookCalculation> {
   return mapWorkbookCalculationResponse(
     await getWorkbookCalculationGenerated(workbookCalculationId),
+  );
+}
+
+export async function retryWorkbookCalculation({
+  workbookCalculationId,
+}: RetryWorkbookCalculationInput): Promise<WorkbookCalculation> {
+  return mapWorkbookCalculationResponse(
+    await retryWorkbookCalculationGenerated(workbookCalculationId),
   );
 }
 

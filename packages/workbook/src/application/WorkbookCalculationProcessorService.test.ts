@@ -7,7 +7,7 @@ import {
   eventId as toEventId,
 } from "@lemma/events/domain";
 import {
-  createWorkbookCalculation,
+  createInitialWorkbookCalculation,
   createWorkbook as createWorkbookDomain,
   fileId,
   markWorkbookValid,
@@ -22,6 +22,7 @@ import {
 import type {
   Clock,
   IdGenerator,
+  WorkbookCalculationSourceRecord,
   WorkbookCalculator,
   WorkbookFileProviderPort,
   WorkbookRepository,
@@ -40,27 +41,128 @@ const calculationId = workbookCalculationId(
 const lineage = rootOperationLineage("019e9315-6a87-715f-9861-8654df070c24");
 
 describe("WorkbookCalculationProcessorService", () => {
+  it("creates source-aware snapshots for each requested question", async () => {
+    const repository = new FakeWorkbookRepository();
+    const transaction = new FakeWorkbookTransaction(repository);
+    const calculator = new FakeWorkbookCalculator([
+      {
+        sheets: [
+          { cells: { A1: "1" }, columnCount: 1, name: "Sheet1", rowCount: 1 },
+        ],
+      },
+      {
+        sheets: [
+          { cells: { A1: "2" }, columnCount: 1, name: "Sheet1", rowCount: 1 },
+        ],
+      },
+    ]);
+    const service = new WorkbookCalculationProcessorService({
+      clock,
+      idGenerator: fakeIdGenerator,
+      workbookCalculator: calculator,
+      workbookFileProvider: fakeWorkbookFileProvider,
+      workbookRepository: repository,
+      workbookTransaction: transaction,
+    });
+    const secondWorkbookId = workbookId("019e9315-6a87-715f-9861-8654df070c31");
+
+    repository.runningCalculation = createInitialWorkbookCalculation(
+      {
+        correlationId: null,
+        createdByUserId,
+        id: calculationId,
+        ownerUserId,
+        requestedCount: 2,
+      },
+      at,
+    );
+    repository.workbooks.set(
+      primaryWorkbookId,
+      createValidWorkbook(primaryWorkbookId),
+    );
+    repository.workbooks.set(
+      secondWorkbookId,
+      createValidWorkbook(secondWorkbookId),
+    );
+    repository.sources = [
+      {
+        calculationId,
+        createdAt: at,
+        position: 0,
+        sourceId: "alpha",
+        workbookId: primaryWorkbookId,
+      },
+      {
+        calculationId,
+        createdAt: at,
+        position: 1,
+        sourceId: "beta",
+        workbookId: secondWorkbookId,
+      },
+    ];
+
+    await service.processWorkbookCalculation({
+      lineage,
+      workbookCalculationId: calculationId,
+    });
+
+    assert.equal(calculator.calculateBatchCalls, 2);
+    assert.deepEqual(
+      repository.completedSnapshots.map((snapshot) => ({
+        questionIndex: snapshot.questionIndex,
+        snapshotIndex: snapshot.snapshotIndex,
+        sourceId: snapshot.sourceId,
+        workbookId: snapshot.workbookId,
+      })),
+      [
+        {
+          questionIndex: 0,
+          snapshotIndex: 0,
+          sourceId: "alpha",
+          workbookId: primaryWorkbookId,
+        },
+        {
+          questionIndex: 0,
+          snapshotIndex: 1,
+          sourceId: "beta",
+          workbookId: secondWorkbookId,
+        },
+        {
+          questionIndex: 1,
+          snapshotIndex: 2,
+          sourceId: "alpha",
+          workbookId: primaryWorkbookId,
+        },
+        {
+          questionIndex: 1,
+          snapshotIndex: 3,
+          sourceId: "beta",
+          workbookId: secondWorkbookId,
+        },
+      ],
+    );
+  });
+
   it("rejects empty source collections without falling back to the calculation workbook", async () => {
     const repository = new FakeWorkbookRepository();
     const transaction = new FakeWorkbookTransaction(repository);
     const calculator = new FakeWorkbookCalculator();
     const service = new WorkbookCalculationProcessorService({
+      clock,
+      idGenerator: fakeIdGenerator,
+      workbookCalculator: calculator,
+      workbookFileProvider: fakeWorkbookFileProvider,
       workbookRepository: repository,
       workbookTransaction: transaction,
-      workbookFileProvider: fakeWorkbookFileProvider,
-      workbookCalculator: calculator,
-      idGenerator: fakeIdGenerator,
-      clock,
     });
 
-    repository.runningCalculation = createWorkbookCalculation(
+    repository.runningCalculation = createInitialWorkbookCalculation(
       {
+        correlationId: null,
+        createdByUserId,
         id: calculationId,
         ownerUserId,
-        createdByUserId,
-        workbookId: primaryWorkbookId,
         requestedCount: 2,
-        correlationId: null,
       },
       at,
     );
@@ -70,16 +172,18 @@ describe("WorkbookCalculationProcessorService", () => {
     );
 
     await service.processWorkbookCalculation({
-      workbookCalculationId: calculationId,
-      sources: [],
       lineage,
+      workbookCalculationId: calculationId,
     });
 
     assert.deepEqual(repository.findWorkbookByIdCalls, []);
     assert.equal(calculator.calculateBatchCalls, 0);
     assert.deepEqual(repository.completedSnapshots, []);
     assert.equal(transaction.outboxEvents.length, 1);
-    assert.equal(transaction.outboxEvents[0]?.type, WORKBOOK_CALCULATION_FAILED_EVENT);
+    assert.equal(
+      transaction.outboxEvents[0]?.type,
+      WORKBOOK_CALCULATION_FAILED_EVENT,
+    );
     assert.deepEqual(transaction.outboxEvents[0]?.payload.sources, []);
   });
 });
@@ -90,9 +194,9 @@ const clock: Clock = {
 
 const fakeIdGenerator: IdGenerator = {
   eventId: () => toEventId("019e9315-6a87-715f-9861-8654df070c25"),
-  workbookId: () => workbookId("019e9315-6a87-715f-9861-8654df070c26"),
   workbookCalculationId: () =>
     workbookCalculationId("019e9315-6a87-715f-9861-8654df070c27"),
+  workbookId: () => workbookId("019e9315-6a87-715f-9861-8654df070c26"),
   workbookSnapshotId: () =>
     workbookSnapshotId("019e9315-6a87-715f-9861-8654df070c28"),
 };
@@ -108,18 +212,20 @@ const fakeWorkbookFileProvider: WorkbookFileProviderPort = {
     throw new Error("Not implemented.");
   },
   readWorkbookFileContentForOwnerUserId: async () => ({
-    fileId: fileId("019e9315-6a87-715f-9861-8654df070c29"),
-    originalName: "workbook.xlsx",
+    byteSize: 0,
+    bytes: new Uint8Array(),
+    checksumSha256: "checksum",
     contentType:
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    byteSize: 0,
-    checksumSha256: "checksum",
-    bytes: new Uint8Array(),
+    fileId: fileId("019e9315-6a87-715f-9861-8654df070c29"),
+    originalName: "workbook.xlsx",
   }),
 };
 
 class FakeWorkbookCalculator implements WorkbookCalculator {
   calculateBatchCalls = 0;
+
+  constructor(private readonly result: WorkbookSnapshot["values"][] = []) {}
 
   async inspect(): Promise<never> {
     throw new Error("Not implemented.");
@@ -131,7 +237,7 @@ class FakeWorkbookCalculator implements WorkbookCalculator {
 
   async calculateBatch(): Promise<WorkbookSnapshot["values"][]> {
     this.calculateBatchCalls += 1;
-    return [];
+    return this.result;
   }
 
   async health(): Promise<never> {
@@ -143,23 +249,23 @@ function createValidWorkbook(id: ReturnType<typeof workbookId>): Workbook {
   return markWorkbookValid(
     createWorkbookDomain(
       {
-        id,
-        ownerUserId,
-        createdByUserId,
-        name: "Workbook",
-        fileId: fileId("019e9315-6a87-715f-9861-8654df070c30"),
         checksumSha256: "checksum",
-        originalName: "workbook.xlsx",
+        createdByUserId,
         engine: "libreoffice",
+        fileId: fileId("019e9315-6a87-715f-9861-8654df070c30"),
+        id,
+        name: "Workbook",
+        originalName: "workbook.xlsx",
+        ownerUserId,
       },
       at,
     ),
     {
-      sheetCount: 1,
       cellCount: 1,
-      formulaCount: 0,
       forbiddenFeatureFindings: [],
+      formulaCount: 0,
       libreOfficeVersion: "25.2",
+      sheetCount: 1,
     },
     "25.2",
     at,
@@ -178,8 +284,8 @@ class FakeWorkbookTransaction implements WorkbookTransactionPort {
     }) => Promise<T>,
   ): Promise<T> {
     return fn({
-      workbookRepository: this.repository,
       outboxRepository: new FakeOutboxRepository(this.outboxEvents),
+      workbookRepository: this.repository,
     });
   }
 }
@@ -229,6 +335,7 @@ class FakeWorkbookRepository implements WorkbookRepository {
   readonly findWorkbookByIdCalls: string[] = [];
   completedSnapshots: readonly WorkbookSnapshot[] = [];
   runningCalculation: WorkbookCalculation | null = null;
+  sources: WorkbookCalculationSourceRecord[] = [];
 
   async listWorkbooksByOwnerUserId(): Promise<Workbook[]> {
     throw new Error("Not implemented.");
@@ -267,7 +374,7 @@ class FakeWorkbookRepository implements WorkbookRepository {
     throw new Error("Not implemented.");
   }
 
-  async createWorkbookCalculation(): Promise<WorkbookCalculation> {
+  async createWorkbookCalculationWithSources(): Promise<WorkbookCalculation> {
     throw new Error("Not implemented.");
   }
 
@@ -288,6 +395,16 @@ class FakeWorkbookRepository implements WorkbookRepository {
 
   async listWorkbookSnapshotsByCalculationId(): Promise<WorkbookSnapshot[]> {
     throw new Error("Not implemented.");
+  }
+
+  async listWorkbookSnapshotMetadataForCalculation(): Promise<[]> {
+    throw new Error("Not implemented.");
+  }
+
+  async listWorkbookCalculationSources(): Promise<
+    WorkbookCalculationSourceRecord[]
+  > {
+    return this.sources;
   }
 
   async createWorkbookSnapshots(): Promise<WorkbookSnapshot[]> {

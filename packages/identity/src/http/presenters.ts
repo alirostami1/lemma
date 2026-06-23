@@ -8,7 +8,7 @@ import type {
   RolesResponse as RolesResponseDto,
   UserRole as UserRoleDto,
   UserRolesResponse as UserRolesResponseDto,
-} from "../gen/types/index.js";
+} from "../generated/types/index.js";
 
 export function presentIdentityUser(user: User): IdentityUserResponseDto {
   return {
@@ -40,35 +40,35 @@ export function presentUserRoles(
 
 function toIdentityUserDto(user: User): IdentityUserDto {
   return {
+    createdAt: presentDate(user.createdAt),
+    displayName: user.displayName,
+    email: user.email,
     id: user.id,
     identityId: user.identityId,
-    email: user.email,
-    displayName: user.displayName,
     status: user.status,
-    createdAt: presentDate(user.createdAt),
     updatedAt: presentDate(user.updatedAt),
   };
 }
 
 function toRoleDto(role: Role): RoleDto {
   return {
+    createdAt: presentDate(role.createdAt),
+    description: role.description,
     id: role.id,
+    isSystem: role.isSystem,
     key: role.key,
     name: role.name,
-    description: role.description,
-    isSystem: role.isSystem,
-    createdAt: presentDate(role.createdAt),
     updatedAt: presentDate(role.updatedAt),
   };
 }
 
 function toUserRoleDto(userRole: UserGrantedRole): UserRoleDto {
   return {
-    userId: userRole.userId,
+    createdAt: presentDate(userRole.createdAt),
+    expiresAt: presentDate(userRole.expiresAt),
+    grantedByUserId: userRole.grantedByUserId,
     roleId: userRole.roleId,
     roleKey: userRole.roleKey,
-    grantedByUserId: userRole.grantedByUserId,
-    expiresAt: presentDate(userRole.expiresAt),
-    createdAt: presentDate(userRole.createdAt),
+    userId: userRole.userId,
   };
 }

@@ -7,9 +7,10 @@ import {
   eventId as toEventId,
 } from "@lemma/events/domain";
 import {
-  createWorkbookCalculation,
+  createInitialWorkbookCalculation,
   createWorkbook as createWorkbookDomain,
   fileId,
+  markWorkbookCalculationFailed,
   markWorkbookValid,
   userId,
   type Workbook,
@@ -45,7 +46,7 @@ const nextEventId = toEventId("019e9315-6a87-715f-9861-8654df070c06");
 const lineage = rootOperationLineage("019e9315-6a87-715f-9861-8654df070c07");
 const sources = [
   {
-    sourceId: "019e9315-6a87-715f-9861-8654df070c10",
+    sourceId: "primary",
     workbookId: targetWorkbookId,
   },
 ] as const;
@@ -53,26 +54,25 @@ const sources = [
 describe("WorkbookCalculationRequestAdapter", () => {
   it("returns an existing calculation for the same correlation id", async () => {
     const harness = createHarness();
-    const existing = createWorkbookCalculation(
+    const existing = createInitialWorkbookCalculation(
       {
+        correlationId: "019e9315-6a87-715f-9861-8654df070c08",
+        createdByUserId,
         id: existingCalculationId,
         ownerUserId,
-        createdByUserId,
-        workbookId: targetWorkbookId,
         requestedCount: 3,
-        correlationId: "019e9315-6a87-715f-9861-8654df070c08",
       },
       at,
     );
     harness.repository.calculations.set(existing.id, existing);
 
     const result = await harness.adapter.requestCalculation({
-      createdByUserId,
-      workbookId: targetWorkbookId,
-      sources,
-      requestedCount: 3,
       correlationId: existing.correlationId,
+      createdByUserId,
       lineage,
+      ownerUserId,
+      requestedCount: 3,
+      sources,
     });
 
     assert.equal(result.workbookCalculationId, existing.id);
@@ -80,16 +80,53 @@ describe("WorkbookCalculationRequestAdapter", () => {
     assert.equal(harness.transaction.outboxEvents.length, 0);
   });
 
+  it("rejects failed correlation reuse with correlation and status details", async () => {
+    const harness = createHarness();
+    const correlationId = "019e9315-6a87-715f-9861-8654df070c08";
+    const existing = markWorkbookCalculationFailed(
+      createInitialWorkbookCalculation(
+        {
+          correlationId,
+          createdByUserId,
+          id: existingCalculationId,
+          ownerUserId,
+          requestedCount: 3,
+        },
+        at,
+      ),
+      "failed",
+      at,
+    );
+    harness.repository.calculations.set(existing.id, existing);
+
+    await assert.rejects(
+      () =>
+        harness.adapter.requestCalculation({
+          correlationId,
+          createdByUserId,
+          lineage,
+          ownerUserId,
+          requestedCount: 3,
+          sources,
+        }),
+      (error: unknown) =>
+        error instanceof Error &&
+        error.message.includes(correlationId) &&
+        error.message.includes("failed"),
+    );
+    assert.equal(harness.repository.createdCalculations.length, 0);
+  });
+
   it("creates a calculation and appends one requested event", async () => {
     const harness = createHarness();
 
     const result = await harness.adapter.requestCalculation({
-      createdByUserId,
-      workbookId: targetWorkbookId,
-      sources,
-      requestedCount: 5,
       correlationId: "019e9315-6a87-715f-9861-8654df070c09",
+      createdByUserId,
       lineage,
+      ownerUserId,
+      requestedCount: 5,
+      sources,
     });
 
     assert.equal(result.workbookCalculationId, nextCalculationId);
@@ -100,32 +137,35 @@ describe("WorkbookCalculationRequestAdapter", () => {
       WORKBOOK_CALCULATION_REQUESTED_EVENT,
     );
     assert.deepEqual(harness.transaction.outboxEvents[0]?.payload, {
-      workbookCalculationId: nextCalculationId,
-      workbookId: targetWorkbookId,
-      sources: [...sources],
-      requestedCount: 5,
+      attemptNumber: 1,
       correlationId: "019e9315-6a87-715f-9861-8654df070c09",
+      requestedCount: 5,
+      retryOfCalculationId: null,
+      sources: [...sources],
+      workbookCalculationId: nextCalculationId,
     } satisfies WorkbookCalculationRequestedPayload);
   });
 
   it("rejects duplicate workbook source ids", async () => {
     const harness = createHarness();
+    const [firstSource] = sources;
+    assert.ok(firstSource);
 
     await assert.rejects(
       () =>
         harness.adapter.requestCalculation({
+          correlationId: "019e9315-6a87-715f-9861-8654df070c0a",
           createdByUserId,
-          workbookId: targetWorkbookId,
+          lineage,
+          ownerUserId,
+          requestedCount: 5,
           sources: [
-            sources[0]!,
+            firstSource,
             {
-              sourceId: sources[0]!.sourceId,
+              sourceId: firstSource.sourceId,
               workbookId: workbookId("019e9315-6a87-715f-9861-8654df070c13"),
             },
           ],
-          requestedCount: 5,
-          correlationId: "019e9315-6a87-715f-9861-8654df070c0a",
-          lineage,
         }),
       (error: unknown) =>
         error instanceof Error &&
@@ -134,6 +174,31 @@ describe("WorkbookCalculationRequestAdapter", () => {
     assert.equal(harness.repository.createdCalculations.length, 0);
     assert.equal(harness.transaction.outboxEvents.length, 0);
   });
+
+  it("rejects source ids with invalid pattern", async () => {
+    const harness = createHarness();
+
+    await assert.rejects(
+      () =>
+        harness.adapter.requestCalculation({
+          correlationId: "019e9315-6a87-715f-9861-8654df070c0b",
+          createdByUserId,
+          lineage,
+          ownerUserId,
+          requestedCount: 5,
+          sources: [
+            {
+              sourceId: "123bad",
+              workbookId: targetWorkbookId,
+            },
+          ],
+        }),
+      (error: unknown) =>
+        error instanceof Error &&
+        error.message ===
+          "sources[0].sourceId must start with a letter and contain only letters, numbers, underscores, or hyphens.",
+    );
+  });
 });
 
 function createHarness() {
@@ -141,10 +206,10 @@ function createHarness() {
   repository.workbooks.set(targetWorkbookId, createValidWorkbook());
   const transaction = new FakeWorkbookTransaction(repository);
   const adapter = new WorkbookCalculationRequestAdapter({
+    clock,
+    idGenerator: fakeIdGenerator,
     workbookRepository: repository,
     workbookTransaction: transaction,
-    idGenerator: fakeIdGenerator,
-    clock,
   });
 
   return { adapter, repository, transaction };
@@ -156,8 +221,8 @@ const clock: Clock = {
 
 const fakeIdGenerator: IdGenerator = {
   eventId: () => nextEventId,
-  workbookId: () => workbookId("019e9315-6a87-715f-9861-8654df070c10"),
   workbookCalculationId: () => nextCalculationId,
+  workbookId: () => workbookId("019e9315-6a87-715f-9861-8654df070c10"),
   workbookSnapshotId: () =>
     workbookSnapshotId("019e9315-6a87-715f-9861-8654df070c11"),
 };
@@ -166,23 +231,23 @@ function createValidWorkbook(): Workbook {
   return markWorkbookValid(
     createWorkbookDomain(
       {
-        id: targetWorkbookId,
-        ownerUserId,
-        createdByUserId,
-        name: "Workbook",
-        fileId: fileId("019e9315-6a87-715f-9861-8654df070c12"),
         checksumSha256: "checksum",
-        originalName: "workbook.xlsx",
+        createdByUserId,
         engine: "libreoffice",
+        fileId: fileId("019e9315-6a87-715f-9861-8654df070c12"),
+        id: targetWorkbookId,
+        name: "Workbook",
+        originalName: "workbook.xlsx",
+        ownerUserId,
       },
       at,
     ),
     {
-      sheetCount: 1,
       cellCount: 1,
-      formulaCount: 0,
       forbiddenFeatureFindings: [],
+      formulaCount: 0,
       libreOfficeVersion: "25.2",
+      sheetCount: 1,
     },
     "25.2",
     at,
@@ -201,8 +266,8 @@ class FakeWorkbookTransaction implements WorkbookTransactionPort {
     }) => Promise<T>,
   ): Promise<T> {
     return fn({
-      workbookRepository: this.repository,
       outboxRepository: new FakeOutboxRepository(this.outboxEvents),
+      workbookRepository: this.repository,
     });
   }
 }
@@ -266,9 +331,11 @@ class FakeWorkbookRepository implements WorkbookRepository {
     );
   }
 
-  async createWorkbookCalculation(
-    calculation: WorkbookCalculation,
-  ): Promise<WorkbookCalculation> {
+  async createWorkbookCalculationWithSources(input: {
+    calculation: WorkbookCalculation;
+    sources: readonly unknown[];
+  }): Promise<WorkbookCalculation> {
+    const { calculation } = input;
     this.createdCalculations.push(calculation);
     this.calculations.set(calculation.id, calculation);
     return calculation;
@@ -314,6 +381,14 @@ class FakeWorkbookRepository implements WorkbookRepository {
 
   async listWorkbookSnapshotsByCalculationId(): Promise<WorkbookSnapshot[]> {
     throw new Error("Not implemented.");
+  }
+
+  async listWorkbookSnapshotMetadataForCalculation(): Promise<[]> {
+    throw new Error("Not implemented.");
+  }
+
+  async listWorkbookCalculationSources() {
+    return [];
   }
 
   async createWorkbookSnapshots(): Promise<WorkbookSnapshot[]> {

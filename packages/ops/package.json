@@ -2,8 +2,8 @@
   "name": "@lemma/ops",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
   "sideEffects": false,
+  "type": "module",
   "exports": {
     "./application": {
       "types": "./src/application/index.ts",
@@ -35,12 +35,16 @@
     }
   },
   "scripts": {
-    "check-types": "tsc --noEmit",
     "build": "tsc",
     "check": "biome check",
+    "check:types": "tsc --noEmit",
+    "check:write": "biome check --write",
     "format": "biome format",
+    "format:write": "biome format --write",
+    "generate:hono": "orval",
     "lint": "biome lint",
-    "generate:openapi": "node ../../scripts/run-openapi-generator.mjs"
+    "lint:write": "biome lint --write",
+    "test": "node --import tsx --test src/**/*.test.ts"
   },
   "dependencies": {
     "@hono/zod-validator": "catalog:",
@@ -58,7 +62,7 @@
     "@lemma/openapi-hono-generator": "workspace:*",
     "@lemma/typescript-config": "workspace:*",
     "@types/node": "catalog:",
-    "orval": "^8.10.0",
+    "orval": "catalog:",
     "typescript": "catalog:"
   }
 }

@@ -3,7 +3,8 @@ import { instrumentService } from "@lemma/observability";
 import {
   assertWorkbookIsUsable,
   cancelWorkbookCalculation,
-  createWorkbookCalculation,
+  createRetryWorkbookCalculation,
+  InvalidWorkbookFieldError,
   workbookCalculationId as toWorkbookCalculationId,
   workbookId as toWorkbookId,
 } from "../domain/index.js";
@@ -53,10 +54,11 @@ import type {
   WorkbookRepository,
   WorkbookTransactionPort,
 } from "./ports.js";
-import { normalizeWorkbookCalculationSources } from "./workbook-calculation-sources.js";
 import { WorkbookCalculationListService } from "./WorkbookCalculationListService.js";
 import { WorkbookCalculationProcessorService } from "./WorkbookCalculationProcessorService.js";
+import { WorkbookCalculationRequestAdapter } from "./WorkbookCalculationRequestAdapter.js";
 import { WorkbookSnapshotService } from "./WorkbookSnapshotService.js";
+import { normalizeWorkbookCalculationSources } from "./workbook-calculation-sources.js";
 import { workbookCalculationRequestedEvent } from "./workbook-events.js";
 
 const instrumentation = instrumentService("workbook", "calculation_service");
@@ -102,44 +104,44 @@ export class WorkbookCalculationService {
           command.sources,
           "sources",
         );
-        const workbook = await this.deps.workbookRepository.findWorkbookById(
-          toWorkbookId(command.workbookId),
+        const workbooks = await Promise.all(
+          sources.map((source) =>
+            this.deps.workbookRepository.findWorkbookById(
+              toWorkbookId(source.workbookId),
+            ),
+          ),
         );
-        if (!workbook) {
+        const workbook = workbooks[0];
+        if (!workbook || workbooks.some((item) => item === null)) {
           throw new WorkbookNotFoundError();
         }
-        this.assertAuthorized(
-          canRequestWorkbookCalculation(command.currentUser, workbook),
-          "You cannot calculate this workbook.",
-        );
-        assertWorkbookIsUsable(workbook);
-        const at = this.deps.clock.now();
-        const calculation = createWorkbookCalculation(
-          {
-            id: this.deps.idGenerator.workbookCalculationId(),
-            ownerUserId: workbook.ownerUserId,
-            createdByUserId: command.currentUser.user.id,
-            workbookId: workbook.id,
-            requestedCount: command.requestedCount,
-            correlationId: command.correlationId,
-          },
-          at,
-        );
-        const created = await this.deps.workbookTransaction.transaction(
-          async ({ workbookRepository, outboxRepository }) => {
-            const persisted =
-              await workbookRepository.createWorkbookCalculation(calculation);
-            await outboxRepository.appendEvents([
-              workbookCalculationRequestedEvent({
-                id: this.deps.idGenerator.eventId(),
-                calculation: persisted,
-                sources,
-                lineage: command.lineage,
-                occurredAt: persisted.createdAt,
-              }),
-            ]);
-            return persisted;
-          },
+        for (const sourceWorkbook of workbooks) {
+          if (!sourceWorkbook) {
+            throw new WorkbookNotFoundError();
+          }
+          assertWorkbookIsUsable(sourceWorkbook);
+          if (sourceWorkbook.ownerUserId !== workbook.ownerUserId) {
+            throw new InvalidWorkbookFieldError(
+              "All calculation source workbooks must belong to the same owner.",
+            );
+          }
+          this.assertAuthorized(
+            canRequestWorkbookCalculation(command.currentUser, sourceWorkbook),
+            "You cannot calculate this workbook.",
+          );
+        }
+        const requested = await new WorkbookCalculationRequestAdapter(
+          this.deps,
+        ).requestCalculation({
+          correlationId: command.correlationId ?? null,
+          createdByUserId: command.currentUser.user.id,
+          lineage: command.lineage,
+          ownerUserId: workbook.ownerUserId,
+          requestedCount: command.requestedCount,
+          sources,
+        });
+        const created = await this.findCalculationByIdOrThrow(
+          requested.workbookCalculationId,
         );
 
         return {
@@ -191,14 +193,49 @@ export class WorkbookCalculationService {
           canManageWorkbookCalculation(command.currentUser, calculation),
           "You cannot retry this workbook calculation.",
         );
-        return this.requestWorkbookCalculation({
-          currentUser: command.currentUser,
-          workbookId: calculation.workbookId,
-          sources: command.sources,
-          requestedCount: calculation.requestedCount,
-          correlationId: calculation.correlationId,
-          lineage: command.lineage,
-        });
+        const retry = createRetryWorkbookCalculation(
+          {
+            createdByUserId: command.currentUser.user.id,
+            id: this.deps.idGenerator.workbookCalculationId(),
+            original: calculation,
+          },
+          this.deps.clock.now(),
+        );
+        const sources =
+          await this.deps.workbookRepository.listWorkbookCalculationSources(
+            calculation.id,
+          );
+        if (sources.length === 0) {
+          throw new InvalidWorkbookFieldError(
+            "Workbook calculation has no persisted sources to retry.",
+          );
+        }
+        const retrySources = sources.map((source) => ({
+          sourceId: source.sourceId,
+          workbookId: source.workbookId,
+        }));
+        const created = await this.deps.workbookTransaction.transaction(
+          async ({ workbookRepository, outboxRepository }) => {
+            const persisted =
+              await workbookRepository.createWorkbookCalculationWithSources({
+                calculation: retry,
+                sources: retrySources,
+              });
+            await outboxRepository.appendEvents([
+              workbookCalculationRequestedEvent({
+                calculation: persisted,
+                id: this.deps.idGenerator.eventId(),
+                lineage: command.lineage,
+                occurredAt: persisted.createdAt,
+                sources: retrySources,
+              }),
+            ]);
+            return persisted;
+          },
+        );
+        return {
+          workbookCalculation: created,
+        };
       },
     );
   }
