@@ -40,24 +40,24 @@ export function QuestionSetQuestionList({
     <ResourceList>
       {items.map((item) => (
         <ResourceListItem
-          key={item.id}
-          variant="navigation"
-          title={item.title}
           description={item.description}
+          key={item.id}
           metadata={item.metadata}
           navigationAccessory={
             <ArrowRight className="size-4 text-muted-foreground" />
           }
           renderLink={(children, className) => (
             <Link
-              to="/question-sets/$questionSetId/questions/$questionId"
-              params={{ questionSetId, questionId: item.id }}
               aria-label={`Open ${item.title}`}
               className={className}
+              params={{ questionId: item.id, questionSetId }}
+              to="/question-sets/$questionSetId/questions/$questionId"
             >
               {children}
             </Link>
           )}
+          title={item.title}
+          variant="navigation"
         />
       ))}
     </ResourceList>

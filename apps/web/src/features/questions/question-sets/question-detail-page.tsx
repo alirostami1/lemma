@@ -59,43 +59,43 @@ export function QuestionDetailPage({
   return (
     <PageContainer variant="resource">
       <PageHeader
-        title="Question"
+        actions={
+          <Button asChild variant="outline">
+            <Link params={{ questionSetId }} to="/question-sets/$questionSetId">
+              Back to question set
+            </Link>
+          </Button>
+        }
         description={
           controller.questionSet
             ? `From ${controller.questionSet.name}`
             : "Review generated question."
         }
-        actions={
-          <Button asChild variant="outline">
-            <Link to="/question-sets/$questionSetId" params={{ questionSetId }}>
-              Back to question set
-            </Link>
-          </Button>
-        }
+        title="Question"
       />
       <DetailSection
-        title="Question"
         description="Review this generated question."
+        title="Question"
       >
         {controller.isLoading || !controller.question ? (
           <QuestionDetailSkeleton />
         ) : (
           <div className="grid gap-4">
             <QuestionPlayer
-              question={questionToPresentableQuestion(controller.question)}
               answer={controller.answer}
-              mode="practice"
               feedback={controller.grade}
+              mode="practice"
               onAnswerChange={controller.onAnswerChange}
+              question={questionToPresentableQuestion(controller.question)}
             />
             {controller.checkAnswerError ? (
               <InlineError message={controller.checkAnswerError} />
             ) : null}
             <div>
               <Button
-                type="button"
                 disabled={!controller.canCheckAnswer}
                 onClick={controller.onCheckAnswer}
+                type="button"
               >
                 {controller.isCheckingAnswer
                   ? "Checking answer..."

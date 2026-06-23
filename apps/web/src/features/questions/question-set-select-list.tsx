@@ -21,12 +21,12 @@ export function QuestionSetSelectList({
         const selected = questionSet.id === selectedQuestionSetId;
         return (
           <ToolbarPopoverChoice
-            key={questionSet.id}
-            selected={selected}
             disabled={disabled}
             icon={<FolderOpen className="size-4" />}
-            title={questionSet.name}
+            key={questionSet.id}
             onClick={() => onSelectQuestionSet(questionSet.id)}
+            selected={selected}
+            title={questionSet.name}
           />
         );
       })}

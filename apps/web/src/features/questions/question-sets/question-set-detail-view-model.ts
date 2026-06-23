@@ -20,17 +20,17 @@ export function getQuestionSetDetailViewModel(input: {
   const questionSetName = input.questionSet?.name ?? "Question set";
 
   return {
-    title: questionSetName,
-    description: "See generated questions in this question set.",
-    summaryTitle: "Question set",
-    summaryDescription: "Question set details and generated question history.",
-    generatedQuestionsTitle: "Generated questions",
-    generatedQuestionsDescription:
-      "Generated questions stay here after generation finishes.",
     backLabel: "Back to question sets",
     createLabel: "Create blueprint",
-    loadMoreLabel: "Load more questions",
-    loadingMoreLabel: "Loading more questions...",
+    description: "See generated questions in this question set.",
     endOfListLabel: "All generated questions are shown.",
+    generatedQuestionsDescription:
+      "Generated questions stay here after generation finishes.",
+    generatedQuestionsTitle: "Generated questions",
+    loadingMoreLabel: "Loading more questions...",
+    loadMoreLabel: "Load more questions",
+    summaryDescription: "Question set details and generated question history.",
+    summaryTitle: "Question set",
+    title: questionSetName,
   };
 }

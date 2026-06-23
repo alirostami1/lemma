@@ -70,12 +70,12 @@ export function QuestionSetDetailPage({
         viewModel={viewModel}
       />
       <QuestionSetGeneratedQuestionsSection
-        questionSetId={questionSetId}
-        questionItems={controller.questionItems}
-        questionsState={controller.questionsState}
-        viewModel={viewModel}
         onLoadMore={controller.onLoadMore}
         onRetryLoadMore={controller.onRetryLoadMore}
+        questionItems={controller.questionItems}
+        questionSetId={questionSetId}
+        questionsState={controller.questionsState}
+        viewModel={viewModel}
       />
     </PageContainer>
   );

@@ -66,17 +66,14 @@ export function useQuestionDetailController({
   );
 
   return {
-    question: questionQuery.data?.question ?? null,
-    questionSet: questionSetQuery.data?.questionSet ?? null,
     answer,
-    grade: gradeMutation.data?.grade ?? null,
-    isCheckingAnswer: gradeMutation.isPending,
+    canCheckAnswer: answer.responses.length > 0 && !gradeMutation.isPending,
     checkAnswerError: gradeMutation.isError
       ? "Answer could not be checked."
       : null,
-    canCheckAnswer: answer.responses.length > 0 && !gradeMutation.isPending,
+    grade: gradeMutation.data?.grade ?? null,
+    isCheckingAnswer: gradeMutation.isPending,
     isLoading: questionQuery.isLoading || questionSetQuery.isLoading,
-    pageError: questionError ?? questionSetError,
     onAnswerChange: (nextAnswer) => {
       setAnswer(nextAnswer);
       resetGrade();
@@ -85,8 +82,11 @@ export function useQuestionDetailController({
       if (answer.responses.length === 0 || gradeMutation.isPending) {
         return;
       }
-      gradeMutation.mutate({ questionId, answer });
+      gradeMutation.mutate({ answer, questionId });
     },
+    pageError: questionError ?? questionSetError,
+    question: questionQuery.data?.question ?? null,
+    questionSet: questionSetQuery.data?.questionSet ?? null,
   };
 }
 

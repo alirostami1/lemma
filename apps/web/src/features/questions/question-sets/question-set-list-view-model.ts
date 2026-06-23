@@ -20,15 +20,15 @@ export function buildQuestionSetListViewModel(input: {
   questionSets: QuestionSet[];
 }): QuestionSetListViewModel {
   return {
-    title: "Question sets",
     description: "Organize generated questions by question set.",
-    sectionTitle: "Question sets",
-    sectionDescription: `${input.questionSets.length} question set${input.questionSets.length === 1 ? "" : "s"}`,
     emptyDescription: "Question sets group generated questions for reuse.",
     items: input.questionSets.map((questionSet) => ({
       id: questionSet.id,
-      title: questionSet.name,
       metadata: `Updated ${formatStableDateTime(questionSet.updatedAt)}`,
+      title: questionSet.name,
     })),
+    sectionDescription: `${input.questionSets.length} question set${input.questionSets.length === 1 ? "" : "s"}`,
+    sectionTitle: "Question sets",
+    title: "Question sets",
   };
 }

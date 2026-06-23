@@ -40,29 +40,24 @@ export function useQuestionSetListController(): QuestionSetListController {
   );
 
   return {
-    viewModel: buildQuestionSetListViewModel({ questionSets }),
-    questionSets,
-    pageError: getQuestionSetListPageError(
-      questionSets.length === 0 ? query.error : null,
-    ),
-    isInitialLoading: query.isLoading,
+    hasMore: Boolean(query.hasNextPage),
     initialErrorMessage:
       query.isError && questionSets.length === 0
         ? "Question sets could not be loaded."
         : null,
+    isInitialLoading: query.isLoading,
+    isLoadingMore: query.isFetchingNextPage,
     loadMoreErrorMessage: query.isFetchNextPageError
       ? "More question sets could not be loaded."
       : null,
-    isLoadingMore: query.isFetchingNextPage,
-    hasMore: Boolean(query.hasNextPage),
-    onRetry: () => {
-      void query.refetch();
-    },
     onLoadMore: () => {
       if (!query.hasNextPage || query.isFetchingNextPage) {
         return;
       }
       void query.fetchNextPage();
+    },
+    onRetry: () => {
+      void query.refetch();
     },
     onRetryLoadMore: () => {
       if (query.isFetchingNextPage) {
@@ -70,6 +65,11 @@ export function useQuestionSetListController(): QuestionSetListController {
       }
       void query.fetchNextPage();
     },
+    pageError: getQuestionSetListPageError(
+      questionSets.length === 0 ? query.error : null,
+    ),
+    questionSets,
+    viewModel: buildQuestionSetListViewModel({ questionSets }),
   };
 }
 

@@ -17,8 +17,6 @@ export function QuestionSetDetailHeader({
 }) {
   return (
     <PageHeader
-      title={viewModel.title}
-      description={viewModel.description}
       actions={
         <>
           <Button asChild variant="outline">
@@ -35,6 +33,8 @@ export function QuestionSetDetailHeader({
           </Button>
         </>
       }
+      description={viewModel.description}
+      title={viewModel.title}
     />
   );
 }
@@ -50,8 +50,8 @@ export function QuestionSetSummarySection({
 }) {
   return (
     <DetailSection
-      title={viewModel.summaryTitle}
       description={viewModel.summaryDescription}
+      title={viewModel.summaryTitle}
     >
       <div className="grid gap-2 text-sm">
         {state.status === "loading" ? (
@@ -97,15 +97,15 @@ export function QuestionSetGeneratedQuestionsSection({
 }) {
   return (
     <DetailSection
-      title={viewModel.generatedQuestionsTitle}
       description={viewModel.generatedQuestionsDescription}
+      title={viewModel.generatedQuestionsTitle}
     >
       <div className="grid gap-4">
         <QuestionSetQuestionList
-          questionSetId={questionSetId}
-          items={questionItems}
-          isLoading={questionsState.isInitialLoading}
           isError={questionsState.initialErrorMessage !== null}
+          isLoading={questionsState.isInitialLoading}
+          items={questionItems}
+          questionSetId={questionSetId}
         />
         {questionsState.hasMore ? (
           <PaginatedList

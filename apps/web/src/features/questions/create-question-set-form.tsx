@@ -43,13 +43,13 @@ export function CreateQuestionSetForm({
         <Field>
           <FieldLabel htmlFor="question-set-name">Name</FieldLabel>
           <Input
-            id="question-set-name"
-            name="name"
-            placeholder="Question set name"
-            value={name}
             autoFocus={autoFocus}
             disabled={disabled || isSubmitting}
+            id="question-set-name"
+            name="name"
             onChange={(event) => onNameChange(event.currentTarget.value)}
+            placeholder="Question set name"
+            value={name}
           />
         </Field>
       </FieldGroup>
@@ -59,20 +59,20 @@ export function CreateQuestionSetForm({
       <div className="flex flex-wrap items-center justify-end gap-2">
         {onCancel ? (
           <Button
-            type="button"
-            variant="outline"
+            className="gap-2"
             disabled={disabled || isSubmitting}
             onClick={onCancel}
-            className="gap-2"
+            type="button"
+            variant="outline"
           >
             {cancelIcon}
             {cancelLabel}
           </Button>
         ) : null}
         <Button
-          type="submit"
-          disabled={disabled || isSubmitting}
           className="gap-2"
+          disabled={disabled || isSubmitting}
+          type="submit"
         >
           {submitIcon}
           {isSubmitting ? "Creating..." : submitLabel}

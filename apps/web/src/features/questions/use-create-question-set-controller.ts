@@ -39,9 +39,9 @@ export function useCreateQuestionSetController(): CreateQuestionSetController {
   }
 
   return {
-    name,
     errorMessage,
     isSubmitting: createQuestionSet.isPending,
+    name,
     onNameChange: setName,
     onSubmit,
     reset,

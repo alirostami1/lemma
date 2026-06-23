@@ -30,16 +30,16 @@ describe("QuestionSetQuestionList", () => {
   it("renders compact question navigation rows", () => {
     render(
       <QuestionSetQuestionList
-        questionSetId="set-1"
+        isLoading={false}
         items={[
           {
-            id: "question-1",
-            title: "Question 1",
             description: "What is 2 + 2?",
+            id: "question-1",
             metadata: "Generated Jun 14, 2026",
+            title: "Question 1",
           },
         ]}
-        isLoading={false}
+        questionSetId="set-1"
       />,
     );
 

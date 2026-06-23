@@ -14,15 +14,15 @@ describe("ResourceList", () => {
     render(
       <ResourceList>
         <ResourceListItem
-          variant="navigation"
-          title="Saved blueprint"
           description="Open blueprint"
           navigationAccessory={<span>Next</span>}
           renderLink={(children, className) => (
-            <a href="/blueprint" className={className}>
+            <a className={className} href="/blueprint">
               {children}
             </a>
           )}
+          title="Saved blueprint"
+          variant="navigation"
         />
       </ResourceList>,
     );
@@ -38,9 +38,9 @@ describe("ResourceList", () => {
     render(
       <ResourceList>
         <ResourceListItem
-          variant="display"
           title="Saved blueprint"
           trailingAction={<button type="button">Generate</button>}
+          variant="display"
         />
       </ResourceList>,
     );
@@ -52,8 +52,8 @@ describe("ResourceList", () => {
   it("renders stacked lists with explicit spacing", () => {
     const { container } = render(
       <ResourceList variant="stacked">
-        <ResourceListItem variant="display" title="One" />
-        <ResourceListItem variant="display" title="Two" />
+        <ResourceListItem title="One" variant="display" />
+        <ResourceListItem title="Two" variant="display" />
       </ResourceList>,
     );
 
