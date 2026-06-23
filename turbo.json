@@ -36,7 +36,12 @@
         "package.json",
         "orval.config.ts",
         "src/lib/custom-fetch.ts",
-        "$TURBO_ROOT$/packages/api-contract/src/**"
+        "$TURBO_ROOT$/packages/api-contract/src/**",
+        "$TURBO_ROOT$/packages/files/openapi/**",
+        "$TURBO_ROOT$/packages/identity/openapi/**",
+        "$TURBO_ROOT$/packages/ops/openapi/**",
+        "$TURBO_ROOT$/packages/questions/openapi/**",
+        "$TURBO_ROOT$/packages/workbook/openapi/**"
       ],
       "outputs": ["src/api/generated/**"]
     },
