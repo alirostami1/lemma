@@ -95,6 +95,18 @@ export type SerializableStudioSource =
       name: string;
       createdAt: string;
       backing: {
+        kind: "restoring_local_file";
+        originalName: string;
+        byteSize: number;
+        lastModified: number;
+      };
+    }
+  | {
+      type: "workbook";
+      sourceId: string;
+      name: string;
+      createdAt: string;
+      backing: {
         kind: "draft_file";
         fileId: string;
         originalName: string;
@@ -354,10 +366,9 @@ export function serializeStudioSources(
         serialized.push({
           backing: {
             byteSize: source.backing.byteSize,
-            kind: "local_file",
+            kind: "restoring_local_file",
             lastModified: source.backing.lastModified,
             originalName: source.backing.originalName,
-            parseStatus: "parsed",
           },
           createdAt: source.createdAt.toISOString(),
           name: source.name,
@@ -497,6 +508,21 @@ export function deserializeStudioSources(
     }
 
     if (source.backing.kind === "local_file") {
+      return {
+        backing: {
+          byteSize: source.backing.byteSize,
+          kind: "restoring_local_file",
+          lastModified: source.backing.lastModified,
+          originalName: source.backing.originalName,
+          workbookId: null,
+        },
+        createdAt: new Date(source.createdAt),
+        name: source.name,
+        sourceId: source.sourceId,
+        type: "workbook",
+      };
+    }
+    if (source.backing.kind === "restoring_local_file") {
       return {
         backing: {
           byteSize: source.backing.byteSize,

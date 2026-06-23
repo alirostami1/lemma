@@ -1,6 +1,7 @@
 import {
   type UseMutationOptions,
   type UseQueryOptions,
+  type InfiniteData,
   useInfiniteQuery,
   useMutation,
   useQueries,
@@ -69,7 +70,13 @@ export function useWorkbooksInfiniteQuery(
   input?: Omit<ListWorkbooksInput, "cursor">,
   options?: { enabled?: boolean },
 ) {
-  return useInfiniteQuery({
+  return useInfiniteQuery<
+    WorkbooksPage,
+    Error,
+    InfiniteData<WorkbooksPage>,
+    ReturnType<typeof workbookKeys.infiniteList>,
+    string | undefined
+  >({
     getNextPageParam: (page) => page.nextCursor ?? undefined,
     initialPageParam: undefined as string | undefined,
     queryFn: ({ pageParam }) => listWorkbooks({ ...input, cursor: pageParam }),
@@ -165,13 +172,19 @@ export function useWorkbookSnapshotSheetsInfiniteQuery(
   const { workbookSnapshotId, ...params } = input;
   const { enabled = true, ...queryOptions } = options ?? {};
 
-  return useInfiniteQuery({
+  return useInfiniteQuery<
+    WorkbookSnapshotSheetsPage,
+    Error,
+    InfiniteData<WorkbookSnapshotSheetsPage>,
+    ReturnType<typeof workbookKeys.snapshotSheetsInfinite>,
+    string | undefined
+  >({
     enabled: enabled && Boolean(workbookSnapshotId),
-    getNextPageParam: (page) => page.nextCursor ?? undefined,
-    initialPageParam: undefined as string | undefined,
+    queryKey: workbookKeys.snapshotSheetsInfinite(workbookSnapshotId, params),
     queryFn: ({ pageParam }) =>
       listWorkbookSnapshotSheets({ ...input, cursor: pageParam }),
-    queryKey: workbookKeys.snapshotSheetsInfinite(workbookSnapshotId, params),
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
     staleTime: IMMUTABLE_WORKBOOK_SNAPSHOT_STALE_TIME_MS,
     ...queryOptions,
   });

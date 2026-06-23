@@ -476,6 +476,7 @@ export function useBlueprintDraftController({
     setLocalDraftError,
     setLocalDraftStatus,
     setRecoverySnapshot,
+    serverDraftId,
     sources,
   });
 

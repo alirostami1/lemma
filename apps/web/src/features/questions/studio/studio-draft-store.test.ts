@@ -357,6 +357,7 @@ function draftFileSource(sourceId: string, fileId: string) {
       fileId,
       kind: "draft_file" as const,
       originalName: `${sourceId}.xlsx`,
+      parsedWorkbook: null,
       previewError: null,
       previewStatus: "idle" as const,
       workbookId: null,

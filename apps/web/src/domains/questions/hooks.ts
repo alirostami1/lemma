@@ -1,6 +1,7 @@
 import {
   type UseMutationOptions,
   type UseQueryOptions,
+  type InfiniteData,
   useInfiniteQuery,
   useMutation,
   useQuery,
@@ -47,8 +48,10 @@ import type {
   PublishQuestionBlueprintDraftResult,
   QuestionBlueprintAuthoringResult,
   QuestionBlueprintDraftResult,
+  QuestionBlueprintDraftSummariesPage,
   QuestionBlueprintResult,
   QuestionBlueprintsPage,
+  QuestionsPage,
   QuestionGenerationRunResult,
   QuestionGradeResult,
   QuestionResult,
@@ -155,12 +158,17 @@ export function useQuestionSetsInfiniteQuery(
   input?: Omit<ListQuestionSetsInput, "cursor">,
   options?: { enabled?: boolean },
 ) {
-  return useInfiniteQuery({
+  return useInfiniteQuery<
+    QuestionSetsPage,
+    Error,
+    InfiniteData<QuestionSetsPage>,
+    ReturnType<typeof questionKeys.questionSetInfiniteList>,
+    string | undefined
+  >({
+    queryKey: questionKeys.questionSetInfiniteList(input),
+    queryFn: ({ pageParam }) => listQuestionSets({ ...input, cursor: pageParam }),
     getNextPageParam: (page) => page.nextCursor ?? undefined,
     initialPageParam: undefined as string | undefined,
-    queryFn: ({ pageParam }) =>
-      listQuestionSets({ ...input, cursor: pageParam }),
-    queryKey: questionKeys.questionSetInfiniteList(input),
     ...options,
   });
 }
@@ -183,16 +191,22 @@ export function useQuestionSetQuestionsInfiniteQuery(
 ) {
   const params = { limit: input.limit };
 
-  return useInfiniteQuery({
+  return useInfiniteQuery<
+    QuestionsPage,
+    Error,
+    InfiniteData<QuestionsPage>,
+    ReturnType<typeof questionKeys.questionSetQuestionsInfiniteList>,
+    string | undefined
+  >({
     enabled: Boolean(input.questionSetId),
-    getNextPageParam: (page) => page.nextCursor ?? undefined,
-    initialPageParam: undefined as string | undefined,
-    queryFn: ({ pageParam }) =>
-      listQuestionSetQuestions({ ...input, cursor: pageParam }),
     queryKey: questionKeys.questionSetQuestionsInfiniteList(
       input.questionSetId,
       params,
     ),
+    queryFn: ({ pageParam }) =>
+      listQuestionSetQuestions({ ...input, cursor: pageParam }),
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
     ...options,
   });
 }
@@ -236,12 +250,18 @@ export function useQuestionBlueprintsInfiniteQuery(
   input?: Omit<ListQuestionBlueprintsInput, "cursor">,
   options?: { enabled?: boolean },
 ) {
-  return useInfiniteQuery({
-    getNextPageParam: (page) => page.nextCursor ?? undefined,
-    initialPageParam: undefined as string | undefined,
+  return useInfiniteQuery<
+    QuestionBlueprintsPage,
+    Error,
+    InfiniteData<QuestionBlueprintsPage>,
+    ReturnType<typeof questionKeys.questionBlueprintsInfiniteList>,
+    string | undefined
+  >({
+    queryKey: questionKeys.questionBlueprintsInfiniteList(input),
     queryFn: ({ pageParam }) =>
       listQuestionBlueprints({ ...input, cursor: pageParam }),
-    queryKey: questionKeys.questionBlueprintsInfiniteList(input),
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
     ...options,
   });
 }
@@ -250,12 +270,18 @@ export function useQuestionBlueprintDraftsInfiniteQuery(
   input?: Omit<ListQuestionBlueprintDraftsInput, "cursor">,
   options?: { enabled?: boolean },
 ) {
-  return useInfiniteQuery({
-    getNextPageParam: (page) => page.nextCursor ?? undefined,
-    initialPageParam: undefined as string | undefined,
+  return useInfiniteQuery<
+    QuestionBlueprintDraftSummariesPage,
+    Error,
+    InfiniteData<QuestionBlueprintDraftSummariesPage>,
+    ReturnType<typeof questionKeys.questionBlueprintDraftsInfiniteList>,
+    string | undefined
+  >({
+    queryKey: questionKeys.questionBlueprintDraftsInfiniteList(input),
     queryFn: ({ pageParam }) =>
       listQuestionBlueprintDraftSummaries({ ...input, cursor: pageParam }),
-    queryKey: questionKeys.questionBlueprintDraftsInfiniteList(input),
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
     ...options,
   });
 }

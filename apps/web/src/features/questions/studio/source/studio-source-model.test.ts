@@ -215,10 +215,9 @@ describe("studio-source-model", () => {
       {
         backing: {
           byteSize: 12,
-          kind: "local_file",
+          kind: "restoring_local_file",
           lastModified: 456,
           originalName: "restoring.xlsx",
-          parseStatus: "parsed",
         },
         createdAt: "2026-06-21T00:00:00.000Z",
         name: "Restoring",
@@ -273,6 +272,45 @@ describe("studio-source-model", () => {
         type: "workbook",
       },
     ]);
+  });
+
+  it("deserializes local and restoring files with workbookId null", () => {
+    const [restored, restoring] = deserializeStudioSources([
+      {
+        backing: {
+          byteSize: 10,
+          kind: "local_file",
+          lastModified: 123,
+          originalName: "budget.xlsx",
+          parseStatus: "parsed",
+        },
+        createdAt: "2026-06-21T00:00:00.000Z",
+        name: "Budget",
+        sourceId: "source_1",
+        type: "workbook",
+      },
+      {
+        backing: {
+          byteSize: 11,
+          kind: "restoring_local_file",
+          lastModified: 456,
+          originalName: "budget-restored.xlsx",
+        },
+        createdAt: "2026-06-22T00:00:00.000Z",
+        name: "Budget Restored",
+        sourceId: "source_2",
+        type: "workbook",
+      },
+    ]);
+
+    expect(
+      restored.backing.kind === "restoring_local_file" ? restored.backing.workbookId : null,
+    ).toBeNull();
+    expect(
+      restoring.backing.kind === "restoring_local_file"
+        ? restoring.backing.workbookId
+        : null,
+    ).toBeNull();
   });
 
   it("hydrates restoring source to parsed local file when asset exists", async () => {

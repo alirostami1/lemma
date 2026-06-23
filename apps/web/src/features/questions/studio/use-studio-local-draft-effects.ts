@@ -30,6 +30,7 @@ export function useStudioLocalDraftEffects({
   lastSavedDraftKey,
   loadedBlueprint,
   loadedBlueprintId,
+  serverDraftId,
   sources,
   isDraftRouteActive,
   setIsRecoveryResolved,
@@ -51,6 +52,7 @@ export function useStudioLocalDraftEffects({
   lastSavedDraftKey: string | null;
   loadedBlueprint: QuestionBlueprintAuthoring | null;
   loadedBlueprintId: string | null;
+  serverDraftId: string | null;
   sources: StudioSource[];
   isDraftRouteActive: boolean;
   setIsRecoveryResolved(value: boolean): void;
@@ -189,10 +191,13 @@ export function useStudioLocalDraftEffects({
       (source) => source.backing.kind === "local_file",
     );
     const hasUnsavedServerDraft =
-      loadedBlueprintId !== null &&
+      serverDraftId !== null &&
       currentDraftKey !== lastRemoteSaveSnapshotKey;
-    const hasUnsavedLocalDraft = lastLocalSavedDraftKey !== currentDraftKey;
-    const hasUnsafeAssets = false;
+    const hasUnsavedLocalDraft =
+      serverDraftId === null && lastLocalSavedDraftKey !== currentDraftKey;
+    const hasUnsafeAssets = sources.some(
+      (source) => source.backing.kind === "restoring_local_file",
+    );
     const shouldProtectLeave =
       hasUnsavedServerDraft ||
       hasUnsavedLocalDraft ||
@@ -212,6 +217,7 @@ export function useStudioLocalDraftEffects({
   }, [
     currentDraftKey,
     lastLocalSavedDraftKey,
+    serverDraftId,
     loadedBlueprintId,
     lastRemoteSaveSnapshotKey,
     sources,

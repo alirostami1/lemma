@@ -127,6 +127,11 @@ function SecondaryLauncherPanel({
             errorMessage={errorMessage}
             isEmpty={items.length === 0}
             isLoading={isLoading && items.length === 0}
+            loading={
+              <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
+                Loading saved blueprints...
+              </div>
+            }
           >
             <CreateLauncherItemList items={items} />
           </AsyncPanel>

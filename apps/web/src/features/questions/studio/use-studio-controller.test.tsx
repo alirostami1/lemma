@@ -12,6 +12,8 @@ import type {
 import type { useSaveBlueprintController } from "./use-save-blueprint-controller";
 import { useStudioController } from "./use-studio-controller";
 
+type UseSaveBlueprintControllerInput = Parameters<typeof useSaveBlueprintController>[0];
+
 const navigateMock = vi.hoisted(() => vi.fn());
 const draftControllerArgs = vi.hoisted(() => ({
   last: null as {
@@ -20,21 +22,7 @@ const draftControllerArgs = vi.hoisted(() => ({
   } | null,
 }));
 const saveControllerArgs = vi.hoisted(() => ({
-  last: null as {
-    onSaveDraft: () => void;
-    initialDraftId: string;
-    onDraftSaved: (input: { draftId: string }) => void;
-    onBlueprintPublished?: (input: {
-      blueprintId: string;
-      draftId: string | null;
-    }) => void;
-    onSaved: (input: {
-      blueprintDescription: string;
-      blueprintId: string;
-      blueprintName: string;
-      sources: readonly unknown[];
-    }) => void;
-  } | null,
+  last: null as UseSaveBlueprintControllerInput | null,
 }));
 const savedBlueprintsControllerArgs = vi.hoisted(() => ({
   onGenerate: vi.fn(),
@@ -112,19 +100,13 @@ vi.mock("./use-save-blueprint-controller", () => ({
   useSaveBlueprintController: (
     input: Parameters<typeof useSaveBlueprintController>[0],
   ) => {
-    saveControllerArgs.last = {
-      initialDraftId: input.initialDraftId ?? "",
-      onBlueprintPublished: input.onBlueprintPublished,
-      onDraftSaved: input.onDraftSaved,
-      onSaveDraft: input.onSaveDraft,
-      onSaved: input.onSaved,
-    };
+    saveControllerArgs.last = input;
     return {
       clearMessages: vi.fn(),
       commandBarSave: {
         isSaving: false,
         onOpenSaveDialog: vi.fn(),
-        onSaveDraft: input.onSaveDraft,
+        onSaveDraft: vi.fn(),
         saveError: null,
       },
       saveDialog: {
