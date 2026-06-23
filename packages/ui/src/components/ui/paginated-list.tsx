@@ -27,10 +27,10 @@ function PaginatedList({
       ) : null}
       {hasMore && !loadMoreErrorMessage ? (
         <Button
-          type="button"
-          variant="outline"
           disabled={isLoadingMore}
           onClick={onLoadMore}
+          type="button"
+          variant="outline"
         >
           {isLoadingMore ? "Loading more..." : "Load more"}
         </Button>

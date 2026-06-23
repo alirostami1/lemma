@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 import { cn } from "#/lib/utils";
 
 const titleClasses = {
-  launcher: "text-3xl font-semibold tracking-tight",
   default: "text-2xl font-semibold tracking-tight",
+  launcher: "text-3xl font-semibold tracking-tight",
 } as const;
 
 export type PageHeaderProps = {

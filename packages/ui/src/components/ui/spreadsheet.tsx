@@ -188,8 +188,8 @@ export function useSpreadsheetRangeSelection({
 
       if (cell?.dataset.rowIndex && cell.dataset.columnIndex) {
         setSelectionEnd({
-          rowIndex: Number(cell.dataset.rowIndex),
           columnIndex: Number(cell.dataset.columnIndex),
+          rowIndex: Number(cell.dataset.rowIndex),
         });
       }
 
@@ -220,12 +220,12 @@ export function useSpreadsheetRangeSelection({
       }
 
       setSelectionStart({
-        rowIndex: range.startRowIndex,
         columnIndex: range.startColumnIndex,
+        rowIndex: range.startRowIndex,
       });
       setSelectionEnd({
-        rowIndex: range.endRowIndex,
         columnIndex: range.endColumnIndex,
+        rowIndex: range.endRowIndex,
       });
       setIsSelecting(false);
     },
@@ -248,9 +248,9 @@ export function useSpreadsheetRangeSelection({
 
   const getCellProps = useCallback(
     (point: SpreadsheetCellPoint) => ({
-      "data-spreadsheet-cell": true,
-      "data-row-index": point.rowIndex,
       "data-column-index": point.columnIndex,
+      "data-row-index": point.rowIndex,
+      "data-spreadsheet-cell": true,
       onMouseDown: (event: MouseEvent) => {
         if (
           !enabled ||
@@ -289,9 +289,9 @@ export function useSpreadsheetRangeSelection({
 
   const viewportProps = useMemo(
     () => ({
-      ref: viewportRef,
-      onMouseMove: updatePointer,
       onMouseLeave: updatePointer,
+      onMouseMove: updatePointer,
+      ref: viewportRef,
     }),
     [updatePointer],
   );
@@ -333,12 +333,12 @@ export function SpreadsheetCellInput({
 }: ComponentProps<typeof Input>) {
   return (
     <Input
-      data-slot="spreadsheet-cell-input"
-      data-spreadsheet-interactive
       className={cn(
         "h-full min-h-9 rounded-none border-0 bg-transparent px-2 py-1.5 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent",
         className,
       )}
+      data-slot="spreadsheet-cell-input"
+      data-spreadsheet-interactive
       {...props}
     />
   );
@@ -350,12 +350,12 @@ export function SpreadsheetCellInputGroup({
 }: ComponentProps<typeof InputGroup>) {
   return (
     <InputGroup
-      data-slot="spreadsheet-cell-input-group"
-      data-spreadsheet-interactive
       className={cn(
         "h-full min-h-9 rounded-none border-0 bg-transparent shadow-none dark:bg-transparent",
         className,
       )}
+      data-slot="spreadsheet-cell-input-group"
+      data-spreadsheet-interactive
       {...props}
     />
   );
@@ -429,9 +429,9 @@ export function SpreadsheetEditableGrid({
               aria-label={`Cell ${spreadsheetColumnName(
                 context.point.columnIndex,
               )}${context.point.rowIndex + 1}`}
+              onChange={(event) => onValueChange(event.currentTarget.value)}
               readOnly={!onCellValueChange}
               value={context.value}
-              onChange={(event) => onValueChange(event.currentTarget.value)}
             />
           )
         );
@@ -485,8 +485,8 @@ function SpreadsheetGridFrame({
           </div>
           {Array.from({ length: resolvedColumnCount }, (_, index) => (
             <div
-              key={spreadsheetColumnName(columnStartIndex + index)}
               className="sticky top-0 z-20 border bg-background px-2 py-2 text-xs font-medium text-muted-foreground"
+              key={spreadsheetColumnName(columnStartIndex + index)}
             >
               {spreadsheetColumnName(columnStartIndex + index)}
             </div>
@@ -497,7 +497,7 @@ function SpreadsheetGridFrame({
                 {rowStartIndex + rowIndex + 1}
               </div>
               {Array.from({ length: resolvedColumnCount }, (_, columnIndex) => {
-                const point = { rowIndex, columnIndex };
+                const point = { columnIndex, rowIndex };
                 const value = row[columnIndex] ?? "";
                 const selected = Boolean(
                   rangeSelection?.selectionRange &&
@@ -519,8 +519,8 @@ function SpreadsheetGridFrame({
                 if (cellMode === "editable") {
                   return (
                     <div
-                      key={spreadsheetColumnName(columnIndex)}
                       className={cellClassName}
+                      key={spreadsheetColumnName(columnIndex)}
                       {...rangeSelection?.getCellProps(point)}
                     >
                       {cellContent}
@@ -530,9 +530,9 @@ function SpreadsheetGridFrame({
 
                 return (
                   <button
+                    className={cellClassName}
                     key={spreadsheetColumnName(columnIndex)}
                     type="button"
-                    className={cellClassName}
                     {...rangeSelection?.getCellProps(point)}
                   >
                     {cellContent}
@@ -570,11 +570,11 @@ export function SpreadsheetSheetTabs({
       {icon}
       {sheets.map((sheet) => (
         <Button
+          className="cursor-pointer"
           key={sheet.name}
+          onClick={() => onActiveSheetNameChange(sheet.name)}
           type="button"
           variant={sheet.name === activeSheetName ? "default" : "outline"}
-          className="cursor-pointer"
-          onClick={() => onActiveSheetNameChange(sheet.name)}
         >
           {sheet.name}
         </Button>
@@ -588,10 +588,10 @@ export function normalizeSpreadsheetRange(
   end: SpreadsheetCellPoint,
 ): SpreadsheetCellRange {
   return {
-    startRowIndex: Math.min(start.rowIndex, end.rowIndex),
+    endColumnIndex: Math.max(start.columnIndex, end.columnIndex),
     endRowIndex: Math.max(start.rowIndex, end.rowIndex),
     startColumnIndex: Math.min(start.columnIndex, end.columnIndex),
-    endColumnIndex: Math.max(start.columnIndex, end.columnIndex),
+    startRowIndex: Math.min(start.rowIndex, end.rowIndex),
   };
 }
 
