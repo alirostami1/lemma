@@ -1,6 +1,7 @@
 import type {
   DB,
   QuestionBlueprints,
+  QuestionBlueprintVersions,
   QuestionGenerationRuns,
   QuestionSets,
   Questions,
@@ -17,10 +18,12 @@ import {
 import {
   type Question,
   type QuestionBlueprint,
+  type QuestionBlueprintVersion,
   type QuestionGenerationRun,
   type QuestionSet,
   reconstituteQuestion,
   reconstituteQuestionBlueprint,
+  reconstituteQuestionBlueprintVersion,
   reconstituteQuestionGenerationRun,
   reconstituteQuestionSet,
 } from "../domain/index.js";
@@ -79,6 +82,7 @@ export function mapQuestionBlueprintToInsert(
     archivedAt: blueprint.archivedAt,
     createdAt: blueprint.createdAt,
     createdByUserId: blueprint.createdByUserId,
+    currentVersionId: blueprint.currentVersionId,
     description: blueprint.description,
     document: toMutableJsonObject(blueprint.document),
     id: blueprint.id,
@@ -96,6 +100,7 @@ export function mapQuestionBlueprintToUpdate(
 ): UpdateObject<DB, "questionBlueprints"> {
   return {
     archivedAt: blueprint.archivedAt,
+    currentVersionId: blueprint.currentVersionId,
     description: blueprint.description,
     document: toMutableJsonObject(blueprint.document),
     name: blueprint.name,
@@ -104,6 +109,38 @@ export function mapQuestionBlueprintToUpdate(
     updatedAt: blueprint.updatedAt,
     visibility: blueprint.visibility,
   };
+}
+
+export function mapQuestionBlueprintVersionRowToDomain(
+  row: Selectable<QuestionBlueprintVersions> & {
+    document: unknown;
+    sources: unknown;
+  },
+): QuestionBlueprintVersion {
+  return reconstituteQuestionBlueprintVersion(row);
+}
+
+export function mapQuestionBlueprintVersionToInsert(
+  version: QuestionBlueprintVersion,
+): InsertObject<DB, "questionBlueprintVersions"> {
+  return {
+    blueprintId: version.blueprintId,
+    createdAt: version.createdAt,
+    createdByUserId: version.createdByUserId,
+    description: version.description,
+    document: mapJsonObjectToDb(version.document),
+    id: version.id,
+    name: version.name,
+    ownerUserId: version.ownerUserId,
+    parentVersionId: version.parentVersionId,
+    publishedAt: version.publishedAt,
+    sources: mapJsonArrayToDb(version.sources),
+    versionNumber: version.versionNumber,
+  };
+}
+
+export function mapJsonObjectToDb(value: JsonObject) {
+  return sql<JsonObject>`${JSON.stringify(value)}::jsonb`;
 }
 
 export function mapJsonArrayToDb(value: readonly JsonObject[]) {

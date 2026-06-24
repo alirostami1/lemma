@@ -18,6 +18,7 @@ import {
 import {
   questionBlueprintDraftId as toQuestionBlueprintDraftId,
   questionBlueprintId as toQuestionBlueprintId,
+  questionBlueprintVersionId as toQuestionBlueprintVersionId,
   questionGenerationRunId as toQuestionGenerationRunId,
   questionId as toQuestionId,
   questionSetId as toQuestionSetId,
@@ -162,6 +163,7 @@ export function createWorkerRuntime(
       eventId: () => toEventId(uuidv7()),
       questionBlueprintDraftId: () => toQuestionBlueprintDraftId(uuidv7()),
       questionBlueprintId: () => toQuestionBlueprintId(uuidv7()),
+      questionBlueprintVersionId: () => toQuestionBlueprintVersionId(uuidv7()),
       questionGenerationRunId: () => toQuestionGenerationRunId(uuidv7()),
       questionId: () => toQuestionId(uuidv7()),
       questionSetId: () => toQuestionSetId(uuidv7()),

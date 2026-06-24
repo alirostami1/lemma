@@ -13,6 +13,7 @@ import type {
   QuestionBlueprintId,
   QuestionBlueprintSource,
   QuestionBlueprintStatus,
+  QuestionBlueprintVersionId,
   QuestionGenerationRun,
   QuestionGenerationRunId,
   QuestionGenerationRunStatus,
@@ -113,6 +114,10 @@ export interface QuestionsRepository {
   updateQuestionBlueprint(
     blueprint: QuestionBlueprint,
   ): Promise<QuestionBlueprint | null>;
+  updateQuestionBlueprintDefinition(input: {
+    blueprint: QuestionBlueprint;
+    versionId: QuestionBlueprintVersionId;
+  }): Promise<QuestionBlueprint | null>;
   updateQuestionBlueprintDraft(
     draft: QuestionBlueprintDraft,
   ): Promise<QuestionBlueprintDraft | null>;
@@ -241,6 +246,7 @@ export interface IdGenerator {
   eventId(): EventId;
   questionBlueprintDraftId(): QuestionBlueprintDraftId;
   questionBlueprintId(): QuestionBlueprintId;
+  questionBlueprintVersionId(): QuestionBlueprintVersionId;
   questionGenerationRunId(): QuestionGenerationRunId;
   questionId(): QuestionId;
   questionSetId(): QuestionSetId;

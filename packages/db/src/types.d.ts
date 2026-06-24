@@ -122,6 +122,7 @@ export interface ProcessedEvents {
 }
 
 export interface QuestionBlueprintDrafts {
+  baseVersionId: string | null;
   blueprintId: string | null;
   createdAt: Generated<Timestamp>;
   createdByUserId: string;
@@ -133,6 +134,7 @@ export interface QuestionBlueprintDrafts {
   name: string;
   ownerUserId: string;
   publishedAt: Timestamp | null;
+  revision: Generated<number>;
   sources: Generated<Json>;
   status: Generated<string>;
   updatedAt: Generated<Timestamp>;
@@ -162,6 +164,7 @@ export interface QuestionBlueprints {
   archivedAt: Timestamp | null;
   createdAt: Generated<Timestamp>;
   createdByUserId: string;
+  currentVersionId: string;
   description: string | null;
   document: Json;
   id: Generated<string>;
@@ -171,6 +174,21 @@ export interface QuestionBlueprints {
   status: Generated<string>;
   updatedAt: Generated<Timestamp>;
   visibility: Generated<string>;
+}
+
+export interface QuestionBlueprintVersions {
+  blueprintId: string;
+  createdAt: Generated<Timestamp>;
+  createdByUserId: string;
+  description: string | null;
+  document: Json;
+  id: Generated<string>;
+  name: string;
+  ownerUserId: string;
+  parentVersionId: string | null;
+  publishedAt: Generated<Timestamp>;
+  sources: Generated<Json>;
+  versionNumber: number;
 }
 
 export interface QuestionGenerationRuns {
@@ -331,6 +349,7 @@ export interface DB {
   questionBlueprintDrafts: QuestionBlueprintDrafts;
   questionBlueprintMembers: QuestionBlueprintMembers;
   questionBlueprints: QuestionBlueprints;
+  questionBlueprintVersions: QuestionBlueprintVersions;
   questionGenerationRuns: QuestionGenerationRuns;
   questionSetMembers: QuestionSetMembers;
   questionSetQuestions: QuestionSetQuestions;

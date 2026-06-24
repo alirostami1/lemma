@@ -16,6 +16,8 @@ export async function up(db: MigrationDb): Promise<void> {
     .addColumn("owner_user_id", "uuid", (c) => c.notNull())
     .addColumn("created_by_user_id", "uuid", (c) => c.notNull())
     .addColumn("blueprint_id", "uuid")
+    .addColumn("base_version_id", "uuid")
+    .addColumn("revision", "integer", (c) => c.notNull().defaultTo(1))
     .addColumn("name", "text", (c) => c.notNull())
     .addColumn("description", "text")
     .addColumn("document", "jsonb", (c) => c.notNull())
@@ -35,6 +37,16 @@ export async function up(db: MigrationDb): Promise<void> {
     .addCheckConstraint(
       "question_blueprint_drafts_status_check",
       sql`status in ('draft', 'publishing', 'published', 'discarded')`,
+    )
+    .addCheckConstraint(
+      "question_blueprint_drafts_revision_check",
+      sql`revision > 0`,
+    )
+    .addCheckConstraint(
+      "question_blueprint_drafts_target_base_pair_check",
+      sql`(base_version_id is null or blueprint_id is not null)
+        and (status not in ('draft', 'publishing') or blueprint_id is null or base_version_id is not null)
+        and (status <> 'published' or blueprint_id is not null)`,
     )
     .addCheckConstraint(
       "question_blueprint_drafts_document_object_check",
@@ -65,7 +77,22 @@ export async function up(db: MigrationDb): Promise<void> {
       ["id"],
       (cb) => cb.onDelete("restrict"),
     )
+    .addForeignKeyConstraint(
+      "question_blueprint_drafts_base_version_id_foreign",
+      ["base_version_id"],
+      "question_blueprint_versions",
+      ["id"],
+      (cb) => cb.onDelete("restrict"),
+    )
     .execute();
+
+  await sql`
+    alter table question_blueprint_drafts
+    add constraint question_blueprint_drafts_base_version_same_blueprint_foreign
+    foreign key (base_version_id, blueprint_id)
+    references question_blueprint_versions(id, blueprint_id)
+    on delete restrict
+  `.execute(db);
 
   await db.schema
     .createIndex("question_blueprint_drafts_owner_status_updated_index")
@@ -78,6 +105,11 @@ export async function up(db: MigrationDb): Promise<void> {
     .column("blueprint_id")
     .where("blueprint_id", "is not", null)
     .execute();
+  await sql`
+    create unique index question_blueprint_drafts_owner_user_id_blueprint_id_active_unique
+    on question_blueprint_drafts (owner_user_id, blueprint_id)
+    where status in ('draft', 'publishing') and blueprint_id is not null
+  `.execute(db);
 
   await db.schema
     .createTable("question_blueprint_draft_source_files")
@@ -137,6 +169,9 @@ export async function up(db: MigrationDb): Promise<void> {
 
 export async function down(db: MigrationDb): Promise<void> {
   await db.schema.dropTable("question_blueprint_draft_source_files").execute();
+  await sql`
+    drop index if exists question_blueprint_drafts_owner_user_id_blueprint_id_active_unique
+  `.execute(db);
   await db.schema.dropTable("question_blueprint_drafts").execute();
   await db.schema
     .alterTable("workbooks")

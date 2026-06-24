@@ -11,6 +11,7 @@ import type {
   QuestionBlueprintDraftStatus,
   QuestionBlueprintId,
   QuestionBlueprintStatus,
+  QuestionBlueprintVersionId,
   QuestionGenerationRun,
   QuestionGenerationRunId,
   QuestionGenerationRunStatus,
@@ -106,6 +107,13 @@ export class KyselyQuestionsRepository implements QuestionsRepository {
     blueprint: QuestionBlueprint,
   ): Promise<QuestionBlueprint | null> {
     return this.blueprints.updateQuestionBlueprint(blueprint);
+  }
+
+  updateQuestionBlueprintDefinition(input: {
+    blueprint: QuestionBlueprint;
+    versionId: QuestionBlueprintVersionId;
+  }): Promise<QuestionBlueprint | null> {
+    return this.blueprints.updateQuestionBlueprintDefinition(input);
   }
 
   findQuestionBlueprintDraftById(
