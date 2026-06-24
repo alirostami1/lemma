@@ -4,6 +4,10 @@ Lemma is a web application organized as a pnpm/Turbo workspace. Apps compose
 package modules; packages own domain logic, infrastructure adapters, generated
 HTTP contracts, or shared UI.
 
+Architecture decision records live in [docs/adr](adr/). The draft/source
+lifecycle source of truth is
+[ADR 0002: Draft-Only Authoring, Immutable Blueprint Versions, and Source Artifact Lifecycle](adr/0002-draft-only-authoring-source-artifacts.md).
+
 ## Package Direction
 
 ```mermaid

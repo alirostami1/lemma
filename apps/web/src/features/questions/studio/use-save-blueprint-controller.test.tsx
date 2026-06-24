@@ -3,6 +3,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
+import type { StudioSource } from "./source/studio-source-model";
 import { useSaveBlueprintController } from "./use-save-blueprint-controller";
 
 const fileUploadMocks = vi.hoisted(() => ({
@@ -212,6 +213,170 @@ describe("useSaveBlueprintController", () => {
     });
   });
 
+  it("publishes a loaded draft through the draft API and preserves draft sources", async () => {
+    const draftFileSource = createDraftFileSource();
+    questionDraftMocks.updateServerDraft.mockResolvedValue({
+      draft: {
+        blueprintId: "blueprint-1",
+        createdAt: new Date("2026-06-20T00:00:00.000Z"),
+        createdByUserId: "owner-1",
+        description: null,
+        document: createDocument(),
+        id: "draft_loaded",
+        lastSavedAt: new Date("2026-06-21T00:00:00.000Z"),
+        name: "Draft loaded",
+        ownerUserId: "owner-1",
+        sources: [],
+        status: "draft",
+        updatedAt: new Date("2026-06-21T00:00:00.000Z"),
+      },
+    });
+    questionGenerationMocks.publishQuestionBlueprintDraft.mockResolvedValue({
+      draft: {
+        id: "draft_loaded",
+      },
+      questionBlueprint: {
+        description: null,
+        id: "blueprint-1",
+        name: "Published",
+        sources: [
+          {
+            name: "Server source",
+            sourceId: "source_1",
+            workbookId: "workbook_1",
+          },
+        ],
+      },
+    });
+
+    const onSaved = vi.fn();
+
+    const { result } = renderHook(() =>
+      useSaveBlueprintController({
+        authoringModel: createModel(),
+        blueprintDescription: "",
+        blueprintName: "Draft",
+        hasUnsavedChanges: false,
+        initialDraftId: "draft_loaded",
+        loadedBlueprintId: "blueprint-1",
+        onDraftSaved: () => {},
+        onSaved,
+        onSourcesChange: () => {},
+        readiness: {
+          canGenerate: true,
+          canSave: true,
+          issues: [],
+        },
+        sources: [draftFileSource],
+      }),
+    );
+
+    act(() => {
+      result.current.saveDialog.onSave({
+        mode: "update_existing",
+        name: "Draft",
+      });
+    });
+
+    await waitFor(() => {
+      expect(
+        questionGenerationMocks.publishQuestionBlueprintDraft,
+      ).toHaveBeenCalledOnce();
+    });
+
+    expect(questionDraftMocks.updateServerDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        draftId: "draft_loaded",
+        sources: [
+          expect.objectContaining({
+            byteSize: 512,
+            checksumSha256: "checksum-1",
+            fileId: "file_1",
+            name: "Server source",
+            originalName: "server-source.xlsx",
+            sourceId: "source_1",
+            status: "uploaded",
+            type: "workbook",
+            workbookId: null,
+          }),
+        ],
+      }),
+    );
+    expect(
+      questionGenerationMocks.publishQuestionBlueprintDraft,
+    ).toHaveBeenCalledWith("draft_loaded");
+    expect(
+      questionBlueprintMocks.createQuestionBlueprint,
+    ).not.toHaveBeenCalled();
+    expect(
+      questionBlueprintMocks.updateQuestionBlueprint,
+    ).not.toHaveBeenCalled();
+    expect(onSaved).toHaveBeenCalledOnce();
+  });
+
+  it("uses the latest loaded server draft id instead of stale private state", async () => {
+    questionDraftMocks.updateServerDraft.mockImplementation(
+      async (input: { draftId: string }) => ({
+        draft: {
+          blueprintId: "blueprint-1",
+          createdAt: new Date("2026-06-20T00:00:00.000Z"),
+          createdByUserId: "owner-1",
+          description: null,
+          document: createDocument(),
+          id: input.draftId,
+          lastSavedAt: new Date("2026-06-21T00:00:00.000Z"),
+          name: "Draft existing",
+          ownerUserId: "owner-1",
+          sources: [],
+          status: "draft",
+          updatedAt: new Date("2026-06-21T00:00:00.000Z"),
+        },
+      }),
+    );
+
+    const { result, rerender } = renderHook(
+      (props: { draftId: string }) =>
+        useSaveBlueprintController({
+          authoringModel: createModel(),
+          blueprintDescription: "",
+          blueprintName: "Draft",
+          hasUnsavedChanges: false,
+          initialDraftId: props.draftId,
+          loadedBlueprintId: null,
+          onDraftSaved: () => {},
+          onSaved: () => {},
+          onSourcesChange: () => {},
+          readiness: {
+            canGenerate: true,
+            canSave: true,
+            issues: [],
+          },
+          sources: [],
+        }),
+      {
+        initialProps: {
+          draftId: "draft_old",
+        },
+      },
+    );
+
+    rerender({ draftId: "draft_loaded" });
+
+    act(() => {
+      result.current.commandBarSave.onSaveDraft();
+    });
+
+    await waitFor(() => {
+      expect(questionDraftMocks.updateServerDraft).toHaveBeenCalledOnce();
+    });
+    expect(questionDraftMocks.createServerDraft).not.toHaveBeenCalled();
+    expect(questionDraftMocks.updateServerDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        draftId: "draft_loaded",
+      }),
+    );
+  });
+
   it("calls onDraftSaved for repeated draft saves", async () => {
     questionDraftMocks.updateServerDraft.mockResolvedValue({
       draft: {
@@ -283,5 +448,25 @@ function createDocument() {
     references: [],
     responseFields: [],
     schemaVersion: 1,
+  };
+}
+
+function createDraftFileSource(): StudioSource {
+  return {
+    backing: {
+      byteSize: 512,
+      checksumSha256: "checksum-1",
+      fileId: "file_1",
+      kind: "draft_file",
+      originalName: "server-source.xlsx",
+      parsedWorkbook: null,
+      previewError: null,
+      previewStatus: "loaded",
+      workbookId: null,
+    },
+    createdAt: new Date("2026-06-21T00:00:00.000Z"),
+    name: "Server source",
+    sourceId: "source_1",
+    type: "workbook",
   };
 }
