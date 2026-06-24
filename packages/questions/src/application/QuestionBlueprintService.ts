@@ -22,6 +22,7 @@ import type {
   QuestionBlueprintResult,
   QuestionBlueprintsResult,
 } from "./dto.js";
+import { QuestionBlueprintNotFoundError } from "./errors.js";
 import {
   decodeListCursor,
   encodeListCursor,
@@ -105,6 +106,7 @@ export class QuestionBlueprintService {
         createdByUserId: toUserId(command.currentUser.user.id),
         description: questionBlueprintDescription(command.description ?? null),
         document: compiled.document,
+        currentVersionId: this.deps.idGenerator.questionBlueprintVersionId(),
         id: toQuestionBlueprintId(this.deps.idGenerator.questionBlueprintId()),
         name: questionBlueprintName(command.name),
         ownerUserId: toUserId(command.currentUser.user.id),
@@ -198,21 +200,20 @@ export class QuestionBlueprintService {
       sources: command.patch.sources ?? blueprint.sources,
     });
 
-    return {
-      questionBlueprint: await hydrateQuestionBlueprint(
-        await persistQuestionBlueprint(
-          this.deps.questionsRepository,
-          updateQuestionBlueprintDefinition(
-            updatedMetadata,
-            {
-              document: compiled.document,
-              sources: compiled.sources,
-            },
-            at,
-          ),
+    const updated =
+      await this.deps.questionsRepository.updateQuestionBlueprintDefinition({
+        blueprint: updateQuestionBlueprintDefinition(
+          updatedMetadata,
+          {
+            document: compiled.document,
+            sources: compiled.sources,
+          },
+          at,
         ),
-      ),
-    };
+        versionId: this.deps.idGenerator.questionBlueprintVersionId(),
+      });
+    if (!updated) throw new QuestionBlueprintNotFoundError();
+    return { questionBlueprint: await hydrateQuestionBlueprint(updated) };
   }
 
   async deleteQuestionBlueprint(

@@ -3,6 +3,10 @@ import { assertUuid } from "./primitives.js";
 
 export type QuestionSetId = Brand<string, "QuestionSetId">;
 export type QuestionBlueprintId = Brand<string, "QuestionBlueprintId">;
+export type QuestionBlueprintVersionId = Brand<
+  string,
+  "QuestionBlueprintVersionId"
+>;
 export type QuestionId = Brand<string, "QuestionId">;
 export type QuestionGenerationRunId = Brand<string, "QuestionGenerationRunId">;
 export type UserId = Brand<string, "UserId">;
@@ -16,6 +20,15 @@ export function questionSetId(value: unknown): QuestionSetId {
 
 export function questionBlueprintId(value: unknown): QuestionBlueprintId {
   return assertUuid(value, "questionBlueprintId") as QuestionBlueprintId;
+}
+
+export function questionBlueprintVersionId(
+  value: unknown,
+): QuestionBlueprintVersionId {
+  return assertUuid(
+    value,
+    "questionBlueprintVersionId",
+  ) as QuestionBlueprintVersionId;
 }
 
 export function questionId(value: unknown): QuestionId {

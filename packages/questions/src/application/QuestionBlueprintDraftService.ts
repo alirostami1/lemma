@@ -66,8 +66,9 @@ export class QuestionBlueprintDraftService {
   async createQuestionBlueprintDraft(
     command: CreateQuestionBlueprintDraftCommand,
   ): Promise<QuestionBlueprintDraftResult> {
+    let targetBlueprint: QuestionBlueprint | null = null;
     if (command.blueprintId) {
-      await this.assertCanManageBlueprint(
+      targetBlueprint = await this.assertCanManageBlueprint(
         command.currentUser,
         command.blueprintId,
       );
@@ -75,6 +76,7 @@ export class QuestionBlueprintDraftService {
     const at = this.deps.clock.now();
     const draft = createQuestionBlueprintDraft(
       {
+        baseVersionId: targetBlueprint?.currentVersionId ?? null,
         blueprintId: command.blueprintId
           ? questionBlueprintId(command.blueprintId)
           : null,
@@ -267,7 +269,10 @@ export class QuestionBlueprintDraftService {
         at,
       );
       const persistedBlueprint =
-        await this.deps.questionsRepository.updateQuestionBlueprint(blueprint);
+        await this.deps.questionsRepository.updateQuestionBlueprintDefinition({
+          blueprint,
+          versionId: this.deps.idGenerator.questionBlueprintVersionId(),
+        });
       if (!persistedBlueprint) throw new QuestionBlueprintNotFoundError();
       blueprint = persistedBlueprint;
     } else {
@@ -277,6 +282,8 @@ export class QuestionBlueprintDraftService {
             createdByUserId: draft.createdByUserId,
             description: draft.description,
             document: draft.document,
+            currentVersionId:
+              this.deps.idGenerator.questionBlueprintVersionId(),
             id: this.deps.idGenerator.questionBlueprintId(),
             name: draft.name,
             ownerUserId: draft.ownerUserId,

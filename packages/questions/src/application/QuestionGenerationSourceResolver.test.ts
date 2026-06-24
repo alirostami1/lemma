@@ -7,6 +7,7 @@ import {
   questionBlueprintDocument,
   questionBlueprintId,
   questionBlueprintName,
+  questionBlueprintVersionId,
   questionBlueprintVisibility,
   userId as toUserId,
   workbookId as toWorkbookId,
@@ -70,6 +71,9 @@ function createBlueprint(input: { workbookId: WorkbookId }) {
   return createQuestionBlueprint(
     {
       createdByUserId: ownerUserId,
+      currentVersionId: questionBlueprintVersionId(
+        "019e9315-6a87-715f-9861-8654df070c60",
+      ),
       description: questionBlueprintDescription(null),
       document: questionBlueprintDocument({
         blocks: [],

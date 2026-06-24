@@ -5,7 +5,9 @@ import {
 } from "./errors.js";
 import {
   type QuestionBlueprintId,
+  type QuestionBlueprintVersionId,
   questionBlueprintId,
+  questionBlueprintVersionId,
   type UserId,
   userId,
   type WorkbookId,
@@ -52,7 +54,9 @@ export type QuestionBlueprintDraft = Timestamped & {
   id: QuestionBlueprintDraftId;
   ownerUserId: UserId;
   createdByUserId: UserId;
+  revision: number;
   blueprintId: QuestionBlueprintId | null;
+  baseVersionId: QuestionBlueprintVersionId | null;
   name: QuestionBlueprintName;
   description: QuestionBlueprintDescription | null;
   document: QuestionBlueprintDocument;
@@ -128,10 +132,16 @@ export function questionBlueprintDraftSources(
 export function createQuestionBlueprintDraft(
   input: Omit<
     QuestionBlueprintDraft,
-    keyof Timestamped | "status" | "lastSavedAt" | "publishedAt" | "discardedAt"
+    | keyof Timestamped
+    | "status"
+    | "lastSavedAt"
+    | "publishedAt"
+    | "discardedAt"
+    | "revision"
   >,
   at: Date,
 ): QuestionBlueprintDraft {
+  assertDraftTargetBasePair({ ...input, status: "draft" });
   assertDraftReferences(input.document, input.sources);
   return {
     ...input,
@@ -139,6 +149,7 @@ export function createQuestionBlueprintDraft(
     discardedAt: null,
     lastSavedAt: at,
     publishedAt: null,
+    revision: 1,
     status: "draft",
     updatedAt: at,
   };
@@ -149,6 +160,8 @@ export function reconstituteQuestionBlueprintDraft(input: {
   ownerUserId: string;
   createdByUserId: string;
   blueprintId: string | null;
+  baseVersionId: string | null;
+  revision: number;
   name: string;
   description: string | null;
   document: unknown;
@@ -160,13 +173,20 @@ export function reconstituteQuestionBlueprintDraft(input: {
   createdAt: Date;
   updatedAt: Date;
 }): QuestionBlueprintDraft {
+  const blueprintId = input.blueprintId
+    ? questionBlueprintId(input.blueprintId)
+    : null;
+  const baseVersionId = input.baseVersionId
+    ? questionBlueprintVersionId(input.baseVersionId)
+    : null;
+  const status = draftStatus(input.status);
+  assertDraftTargetBasePair({ baseVersionId, blueprintId, status });
   const document = questionBlueprintDocument(input.document);
   const sources = questionBlueprintDraftSources(input.sources);
   assertDraftReferences(document, sources);
   return {
-    blueprintId: input.blueprintId
-      ? questionBlueprintId(input.blueprintId)
-      : null,
+    blueprintId,
+    baseVersionId,
     createdAt: input.createdAt,
     createdByUserId: userId(input.createdByUserId),
     description: questionBlueprintDescription(input.description),
@@ -177,8 +197,9 @@ export function reconstituteQuestionBlueprintDraft(input: {
     name: questionBlueprintName(input.name),
     ownerUserId: userId(input.ownerUserId),
     publishedAt: input.publishedAt,
+    revision: questionBlueprintDraftRevision(input.revision),
     sources,
-    status: draftStatus(input.status),
+    status,
     updatedAt: input.updatedAt,
   };
 }
@@ -193,7 +214,12 @@ export function updateQuestionBlueprintDraft(
 ): QuestionBlueprintDraft {
   assertMutable(draft);
   assertDraftReferences(input.document, input.sources);
-  return { ...touch(draft, at), ...input, lastSavedAt: at };
+  return {
+    ...touch(draft, at),
+    ...input,
+    lastSavedAt: at,
+    revision: nextQuestionBlueprintDraftRevision(draft.revision),
+  };
 }
 
 export function attachDraftSourceFile(
@@ -217,6 +243,7 @@ export function attachDraftSourceFile(
   }
   return {
     ...touch(draft, at),
+    revision: nextQuestionBlueprintDraftRevision(draft.revision),
     sources: draft.sources.map((source) =>
       source.sourceId === sourceId
         ? {
@@ -243,6 +270,7 @@ export function markQuestionBlueprintDraftPublished(
     ...touch(draft, at),
     blueprintId,
     publishedAt: at,
+    revision: nextQuestionBlueprintDraftRevision(draft.revision),
     sources,
     status: "published",
   };
@@ -253,7 +281,51 @@ export function discardQuestionBlueprintDraft(
   at: Date,
 ): QuestionBlueprintDraft {
   assertMutable(draft);
-  return { ...touch(draft, at), discardedAt: at, status: "discarded" };
+  return {
+    ...touch(draft, at),
+    discardedAt: at,
+    revision: nextQuestionBlueprintDraftRevision(draft.revision),
+    status: "discarded",
+  };
+}
+
+export function questionBlueprintDraftRevision(value: unknown): number {
+  if (!Number.isSafeInteger(value) || Number(value) <= 0) {
+    throw new InvalidQuestionFieldError(
+      "question blueprint draft revision must be a positive integer",
+    );
+  }
+  return value as number;
+}
+
+function nextQuestionBlueprintDraftRevision(value: number): number {
+  return questionBlueprintDraftRevision(value + 1);
+}
+
+function assertDraftTargetBasePair(input: {
+  blueprintId: QuestionBlueprintId | null;
+  baseVersionId: QuestionBlueprintVersionId | null;
+  status: QuestionBlueprintDraftStatus;
+}): void {
+  if (input.baseVersionId !== null && input.blueprintId === null) {
+    throw new InvalidQuestionFieldError(
+      "question blueprint drafts cannot have a base version without a blueprint",
+    );
+  }
+  if (
+    (input.status === "draft" || input.status === "publishing") &&
+    input.blueprintId !== null &&
+    input.baseVersionId === null
+  ) {
+    throw new InvalidQuestionFieldError(
+      "targeted active question blueprint drafts must have a base version",
+    );
+  }
+  if (input.status === "published" && input.blueprintId === null) {
+    throw new InvalidQuestionFieldError(
+      "published question blueprint drafts must reference a blueprint",
+    );
+  }
 }
 
 function assertDraftReferences(

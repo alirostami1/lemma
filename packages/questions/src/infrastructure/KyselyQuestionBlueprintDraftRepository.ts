@@ -124,6 +124,7 @@ function mapInsert(
   draft: QuestionBlueprintDraft,
 ): InsertObject<DB, "questionBlueprintDrafts"> {
   return {
+    baseVersionId: draft.baseVersionId,
     blueprintId: draft.blueprintId,
     createdAt: draft.createdAt,
     createdByUserId: draft.createdByUserId,
@@ -137,6 +138,7 @@ function mapInsert(
     name: draft.name,
     ownerUserId: draft.ownerUserId,
     publishedAt: draft.publishedAt,
+    revision: draft.revision,
     sources: mapJsonArrayToDb(draft.sources),
     status: draft.status,
     updatedAt: draft.updatedAt,
@@ -147,6 +149,7 @@ function mapUpdate(
   draft: QuestionBlueprintDraft,
 ): UpdateObject<DB, "questionBlueprintDrafts"> {
   return {
+    baseVersionId: draft.baseVersionId,
     blueprintId: draft.blueprintId,
     description: draft.description,
     discardedAt: draft.discardedAt,
@@ -157,6 +160,7 @@ function mapUpdate(
     lastSavedAt: draft.lastSavedAt,
     name: draft.name,
     publishedAt: draft.publishedAt,
+    revision: draft.revision,
     sources: mapJsonArrayToDb(draft.sources),
     status: draft.status,
     updatedAt: draft.updatedAt,

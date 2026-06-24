@@ -2,10 +2,12 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   createQuestionBlueprint,
+  nextUntitledQuestionBlueprintName,
   questionBlueprintDescription,
   questionBlueprintDocument,
   questionBlueprintId,
   questionBlueprintName,
+  questionBlueprintVersionId,
   questionBlueprintVisibility,
   questionSourceEvidence,
   reconstituteQuestionBlueprint,
@@ -22,6 +24,9 @@ describe("composable question canonical model", () => {
     const blueprint = createQuestionBlueprint(
       {
         createdByUserId: ownerUserId,
+        currentVersionId: questionBlueprintVersionId(
+          "019e9315-6a87-715f-9861-8654df070c07",
+        ),
         description: questionBlueprintDescription(null),
         document: emptyDocument(),
         id: questionBlueprintId("019e9315-6a87-715f-9861-8654df070c03"),
@@ -103,6 +108,17 @@ describe("composable question canonical model", () => {
     assert.equal(blueprint.sources[0]?.sourceId, "source_1");
   });
 
+  it("generates next default blueprint name", () => {
+    assert.equal(nextUntitledQuestionBlueprintName([]), "Untitled blueprint");
+    assert.equal(
+      nextUntitledQuestionBlueprintName([
+        "Untitled blueprint",
+        "Untitled blueprint 2",
+      ]),
+      "Untitled blueprint 3",
+    );
+  });
+
   it("source evidence accepts only schemaVersion plus sources", () => {
     const evidence = questionSourceEvidence({
       schemaVersion: 1,
@@ -156,6 +172,9 @@ describe("composable question canonical model", () => {
 function blueprintInput() {
   return {
     createdByUserId: ownerUserId,
+    currentVersionId: questionBlueprintVersionId(
+      "019e9315-6a87-715f-9861-8654df070c07",
+    ),
     description: questionBlueprintDescription(null),
     document: emptyDocument(),
     id: questionBlueprintId("019e9315-6a87-715f-9861-8654df070c03"),
@@ -171,6 +190,9 @@ function storedBlueprint(overrides: { document?: unknown; sources?: unknown }) {
     ...blueprintInput(),
     archivedAt: null,
     createdAt,
+    currentVersionId: questionBlueprintVersionId(
+      "019e9315-6a87-715f-9861-8654df070c07",
+    ),
     document: emptyDocument(),
     sources: [],
     status: "active",

@@ -16,6 +16,7 @@ const workbookId = "019e9315-6a87-715f-9861-8654df074012";
 const calculationId = "019e9315-6a87-715f-9861-8654df074013";
 const snapshotId = "019e9315-6a87-715f-9861-8654df074014";
 const questionSetId = "019e9315-6a87-715f-9861-8654df074015";
+const versionId = "019e9315-6a87-715f-9861-8654df074016";
 const createdAt = new Date("2026-06-18T00:00:00.000Z");
 
 describe("KyselyQuestionMappers", () => {
@@ -96,6 +97,7 @@ function blueprintRow(): Parameters<typeof mapQuestionBlueprintRowToDomain>[0] {
     archivedAt: null,
     createdAt,
     createdByUserId: userId,
+    currentVersionId: versionId,
     description: null,
     document: document(),
     id,
@@ -115,6 +117,7 @@ function emptyBlueprintRow(): Parameters<
     archivedAt: null,
     createdAt,
     createdByUserId: userId,
+    currentVersionId: versionId,
     description: null,
     document: {
       blocks: [],

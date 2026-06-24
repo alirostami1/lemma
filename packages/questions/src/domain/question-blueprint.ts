@@ -5,7 +5,9 @@ import {
 } from "./errors.js";
 import {
   type QuestionBlueprintId,
+  type QuestionBlueprintVersionId,
   questionBlueprintId,
+  questionBlueprintVersionId,
   type UserId,
   userId,
   type WorkbookId,
@@ -29,6 +31,7 @@ import {
 
 export type QuestionBlueprint = Timestamped & {
   id: QuestionBlueprintId;
+  currentVersionId: QuestionBlueprintVersionId;
   ownerUserId: UserId;
   createdByUserId: UserId;
   name: QuestionBlueprintName;
@@ -50,6 +53,7 @@ export type QuestionBlueprintSource = {
 export function createQuestionBlueprint(
   input: {
     id: QuestionBlueprintId;
+    currentVersionId: QuestionBlueprintVersionId;
     ownerUserId: UserId;
     createdByUserId: UserId;
     name: QuestionBlueprintName;
@@ -66,6 +70,7 @@ export function createQuestionBlueprint(
     archivedAt: null,
     createdAt: at,
     createdByUserId: input.createdByUserId,
+    currentVersionId: input.currentVersionId,
     description: input.description,
     document: input.document,
     id: input.id,
@@ -82,6 +87,7 @@ export function reconstituteQuestionBlueprint(input: {
   id: string;
   ownerUserId: string;
   createdByUserId: string;
+  currentVersionId: string;
   name: string;
   description: string | null;
   document: unknown;
@@ -99,6 +105,7 @@ export function reconstituteQuestionBlueprint(input: {
     archivedAt: input.archivedAt,
     createdAt: input.createdAt,
     createdByUserId: userId(input.createdByUserId),
+    currentVersionId: questionBlueprintVersionId(input.currentVersionId),
     description: questionBlueprintDescription(input.description),
     document,
     id: questionBlueprintId(input.id),
@@ -202,6 +209,19 @@ export function questionBlueprintSourcesReferencedByDocument(
     }
     return source;
   });
+}
+
+export function nextUntitledQuestionBlueprintName(
+  existingNames: Iterable<string>,
+): QuestionBlueprintName {
+  const existing = new Set(existingNames);
+  let candidate = "Untitled blueprint";
+  let suffix = 2;
+  while (existing.has(candidate)) {
+    candidate = `Untitled blueprint ${suffix}`;
+    suffix += 1;
+  }
+  return questionBlueprintName(candidate);
 }
 
 export function updateQuestionBlueprintDefinition(

@@ -104,6 +104,7 @@ export async function up(db: MigrationDb): Promise<void> {
     .addColumn("id", "uuid", (c) => c.primaryKey().defaultTo(sql`uuidv7()`))
     .addColumn("owner_user_id", "uuid", (c) => c.notNull())
     .addColumn("created_by_user_id", "uuid", (c) => c.notNull())
+    .addColumn("current_version_id", "uuid", (c) => c.notNull())
     .addColumn("name", "varchar(160)", (c) => c.notNull())
     .addColumn("description", "text")
     .addColumn("visibility", "text", (c) => c.notNull().defaultTo("private"))
@@ -119,9 +120,9 @@ export async function up(db: MigrationDb): Promise<void> {
     .addColumn("updated_at", "timestamptz", (c) =>
       c.notNull().defaultTo(sql`now()`),
     )
-    .addUniqueConstraint("question_blueprints_owner_user_id_name_unique", [
+    .addUniqueConstraint("question_blueprints_id_owner_user_id_unique", [
+      "id",
       "owner_user_id",
-      "name",
     ])
     .addCheckConstraint(
       "question_blueprints_status_check",
@@ -176,6 +177,121 @@ export async function up(db: MigrationDb): Promise<void> {
     .execute();
 
   await db.schema
+    .createTable("question_blueprint_versions")
+    .addColumn("id", "uuid", (c) => c.primaryKey().defaultTo(sql`uuidv7()`))
+    .addColumn("blueprint_id", "uuid", (c) => c.notNull())
+    .addColumn("owner_user_id", "uuid", (c) => c.notNull())
+    .addColumn("created_by_user_id", "uuid", (c) => c.notNull())
+    .addColumn("version_number", "integer", (c) => c.notNull())
+    .addColumn("parent_version_id", "uuid")
+    .addColumn("name", "varchar(160)", (c) => c.notNull())
+    .addColumn("description", "text")
+    .addColumn("document", "jsonb", (c) => c.notNull())
+    .addColumn("sources", "jsonb", (c) =>
+      c.notNull().defaultTo(sql`'[]'::jsonb`),
+    )
+    .addColumn("published_at", "timestamptz", (c) =>
+      c.notNull().defaultTo(sql`now()`),
+    )
+    .addColumn("created_at", "timestamptz", (c) =>
+      c.notNull().defaultTo(sql`now()`),
+    )
+    .addUniqueConstraint(
+      "question_blueprint_versions_blueprint_id_version_number_unique",
+      ["blueprint_id", "version_number"],
+    )
+    .addUniqueConstraint("question_blueprint_versions_id_blueprint_id_unique", [
+      "id",
+      "blueprint_id",
+    ])
+    .addCheckConstraint(
+      "question_blueprint_versions_version_number_check",
+      sql`version_number > 0`,
+    )
+    .addCheckConstraint(
+      "question_blueprint_versions_name_nonempty_check",
+      sql`length(trim(name)) > 0`,
+    )
+    .addCheckConstraint(
+      "question_blueprint_versions_document_object_check",
+      sql`jsonb_typeof(document) = 'object'`,
+    )
+    .addCheckConstraint(
+      "question_blueprint_versions_document_schema_version_check",
+      sql`document @> '{"schemaVersion":1}'::jsonb`,
+    )
+    .addCheckConstraint(
+      "question_blueprint_versions_document_blocks_check",
+      sql`document ? 'blocks' and jsonb_typeof(document->'blocks') = 'array'`,
+    )
+    .addCheckConstraint(
+      "question_blueprint_versions_document_response_fields_check",
+      sql`document ? 'responseFields' and jsonb_typeof(document->'responseFields') = 'array'`,
+    )
+    .addCheckConstraint(
+      "question_blueprint_versions_document_references_check",
+      sql`document ? 'references' and jsonb_typeof(document->'references') = 'array'`,
+    )
+    .addCheckConstraint(
+      "question_blueprint_versions_sources_array_check",
+      sql`jsonb_typeof(sources) = 'array'`,
+    )
+    .addForeignKeyConstraint(
+      "question_blueprint_versions_owner_user_id_foreign",
+      ["owner_user_id"],
+      "users",
+      ["id"],
+      (cb) => cb.onDelete("restrict"),
+    )
+    .addForeignKeyConstraint(
+      "question_blueprint_versions_created_by_user_id_foreign",
+      ["created_by_user_id"],
+      "users",
+      ["id"],
+      (cb) => cb.onDelete("restrict"),
+    )
+    .addForeignKeyConstraint(
+      "question_blueprint_versions_parent_version_id_foreign",
+      ["parent_version_id"],
+      "question_blueprint_versions",
+      ["id"],
+      (cb) => cb.onDelete("restrict"),
+    )
+    .execute();
+
+  await sql`
+    alter table question_blueprints
+    add constraint question_blueprints_current_version_same_blueprint_foreign
+    foreign key (current_version_id, id)
+    references question_blueprint_versions(id, blueprint_id)
+    on delete restrict
+    deferrable initially deferred
+  `.execute(db);
+  await sql`
+    alter table question_blueprint_versions
+    add constraint question_blueprint_versions_blueprint_id_foreign
+    foreign key (blueprint_id)
+    references question_blueprints(id)
+    on delete restrict
+    deferrable initially deferred
+  `.execute(db);
+  await sql`
+    alter table question_blueprint_versions
+    add constraint question_blueprint_versions_parent_same_blueprint_foreign
+    foreign key (parent_version_id, blueprint_id)
+    references question_blueprint_versions(id, blueprint_id)
+    on delete restrict
+  `.execute(db);
+  await sql`
+    alter table question_blueprint_versions
+    add constraint question_blueprint_versions_blueprint_owner_match_foreign
+    foreign key (blueprint_id, owner_user_id)
+    references question_blueprints(id, owner_user_id)
+    on delete restrict
+    deferrable initially deferred
+  `.execute(db);
+
+  await db.schema
     .createIndex("question_blueprints_owner_user_id_status_created_at_index")
     .on("question_blueprints")
     .columns(["owner_user_id", "status", "created_at"])
@@ -191,8 +307,21 @@ export async function up(db: MigrationDb): Promise<void> {
     .columns(["status", "updated_at"])
     .execute();
   await sql`
+    create unique index question_blueprints_owner_user_id_name_active_unique
+    on question_blueprints (owner_user_id, name)
+    where status <> 'deleted'
+  `.execute(db);
+  await sql`
     create index question_blueprints_sources_gin_index
     on question_blueprints using gin (sources jsonb_path_ops)
+  `.execute(db);
+  await sql`
+    create index question_blueprint_versions_blueprint_id_version_number_index
+    on question_blueprint_versions (blueprint_id, version_number desc)
+  `.execute(db);
+  await sql`
+    create index question_blueprint_versions_owner_user_id_published_at_index
+    on question_blueprint_versions (owner_user_id, published_at desc)
   `.execute(db);
 
   await sql`
@@ -265,9 +394,35 @@ export async function down(db: MigrationDb): Promise<void> {
   await sql`drop trigger if exists question_blueprints_set_updated_at on question_blueprints`.execute(
     db,
   );
+  await sql`drop index if exists question_blueprint_versions_owner_user_id_published_at_index`.execute(
+    db,
+  );
+  await sql`drop index if exists question_blueprint_versions_blueprint_id_version_number_index`.execute(
+    db,
+  );
   await sql`drop index if exists question_blueprints_sources_gin_index`.execute(
     db,
   );
+  await sql`drop index if exists question_blueprints_owner_user_id_name_active_unique`.execute(
+    db,
+  );
+  await sql`
+    alter table question_blueprints
+    drop constraint if exists question_blueprints_current_version_same_blueprint_foreign
+  `.execute(db);
+  await sql`
+    alter table question_blueprint_versions
+    drop constraint if exists question_blueprint_versions_blueprint_owner_match_foreign
+  `.execute(db);
+  await sql`
+    alter table question_blueprint_versions
+    drop constraint if exists question_blueprint_versions_parent_same_blueprint_foreign
+  `.execute(db);
+  await sql`
+    alter table question_blueprint_versions
+    drop constraint if exists question_blueprint_versions_blueprint_id_foreign
+  `.execute(db);
+  await db.schema.dropTable("question_blueprint_versions").execute();
   await db.schema.dropTable("question_blueprints").execute();
   await sql`drop trigger if exists workbooks_set_updated_at on workbooks`.execute(
     db,

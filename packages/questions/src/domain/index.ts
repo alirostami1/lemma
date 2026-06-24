@@ -11,6 +11,7 @@ export {
 } from "./errors.js";
 export type {
   QuestionBlueprintId,
+  QuestionBlueprintVersionId,
   QuestionGenerationRunId,
   QuestionId,
   QuestionSetId,
@@ -21,6 +22,7 @@ export type {
 } from "./ids.js";
 export {
   questionBlueprintId,
+  questionBlueprintVersionId,
   questionGenerationRunId,
   questionId,
   questionSetId,
@@ -55,6 +57,7 @@ export {
   archiveQuestionBlueprint,
   createQuestionBlueprint,
   deleteQuestionBlueprint,
+  nextUntitledQuestionBlueprintName,
   questionBlueprintSourceIdsUsedByDocument,
   questionBlueprintSources,
   questionBlueprintSourcesReferencedByDocument,
@@ -85,10 +88,20 @@ export {
   discardQuestionBlueprintDraft,
   markQuestionBlueprintDraftPublished,
   questionBlueprintDraftId,
+  questionBlueprintDraftRevision,
   questionBlueprintDraftSources,
   reconstituteQuestionBlueprintDraft,
   updateQuestionBlueprintDraft,
 } from "./question-blueprint-draft.js";
+export type {
+  QuestionBlueprintVersion,
+  QuestionBlueprintVersionNumber,
+} from "./question-blueprint-version.js";
+export {
+  createQuestionBlueprintVersion,
+  questionBlueprintVersionNumber,
+  reconstituteQuestionBlueprintVersion,
+} from "./question-blueprint-version.js";
 export type {
   BlueprintInlineContent,
   QuestionBlock,
