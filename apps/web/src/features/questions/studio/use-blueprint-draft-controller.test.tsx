@@ -183,6 +183,59 @@ describe("useBlueprintDraftController draft loading", () => {
     expect(result.current.loadedBlueprintId).toBeNull();
   });
 
+  it("loads server draft source bindings as the authoring context", async () => {
+    draftQueryState.set("draft_with_source", {
+      data: {
+        draft: {
+          ...draftTemplate("draft_with_source", "Server draft"),
+          sources: [
+            {
+              byteSize: 256,
+              checksumSha256: "checksum-1",
+              fileId: "file_1",
+              name: "Workbook source",
+              originalName: "source.xlsx",
+              sourceId: "source_1",
+              status: "uploaded",
+              type: "workbook",
+              workbookId: null,
+            },
+          ],
+        },
+      },
+      isError: false,
+      isLoading: false,
+    });
+
+    const { result } = renderHook(() =>
+      useBlueprintDraftController({
+        initialBlueprintId: "",
+        initialDraftId: "draft_with_source",
+      }),
+    );
+
+    await waitFor(() =>
+      expect(result.current.blueprintName).toBe("Server draft"),
+    );
+    expect(result.current.serverDraftId).toBe("draft_with_source");
+    expect(result.current.sources).toEqual([
+      expect.objectContaining({
+        name: "Workbook source",
+        sourceId: "source_1",
+        type: "workbook",
+      }),
+    ]);
+    expect(result.current.sources[0]?.backing).toEqual(
+      expect.objectContaining({
+        byteSize: 256,
+        checksumSha256: "checksum-1",
+        fileId: "file_1",
+        kind: "draft_file",
+        originalName: "source.xlsx",
+      }),
+    );
+  });
+
   it("switches from draft A to draft B", async () => {
     draftQueryState.set("draft_a", {
       data: {

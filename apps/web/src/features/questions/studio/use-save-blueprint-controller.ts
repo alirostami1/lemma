@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   useCompleteFileUpload,
   useCreateFileUpload,
@@ -133,6 +133,10 @@ export function useSaveBlueprintController({
     isUpdateBlueprintPending;
   const hasExistingBlueprint = loadedBlueprintId !== null;
   const saveDocumentIssue = getFirstReadinessIssueMessage(readiness, "save");
+
+  useEffect(() => {
+    setServerDraftId(initialDraftId);
+  }, [initialDraftId]);
 
   const saveDialogState: SaveDialogState = useMemo(
     () => ({
