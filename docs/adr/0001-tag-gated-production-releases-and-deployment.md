@@ -21,6 +21,10 @@ pushed. Release tags use `vMAJOR.MINOR.PATCH`, such as `v0.1.0`, `v0.2.1`, or
 `v1.0.0`. Tags such as `release-1`, `v1`, `v1.2`, `latest`, and `prod` are not
 valid release tags.
 
+The workflow trigger pattern `v*.*.*` is only a coarse GitHub Actions glob; the
+workflow enforces strict `vMAJOR.MINOR.PATCH` validation before any production
+mutation.
+
 Before the first production launch, use `v0.x.y` release tags. Reserve
 `v1.0.0` for the first real production release.
 
