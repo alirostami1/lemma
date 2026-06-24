@@ -1,9 +1,15 @@
 import type { DatabaseExecutor } from "@lemma/db";
 import type {
+  DB,
   QuestionBlueprintDraftSourceFiles,
   QuestionBlueprintDrafts,
 } from "@lemma/db/tables";
-import type { Insertable, Selectable, Updateable } from "kysely";
+import type {
+  Insertable,
+  InsertObject,
+  Selectable,
+  UpdateObject,
+} from "kysely";
 import type { DraftSourceFileMetadata } from "../application/index.js";
 import {
   type QuestionBlueprintDraft,
@@ -116,7 +122,7 @@ function mapRow(
 
 function mapInsert(
   draft: QuestionBlueprintDraft,
-): Insertable<QuestionBlueprintDrafts> {
+): InsertObject<DB, "questionBlueprintDrafts"> {
   return {
     blueprintId: draft.blueprintId,
     createdAt: draft.createdAt,
@@ -139,14 +145,15 @@ function mapInsert(
 
 function mapUpdate(
   draft: QuestionBlueprintDraft,
-): Updateable<QuestionBlueprintDrafts> {
+): UpdateObject<DB, "questionBlueprintDrafts"> {
   return {
     blueprintId: draft.blueprintId,
     description: draft.description,
     discardedAt: draft.discardedAt,
-    document: JSON.stringify(
-      draft.document,
-    ) as Updateable<QuestionBlueprintDrafts>["document"],
+    document: JSON.stringify(draft.document) as UpdateObject<
+      DB,
+      "questionBlueprintDrafts"
+    >["document"],
     lastSavedAt: draft.lastSavedAt,
     name: draft.name,
     publishedAt: draft.publishedAt,

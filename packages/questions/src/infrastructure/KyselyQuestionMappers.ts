@@ -1,12 +1,19 @@
 import type {
+  DB,
   QuestionBlueprints,
   QuestionGenerationRuns,
   QuestionSets,
   Questions,
 } from "@lemma/db/tables";
 import type { JsonObject } from "@lemma/domain";
-import type { Insertable, Selectable, Updateable } from "kysely";
-import { sql } from "kysely";
+import {
+  type Insertable,
+  type InsertObject,
+  type Selectable,
+  sql,
+  type Updateable,
+  type UpdateObject,
+} from "kysely";
 import {
   type Question,
   type QuestionBlueprint,
@@ -67,7 +74,7 @@ export function mapQuestionBlueprintRowToDomain(
 
 export function mapQuestionBlueprintToInsert(
   blueprint: QuestionBlueprint,
-): Insertable<QuestionBlueprints> {
+): InsertObject<DB, "questionBlueprints"> {
   return {
     archivedAt: blueprint.archivedAt,
     createdAt: blueprint.createdAt,
@@ -86,7 +93,7 @@ export function mapQuestionBlueprintToInsert(
 
 export function mapQuestionBlueprintToUpdate(
   blueprint: QuestionBlueprint,
-): Updateable<QuestionBlueprints> {
+): UpdateObject<DB, "questionBlueprints"> {
   return {
     archivedAt: blueprint.archivedAt,
     description: blueprint.description,
@@ -100,7 +107,7 @@ export function mapQuestionBlueprintToUpdate(
 }
 
 export function mapJsonArrayToDb(value: readonly JsonObject[]) {
-  return sql`${JSON.stringify(value)}::jsonb`;
+  return sql<JsonObject[]>`${JSON.stringify(value)}::jsonb`;
 }
 
 export function mapQuestionRowToDomain(
