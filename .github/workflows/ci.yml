@@ -26,7 +26,7 @@ jobs:
           fetch-depth: 0
       - name: Classify changed files
         id: filter
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         with:
           filters: .github/path-filters/ci.yml
   pull-request-conventions:
@@ -102,7 +102,7 @@ jobs:
           node-version: 22.22.2
           cache: pnpm
       - name: Cache Turbo
-        uses: actions/cache@v5
+        uses: actions/cache@v5.0.5
         with:
           path: .turbo/cache
           key: turbo-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}-${{ github.sha }}
