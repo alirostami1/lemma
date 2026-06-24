@@ -1,36 +1,13 @@
 name: Deploy VPS
 on:
+  push:
+    tags:
+      - "v*.*.*"
   workflow_dispatch:
     inputs:
       image_tag:
         description: "Image tag to deploy. Defaults to the current commit SHA."
         required: false
-  push:
-    branches:
-      - main
-    paths:
-      - ".dockerignore"
-      - ".github/workflows/deploy-vps.yml"
-      - ".npmrc"
-      - "apps/api/**"
-      - "apps/admin/**"
-      - "apps/keycloak-theme/**"
-      - "apps/libreoffice-worker/**"
-      - "apps/web/**"
-      - "apps/worker/**"
-      - "infra/ansible/**"
-      - "infra/caddy/**"
-      - "infra/production/**"
-      - "package.json"
-      - "packages/**"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - "scripts/run-openapi-generator.mjs"
-      - "scripts/production/**"
-      - "tsconfig*.json"
-      - "turbo.json"
-      - "!apps/**/*.md"
-      - "!packages/**/*.md"
 permissions:
   contents: read
   packages: write
@@ -43,8 +20,40 @@ env:
   IMAGE_TAG: ${{ github.event.inputs.image_tag || github.sha }}
   SOPS_VERSION: v3.10.2
 jobs:
+  validate-release-ref:
+    name: validate release ref
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate release ref
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          REF_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          echo "event: ${EVENT_NAME}"
+          echo "ref: ${REF}"
+          echo "ref type: ${REF_TYPE}"
+          echo "ref name: ${REF_NAME}"
+
+          if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
+            exit 0
+          fi
+
+          if [[ "${REF_TYPE}" != "tag" ]]; then
+            echo "::error::Production deploy push events must use release tags."
+            exit 1
+          fi
+
+          if [[ ! "${REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid release tag '${REF_NAME}'. Expected vMAJOR.MINOR.PATCH, for example v0.1.0."
+            exit 1
+          fi
   build:
     name: build and push images
+    needs: validate-release-ref
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref_type == 'tag')
     runs-on: ubuntu-latest
     environment: vps
     strategy:
@@ -97,6 +106,7 @@ jobs:
   deploy:
     name: deploy to VPS
     needs: build
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref_type == 'tag')
     runs-on: ubuntu-latest
     environment: vps
     steps:
@@ -105,6 +115,10 @@ jobs:
       - name: Show deploy plan
         run: |
           echo "environment: vps"
+          echo "event: ${GITHUB_EVENT_NAME}"
+          echo "ref: ${GITHUB_REF}"
+          echo "ref type: ${GITHUB_REF_TYPE}"
+          echo "ref name: ${GITHUB_REF_NAME}"
           echo "image owner: ${IMAGE_OWNER}"
           echo "image tag: ${IMAGE_TAG}"
           echo "compose: infra/production/compose.yml"

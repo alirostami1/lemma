@@ -112,8 +112,16 @@ boundary checks as hard policy. Infra validation currently runs ShellCheck for
 production shell scripts, yamllint for workflow/Ansible YAML, actionlint,
 ansible-lint, and Ansible playbook syntax checks.
 
-The production deploy workflow should run automatically only when deployable
-paths change. It must always remain available through `workflow_dispatch`.
+The production deploy workflow runs automatically only from semantic-version
+release tags. It remains manually available through `workflow_dispatch`.
+Ordinary pushes to `main` must not deploy production.
+
+Release flow:
+
+```text
+feature branch -> PR -> main -> CI green -> release tag -> production deploy
+```
+
 The deploy job prints a non-secret deploy plan before changing the VPS.
 After Ansible deploys, CI runs `scripts/production/smoke.sh` against the
 decrypted production env to verify public web, admin, API health, and OIDC
