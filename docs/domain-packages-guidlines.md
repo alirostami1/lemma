@@ -10,7 +10,7 @@ domain          business concepts, invariants, transitions, value objects
 application     orchestration, policies, ports, transaction boundaries
 infrastructure  Kysely repositories and external service adapters
 http            handlers, presenters, OpenAPI-facing DTO mapping
-gen             generated Hono/Zod/types output
+generated             generated Hono/Zod/types output
 ```
 
 ## Dependency Direction
@@ -20,13 +20,13 @@ flowchart TB
   HTTP[http] --> Application[application]
   Infrastructure[infrastructure] --> Application
   Application --> Domain[domain]
-  HTTP --> Generated[gen]
+  HTTP --> Generated[generated]
   Infrastructure --> DB[db/external systems]
 ```
 
 Rules:
 
-- `domain` must not import `application`, `infrastructure`, `http`, or `gen`.
+- `domain` must not import `application`, `infrastructure`, `http`, or `generated`.
 - `domain` must not import DB, Hono, Zod, Keycloak, storage clients, or generated OpenAPI code.
 - `application` orchestrates domain behavior and calls ports.
 - `infrastructure` implements ports and translates external failures.
@@ -97,7 +97,7 @@ Application services should not:
   results back to response DTOs.
 - HTTP error presenters centralize status-code decisions.
 - HTTP presenter functions should return generated response DTO types from
-  `src/gen/types` when a generated type exists.
+  `src/generated/types` when a generated type exists.
 - Name public response builders `present<Resource>` or `present<ResourcePlural>`;
   name private nested DTO mappers `to<Resource>Dto`.
 - Keep domain/application models out of public HTTP responses unless the

@@ -17,12 +17,12 @@ export function BlockPreview({
 }) {
   return (
     <QuestionPlayer
-      question={editorBlockToPresentableQuestion(block)}
       answer={createEmptyQuestionAnswer()}
       mode="authoring-preview"
-      referencePreviewCache={referencePreviewCache}
-      onSelectReference={onSelectReference}
       onAnswerChange={() => {}}
+      onSelectReference={onSelectReference}
+      question={editorBlockToPresentableQuestion(block)}
+      referencePreviewCache={referencePreviewCache}
     />
   );
 }

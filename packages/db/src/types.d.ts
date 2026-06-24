@@ -69,6 +69,86 @@ export interface FileUploads {
   uploadExpiresAt: Timestamp;
 }
 
+export interface OpsOutboxEventReviews {
+  action: string;
+  actorUserId: string | null;
+  createdAt: Generated<Timestamp>;
+  id: Generated<string>;
+  note: string | null;
+  outboxEventId: string;
+}
+
+export interface OpsQueueJobReconciliations {
+  completedAt: Timestamp | null;
+  createdAt: Generated<Timestamp>;
+  errorMessage: string | null;
+  jobId: string;
+  jobName: string;
+  lastError: string | null;
+  lockedAt: Timestamp;
+  lockedBy: string;
+  questionGenerationRunId: string | null;
+  result: string | null;
+  status: Generated<string>;
+  updatedAt: Generated<Timestamp>;
+}
+
+export interface OutboxEvents {
+  aggregateId: string;
+  aggregateType: string;
+  attempts: Generated<number>;
+  availableAt: Generated<Timestamp>;
+  causationId: string | null;
+  correlationId: string;
+  createdAt: Generated<Timestamp>;
+  eventType: string;
+  id: Generated<string>;
+  lastError: string | null;
+  lockedAt: Timestamp | null;
+  lockedBy: string | null;
+  ownerUserId: string | null;
+  payload: Json;
+  publishedAt: Timestamp | null;
+  requestId: string;
+  schemaVersion: number;
+  status: Generated<string>;
+  updatedAt: Generated<Timestamp>;
+}
+
+export interface ProcessedEvents {
+  consumer: string;
+  eventId: string;
+  processedAt: Timestamp;
+}
+
+export interface QuestionBlueprintDrafts {
+  blueprintId: string | null;
+  createdAt: Generated<Timestamp>;
+  createdByUserId: string;
+  description: string | null;
+  discardedAt: Timestamp | null;
+  document: Json;
+  id: Generated<string>;
+  lastSavedAt: Timestamp;
+  name: string;
+  ownerUserId: string;
+  publishedAt: Timestamp | null;
+  sources: Generated<Json>;
+  status: Generated<string>;
+  updatedAt: Generated<Timestamp>;
+}
+
+export interface QuestionBlueprintDraftSourceFiles {
+  byteSize: Int8;
+  checksumSha256: string;
+  contentType: string;
+  createdAt: Generated<Timestamp>;
+  draftId: string;
+  fileId: string;
+  originalName: string;
+  sourceId: string;
+}
+
 export interface QuestionBlueprintMembers {
   blueprintId: string;
   createdAt: Generated<Timestamp>;
@@ -82,39 +162,22 @@ export interface QuestionBlueprints {
   archivedAt: Timestamp | null;
   createdAt: Generated<Timestamp>;
   createdByUserId: string;
-  currentVersionId: string | null;
   description: string | null;
+  document: Json;
   id: Generated<string>;
   name: string;
   ownerUserId: string;
+  sources: Generated<Json>;
   status: Generated<string>;
   updatedAt: Generated<Timestamp>;
   visibility: Generated<string>;
-  workbookId: string | null;
-}
-
-export interface QuestionBlueprintVersionAssets {
-  createdAt: Generated<Timestamp>;
-  kind: Generated<string>;
-  position: Generated<number>;
-  questionBlueprintVersionId: string;
-  workbookId: string;
-}
-
-export interface QuestionBlueprintVersions {
-  createdAt: Generated<Timestamp>;
-  createdByUserId: string;
-  document: Json;
-  id: Generated<string>;
-  questionBlueprintId: string;
-  versionNumber: number;
-  workbookId: string | null;
 }
 
 export interface QuestionGenerationRuns {
+  attemptNumber: Generated<number>;
   attempts: Generated<number>;
   blueprintId: string;
-  blueprintVersionId: string;
+  blueprintSnapshot: Json;
   createdAt: Generated<Timestamp>;
   createdByUserId: string;
   errorMessage: string | null;
@@ -123,16 +186,16 @@ export interface QuestionGenerationRuns {
   ownerUserId: string;
   requestedCount: number;
   result: Json | null;
-  source: Json | null;
+  retryOfRunId: string | null;
   startedAt: Timestamp | null;
   status: Generated<string>;
   targetQuestionSetId: string;
   updatedAt: Generated<Timestamp>;
+  workbookCalculationId: string | null;
 }
 
 export interface Questions {
   blueprintId: string;
-  blueprintVersionId: string;
   body: Json;
   createdAt: Generated<Timestamp>;
   createdByUserId: string;
@@ -141,7 +204,7 @@ export interface Questions {
   ownerUserId: string;
   producer: Json;
   solution: Json;
-  source: Json | null;
+  sourceEvidence: Json;
   sourcePlan: Json;
   status: Generated<string>;
   updatedAt: Generated<Timestamp>;
@@ -205,6 +268,7 @@ export interface Users {
 }
 
 export interface WorkbookCalculations {
+  attemptNumber: Generated<number>;
   attempts: Generated<number>;
   correlationId: string | null;
   createdAt: Generated<Timestamp>;
@@ -214,9 +278,17 @@ export interface WorkbookCalculations {
   id: Generated<string>;
   ownerUserId: string;
   requestedCount: number;
+  retryOfCalculationId: string | null;
   startedAt: Timestamp | null;
   status: Generated<string>;
   updatedAt: Generated<Timestamp>;
+}
+
+export interface WorkbookCalculationSources {
+  calculationId: string;
+  createdAt: Generated<Timestamp>;
+  position: number;
+  sourceId: string;
   workbookId: string;
 }
 
@@ -241,7 +313,9 @@ export interface WorkbookSnapshots {
   calculationId: string;
   createdAt: Generated<Timestamp>;
   id: Generated<string>;
+  questionIndex: number;
   snapshotIndex: number;
+  sourceId: string;
   values: Json;
   workbookId: string;
 }
@@ -249,19 +323,24 @@ export interface WorkbookSnapshots {
 export interface DB {
   files: Files;
   fileUploads: FileUploads;
+  opsOutboxEventReviews: OpsOutboxEventReviews;
+  opsQueueJobReconciliations: OpsQueueJobReconciliations;
+  outboxEvents: OutboxEvents;
+  processedEvents: ProcessedEvents;
+  questionBlueprintDraftSourceFiles: QuestionBlueprintDraftSourceFiles;
+  questionBlueprintDrafts: QuestionBlueprintDrafts;
   questionBlueprintMembers: QuestionBlueprintMembers;
-  questionBlueprintVersionAssets: QuestionBlueprintVersionAssets;
   questionBlueprints: QuestionBlueprints;
-  questionBlueprintVersions: QuestionBlueprintVersions;
   questionGenerationRuns: QuestionGenerationRuns;
-  questions: Questions;
   questionSetMembers: QuestionSetMembers;
   questionSetQuestions: QuestionSetQuestions;
   questionSets: QuestionSets;
+  questions: Questions;
   roles: Roles;
   userRoles: UserRoles;
   users: Users;
+  workbookCalculationSources: WorkbookCalculationSources;
   workbookCalculations: WorkbookCalculations;
-  workbooks: Workbooks;
   workbookSnapshots: WorkbookSnapshots;
+  workbooks: Workbooks;
 }

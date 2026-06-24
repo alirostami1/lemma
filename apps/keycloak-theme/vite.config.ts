@@ -4,18 +4,20 @@ import { keycloakify } from "keycloakify/vite-plugin";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  resolve: { tsconfigPaths: true },
   plugins: [
     tailwindcss(),
     react(),
     keycloakify({
       accountThemeImplementation: "none",
-      themeName: "lemma",
       keycloakifyBuildDirPath: "dist_keycloak",
       keycloakVersionTargets: {
         "22-to-25": false,
         "all-other-versions": "lemma-keycloak-theme.jar",
       },
+      themeName: "lemma",
     }),
   ],
+  resolve: {
+    tsconfigPaths: true,
+  },
 });

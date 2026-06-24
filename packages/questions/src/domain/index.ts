@@ -11,7 +11,6 @@ export {
 } from "./errors.js";
 export type {
   QuestionBlueprintId,
-  QuestionBlueprintVersionId,
   QuestionGenerationRunId,
   QuestionId,
   QuestionSetId,
@@ -19,11 +18,9 @@ export type {
   WorkbookCalculationId,
   WorkbookId,
   WorkbookSnapshotId,
-  WorkbookVersionId,
 } from "./ids.js";
 export {
   questionBlueprintId,
-  questionBlueprintVersionId,
   questionGenerationRunId,
   questionId,
   questionSetId,
@@ -31,7 +28,6 @@ export {
   workbookCalculationId,
   workbookId,
   workbookSnapshotId,
-  workbookVersionId,
 } from "./ids.js";
 export {
   assertMaxLength,
@@ -39,17 +35,12 @@ export {
   assertNullableDescription,
   assertUuid,
 } from "./primitives.js";
-export type {
-  CreateWorkbookQuestionSourceInput,
-  Question,
-  WorkbookQuestionSource,
-} from "./question.js";
+export type { Question } from "./question.js";
 export {
   archiveQuestion,
   createQuestion,
   deleteQuestion,
   reconstituteQuestion,
-  workbookQuestionSource,
 } from "./question.js";
 export type {
   QuestionAnswer,
@@ -58,18 +49,17 @@ export type {
 export { questionAnswer } from "./question-answer.js";
 export type {
   QuestionBlueprint,
-  QuestionBlueprintVersion,
-  QuestionBlueprintVersionAsset,
+  QuestionBlueprintSource,
 } from "./question-blueprint.js";
 export {
   archiveQuestionBlueprint,
   createQuestionBlueprint,
-  createQuestionBlueprintVersion,
-  createQuestionBlueprintVersionAssets,
   deleteQuestionBlueprint,
+  questionBlueprintSourceIdsUsedByDocument,
+  questionBlueprintSources,
+  questionBlueprintSourcesReferencedByDocument,
   reconstituteQuestionBlueprint,
-  reconstituteQuestionBlueprintVersion,
-  reconstituteQuestionBlueprintVersionAsset,
+  updateQuestionBlueprintDefinition,
   updateQuestionBlueprintMetadata,
 } from "./question-blueprint.js";
 export type {
@@ -83,6 +73,22 @@ export type {
   QuestionBlueprintTextBlock,
 } from "./question-blueprint-document.js";
 export { questionBlueprintDocument } from "./question-blueprint-document.js";
+export type {
+  QuestionBlueprintDraft,
+  QuestionBlueprintDraftId,
+  QuestionBlueprintDraftSource,
+  QuestionBlueprintDraftStatus,
+} from "./question-blueprint-draft.js";
+export {
+  attachDraftSourceFile,
+  createQuestionBlueprintDraft,
+  discardQuestionBlueprintDraft,
+  markQuestionBlueprintDraftPublished,
+  questionBlueprintDraftId,
+  questionBlueprintDraftSources,
+  reconstituteQuestionBlueprintDraft,
+  updateQuestionBlueprintDraft,
+} from "./question-blueprint-draft.js";
 export type {
   BlueprintInlineContent,
   QuestionBlock,
@@ -124,6 +130,8 @@ export {
   QUESTION_SET_QUESTIONS_ADDED_EVENT,
 } from "./question-generation-events.js";
 export type {
+  CreateInitialQuestionGenerationRunInput,
+  QuestionBlueprintSnapshot,
   QuestionGenerationRun,
   QuestionGenerationRunResult,
 } from "./question-generation-run.js";
@@ -131,12 +139,15 @@ export {
   assertCanMaterialize,
   assertQuestionGenerationRunCanRetry,
   cancelQuestionGenerationRun,
-  createQuestionGenerationRun,
+  createInitialQuestionGenerationRun,
+  createQuestionBlueprintSnapshot,
+  createRetryQuestionGenerationRun,
   isTerminalRun,
   markQuestionGenerationRunFailed,
   markQuestionGenerationRunMaterializing,
   markQuestionGenerationRunSucceeded,
   markQuestionGenerationRunWaitingForWorkbookCalculation,
+  questionBlueprintSnapshot,
   reconstituteQuestionGenerationRun,
 } from "./question-generation-run.js";
 export type {
@@ -166,10 +177,17 @@ export {
   renameQuestionSet,
 } from "./question-set.js";
 export type {
+  QuestionSourceEvidence,
+  QuestionSourceEvidenceItem,
   QuestionSourcePlan,
-  QuestionSourceReference,
+  QuestionSourcePlanReference,
 } from "./question-source.js";
-export { questionSourcePlan } from "./question-source.js";
+export {
+  questionSourceEvidence,
+  questionSourceEvidenceFromStore,
+  questionSourcePlan,
+  questionSourcePlanFromStore,
+} from "./question-source.js";
 export type { QuestionValueExpression } from "./question-value-expression.js";
 export { questionValueExpression } from "./question-value-expression.js";
 export type {
@@ -207,3 +225,14 @@ export {
   questionStatus,
   requestedGenerationCount,
 } from "./question-values.js";
+export type {
+  ParseWorkbookReferenceKeyResult,
+  WorkbookReferenceKeyParts,
+} from "./reference-key.js";
+export {
+  assertReferenceIdMatchesStructuredSource,
+  formatWorkbookReferenceKey,
+  getWorkbookReferenceKeyForStructuredSource,
+  isCanonicalWorkbookReferenceKey,
+  parseWorkbookReferenceKey,
+} from "./reference-key.js";

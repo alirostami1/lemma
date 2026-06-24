@@ -26,15 +26,15 @@ export function ToolbarPopoverChoice({
 
   return (
     <Button
-      type="button"
-      variant={selected ? "default" : "outline"}
-      disabled={disabled}
       aria-pressed={selected}
       className={cn(
         "h-auto w-full min-h-14 justify-start gap-3 px-3 py-3 text-left",
         selected && "border-primary",
       )}
+      disabled={disabled}
       onClick={onClick}
+      type="button"
+      variant={selected ? "default" : "outline"}
     >
       <span className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-background/60">
         {icon}

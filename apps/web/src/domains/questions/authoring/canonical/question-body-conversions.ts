@@ -12,20 +12,19 @@ export function questionBodyToComposedPreviewModel(
   body: QuestionBody,
 ): ComposedPreviewModel {
   return {
-    schemaVersion: 1,
     blocks: body.blocks.map((block) => {
       if (block.type === "text") {
         return {
+          content: block.content,
           id: block.id,
           type: "text" as const,
-          content: block.content,
         };
       }
       if (block.type === "rich_text") {
         return {
+          content: canonicalRichContentToComposed(block.content),
           id: block.id,
           type: "rich_text" as const,
-          content: canonicalRichContentToComposed(block.content),
         };
       }
       if (block.type === "separator") {
@@ -37,22 +36,23 @@ export function questionBodyToComposedPreviewModel(
       if (block.type === "response") {
         return {
           id: block.id,
-          type: "response" as const,
-          responseFieldId: block.responseFieldId,
           label: block.label,
           placeholder: block.placeholder,
+          responseFieldId: block.responseFieldId,
+          type: "response" as const,
         };
       }
       if (block.type === "table") {
         return {
           id: block.id,
-          type: "table" as const,
           table: questionTableBlockToPreviewModel(block, body.responseFields),
+          type: "table" as const,
         };
       }
       throw new Error("Unsupported question body for composed renderer.");
     }),
     responseFields: body.responseFields.map(questionResponseFieldToComposed),
+    schemaVersion: 1,
   };
 }
 

@@ -85,8 +85,8 @@ export class FailedQueueJobReconciler {
     },
   ) {
     this.pollingLoop = new PollingLoop({
-      name: "failed-queue-job-reconciler",
       intervalMs: deps.config.intervalMs,
+      name: "failed-queue-job-reconciler",
       task: () => this.runPollingTask(),
     });
     this.policy = {
@@ -111,10 +111,10 @@ export class FailedQueueJobReconciler {
     for (const name of this.policy.jobNames) {
       jobs.push(
         ...(await this.deps.repository.claimFailedJobs({
-          name,
           limit: this.deps.config.batchSize,
-          lockedBy: this.deps.config.workerId,
           lockedAt: now,
+          lockedBy: this.deps.config.workerId,
+          name,
           staleBefore: new Date(now.getTime() - this.deps.config.lockTimeoutMs),
         })),
       );
@@ -161,10 +161,10 @@ export class FailedQueueJobReconciler {
     return {
       ...result,
       log: {
-        message: "failed queue jobs reconciled",
         fields: {
           "queue.failed_jobs.reconciled_count": reconciledCount,
         },
+        message: "failed queue jobs reconciled",
       },
     };
   }
@@ -173,11 +173,11 @@ export class FailedQueueJobReconciler {
     try {
       const outcome = await this.policy.reconcile(job);
       await this.deps.repository.completeReconciliation({
-        jobId: job.id,
-        result: outcome.result,
-        questionGenerationRunId: outcome.resourceId,
-        errorMessage: outcome.errorMessage,
         completedAt: this.deps.clock.now(),
+        errorMessage: outcome.errorMessage,
+        jobId: job.id,
+        questionGenerationRunId: outcome.resourceId,
+        result: outcome.result,
       });
     } catch (error) {
       await this.policy.recordFailure(job, error);
@@ -194,27 +194,27 @@ export class FailedQueueJobReconciler {
 
     if (!questionGenerationRunId || !lineage) {
       return {
-        result: "invalid_payload",
-        resourceId: null,
         errorMessage: auditErrorMessage,
+        resourceId: null,
+        result: "invalid_payload",
       };
     }
 
     const result =
       await this.deps.questionGenerationWorkerService.reconcileFailedGenerationJob(
         {
-          questionGenerationRunId,
-          lineage,
           errorMessage: failedQuestionGenerationMessage(job),
+          lineage,
+          questionGenerationRunId,
         },
       );
     return {
-      result: mapReconciliationResult(result),
+      errorMessage: auditErrorMessage,
       resourceId:
         result.status === "skipped" && result.reason === "invalid_payload"
           ? null
           : questionGenerationRunId,
-      errorMessage: auditErrorMessage,
+      result: mapReconciliationResult(result),
     };
   }
 
@@ -223,12 +223,12 @@ export class FailedQueueJobReconciler {
     error: unknown,
   ): Promise<void> {
     return this.deps.repository.recordReconciliationFailure({
-      jobId: job.id,
       errorMessage: errorMessageFromUnknown(
         error,
         "Queue reconciliation failed.",
       ),
       failedAt: this.deps.clock.now(),
+      jobId: job.id,
     });
   }
 }

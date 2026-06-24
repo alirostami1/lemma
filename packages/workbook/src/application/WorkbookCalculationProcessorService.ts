@@ -3,9 +3,11 @@ import { instrumentService } from "@lemma/observability";
 import {
   assertWorkbookIsUsable,
   createWorkbookSnapshot,
+  InvalidWorkbookFieldError,
   markWorkbookCalculationFailed,
   markWorkbookCalculationSucceeded,
   workbookCalculationId as toWorkbookCalculationId,
+  workbookId as toWorkbookId,
   type WorkbookCalculation,
   type WorkbookSnapshot,
 } from "../domain/index.js";
@@ -19,6 +21,10 @@ import type {
   WorkbookRepository,
   WorkbookTransactionPort,
 } from "./ports.js";
+import {
+  normalizeWorkbookCalculationSources,
+  type WorkbookCalculationSource,
+} from "./workbook-calculation-sources.js";
 import { workbookCalculationFinishedEvent } from "./workbook-events.js";
 import { withWorkbookTempFile } from "./workbook-temp-file.js";
 
@@ -56,77 +62,129 @@ export class WorkbookCalculationProcessorService {
       return;
     }
 
+    let sources: readonly WorkbookCalculationSource[] = [];
     try {
-      const calculated = await this.calculateSnapshots(
+      sources = await this.loadCalculationSources(running.id);
+      const calculated = await this.calculateSnapshots({
+        lineage: command.lineage,
         running,
-        command.lineage,
-      );
+        sources,
+      });
       await this.succeedRunningCalculation({
-        running,
-        snapshots: calculated.snapshots,
         finishedAt: calculated.finishedAt,
         lineage: command.lineage,
+        running,
+        snapshots: calculated.snapshots,
+        sources,
       });
     } catch (error) {
       await this.failRunningCalculation({
-        running,
         error,
         lineage: command.lineage,
+        running,
+        sources,
       });
     }
   }
 
-  private async calculateSnapshots(
-    running: WorkbookCalculation,
-    lineage: OperationLineage,
-  ): Promise<{ snapshots: WorkbookSnapshot[]; finishedAt: Date }> {
-    const workbook = await this.deps.workbookRepository.findWorkbookById(
-      running.workbookId,
+  private async calculateSnapshots(input: {
+    running: WorkbookCalculation;
+    sources: readonly WorkbookCalculationSource[];
+    lineage: OperationLineage;
+  }): Promise<{
+    snapshots: WorkbookSnapshot[];
+    finishedAt: Date;
+  }> {
+    const normalizedSources = normalizeWorkbookCalculationSources(
+      input.sources,
+      "sources",
     );
+    const finishedAt = this.deps.clock.now();
+    const snapshots: WorkbookSnapshot[] = [];
 
-    if (!workbook) {
-      throw new WorkbookNotFoundError();
-    }
-
-    assertWorkbookIsUsable(workbook);
-
-    const file =
-      await this.deps.workbookFileProvider.readWorkbookFileContentForOwnerUserId(
-        {
-          ownerUserId: workbook.ownerUserId,
-          fileId: workbook.fileId,
-        },
+    for (const [sourceIndex, source] of normalizedSources.entries()) {
+      const workbook = await this.deps.workbookRepository.findWorkbookById(
+        toWorkbookId(source.workbookId),
       );
 
-    const values = await withWorkbookTempFile(file, (path) =>
-      this.deps.workbookCalculator.calculateBatch(
-        path,
-        running.requestedCount,
-        { lineage },
-      ),
-    );
+      if (!workbook) {
+        throw new WorkbookNotFoundError();
+      }
 
-    const finishedAt = this.deps.clock.now();
+      assertWorkbookIsUsable(workbook);
+      if (workbook.ownerUserId !== input.running.ownerUserId) {
+        throw new InvalidWorkbookFieldError(
+          "All calculation source workbooks must belong to calculation owner.",
+        );
+      }
+
+      const file =
+        await this.deps.workbookFileProvider.readWorkbookFileContentForOwnerUserId(
+          {
+            fileId: workbook.fileId,
+            ownerUserId: workbook.ownerUserId,
+          },
+        );
+
+      const values = await withWorkbookTempFile(file, (path) =>
+        this.deps.workbookCalculator.calculateBatch(
+          path,
+          input.running.requestedCount,
+          { lineage: input.lineage },
+        ),
+      );
+      if (values.length !== input.running.requestedCount) {
+        throw new InvalidWorkbookFieldError(
+          `Workbook calculator returned ${values.length} snapshots for source ${source.sourceId}; expected ${input.running.requestedCount}.`,
+        );
+      }
+
+      snapshots.push(
+        ...values.map((snapshotValues, questionIndex) =>
+          createWorkbookSnapshot(
+            {
+              calculationId: input.running.id,
+              id: this.deps.idGenerator.workbookSnapshotId(),
+              questionIndex,
+              snapshotIndex:
+                questionIndex * normalizedSources.length + sourceIndex,
+              sourceId: source.sourceId,
+              values: snapshotValues,
+              workbookId: workbook.id,
+            },
+            finishedAt,
+          ),
+        ),
+      );
+    }
+
     return {
       finishedAt,
-      snapshots: values.map((snapshotValues, index) =>
-        createWorkbookSnapshot(
-          {
-            id: this.deps.idGenerator.workbookSnapshotId(),
-            workbookId: running.workbookId,
-            calculationId: running.id,
-            snapshotIndex: index,
-            values: snapshotValues,
-          },
-          finishedAt,
-        ),
-      ),
+      snapshots: snapshots.sort((left, right) => {
+        return left.snapshotIndex - right.snapshotIndex;
+      }),
     };
+  }
+
+  private async loadCalculationSources(
+    calculationId: WorkbookCalculation["id"],
+  ): Promise<WorkbookCalculationSource[]> {
+    const sources =
+      await this.deps.workbookRepository.listWorkbookCalculationSources(
+        calculationId,
+      );
+    return sources
+      .sort((left, right) => left.position - right.position)
+      .map((source) => ({
+        sourceId: source.sourceId,
+        workbookId: source.workbookId,
+      }));
   }
 
   private async succeedRunningCalculation(input: {
     running: WorkbookCalculation;
     snapshots: readonly WorkbookSnapshot[];
+    sources: readonly WorkbookCalculationSource[];
     finishedAt: Date;
     lineage: OperationLineage;
   }): Promise<void> {
@@ -142,8 +200,9 @@ export class WorkbookCalculationProcessorService {
         await outboxRepository.appendEvents([
           this.finishedCalculationEvent({
             calculation: result.calculation,
-            snapshots: result.snapshots,
             lineage: input.lineage,
+            snapshots: sortSnapshotsByIndex(result.snapshots),
+            sources: input.sources,
           }),
         ]);
       },
@@ -152,6 +211,7 @@ export class WorkbookCalculationProcessorService {
 
   private async failRunningCalculation(input: {
     running: WorkbookCalculation;
+    sources: readonly WorkbookCalculationSource[];
     error: unknown;
     lineage: OperationLineage;
   }): Promise<void> {
@@ -170,6 +230,7 @@ export class WorkbookCalculationProcessorService {
           this.finishedCalculationEvent({
             calculation: updated,
             lineage: input.lineage,
+            sources: input.sources,
           }),
         ]);
       },
@@ -178,15 +239,17 @@ export class WorkbookCalculationProcessorService {
 
   private finishedCalculationEvent(input: {
     calculation: WorkbookCalculation;
+    sources: readonly WorkbookCalculationSource[];
     snapshots?: readonly WorkbookSnapshot[];
     lineage: OperationLineage;
   }) {
     return workbookCalculationFinishedEvent({
-      id: this.deps.idGenerator.eventId(),
       calculation: input.calculation,
-      snapshots: input.snapshots,
+      id: this.deps.idGenerator.eventId(),
       lineage: input.lineage,
       occurredAt: input.calculation.updatedAt,
+      snapshots: input.snapshots,
+      sources: input.sources,
     });
   }
 
@@ -201,4 +264,12 @@ export class WorkbookCalculationProcessorService {
 
 function errorMessageFromUnknown(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
+}
+
+function sortSnapshotsByIndex(
+  snapshots: readonly WorkbookSnapshot[],
+): WorkbookSnapshot[] {
+  return [...snapshots].sort((left, right) => {
+    return left.snapshotIndex - right.snapshotIndex;
+  });
 }

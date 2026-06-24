@@ -5,7 +5,7 @@
 Run full validation:
 
 ```bash
-pnpm check-types && pnpm lint && pnpm test
+pnpm check:types && pnpm lint && pnpm test && pnpm check
 ```
 
 Run focused tests with Turbo filters:
@@ -21,6 +21,7 @@ pnpm --filter web test
 - app tests: UI and controller behavior
 - generated contract checks: OpenAPI and generated-file cleanliness
 - architecture checks: package boundary rules
+- legacy model checks: question generation architecture terms that must not return
 
 ## Where To Add Tests
 

@@ -28,30 +28,30 @@ describe("pipeline", () => {
 
     assert.deepEqual(
       await runEventConsumer({
-        event,
         consumer: {
-          name: consumer,
           eventTypes: [event.eventType],
           async handle() {
             calls += 1;
             return { status: "processed" };
           },
+          name: consumer,
         },
+        event,
         idempotencyStore: store,
       }),
       { status: "processed" },
     );
     assert.deepEqual(
       await runEventConsumer({
-        event,
         consumer: {
-          name: consumer,
           eventTypes: [event.eventType],
           async handle() {
             calls += 1;
             return { status: "processed" };
           },
+          name: consumer,
         },
+        event,
         idempotencyStore: store,
       }),
       { status: "already_processed" },
@@ -66,17 +66,17 @@ describe("pipeline", () => {
 
     assert.deepEqual(
       await runEventConsumer({
-        event,
         consumer: {
-          name: consumer,
           eventTypes: [event.eventType],
           async handle() {
-            return { status: "skipped", reason: "no_work" };
+            return { reason: "no_work", status: "skipped" };
           },
+          name: consumer,
         },
+        event,
         idempotencyStore: store,
       }),
-      { status: "skipped", reason: "no_work" },
+      { reason: "no_work", status: "skipped" },
     );
 
     assert.deepEqual(store.processedKeys, []);
@@ -103,35 +103,35 @@ describe("pipeline", () => {
 
   it("creates workflow job consumers with workflow metadata", async () => {
     const data: TestWorkflowData = {
-      resourceId: "resource-1",
       lineage: event.lineage,
+      resourceId: "resource-1",
     };
     let handled: TestWorkflowData | undefined;
 
     const consumer = workflowJobConsumer<TestWorkflowData>({
-      workflowName: "test",
-      stepName: "step",
+      attributes: (job) => ({ "test.resource_id": job.data.resourceId }),
       jobName: "test.step",
+      lineage: (payload) => payload.lineage,
       parsePayload(payload) {
         return { ...payload, parsed: true };
       },
-      lineage: (payload) => payload.lineage,
-      attributes: (job) => ({ "test.resource_id": job.data.resourceId }),
       async run(job) {
         handled = job.data;
       },
+      stepName: "step",
+      workflowName: "test",
     });
     const parsedData = consumer.parse(data);
-    const job = { id: "job-1", name: "test.step", data: parsedData };
+    const job = { data: parsedData, id: "job-1", name: "test.step" };
 
     assert.equal(consumer.name, "test.step");
     assert.equal(consumer.spanName, "test.step_job");
     assert.deepEqual(consumer.attributes(job), {
+      "operation.correlation_id": event.lineage.correlationId,
+      "operation.request_id": event.lineage.requestId,
+      "test.resource_id": "resource-1",
       "workflow.name": "test",
       "workflow.step": "step",
-      "operation.request_id": event.lineage.requestId,
-      "operation.correlation_id": event.lineage.correlationId,
-      "test.resource_id": "resource-1",
     });
 
     await consumer.handle(job);
@@ -170,26 +170,26 @@ function key(eventId: OutboxEvent["id"], consumerName: OutboxConsumerName) {
 
 function createOutboxEvent(): OutboxEvent {
   return {
-    id: eventId("019e9315-6a87-715f-9861-8654df070d10"),
-    eventType: eventType("test.event"),
-    schemaVersion: 1,
-    aggregateType: aggregateType("test"),
     aggregateId: aggregateId("aggregate-1"),
-    ownerUserId: null,
-    lineage: {
-      requestId: "019e9315-6a87-715f-9861-8654df070d10",
-      correlationId: "019e9315-6a87-715f-9861-8654df070d10",
-      causationId: null,
-    },
-    payload: {},
-    status: "pending",
-    availableAt: at,
+    aggregateType: aggregateType("test"),
     attempts: 0,
-    lockedBy: null,
-    lockedAt: null,
-    publishedAt: null,
-    lastError: null,
+    availableAt: at,
     createdAt: at,
+    eventType: eventType("test.event"),
+    id: eventId("019e9315-6a87-715f-9861-8654df070d10"),
+    lastError: null,
+    lineage: {
+      causationId: null,
+      correlationId: "019e9315-6a87-715f-9861-8654df070d10",
+      requestId: "019e9315-6a87-715f-9861-8654df070d10",
+    },
+    lockedAt: null,
+    lockedBy: null,
+    ownerUserId: null,
+    payload: {},
+    publishedAt: null,
+    schemaVersion: 1,
+    status: "pending",
     updatedAt: at,
   };
 }

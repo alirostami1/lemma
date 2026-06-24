@@ -14,7 +14,7 @@ import type {
   FileResponse as FileResponseDto,
   FileUpload as FileUploadDto,
   ListFilesResponse as ListFilesResponseDto,
-} from "../gen/types/index.js";
+} from "../generated/types/index.js";
 
 export function presentFiles(result: FilesResult): ListFilesResponseDto {
   return {
@@ -35,14 +35,14 @@ export function presentCreateFileUpload(
   return {
     upload: toFileUploadDto(result.upload),
     uploadUrl: {
-      url: result.uploadUrl.url,
-      method: result.uploadUrl.method,
       expiresInSeconds: result.uploadUrl.expiresInSeconds,
       headers: {
         "Content-Type": result.uploadUrl.headers["Content-Type"] ?? "",
         "x-amz-checksum-sha256":
           result.uploadUrl.headers["x-amz-checksum-sha256"] ?? "",
       },
+      method: result.uploadUrl.method,
+      url: result.uploadUrl.url,
     },
   };
 }
@@ -57,35 +57,35 @@ export function presentDownloadFileUrl(
 
 function toFileDto(file: File): FileDto {
   return {
-    id: file.id,
-    ownerUserId: file.ownerUserId,
-    createdByUserId: file.createdByUserId,
-    originalName: file.originalName,
-    contentType: file.contentType,
     byteSize: file.byteSize,
     checksumSha256: file.checksumSha256,
-    status: file.status,
-    purpose: file.purpose,
-    deletedAt: presentNullableDate(file.deletedAt),
+    contentType: file.contentType,
     createdAt: presentDate(file.createdAt),
+    createdByUserId: file.createdByUserId,
+    deletedAt: presentNullableDate(file.deletedAt),
+    id: file.id,
+    originalName: file.originalName,
+    ownerUserId: file.ownerUserId,
+    purpose: file.purpose,
+    status: file.status,
     updatedAt: presentDate(file.updatedAt),
   };
 }
 
 function toFileUploadDto(upload: FileUpload): FileUploadDto {
   return {
-    id: upload.id,
-    createdByUserId: upload.createdByUserId,
-    originalName: upload.originalName,
-    contentType: upload.contentType,
-    expectedByteSize: upload.expectedByteSize,
     checksumSha256: upload.checksumSha256,
-    status: upload.status,
-    purpose: upload.purpose,
-    uploadExpiresAt: presentDate(upload.uploadExpiresAt),
     completedAt: presentNullableDate(upload.completedAt),
+    contentType: upload.contentType,
     createdAt: presentDate(upload.createdAt),
+    createdByUserId: upload.createdByUserId,
+    expectedByteSize: upload.expectedByteSize,
+    id: upload.id,
+    originalName: upload.originalName,
+    purpose: upload.purpose,
+    status: upload.status,
     updatedAt: presentDate(upload.updatedAt),
+    uploadExpiresAt: presentDate(upload.uploadExpiresAt),
   };
 }
 
@@ -93,8 +93,8 @@ function toFileDownloadUrlDto(
   download: DownloadUrlResult["download"],
 ): FileDownloadUrlDto {
   return {
-    url: download.url,
-    method: download.method,
     expiresInSeconds: download.expiresInSeconds,
+    method: download.method,
+    url: download.url,
   };
 }

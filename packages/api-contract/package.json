@@ -2,15 +2,22 @@
   "name": "@lemma/api-contract",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
   "sideEffects": false,
+  "type": "module",
   "exports": {
-    ".": "./src/openapi.ts"
+    "./source": {
+      "types": "./src/openapi.ts",
+      "source": "./src/openapi.ts",
+      "import": "./src/openapi.ts",
+      "default": "./src/openapi.ts"
+    }
   },
   "scripts": {
-    "lint": "tsx src/lint.ts",
     "check": "biome check && pnpm lint",
-    "format": "biome format"
+    "check:write": "biome check --write",
+    "format": "biome format",
+    "format:write": "biome format --write",
+    "lint": "node --conditions=source --import tsx scripts/lint.ts"
   },
   "dependencies": {
     "@lemma/files": "workspace:*",
@@ -23,7 +30,7 @@
     "@redocly/openapi-core": "^2.13.0"
   },
   "devDependencies": {
-    "tsx": "catalog:",
-    "@biomejs/biome": "catalog:"
+    "@biomejs/biome": "catalog:",
+    "tsx": "catalog:"
   }
 }

@@ -1,4 +1,4 @@
-import { childOperationLineage, isUuidV7 } from "@lemma/domain";
+import { childOperationLineage } from "@lemma/domain";
 import type { OutboxService } from "@lemma/events/application";
 import { type OutboxEvent, outboxConsumerName } from "@lemma/events/domain";
 import type { JobDispatcher } from "@lemma/jobs/application";
@@ -95,36 +95,36 @@ export class OutboxPollingDispatcher {
     },
   ) {
     this.pollingLoop = new PollingLoop({
-      name: "outbox-dispatcher",
       intervalMs: deps.config.pollIntervalMs,
+      name: "outbox-dispatcher",
       task: () => this.runPollingTask(),
     });
     this.eventConsumers = [
       {
-        name: queueQuestionGenerationConsumer,
         eventTypes: questionGenerationRequestedEventTypes,
         handle: (event) => this.dispatchQuestionGenerationQueueEvent(event),
+        name: queueQuestionGenerationConsumer,
       },
       {
-        name: queueWorkbookValidationConsumer,
         eventTypes: workbookValidationRequestedEventTypes,
         handle: (event) => this.dispatchWorkbookValidationQueueEvent(event),
+        name: queueWorkbookValidationConsumer,
       },
       {
-        name: queueWorkbookCalculationConsumer,
         eventTypes: workbookCalculationRequestedEventTypes,
         handle: (event) => this.dispatchWorkbookCalculationQueueEvent(event),
+        name: queueWorkbookCalculationConsumer,
       },
       {
-        name: queueQuestionGenerationConsumer,
         eventTypes: workbookCalculationResultEventTypes,
         handle: (event) =>
           this.dispatchQuestionGenerationWorkbookResultEvent(event),
+        name: queueQuestionGenerationConsumer,
       },
       {
-        name: publishRealtimeNotificationsConsumer,
         eventTypes: realtimeNotificationEventTypes,
         handle: (event) => this.publishRealtimeNotifications(event),
+        name: publishRealtimeNotificationsConsumer,
       },
     ];
   }
@@ -173,8 +173,8 @@ export class OutboxPollingDispatcher {
     try {
       for (const consumer of this.eventConsumers) {
         await runEventConsumer({
-          event,
           consumer,
+          event,
           idempotencyStore: this.deps.outboxService,
         });
       }
@@ -190,10 +190,10 @@ export class OutboxPollingDispatcher {
     const questionGenerationRunId = getQuestionGenerationRunIdFromEvent(event);
     await this.deps.jobDispatcher.enqueueQuestionGenerationOrchestration({
       jobId: event.id,
-      questionGenerationRunId,
       lineage: childOperationLineage(event.lineage, event.id),
-      retryLimit: this.deps.config.queueRetryLimit,
+      questionGenerationRunId,
       retryDelaySeconds: this.deps.config.queueRetryDelaySeconds,
+      retryLimit: this.deps.config.queueRetryLimit,
     });
     return { status: "processed" };
   }
@@ -204,10 +204,10 @@ export class OutboxPollingDispatcher {
     const workbookId = getWorkbookIdFromEvent(event);
     await this.deps.jobDispatcher.enqueueWorkbookValidation({
       jobId: event.id,
-      workbookId,
       lineage: childOperationLineage(event.lineage, event.id),
-      retryLimit: this.deps.config.queueRetryLimit,
       retryDelaySeconds: this.deps.config.queueRetryDelaySeconds,
+      retryLimit: this.deps.config.queueRetryLimit,
+      workbookId,
     });
     return { status: "processed" };
   }
@@ -217,11 +217,10 @@ export class OutboxPollingDispatcher {
   ): Promise<EventConsumerResult> {
     const workbookCalculationId = getWorkbookCalculationIdFromEvent(event);
     await this.deps.jobDispatcher.enqueueWorkbookCalculation({
-      jobId: event.id,
-      workbookCalculationId,
       lineage: childOperationLineage(event.lineage, event.id),
-      retryLimit: this.deps.config.queueRetryLimit,
       retryDelaySeconds: this.deps.config.queueRetryDelaySeconds,
+      retryLimit: this.deps.config.queueRetryLimit,
+      workbookCalculationId,
     });
     return { status: "processed" };
   }
@@ -235,14 +234,14 @@ export class OutboxPollingDispatcher {
     }
 
     await this.deps.jobDispatcher.enqueueQuestionGenerationOrchestration({
+      eventWorkbookSnapshotIds: result.snapshotIds,
       jobId: event.id,
-      questionGenerationRunId: result.questionGenerationRunId,
-      workbookCalculationId: result.workbookCalculationId,
-      workbookSnapshotIds: result.snapshotIds,
-      workbookCalculationErrorMessage: result.errorMessage,
       lineage: childOperationLineage(event.lineage, event.id),
-      retryLimit: this.deps.config.queueRetryLimit,
+      questionGenerationRunId: result.questionGenerationRunId,
       retryDelaySeconds: this.deps.config.queueRetryDelaySeconds,
+      retryLimit: this.deps.config.queueRetryLimit,
+      workbookCalculationErrorMessage: result.errorMessage,
+      workbookCalculationId: result.workbookCalculationId,
     });
     return { status: "processed" };
   }
@@ -251,7 +250,7 @@ export class OutboxPollingDispatcher {
     event: OutboxEvent,
   ): Promise<EventConsumerResult> {
     if (this.deps.notificationProjector.projectEvent(event).length === 0) {
-      return { status: "skipped", reason: "no_publications" };
+      return { reason: "no_publications", status: "skipped" };
     }
 
     await this.deps.notificationProjector.publishOutboxEvent(event);
@@ -261,8 +260,8 @@ export class OutboxPollingDispatcher {
   private async markFailed(event: OutboxEvent, error: unknown): Promise<void> {
     const now = this.deps.clock.now();
     await this.deps.outboxService.markEventFailed({
-      eventId: event.id,
       errorMessage: errorMessageFromUnknown(error, "Outbox dispatch failed."),
+      eventId: event.id,
       retryAt: nextRetryAt({
         attempts: event.attempts,
         failedAt: now,
@@ -317,7 +316,7 @@ function getWorkbookCalculationIdFromEvent(event: OutboxEvent): string {
   const value = event.payload.workbookCalculationId;
   if (typeof value !== "string" || value.length === 0) {
     throw new Error(
-      "workbook_calculation.requested.v1 payload is missing workbookCalculationId.",
+      "workbook_calculation.requested.v2 payload is missing workbookCalculationId.",
     );
   }
   return value;
@@ -337,6 +336,7 @@ function getWorkbookCalculationResultFromEvent(event: OutboxEvent): {
   }
   const correlationId = event.payload.correlationId;
   const workbookCalculationId = event.payload.workbookCalculationId;
+  const status = event.payload.status;
   const snapshotIds = event.payload.snapshotIds;
   const errorMessage = event.payload.errorMessage;
   if (
@@ -347,25 +347,54 @@ function getWorkbookCalculationResultFromEvent(event: OutboxEvent): {
       "workbook_calculation finished payload is missing workbookCalculationId.",
     );
   }
+  if (
+    correlationId !== null &&
+    (typeof correlationId !== "string" || correlationId.length === 0)
+  ) {
+    throw new Error(
+      "workbook_calculation finished payload has invalid correlationId.",
+    );
+  }
+  const expectedStatus =
+    event.eventType === WORKBOOK_CALCULATION_SUCCEEDED_EVENT
+      ? "succeeded"
+      : "failed";
+  if (status !== expectedStatus) {
+    throw new Error(
+      `workbook_calculation finished payload status must be ${expectedStatus}.`,
+    );
+  }
   if (!Array.isArray(snapshotIds)) {
     throw new Error(
       "workbook_calculation finished payload is missing snapshotIds.",
     );
   }
-  return {
-    questionGenerationRunId:
-      typeof correlationId === "string" && isUuidV7(correlationId)
-        ? correlationId
-        : null,
-    workbookCalculationId,
-    snapshotIds: snapshotIds.filter(
+  if (
+    !snapshotIds.every(
       (snapshotId): snapshotId is string => typeof snapshotId === "string",
-    ),
+    )
+  ) {
+    throw new Error(
+      "workbook_calculation finished payload contains an invalid snapshotId.",
+    );
+  }
+  if (errorMessage !== null && typeof errorMessage !== "string") {
+    throw new Error(
+      "workbook_calculation finished payload has invalid errorMessage.",
+    );
+  }
+  return {
     errorMessage:
       event.eventType === WORKBOOK_CALCULATION_FAILED_EVENT
         ? typeof errorMessage === "string" && errorMessage.trim().length > 0
           ? errorMessage
           : "Workbook calculation failed."
         : null,
+    questionGenerationRunId:
+      typeof correlationId === "string" && correlationId.length > 0
+        ? correlationId
+        : null,
+    snapshotIds,
+    workbookCalculationId,
   };
 }

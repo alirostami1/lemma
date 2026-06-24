@@ -53,8 +53,8 @@ export function useQuestionSetDetailController({
 }): QuestionSetDetailController {
   const questionSetQuery = useQuestionSetQuery(questionSetId);
   const questionsQuery = useQuestionSetQuestionsInfiniteQuery({
-    questionSetId,
     limit: 25,
+    questionSetId,
   });
   useRealtimeNotificationChannel(questionSetNotificationChannel(questionSetId));
   const questions = useMemo(
@@ -74,8 +74,8 @@ export function useQuestionSetDetailController({
 
   const questionSetState: QuestionSetState = questionSetQuery.data?.questionSet
     ? {
-        status: "ready",
         questionSet: questionSetQuery.data.questionSet,
+        status: "ready",
       }
     : { status: "loading" };
   const initialQuestionsError =
@@ -91,22 +91,6 @@ export function useQuestionSetDetailController({
       : null;
 
   return {
-    questionSetState,
-    pageError: questionSetPageError ?? initialQuestionsPageError,
-    questionItems,
-    questionsState: {
-      isInitialLoading: questionsQuery.isLoading && questions.length === 0,
-      initialErrorMessage:
-        questionsQuery.isError && questions.length === 0
-          ? "Generated questions could not be loaded."
-          : null,
-      loadMoreErrorMessage: questionsQuery.isFetchNextPageError
-        ? "More generated questions could not be loaded."
-        : null,
-      isLoadMorePending: questionsQuery.isFetchingNextPage,
-      hasMore: Boolean(questionsQuery.hasNextPage),
-      hasLoadedQuestions: questions.length > 0,
-    },
     onLoadMore: () => {
       if (!questionsQuery.hasNextPage || questionsQuery.isFetchingNextPage) {
         return;
@@ -118,6 +102,22 @@ export function useQuestionSetDetailController({
         return;
       }
       void questionsQuery.fetchNextPage();
+    },
+    pageError: questionSetPageError ?? initialQuestionsPageError,
+    questionItems,
+    questionSetState,
+    questionsState: {
+      hasLoadedQuestions: questions.length > 0,
+      hasMore: Boolean(questionsQuery.hasNextPage),
+      initialErrorMessage:
+        questionsQuery.isError && questions.length === 0
+          ? "Generated questions could not be loaded."
+          : null,
+      isInitialLoading: questionsQuery.isLoading && questions.length === 0,
+      isLoadMorePending: questionsQuery.isFetchingNextPage,
+      loadMoreErrorMessage: questionsQuery.isFetchNextPageError
+        ? "More generated questions could not be loaded."
+        : null,
     },
   };
 }

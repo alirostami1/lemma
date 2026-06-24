@@ -52,20 +52,6 @@ export async function initializeNodeObservability(
 
   const endpoint = trimTrailingSlash(config.otlpEndpoint);
   const sdk = new NodeSDK({
-    resource: resourceFromAttributes({
-      "service.name": config.serviceName,
-      "deployment.environment.name": config.deploymentEnvironment,
-      ...config.attributes,
-    }),
-    traceExporter: new OTLPTraceExporter({
-      url: `${endpoint}/v1/traces`,
-    }),
-    metricReader: new PeriodicExportingMetricReader({
-      exporter: new OTLPMetricExporter({
-        url: `${endpoint}/v1/metrics`,
-      }),
-      exportIntervalMillis: config.metricExportIntervalMs,
-    }),
     instrumentations: [
       getNodeAutoInstrumentations({
         "@opentelemetry/instrumentation-fs": {
@@ -73,6 +59,20 @@ export async function initializeNodeObservability(
         },
       }),
     ],
+    metricReader: new PeriodicExportingMetricReader({
+      exporter: new OTLPMetricExporter({
+        url: `${endpoint}/v1/metrics`,
+      }),
+      exportIntervalMillis: config.metricExportIntervalMs,
+    }),
+    resource: resourceFromAttributes({
+      "deployment.environment.name": config.deploymentEnvironment,
+      "service.name": config.serviceName,
+      ...config.attributes,
+    }),
+    traceExporter: new OTLPTraceExporter({
+      url: `${endpoint}/v1/traces`,
+    }),
   });
 
   activeSdk = sdk;

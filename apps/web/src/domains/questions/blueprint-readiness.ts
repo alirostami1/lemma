@@ -8,6 +8,7 @@ import {
   isValidReferenceId,
   isValidWorkbookReferenceSource,
 } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "./model";
 import { getBlueprintSourceRequirement } from "./source-requirements";
 
 export type BlueprintReadinessIssueCode =
@@ -37,11 +38,13 @@ export type BlueprintReadinessIssue = {
 
 export function getBlueprintReadinessIssues(input: {
   model: ComposedEditorModel;
-  hasWorkbookSelection: boolean;
-  hasWorkbookPreview: boolean;
+  attachedSources: QuestionBlueprintWorkbookSource[];
   name: string;
 }): BlueprintReadinessIssue[] {
   const issues: BlueprintReadinessIssue[] = [];
+  const attachedSourceIds = new Set(
+    input.attachedSources.map((source) => source.sourceId),
+  );
 
   if (input.name.trim().length === 0) {
     issues.push({ code: "missing_name" });
@@ -60,14 +63,26 @@ export function getBlueprintReadinessIssues(input: {
 
   const requiresWorkbookSource =
     getBlueprintSourceRequirement(input.model).status === "required";
-  if (requiresWorkbookSource && !input.hasWorkbookSelection) {
+  if (requiresWorkbookSource && attachedSourceIds.size === 0) {
     issues.push({ code: "missing_source" });
-  } else if (
-    requiresWorkbookSource &&
-    input.hasWorkbookSelection &&
-    !input.hasWorkbookPreview
-  ) {
-    issues.push({ code: "missing_source_preview" });
+  }
+
+  if (attachedSourceIds.size > 0) {
+    for (const reference of input.model.references) {
+      if (
+        reference.source.type !== "workbook_cell" &&
+        reference.source.type !== "workbook_range"
+      ) {
+        continue;
+      }
+
+      if (!attachedSourceIds.has(reference.source.sourceId)) {
+        issues.push({
+          code: "invalid_reference_source",
+          target: { referenceId: reference.id },
+        });
+      }
+    }
   }
 
   return issues;

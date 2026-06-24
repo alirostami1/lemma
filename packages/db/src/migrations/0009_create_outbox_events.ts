@@ -1,7 +1,7 @@
-import type { Kysely } from "kysely";
 import { sql } from "kysely";
+import type { MigrationDb } from "./helpers.js";
 
-export async function up(db: Kysely<Record<string, never>>): Promise<void> {
+export async function up(db: MigrationDb): Promise<void> {
   await db.schema
     .createTable("outbox_events")
     .addColumn("id", "uuid", (c) => c.primaryKey().defaultTo(sql`uuidv7()`))
@@ -20,6 +20,9 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
     .addColumn("locked_at", "timestamptz")
     .addColumn("published_at", "timestamptz")
     .addColumn("last_error", "text")
+    .addColumn("request_id", "uuid", (c) => c.notNull())
+    .addColumn("correlation_id", "uuid", (c) => c.notNull())
+    .addColumn("causation_id", "uuid")
     .addColumn("created_at", "timestamptz", (c) =>
       c.notNull().defaultTo(sql`now()`),
     )
@@ -68,23 +71,37 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
     .on("outbox_events")
     .columns(["status", "available_at", "created_at"])
     .execute();
-
   await db.schema
     .createIndex("outbox_events_aggregate_type_aggregate_id_created_at_index")
     .on("outbox_events")
     .columns(["aggregate_type", "aggregate_id", "created_at"])
     .execute();
-
   await db.schema
     .createIndex("outbox_events_owner_user_id_created_at_index")
     .on("outbox_events")
     .columns(["owner_user_id", "created_at"])
     .execute();
-
+  await db.schema
+    .createIndex("outbox_events_request_id_created_at_index")
+    .on("outbox_events")
+    .columns(["request_id", "created_at"])
+    .execute();
+  await db.schema
+    .createIndex("outbox_events_correlation_id_created_at_index")
+    .on("outbox_events")
+    .columns(["correlation_id", "created_at"])
+    .execute();
   await sql`
     create index outbox_events_failed_created_at_index
     on outbox_events (created_at)
     where status = 'failed'
+  `.execute(db);
+
+  await sql`
+    create trigger outbox_events_set_updated_at
+    before update on outbox_events
+    for each row
+    execute function set_updated_at()
   `.execute(db);
 
   await db.schema
@@ -108,20 +125,13 @@ export async function up(db: Kysely<Record<string, never>>): Promise<void> {
       (cb) => cb.onDelete("cascade"),
     )
     .execute();
-
-  await sql`
-    create trigger outbox_events_set_updated_at
-    before update on outbox_events
-    for each row
-    execute function set_updated_at()
-  `.execute(db);
 }
 
-export async function down(db: Kysely<Record<string, never>>): Promise<void> {
+export async function down(db: MigrationDb): Promise<void> {
+  await db.schema.dropTable("processed_events").execute();
   await sql`drop trigger if exists outbox_events_set_updated_at on outbox_events`.execute(
     db,
   );
-  await db.schema.dropTable("processed_events").execute();
   await sql`drop index if exists outbox_events_failed_created_at_index`.execute(
     db,
   );

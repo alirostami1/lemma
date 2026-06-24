@@ -57,21 +57,21 @@ function createSnapshot(text: string): StudioHistorySnapshot {
     authoringModel: createModel(text),
     blueprintDescription: "",
     blueprintName: "Blueprint",
-    selectedWorkbookId: "",
+    sources: [],
   };
 }
 
 function createModel(text: string): ComposedEditorModel {
   return {
-    schemaVersion: 1,
     blocks: [
       {
+        content: [{ text, type: "text" }],
         id: "text_1",
         type: "text",
-        content: [{ type: "text", text }],
       },
     ],
-    responseFields: [],
     references: [],
+    responseFields: [],
+    schemaVersion: 1,
   };
 }

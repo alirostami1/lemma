@@ -1,10 +1,12 @@
 import { presentDate, presentNullableDate } from "@lemma/http";
 import type {
   GradeQuestionResult,
+  PublishedQuestionBlueprintDraftResult,
   QuestionBlueprintAuthoringResult,
+  QuestionBlueprintDraftResult,
+  QuestionBlueprintDraftsResult,
   QuestionBlueprintResult,
   QuestionBlueprintsResult,
-  QuestionBlueprintVersionsResult,
   QuestionGenerationRunResultDto,
   QuestionGenerationRunsResult,
   QuestionResult,
@@ -14,19 +16,49 @@ import type {
 } from "../application/index.js";
 import type {
   GradeQuestionResponse,
+  ListQuestionBlueprintDraftsResponse,
   ListQuestionBlueprintsResponse,
-  ListQuestionBlueprintVersionsResponse,
   ListQuestionGenerationRunsResponse,
   ListQuestionSetsResponse,
   ListQuestionsResponse,
+  PublishQuestionBlueprintDraftResponse,
   QuestionBlueprintAuthoringResponse,
+  QuestionBlueprintDraftResponse,
   QuestionBlueprint as QuestionBlueprintDto,
   QuestionBlueprintResponse,
   QuestionGenerationRun as QuestionGenerationRunDto,
   QuestionGenerationRunResponse,
   QuestionResponse,
   QuestionSetResponse,
-} from "../gen/types/index.js";
+} from "../generated/types/index.js";
+
+export const presentQuestionBlueprintDraft = (
+  result: QuestionBlueprintDraftResult,
+): QuestionBlueprintDraftResponse => ({
+  draft: {
+    ...result.draft,
+    createdAt: presentDate(result.draft.createdAt),
+    lastSavedAt: presentDate(result.draft.lastSavedAt),
+    sources: [...result.draft.sources],
+    updatedAt: presentDate(result.draft.updatedAt),
+  },
+});
+
+export const presentQuestionBlueprintDrafts = (
+  result: QuestionBlueprintDraftsResult,
+): ListQuestionBlueprintDraftsResponse => ({
+  drafts: result.drafts.map(
+    (draft) => presentQuestionBlueprintDraft({ draft }).draft,
+  ),
+  nextCursor: result.nextCursor,
+});
+
+export const presentPublishedQuestionBlueprintDraft = (
+  result: PublishedQuestionBlueprintDraftResult,
+): PublishQuestionBlueprintDraftResponse => ({
+  ...presentQuestionBlueprintDraft({ draft: result.draft }),
+  ...presentQuestionBlueprint({ questionBlueprint: result.questionBlueprint }),
+});
 
 export const presentQuestionSet = (
   result: QuestionSetResult,
@@ -41,93 +73,63 @@ export const presentQuestionSet = (
 export const presentQuestionSets = (
   result: QuestionSetsResult,
 ): ListQuestionSetsResponse => ({
+  nextCursor: result.nextCursor,
   questionSets: result.questionSets.map(
     (questionSet) => presentQuestionSet({ questionSet }).questionSet,
   ),
-  nextCursor: result.nextCursor,
 });
 
 export const presentQuestionBlueprint = (
   result: QuestionBlueprintResult,
-): QuestionBlueprintResponse => {
-  const currentVersion = result.questionBlueprint.currentVersion;
-  return {
-    questionBlueprint: {
-      ...result.questionBlueprint,
-      currentVersionId: currentVersion.id,
-      currentVersionNumber: currentVersion.versionNumber,
-      document: toLearnerQuestionBlueprintDocumentDto(currentVersion.document),
-      currentVersion: {
-        id: currentVersion.id,
-        versionNumber: currentVersion.versionNumber,
-        workbookId: currentVersion.workbookId,
-        createdByUserId: currentVersion.createdByUserId,
-        createdAt: presentDate(currentVersion.createdAt),
-      },
-      archivedAt: presentNullableDate(result.questionBlueprint.archivedAt),
-      createdAt: presentDate(result.questionBlueprint.createdAt),
-      updatedAt: presentDate(result.questionBlueprint.updatedAt),
-    },
-  };
-};
+): QuestionBlueprintResponse => ({
+  questionBlueprint: {
+    ...result.questionBlueprint,
+    archivedAt: presentNullableDate(result.questionBlueprint.archivedAt),
+    createdAt: presentDate(result.questionBlueprint.createdAt),
+    document: toLearnerQuestionBlueprintDocumentDto(
+      result.questionBlueprint.document,
+    ),
+    sources: [...result.questionBlueprint.sources],
+    updatedAt: presentDate(result.questionBlueprint.updatedAt),
+  },
+});
 
 export const presentQuestionBlueprintAuthoring = (
   result: QuestionBlueprintAuthoringResult,
-): QuestionBlueprintAuthoringResponse => {
-  const currentVersion = result.questionBlueprint.currentVersion;
-  const selectedVersion = result.questionBlueprint.selectedVersion;
-  return {
-    questionBlueprint: {
-      ...result.questionBlueprint,
-      currentVersionId: currentVersion.id,
-      currentVersionNumber: currentVersion.versionNumber,
-      selectedVersionId: selectedVersion.id,
-      selectedVersionNumber: selectedVersion.versionNumber,
-      document: selectedVersion.document,
-      workbookId: selectedVersion.workbookId,
-      currentVersion: toQuestionBlueprintVersionDto(currentVersion),
-      selectedVersion: toQuestionBlueprintVersionDto(selectedVersion),
-      versions: result.questionBlueprint.versions.map(
-        toQuestionBlueprintVersionDto,
-      ),
-      archivedAt: presentNullableDate(result.questionBlueprint.archivedAt),
-      createdAt: presentDate(result.questionBlueprint.createdAt),
-      updatedAt: presentDate(result.questionBlueprint.updatedAt),
-    },
-  };
-};
-
-export const presentQuestionBlueprintVersions = (
-  result: QuestionBlueprintVersionsResult,
-): ListQuestionBlueprintVersionsResponse => ({
-  versions: result.versions.map(toQuestionBlueprintVersionDto),
+): QuestionBlueprintAuthoringResponse => ({
+  questionBlueprint: {
+    ...result.questionBlueprint,
+    archivedAt: presentNullableDate(result.questionBlueprint.archivedAt),
+    createdAt: presentDate(result.questionBlueprint.createdAt),
+    document: result.questionBlueprint.document,
+    sources: [...result.questionBlueprint.sources],
+    updatedAt: presentDate(result.questionBlueprint.updatedAt),
+  },
 });
 
 export const presentQuestionBlueprints = (
   result: QuestionBlueprintsResult,
 ): ListQuestionBlueprintsResponse => ({
+  nextCursor: result.nextCursor,
   questionBlueprints: result.questionBlueprints.map(
     (questionBlueprint) =>
       presentQuestionBlueprint({ questionBlueprint }).questionBlueprint,
   ),
-  nextCursor: result.nextCursor,
 });
 
 export const presentQuestion = (result: QuestionResult): QuestionResponse => {
   const question = result.question;
   return {
     question: {
+      blueprintId: question.blueprintId,
+      body: question.body,
+      createdAt: presentDate(question.createdAt),
+      createdByUserId: question.createdByUserId,
+      generationRunId: question.generationRunId,
       id: question.id,
       ownerUserId: question.ownerUserId,
-      createdByUserId: question.createdByUserId,
-      blueprintId: question.blueprintId,
-      blueprintVersionId: question.blueprintVersionId,
-      generationRunId: question.generationRunId,
-      body: question.body,
       producer: question.producer,
-      source: question.source,
       status: question.status,
-      createdAt: presentDate(question.createdAt),
       updatedAt: presentDate(question.updatedAt),
     },
   };
@@ -136,10 +138,10 @@ export const presentQuestion = (result: QuestionResult): QuestionResponse => {
 export const presentQuestions = (
   result: QuestionsResult,
 ): ListQuestionsResponse => ({
+  nextCursor: result.nextCursor,
   questions: result.questions.map(
     (question) => presentQuestion({ question }).question,
   ),
-  nextCursor: result.nextCursor,
 });
 
 export const presentGrade = (
@@ -155,22 +157,18 @@ export const presentQuestionGenerationRun = (
 export const presentQuestionGenerationRuns = (
   result: QuestionGenerationRunsResult,
 ): ListQuestionGenerationRunsResponse => ({
+  nextCursor: result.nextCursor,
   questionGenerationRuns: result.questionGenerationRuns.map(
     (questionGenerationRun) =>
       presentQuestionGenerationRun({ questionGenerationRun })
         .questionGenerationRun,
   ),
-  nextCursor: result.nextCursor,
 });
 
 function toLearnerQuestionBlueprintDocumentDto(
-  document: NonNullable<
-    QuestionBlueprintResult["questionBlueprint"]["currentVersion"]
-  >["document"],
+  document: QuestionBlueprintResult["questionBlueprint"]["document"],
 ): QuestionBlueprintDto["document"] {
   return {
-    schemaVersion: document.schemaVersion,
-    responseFields: document.responseFields,
     blocks: document.blocks.map((block) => {
       if (block.type === "text") {
         return {
@@ -181,8 +179,8 @@ function toLearnerQuestionBlueprintDocumentDto(
       if (block.type === "response") {
         return {
           id: block.id,
-          type: block.type,
           responseFieldId: block.responseFieldId,
+          type: block.type,
           ...(block.label === undefined ? {} : { label: block.label }),
           ...(block.placeholder === undefined
             ? {}
@@ -197,19 +195,19 @@ function toLearnerQuestionBlueprintDocumentDto(
         cells: block.cells.map((cell) => {
           if (cell.type === "content") {
             return {
+              columnId: cell.columnId,
+              content: toPublicInlineContentDto(cell.content),
               id: cell.id,
               rowId: cell.rowId,
-              columnId: cell.columnId,
               type: cell.type,
-              content: toPublicInlineContentDto(cell.content),
             };
           }
           return {
-            id: cell.id,
-            rowId: cell.rowId,
             columnId: cell.columnId,
-            type: cell.type,
+            id: cell.id,
             responseFieldId: cell.responseFieldId,
+            rowId: cell.rowId,
+            type: cell.type,
             ...(cell.label === undefined ? {} : { label: cell.label }),
             ...(cell.placeholder === undefined
               ? {}
@@ -218,6 +216,8 @@ function toLearnerQuestionBlueprintDocumentDto(
         }),
       };
     }),
+    responseFields: document.responseFields,
+    schemaVersion: document.schemaVersion,
   };
 }
 
@@ -235,27 +235,8 @@ function toPublicInlineContentDto(
   return content.map((part) =>
     part.type === "text"
       ? part
-      : { type: "text" as const, text: part.fallbackText ?? "" },
+      : { text: part.fallbackText ?? "", type: "text" as const },
   );
-}
-
-function toQuestionBlueprintVersionDto(
-  version: QuestionBlueprintAuthoringResult["questionBlueprint"]["currentVersion"],
-) {
-  return {
-    id: version.id,
-    versionNumber: version.versionNumber,
-    workbookId: version.workbookId,
-    sourceAssets: version.sourceAssets.map((asset) => ({
-      questionBlueprintVersionId: asset.questionBlueprintVersionId,
-      workbookId: asset.workbookId,
-      kind: asset.kind,
-      position: asset.position,
-      createdAt: presentDate(asset.createdAt),
-    })),
-    createdByUserId: version.createdByUserId,
-    createdAt: presentDate(version.createdAt),
-  };
 }
 
 function toQuestionGenerationRunDto(
@@ -263,21 +244,22 @@ function toQuestionGenerationRunDto(
 ): QuestionGenerationRunDto {
   const run = result.questionGenerationRun;
   return {
+    attemptNumber: run.attemptNumber,
+    attempts: run.attempts,
+    blueprintId: run.blueprintId,
+    createdAt: presentDate(run.createdAt),
+    createdByUserId: run.createdByUserId,
+    errorMessage: run.errorMessage,
+    finishedAt: presentNullableDate(run.finishedAt),
     id: run.id,
     ownerUserId: run.ownerUserId,
-    createdByUserId: run.createdByUserId,
-    blueprintId: run.blueprintId,
-    blueprintVersionId: run.blueprintVersionId,
-    targetQuestionSetId: run.targetQuestionSetId,
     requestedCount: run.requestedCount,
-    source: run.source,
-    status: run.status,
     result: run.result,
-    errorMessage: run.errorMessage,
-    attempts: run.attempts,
+    retryOfRunId: run.retryOfRunId,
     startedAt: presentNullableDate(run.startedAt),
-    finishedAt: presentNullableDate(run.finishedAt),
-    createdAt: presentDate(run.createdAt),
+    status: run.status,
+    targetQuestionSetId: run.targetQuestionSetId,
     updatedAt: presentDate(run.updatedAt),
+    workbookCalculationId: run.workbookCalculationId,
   };
 }

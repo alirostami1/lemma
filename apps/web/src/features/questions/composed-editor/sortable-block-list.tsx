@@ -90,12 +90,12 @@ export function SortableBlockList<T extends { id: string }>({
 
   return (
     <DndContext
-      sensors={sensors}
       collisionDetection={closestCenter}
       modifiers={[restrictToVerticalAxis]}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
+      onDragEnd={handleDragEnd}
+      onDragStart={handleDragStart}
+      sensors={sensors}
     >
       <SortableContext
         items={items.map((item) => item.id)}
@@ -104,9 +104,9 @@ export function SortableBlockList<T extends { id: string }>({
         <div className="space-y-3">
           {items.map((item) => (
             <SortableBlockListItem
-              key={item.id}
-              item={item}
               disabled={disabled}
+              item={item}
+              key={item.id}
               renderItem={renderItem}
             />
           ))}
@@ -138,22 +138,22 @@ function SortableBlockListItem<T extends { id: string }>({
     transition,
     isDragging,
   } = useSortable({
-    id: item.id,
     disabled,
+    id: item.id,
   });
 
   return renderItem(item, {
     attributes,
+    isDragging,
     listeners,
     setNodeRef,
     style: {
-      transform: CSS.Translate.toString(transform),
-      transition,
       opacity: isDragging ? 0.35 : 1,
       position: "relative",
-      zIndex: isDragging ? 10 : undefined,
+      transform: CSS.Translate.toString(transform),
+      transition,
       willChange: isDragging ? "transform" : undefined,
+      zIndex: isDragging ? 10 : undefined,
     },
-    isDragging,
   });
 }

@@ -7,9 +7,9 @@
 import type { WorkbookSnapshotMetadataStatus } from "./workbookSnapshotMetadataStatus.ts";
 
 export interface WorkbookSnapshotMetadata {
-  status: WorkbookSnapshotMetadataStatus;
-  /** @minimum 0 */
-  sheetCount: number;
   /** @minimum 0 */
   cellCount: number;
+  /** @minimum 0 */
+  sheetCount: number;
+  status: WorkbookSnapshotMetadataStatus;
 }

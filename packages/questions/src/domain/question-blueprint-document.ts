@@ -29,6 +29,7 @@ import {
   type QuestionValueExpression,
   questionValueExpression,
 } from "./question-value-expression.js";
+import { assertReferenceIdMatchesStructuredSource } from "./reference-key.js";
 
 export type QuestionBlueprintTextBlock = {
   id: string;
@@ -121,7 +122,12 @@ export function questionBlueprintDocument(
     referenceIds,
     fail,
   );
-  return { schemaVersion: 1, blocks, responseFields, references };
+  return {
+    blocks,
+    references,
+    responseFields,
+    schemaVersion: 1,
+  };
 }
 
 function validatedReferences(
@@ -132,14 +138,33 @@ function validatedReferences(
   assertUniqueIds(value, "references", failWith);
   return value.map((reference) => {
     assertPlainRecord(reference, "reference must be an object", failWith);
-    assertQuestionReferenceId(reference.id, "reference.id", failWith);
     if (reference.label !== undefined) {
       assertString(reference.label, "reference.label", failWith);
+    }
+    const source = questionReferenceSource(reference.source, failWith);
+    if (source.type === "literal") {
+      assertQuestionReferenceId(reference.id, "reference.id", failWith);
+    } else {
+      if (typeof reference.id !== "string" || reference.id.length === 0) {
+        failWith("reference.id must be a non-empty string");
+      }
+      try {
+        assertReferenceIdMatchesStructuredSource({
+          referenceId: reference.id,
+          source,
+        });
+      } catch (error) {
+        failWith(
+          error instanceof Error
+            ? error.message
+            : "workbook reference id must match structured source",
+        );
+      }
     }
     return {
       id: reference.id,
       ...(reference.label === undefined ? {} : { label: reference.label }),
-      source: questionReferenceSource(reference.source, failWith),
+      source,
     };
   });
 }
@@ -157,16 +182,16 @@ function validatedBlueprintBlocks(
     assertNonEmptyString(block.id, "block.id", failWith);
     if (block.type === "text") {
       return {
+        content: blueprintInlineContent(block.content, failWith, referenceIds),
         id: block.id,
         type: "text",
-        content: blueprintInlineContent(block.content, failWith, referenceIds),
       };
     }
     if (block.type === "rich_text") {
       return {
+        content: richContent(block.content, failWith),
         id: block.id,
         type: "rich_text",
-        content: richContent(block.content, failWith),
       };
     }
     if (block.type === "response") {
@@ -203,11 +228,11 @@ function validatedBlueprintResponseBlock(
     failWith("response block references unknown response field");
   }
   const out: QuestionBlueprintResponseBlock = {
-    id: block.id as string,
-    type: "response",
-    responseFieldId: block.responseFieldId,
-    points: positiveNumber(block.points, "response block points", failWith),
     grading: grading(block.grading, failWith),
+    id: block.id as string,
+    points: positiveNumber(block.points, "response block points", failWith),
+    responseFieldId: block.responseFieldId,
+    type: "response",
   };
   addOptionalStrings(out, block, ["label", "placeholder"], failWith);
   if (block.correctValueSource !== undefined) {
@@ -249,11 +274,11 @@ function validatedBlueprintTableBlock(
     positions.add(position);
     if (cell.type === "content") {
       return {
+        columnId: cell.columnId,
+        content: blueprintInlineContent(cell.content, failWith, referenceIds),
         id: cell.id,
         rowId: cell.rowId,
-        columnId: cell.columnId,
         type: "content" as const,
-        content: blueprintInlineContent(cell.content, failWith, referenceIds),
       };
     }
     if (cell.type === "response") {
@@ -262,13 +287,13 @@ function validatedBlueprintTableBlock(
         failWith("response cell references unknown response field");
       }
       const out: Extract<QuestionBlueprintTableCell, { type: "response" }> = {
-        id: cell.id,
-        rowId: cell.rowId,
         columnId: cell.columnId,
-        type: "response",
-        responseFieldId: cell.responseFieldId,
-        points: positiveNumber(cell.points, "response cell points", failWith),
         grading: grading(cell.grading, failWith),
+        id: cell.id,
+        points: positiveNumber(cell.points, "response cell points", failWith),
+        responseFieldId: cell.responseFieldId,
+        rowId: cell.rowId,
+        type: "response",
       };
       addOptionalStrings(out, cell, ["label", "placeholder"], failWith);
       if (cell.correctValueSource !== undefined) {
@@ -283,13 +308,13 @@ function validatedBlueprintTableBlock(
     return failWith("table cell type is invalid");
   });
   return {
+    cells,
+    columns,
     id: block.id as string,
-    type: "table",
+    rows,
     showColumnNames: block.showColumnNames,
     showRowNames: block.showRowNames,
-    columns,
-    rows,
-    cells,
+    type: "table",
   };
 }
 

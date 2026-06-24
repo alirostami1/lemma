@@ -51,21 +51,21 @@ export function SignInRequiredPage({
 }) {
   return (
     <ErrorPage
-      title={title}
-      description={description}
       action={
         onSignIn ? (
-          <Button type="button" onClick={onSignIn}>
+          <Button onClick={onSignIn} type="button">
             Sign in
           </Button>
         ) : (
           <Button asChild>
-            <Link to="/" activeOptions={homeLinkActiveOptions}>
+            <Link activeOptions={homeLinkActiveOptions} to="/">
               Go home
             </Link>
           </Button>
         )
       }
+      description={description}
+      title={title}
     />
   );
 }
@@ -81,16 +81,16 @@ export function AccessDeniedPage({
 }) {
   return (
     <ErrorPage
-      title={title}
-      description={description}
-      requestId={requestId}
       action={
         <Button asChild>
-          <Link to="/" activeOptions={homeLinkActiveOptions}>
+          <Link activeOptions={homeLinkActiveOptions} to="/">
             Go home
           </Link>
         </Button>
       }
+      description={description}
+      requestId={requestId}
+      title={title}
     />
   );
 }
@@ -104,15 +104,15 @@ export function NotFoundPage({
 }) {
   return (
     <ErrorPage
-      title={title}
-      description={description}
       action={
         <Button asChild>
-          <Link to="/" activeOptions={homeLinkActiveOptions}>
+          <Link activeOptions={homeLinkActiveOptions} to="/">
             Go home
           </Link>
         </Button>
       }
+      description={description}
+      title={title}
     />
   );
 }
@@ -130,22 +130,22 @@ export function UnexpectedErrorPage({
 }) {
   return (
     <ErrorPage
-      title={title}
-      description={description}
-      requestId={requestId}
       action={
         reset ? (
-          <Button type="button" onClick={reset}>
+          <Button onClick={reset} type="button">
             Try again
           </Button>
         ) : (
           <Button asChild>
-            <Link to="/" activeOptions={homeLinkActiveOptions}>
+            <Link activeOptions={homeLinkActiveOptions} to="/">
               Go home
             </Link>
           </Button>
         )
       }
+      description={description}
+      requestId={requestId}
+      title={title}
     />
   );
 }

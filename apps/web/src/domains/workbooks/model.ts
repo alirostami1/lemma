@@ -17,43 +17,44 @@ export type WorkbookCalculationStatus =
   | "cancelled";
 
 export interface WorkbookInspection {
-  sheetCount: number;
   cellCount: number;
-  formulaCount: number;
   forbiddenFeatureFindings: string[];
+  formulaCount: number;
   libreOfficeVersion: string | null;
+  sheetCount: number;
 }
 
 export interface Workbook {
-  id: string;
-  ownerUserId: string;
-  createdByUserId: string;
-  name: string;
-  fileId: string;
   checksumSha256: string;
-  originalName: string;
+  createdAt: Date;
+  createdByUserId: string;
   engine: WorkbookEngine;
   engineVersion: string | null;
-  status: WorkbookStatus;
+  fileId: string;
+  id: string;
   inspection: WorkbookInspection | null;
-  validationError: string | null;
-  createdAt: Date;
+  name: string;
+  originalName: string;
+  ownerUserId: string;
+  status: WorkbookStatus;
   updatedAt: Date;
+  validationError: string | null;
 }
 
 export interface WorkbookCalculation {
+  attemptNumber: number;
+  attempts: number;
+  correlationId: string | null;
+  createdAt: Date;
+  createdByUserId: string;
+  errorMessage: string | null;
+  finishedAt: Date | null;
   id: string;
   ownerUserId: string;
-  createdByUserId: string;
-  workbookId: string;
   requestedCount: number;
-  status: WorkbookCalculationStatus;
-  correlationId: string | null;
-  errorMessage: string | null;
-  attempts: number;
+  retryOfCalculationId: string | null;
   startedAt: Date | null;
-  finishedAt: Date | null;
-  createdAt: Date;
+  status: WorkbookCalculationStatus;
   updatedAt: Date;
 }
 
@@ -67,42 +68,44 @@ export type WorkbookCellType =
   | "formula_cached";
 
 export interface WorkbookSnapshot {
-  id: string;
-  workbookId: string;
   calculationId: string;
-  snapshotIndex: number;
   createdAt: Date;
+  id: string;
+  questionIndex: number;
+  snapshotIndex: number;
+  sourceId: string;
+  workbookId: string;
 }
 
 export interface WorkbookSnapshotMetadata {
-  status: "ready";
-  sheetCount: number;
   cellCount: number;
+  sheetCount: number;
+  status: "ready";
 }
 
 export interface WorkbookSnapshotSheet {
-  sheetIndex: number;
-  name: string;
-  rowCount: number;
   columnCount: number;
+  name: string;
   nonEmptyCellCount: number;
+  rowCount: number;
+  sheetIndex: number;
 }
 
 export interface WorkbookSnapshotCells {
+  cellTypes: WorkbookCellType[][];
+  columnCount: number;
+  rowCount: number;
+  rows: string[][];
   sheetIndex: number;
   sheetName: string;
-  startRow: number;
   startColumn: number;
-  rowCount: number;
-  columnCount: number;
-  rows: string[][];
-  cellTypes: WorkbookCellType[][];
+  startRow: number;
 }
 
 export interface WorkbookSnapshotRange extends WorkbookSnapshotCells {
+  endCellAddress: string;
   ref: string;
   startCellAddress: string;
-  endCellAddress: string;
 }
 
 export type WorkbookSnapshotRangeBatchItem =
@@ -124,20 +127,20 @@ export interface WorkbookSnapshotRangeBatch {
 }
 
 export interface ListWorkbooksInput {
-  limit?: number;
   cursor?: string;
+  limit?: number;
   status?: WorkbookStatus;
 }
 
 export interface CreateWorkbookInput {
-  name: string;
   fileId: string;
+  name: string;
 }
 
 export interface UpdateWorkbookInput {
-  workbookId: string;
   name?: string;
   status?: WorkbookUpdateStatus;
+  workbookId: string;
 }
 
 export interface DeleteWorkbookInput {
@@ -149,65 +152,69 @@ export interface ValidateWorkbookInput {
 }
 
 export interface ListWorkbookCalculationsInput {
-  workbookId: string;
-  limit?: number;
   cursor?: string;
+  limit?: number;
   status?: WorkbookCalculationStatus;
+  workbookId: string;
 }
 
 export interface CreateWorkbookCalculationInput {
-  workbookId: string;
-  requestedCount: number;
   correlationId?: string | null;
+  requestedCount: number;
+  workbookId: string;
+}
+
+export interface RetryWorkbookCalculationInput {
+  workbookCalculationId: string;
 }
 
 export interface ListWorkbookSnapshotsInput {
-  workbookCalculationId: string;
-  limit?: number;
   cursor?: string;
+  limit?: number;
+  workbookCalculationId: string;
 }
 
 export interface ListWorkbookSnapshotSheetsInput {
-  workbookSnapshotId: string;
-  limit?: number;
   cursor?: string;
+  limit?: number;
+  workbookSnapshotId: string;
 }
 
 export interface GetWorkbookSnapshotCellsInput {
-  workbookSnapshotId: string;
-  sheetIndex: number;
-  startRow: number;
-  startColumn: number;
-  rowCount: number;
   columnCount: number;
+  rowCount: number;
+  sheetIndex: number;
+  startColumn: number;
+  startRow: number;
+  workbookSnapshotId: string;
 }
 
 export interface GetWorkbookSnapshotRangeInput {
-  workbookSnapshotId: string;
   ref: string;
+  workbookSnapshotId: string;
 }
 
 export interface GetWorkbookSnapshotRangeBatchInput {
-  workbookSnapshotId: string;
   refs: string[];
+  workbookSnapshotId: string;
 }
 
 export interface WorkbooksPage {
-  workbooks: Workbook[];
   nextCursor: string | null;
+  workbooks: Workbook[];
 }
 
 export interface WorkbookCalculationsPage {
-  workbookCalculations: WorkbookCalculation[];
   nextCursor: string | null;
+  workbookCalculations: WorkbookCalculation[];
 }
 
 export interface WorkbookSnapshotsPage {
-  workbookSnapshots: WorkbookSnapshot[];
   nextCursor: string | null;
+  workbookSnapshots: WorkbookSnapshot[];
 }
 
 export interface WorkbookSnapshotSheetsPage {
-  workbookSnapshotSheets: WorkbookSnapshotSheet[];
   nextCursor: string | null;
+  workbookSnapshotSheets: WorkbookSnapshotSheet[];
 }

@@ -19,53 +19,53 @@ export type FileUploadMethod = "PUT";
 export type FileDownloadMethod = "GET";
 
 export interface File {
-  id: string;
-  ownerUserId: string;
-  createdByUserId: string;
-  originalName: string;
-  contentType: FileContentType;
   byteSize: number;
   checksumSha256: string;
-  status: FileStatus;
-  purpose: FilePurpose;
-  deletedAt: Date | null;
+  contentType: FileContentType;
   createdAt: Date;
+  createdByUserId: string;
+  deletedAt: Date | null;
+  id: string;
+  originalName: string;
+  ownerUserId: string;
+  purpose: FilePurpose;
+  status: FileStatus;
   updatedAt: Date;
 }
 
 export interface FileUpload {
-  id: string;
-  createdByUserId: string;
-  originalName: string;
-  contentType: FileContentType;
-  expectedByteSize: number;
   checksumSha256: string;
-  status: FileUploadStatus;
-  purpose: FileUploadPurpose;
-  uploadExpiresAt: Date;
   completedAt: Date | null;
+  contentType: FileContentType;
   createdAt: Date;
+  createdByUserId: string;
+  expectedByteSize: number;
+  id: string;
+  originalName: string;
+  purpose: FileUploadPurpose;
+  status: FileUploadStatus;
   updatedAt: Date;
+  uploadExpiresAt: Date;
 }
 
 export interface FileUploadUrl {
-  url: string;
-  method: FileUploadMethod;
   expiresInSeconds: number;
   headers: Record<string, string>;
+  method: FileUploadMethod;
+  url: string;
 }
 
 export interface FileDownloadUrl {
-  url: string;
-  method: FileDownloadMethod;
   expiresInSeconds: number;
+  method: FileDownloadMethod;
+  url: string;
 }
 
 export interface CreateFileUploadInput {
-  originalName: string;
-  contentType: FileContentType;
   byteSize: number;
   checksumSha256: string;
+  contentType: FileContentType;
+  originalName: string;
   purpose: FileUploadPurpose;
 }
 
@@ -83,10 +83,10 @@ export interface FileUploadResult {
 }
 
 export interface ListFilesInput {
-  limit?: number;
   cursor?: string;
-  status?: FileStatus;
+  limit?: number;
   purpose?: FilePurpose;
+  status?: FileStatus;
 }
 
 export interface FilesPage {

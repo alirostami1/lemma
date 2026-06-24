@@ -37,19 +37,19 @@ export function useCreatePageController(): CreatePageController {
       : null;
 
   return {
-    viewModel,
-    isBlueprintsLoading: blueprintsQuery.isLoading,
+    blueprintsErrorMessage: blueprintsQuery.isError
+      ? "Some blueprints could not be loaded."
+      : null,
     initialError:
       accessError ??
       (!blueprintsQuery.isLoading && blueprintsQuery.isError
         ? blueprintsQuery.error
         : null),
-    blueprintsErrorMessage: blueprintsQuery.isError
-      ? "Some blueprints could not be loaded."
-      : null,
+    isBlueprintsLoading: blueprintsQuery.isLoading,
     onRetryBlueprints: () => {
       void blueprintsQuery.refetch();
     },
     savedBlueprintChooser,
+    viewModel,
   };
 }

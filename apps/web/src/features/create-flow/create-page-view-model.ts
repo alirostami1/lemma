@@ -48,35 +48,35 @@ export type CreatePageViewModel = {
 
 type BlueprintListSource = Pick<
   QuestionBlueprint,
-  "id" | "name" | "status" | "visibility" | "workbookId"
+  "id" | "name" | "status" | "visibility" | "sources"
 >;
 
 export function buildCreatePageViewModel(input: {
   blueprints: BlueprintListSource[];
 }): CreatePageViewModel {
   return {
-    hero: {
-      title: "Create blueprint",
-      description: "Choose how you want to start.",
-    },
     blankBlueprint: {
-      title: "Start blank",
-      description: "Build a blueprint from scratch in Studio.",
       action: {
-        type: "blank_blueprint",
         label: "Open Studio",
         to: "/studio",
+        type: "blank_blueprint",
       },
+      description: "Build a blueprint from scratch in Studio.",
+      title: "Start blank",
+    },
+    hero: {
+      description: "Choose how you want to start.",
+      title: "Create blueprint",
     },
     savedBlueprints: {
-      title: "Open saved blueprint",
+      chooseLabel: "Choose blueprint",
       description: "Continue editing a blueprint you already saved.",
+      emptyMessage: "No saved blueprints yet.",
       recentItems: buildBlueprintListItems(input.blueprints).slice(
         0,
         CREATE_RECENT_ITEM_LIMIT,
       ),
-      emptyMessage: "No saved blueprints yet.",
-      chooseLabel: "Choose blueprint",
+      title: "Open saved blueprint",
     },
   };
 }
@@ -90,16 +90,17 @@ export function buildBlueprintListItems(
         blueprint.status !== "deleted" && blueprint.visibility !== "system",
     )
     .map((blueprint) => ({
+      action: {
+        label: "Open blueprint",
+        search: { blueprintId: blueprint.id },
+        to: "/studio",
+        type: "saved_blueprint",
+      },
+      description:
+        blueprint.sources.length > 0
+          ? "Sources attached"
+          : "No sources attached",
       id: blueprint.id,
       title: blueprint.name,
-      description: blueprint.workbookId
-        ? "Source attached"
-        : "No source attached",
-      action: {
-        type: "saved_blueprint",
-        label: "Open blueprint",
-        to: "/studio",
-        search: { blueprintId: blueprint.id },
-      },
     }));
 }

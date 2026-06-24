@@ -28,12 +28,12 @@ export function createUser(
   at = new Date(),
 ): User {
   return {
+    createdAt: at,
+    displayName: displayName(input.displayName),
+    email: emailAddress(input.email),
     id: userId(input.id),
     identityId: identityId(input.identityId),
-    email: emailAddress(input.email),
-    displayName: displayName(input.displayName),
     status: "active",
-    createdAt: at,
     updatedAt: at,
   };
 }
@@ -48,12 +48,12 @@ export function reconstituteUser(input: {
   updatedAt: Date;
 }): User {
   return {
+    createdAt: input.createdAt,
+    displayName: displayName(input.displayName),
+    email: emailAddress(input.email),
     id: userId(input.id),
     identityId: identityId(input.identityId),
-    email: emailAddress(input.email),
-    displayName: displayName(input.displayName),
     status: userStatus(input.status),
-    createdAt: input.createdAt,
     updatedAt: input.updatedAt,
   };
 }

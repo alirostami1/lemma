@@ -13,23 +13,23 @@ import type {
 const question: PresentableQuestion = {
   blocks: [
     {
+      content: [{ text: "What is 2 + 2?", type: "text" }],
       id: "prompt",
       type: "text",
-      content: [{ type: "text", text: "What is 2 + 2?" }],
     },
     {
       id: "response",
-      type: "response",
-      responseFieldId: "answer",
       label: "Answer",
+      responseFieldId: "answer",
+      type: "response",
     },
   ],
   responseFields: [
     {
       id: "answer",
-      type: "number",
       label: "Answer",
       required: true,
+      type: "number",
     },
   ],
 };
@@ -38,30 +38,30 @@ const tableQuestion: PresentableQuestion = {
   blocks: [
     {
       id: "table",
-      type: "table",
       table: {
-        prompt: "",
+        cells: [
+          {
+            columnId: "column",
+            id: "cell",
+            responseFieldId: "table-answer",
+            rowId: "row",
+            type: "response",
+          },
+        ],
         columns: [{ id: "column", label: "Value" }],
-        rows: [{ id: "row", label: "Result" }],
-        showColumnNames: true,
-        showRowNames: true,
+        prompt: "",
         responseFields: [
           {
             id: "table-answer",
-            type: "number",
             label: "Table answer",
+            type: "number",
           },
         ],
-        cells: [
-          {
-            id: "cell",
-            rowId: "row",
-            columnId: "column",
-            type: "response",
-            responseFieldId: "table-answer",
-          },
-        ],
+        rows: [{ id: "row", label: "Result" }],
+        showColumnNames: true,
+        showRowNames: true,
       },
+      type: "table",
     },
   ],
   responseFields: [],
@@ -112,18 +112,18 @@ describe("QuestionPlayer", () => {
 
     render(
       <QuestionPlayer
-        question={question}
         answer={createEmptyQuestionAnswer()}
-        mode="review"
         feedback={{
-          schemaVersion: 1,
-          totalPoints: 1,
-          earnedPoints: 1,
-          status: "graded",
           details: [],
+          earnedPoints: 1,
           graderVersion: "test",
+          schemaVersion: 1,
+          status: "graded",
+          totalPoints: 1,
         }}
+        mode="review"
         onAnswerChange={onAnswerChange}
+        question={question}
       />,
     );
 
@@ -143,10 +143,10 @@ function Harness({
   return (
     <>
       <QuestionPlayer
-        question={harnessQuestion}
         answer={answer}
         mode={mode}
         onAnswerChange={setAnswer}
+        question={harnessQuestion}
       />
       <output data-testid="answer-json">{JSON.stringify(answer)}</output>
     </>

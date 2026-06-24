@@ -18,7 +18,7 @@ events, and system state.
 
 ```bash
 pnpm --filter @lemma/ops build
-pnpm --filter @lemma/ops generate:openapi
+pnpm --filter @lemma/ops generate:hono
 pnpm --filter @lemma/ops lint
 ```
 

@@ -16,7 +16,7 @@ authentication, realtime access, storage, and health endpoints.
 pnpm --filter api dev
 pnpm --filter api build
 pnpm --filter api test
-pnpm --filter api check-types
+pnpm --filter api check:types
 ```
 
 ## Notes

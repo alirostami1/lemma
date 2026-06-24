@@ -9,7 +9,7 @@ export type QuestionResponseFieldType =
   (typeof QuestionResponseFieldType)[keyof typeof QuestionResponseFieldType];
 
 export const QuestionResponseFieldType = {
-  text: "text",
-  number: "number",
   boolean: "boolean",
+  number: "number",
+  text: "text",
 } as const;

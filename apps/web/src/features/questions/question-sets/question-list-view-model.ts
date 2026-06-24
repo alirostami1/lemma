@@ -12,10 +12,10 @@ export function buildQuestionListViewModel(
   questions: Question[],
 ): QuestionListItemViewModel[] {
   return questions.map((question, index) => ({
-    id: question.id,
-    title: `Question ${index + 1}`,
     description: getQuestionSummary(question),
+    id: question.id,
     metadata: `Generated ${formatStableDateTime(question.createdAt)}`,
+    title: `Question ${index + 1}`,
   }));
 }
 

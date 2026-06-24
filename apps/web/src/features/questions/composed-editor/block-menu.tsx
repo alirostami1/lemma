@@ -31,14 +31,14 @@ export function BlockMenu({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
+          aria-label="More block actions"
+          className={cn("size-8 rounded-md", className)}
+          disabled={disabled}
+          onClick={(event) => event.stopPropagation()}
+          size="icon"
+          title="More block actions"
           type="button"
           variant="ghost"
-          size="icon"
-          disabled={disabled}
-          aria-label="More block actions"
-          title="More block actions"
-          className={cn("size-8 rounded-md", className)}
-          onClick={(event) => event.stopPropagation()}
         >
           <MoreHorizontal />
         </Button>

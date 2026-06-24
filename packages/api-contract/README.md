@@ -22,3 +22,7 @@ pnpm --filter @lemma/api-contract lint
 ## Notes
 
 Prefer fixing source package OpenAPI fragments over editing composed output.
+
+This package is source-only and Node/tooling-only.
+Import from `@lemma/api-contract/source` in Node/tooling contexts.
+Browser apps should not import `@lemma/api-contract` directly.

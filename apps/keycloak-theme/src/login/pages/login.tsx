@@ -24,11 +24,11 @@ export function LoginPage(props: LemmaPageProps<LoginContext>) {
 
   return (
     <AuthLayout
-      title={msg("doLogIn")}
       description={realm.registrationAllowed ? msg("noAccount") : undefined}
       message={
         hasLoginError ? messagesPerField.getFirstError("username") : null
       }
+      title={msg("doLogIn")}
     >
       {realm.password ? (
         <form action={url.loginAction} className="space-y-4" method="post">

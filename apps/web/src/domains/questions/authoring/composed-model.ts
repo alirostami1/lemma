@@ -1,3 +1,4 @@
+import { getReferenceIdForSource } from "../reference-names";
 import type { ComposedInlineContent } from "./inline-content";
 import {
   extractInlineReferenceIds,
@@ -197,9 +198,9 @@ export function createTextBlock(
   text = "",
 ): ComposedTextEditorBlock {
   return {
+    content: plainTextToInlineContent(text),
     id,
     type: "text",
-    content: plainTextToInlineContent(text),
   };
 }
 
@@ -208,9 +209,9 @@ export function createRichTextBlock(
   content = createDefaultRichContent(),
 ): ComposedRichTextEditorBlock {
   return {
+    content,
     id,
     type: "rich_text",
-    content,
   };
 }
 
@@ -222,17 +223,17 @@ export function createResponseBlock(
   > = {},
 ): ComposedResponseEditorBlock {
   return {
-    id,
-    type: "response",
-    responseFieldId,
-    label: overrides.label,
-    placeholder: overrides.placeholder,
     correctValueSource: overrides.correctValueSource ?? {
       type: "literal",
       value: "",
     },
-    points: overrides.points ?? 1,
     grading: overrides.grading ?? { mode: "exact" },
+    id,
+    label: overrides.label,
+    placeholder: overrides.placeholder,
+    points: overrides.points ?? 1,
+    responseFieldId,
+    type: "response",
   };
 }
 
@@ -249,30 +250,30 @@ export function createTableBlock(
 ): ComposedTableEditorBlock {
   return {
     id,
-    type: "table",
     table,
+    type: "table",
   };
 }
 
 export function createDefaultComposedEditorModel(): ComposedEditorModel {
   const responseFieldId = "answer_1";
   return {
-    schemaVersion: 1,
     blocks: [
       createTextBlock("text_1", "Write the question here."),
       createResponseBlock("response_1", responseFieldId, {
         placeholder: "Answer",
       }),
     ],
+    references: [],
     responseFields: [
       {
         id: responseFieldId,
-        type: "text",
         label: "Answer",
         required: true,
+        type: "text",
       },
     ],
-    references: [],
+    schemaVersion: 1,
   };
 }
 
@@ -390,16 +391,16 @@ export function getReferenceUsage(
       case "text":
         for (const referenceId of extractInlineReferenceIds(block.content)) {
           addReferenceUsage(usage, referenceId, {
-            type: "text_block",
             blockId: block.id,
+            type: "text_block",
           });
         }
         break;
       case "rich_text":
         for (const referenceId of extractRichReferenceIds(block.content)) {
           addReferenceUsage(usage, referenceId, {
-            type: "rich_text_block",
             blockId: block.id,
+            type: "rich_text_block",
           });
         }
         break;
@@ -408,9 +409,9 @@ export function getReferenceUsage(
           block.correctValueSource,
         )) {
           addReferenceUsage(usage, referenceId, {
-            type: "response_answer",
             blockId: block.id,
             responseFieldId: block.responseFieldId,
+            type: "response_answer",
           });
         }
         break;
@@ -419,9 +420,9 @@ export function getReferenceUsage(
           if (cell.type === "content") {
             for (const referenceId of extractInlineReferenceIds(cell.content)) {
               addReferenceUsage(usage, referenceId, {
-                type: "table_content_cell",
                 blockId: block.id,
                 cellId: cell.id,
+                type: "table_content_cell",
               });
             }
             continue;
@@ -431,10 +432,10 @@ export function getReferenceUsage(
             cell.correctValueSource,
           )) {
             addReferenceUsage(usage, referenceId, {
-              type: "table_answer_cell",
               blockId: block.id,
               cellId: cell.id,
               responseFieldId: cell.responseFieldId,
+              type: "table_answer_cell",
             });
           }
         }
@@ -476,6 +477,118 @@ export function stripUnusedComposedReferences(
 }
 
 export function renameReferenceIdInComposedEditorModel(
+  model: ComposedEditorModel,
+  previousReferenceId: string,
+  nextReferenceId: string,
+): ComposedEditorModel {
+  const nextModel = replaceReferenceIdUsagesInComposedEditorModel(
+    model,
+    previousReferenceId,
+    nextReferenceId,
+  );
+
+  return {
+    ...nextModel,
+    references: nextModel.references.map((reference) =>
+      reference.id === previousReferenceId
+        ? {
+            ...reference,
+            id: nextReferenceId,
+          }
+        : reference,
+    ),
+  };
+}
+
+export function mergeReferenceIdInComposedEditorModel(
+  model: ComposedEditorModel,
+  previousReferenceId: string,
+  nextReferenceId: string,
+): ComposedEditorModel {
+  const nextModel = replaceReferenceIdUsagesInComposedEditorModel(
+    model,
+    previousReferenceId,
+    nextReferenceId,
+  );
+
+  return {
+    ...nextModel,
+    references: nextModel.references.filter(
+      (reference) => reference.id !== previousReferenceId,
+    ),
+  };
+}
+
+export function normalizeWorkbookReferenceIdsInComposedEditorModel(
+  model: ComposedEditorModel,
+): ComposedEditorModel {
+  let nextModel = model;
+
+  for (const reference of model.references) {
+    const canonicalReferenceId = getReferenceIdForSource(reference.source);
+    if (!canonicalReferenceId || canonicalReferenceId === reference.id) {
+      continue;
+    }
+
+    nextModel = nextModel.references.some(
+      (candidate) =>
+        candidate.id === canonicalReferenceId && candidate.id !== reference.id,
+    )
+      ? mergeReferenceIdInComposedEditorModel(
+          nextModel,
+          reference.id,
+          canonicalReferenceId,
+        )
+      : renameReferenceIdInComposedEditorModel(
+          nextModel,
+          reference.id,
+          canonicalReferenceId,
+        );
+  }
+
+  return nextModel;
+}
+
+function replaceReferenceIdInValueExpression(
+  value: ValueExpression,
+  previousReferenceId: string,
+  nextReferenceId: string,
+): ValueExpression {
+  return value.type === "reference" && value.referenceId === previousReferenceId
+    ? { ...value, referenceId: nextReferenceId }
+    : value;
+}
+
+function getReferenceIdsUsedByBlock(block: ComposedEditorBlock): string[] {
+  switch (block.type) {
+    case "text":
+      return extractInlineReferenceIds(block.content);
+    case "rich_text":
+      return extractRichReferenceIds(block.content);
+    case "response":
+      return extractReferenceIdsFromValueExpression(block.correctValueSource);
+    case "table":
+      return block.table.cells.flatMap((cell) =>
+        cell.type === "content"
+          ? extractInlineReferenceIds(cell.content)
+          : extractReferenceIdsFromValueExpression(cell.correctValueSource),
+      );
+    case "separator":
+      return [];
+    default:
+      return assertNever(block);
+  }
+}
+
+function addReferenceUsage(
+  usage: Map<string, ReferenceUsage[]>,
+  referenceId: string,
+  item: ReferenceUsage,
+) {
+  usage.set(referenceId, [...(usage.get(referenceId) ?? []), item]);
+}
+
+function replaceReferenceIdUsagesInComposedEditorModel(
   model: ComposedEditorModel,
   previousReferenceId: string,
   nextReferenceId: string,
@@ -543,54 +656,7 @@ export function renameReferenceIdInComposedEditorModel(
           return assertNever(block);
       }
     }),
-    references: model.references.map((reference) =>
-      reference.id === previousReferenceId
-        ? {
-            ...reference,
-            id: nextReferenceId,
-          }
-        : reference,
-    ),
   };
-}
-
-function replaceReferenceIdInValueExpression(
-  value: ValueExpression,
-  previousReferenceId: string,
-  nextReferenceId: string,
-): ValueExpression {
-  return value.type === "reference" && value.referenceId === previousReferenceId
-    ? { ...value, referenceId: nextReferenceId }
-    : value;
-}
-
-function getReferenceIdsUsedByBlock(block: ComposedEditorBlock): string[] {
-  switch (block.type) {
-    case "text":
-      return extractInlineReferenceIds(block.content);
-    case "rich_text":
-      return extractRichReferenceIds(block.content);
-    case "response":
-      return extractReferenceIdsFromValueExpression(block.correctValueSource);
-    case "table":
-      return block.table.cells.flatMap((cell) =>
-        cell.type === "content"
-          ? extractInlineReferenceIds(cell.content)
-          : extractReferenceIdsFromValueExpression(cell.correctValueSource),
-      );
-    case "separator":
-      return [];
-    default:
-      return assertNever(block);
-  }
-}
-
-function addReferenceUsage(
-  usage: Map<string, ReferenceUsage[]>,
-  referenceId: string,
-  item: ReferenceUsage,
-) {
-  usage.set(referenceId, [...(usage.get(referenceId) ?? []), item]);
 }
 
 function assertNever(value: never): never {
@@ -628,4 +694,32 @@ export function extractWorkbookReferenceRefsFromComposedEditorModel(
     }
   }
   return [...refs];
+}
+
+export function getUsedWorkbookSourceCountsFromComposedEditorModel(
+  model: ComposedEditorModel,
+) {
+  const counts = new Map<string, number>();
+  const usedReferenceIds = new Set(
+    extractUsedReferenceIdsFromComposedEditorModel(model),
+  );
+
+  for (const reference of model.references) {
+    if (!usedReferenceIds.has(reference.id)) {
+      continue;
+    }
+    if (
+      reference.source.type !== "workbook_cell" &&
+      reference.source.type !== "workbook_range"
+    ) {
+      continue;
+    }
+
+    counts.set(
+      reference.source.sourceId,
+      (counts.get(reference.source.sourceId) ?? 0) + 1,
+    );
+  }
+
+  return counts;
 }

@@ -1,4 +1,5 @@
 import {
+  type InfiniteData,
   type UseMutationOptions,
   type UseQueryOptions,
   useInfiniteQuery,
@@ -8,56 +9,127 @@ import {
 } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
+  attachQuestionBlueprintDraftSourceFile,
   createQuestionBlueprint,
+  createQuestionBlueprintDraft,
   createQuestionGenerationRun,
   createQuestionSet,
   getQuestion,
   getQuestionBlueprint,
   getQuestionBlueprintAuthoring,
-  getQuestionBlueprintVersionAuthoring,
+  getQuestionBlueprintDraft,
   getQuestionGenerationRun,
   getQuestionSet,
   gradeQuestion,
+  listQuestionBlueprintDraftSummaries,
   listQuestionBlueprints,
-  listQuestionBlueprintVersions,
   listQuestionSetQuestions,
   listQuestionSets,
+  publishQuestionBlueprintDraft,
   retryQuestionGenerationRun,
   updateQuestionBlueprint,
+  updateQuestionBlueprintDraft,
 } from "./api";
 import { questionKeys } from "./keys";
 import type {
+  AttachQuestionBlueprintDraftSourceFileInput,
+  CreateQuestionBlueprintDraftInput,
   CreateQuestionBlueprintInput,
   CreateQuestionGenerationRunInput,
   CreateQuestionSetInput,
   GetQuestionBlueprintInput,
-  GetQuestionBlueprintVersionInput,
   GetQuestionGenerationRunInput,
   GetQuestionInput,
   GradeQuestionInput,
+  ListQuestionBlueprintDraftsInput,
   ListQuestionBlueprintsInput,
   ListQuestionSetItemsInput,
   ListQuestionSetsInput,
+  PublishQuestionBlueprintDraftResult,
   QuestionBlueprintAuthoringResult,
+  QuestionBlueprintDraftResult,
+  QuestionBlueprintDraftSummariesPage,
   QuestionBlueprintResult,
   QuestionBlueprintsPage,
-  QuestionBlueprintVersionsResult,
   QuestionGenerationRunResult,
   QuestionGradeResult,
   QuestionResult,
   QuestionSetResult,
   QuestionSetsPage,
+  QuestionsPage,
   RetryQuestionGenerationRunInput,
+  UpdateQuestionBlueprintDraftInput,
   UpdateQuestionBlueprintInput,
 } from "./model";
+
+export function useQuestionBlueprintDraftQuery(
+  draftId: string,
+  options?: Omit<
+    UseQueryOptions<QuestionBlueprintDraftResult>,
+    "queryKey" | "queryFn"
+  >,
+) {
+  return useQuery({
+    enabled: Boolean(draftId),
+    queryFn: () => getQuestionBlueprintDraft(draftId),
+    queryKey: questionKeys.questionBlueprintDraftDetail(draftId),
+    ...options,
+  });
+}
+
+export function useCreateQuestionBlueprintDraft(
+  options?: UseMutationOptions<
+    QuestionBlueprintDraftResult,
+    Error,
+    CreateQuestionBlueprintDraftInput
+  >,
+) {
+  return useMutation({ mutationFn: createQuestionBlueprintDraft, ...options });
+}
+
+export function useUpdateQuestionBlueprintDraft(
+  options?: UseMutationOptions<
+    QuestionBlueprintDraftResult,
+    Error,
+    UpdateQuestionBlueprintDraftInput
+  >,
+) {
+  return useMutation({ mutationFn: updateQuestionBlueprintDraft, ...options });
+}
+
+export function useAttachQuestionBlueprintDraftSourceFile(
+  options?: UseMutationOptions<
+    QuestionBlueprintDraftResult,
+    Error,
+    AttachQuestionBlueprintDraftSourceFileInput
+  >,
+) {
+  return useMutation({
+    mutationFn: attachQuestionBlueprintDraftSourceFile,
+    ...options,
+  });
+}
+
+export function usePublishQuestionBlueprintDraft(
+  options?: UseMutationOptions<
+    PublishQuestionBlueprintDraftResult,
+    Error,
+    string
+  >,
+) {
+  return useMutation({
+    mutationFn: publishQuestionBlueprintDraft,
+    ...options,
+  });
+}
 
 export function useQuestionSetsQuery(
   input?: ListQuestionSetsInput,
   options?: Omit<UseQueryOptions<QuestionSetsPage>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: questionKeys.questionSetList(input),
     queryFn: () => listQuestionSets(input),
+    queryKey: questionKeys.questionSetList(input),
     ...options,
   });
 }
@@ -86,12 +158,18 @@ export function useQuestionSetsInfiniteQuery(
   input?: Omit<ListQuestionSetsInput, "cursor">,
   options?: { enabled?: boolean },
 ) {
-  return useInfiniteQuery({
+  return useInfiniteQuery<
+    QuestionSetsPage,
+    Error,
+    InfiniteData<QuestionSetsPage>,
+    ReturnType<typeof questionKeys.questionSetInfiniteList>,
+    string | undefined
+  >({
     queryKey: questionKeys.questionSetInfiniteList(input),
     queryFn: ({ pageParam }) =>
       listQuestionSets({ ...input, cursor: pageParam }),
-    initialPageParam: undefined as string | undefined,
     getNextPageParam: (page) => page.nextCursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
     ...options,
   });
 }
@@ -101,9 +179,9 @@ export function useQuestionSetQuery(
   options?: Omit<UseQueryOptions<QuestionSetResult>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: questionKeys.questionSetDetail(questionSetId),
-    queryFn: () => getQuestionSet(questionSetId),
     enabled: Boolean(questionSetId),
+    queryFn: () => getQuestionSet(questionSetId),
+    queryKey: questionKeys.questionSetDetail(questionSetId),
     ...options,
   });
 }
@@ -114,16 +192,22 @@ export function useQuestionSetQuestionsInfiniteQuery(
 ) {
   const params = { limit: input.limit };
 
-  return useInfiniteQuery({
+  return useInfiniteQuery<
+    QuestionsPage,
+    Error,
+    InfiniteData<QuestionsPage>,
+    ReturnType<typeof questionKeys.questionSetQuestionsInfiniteList>,
+    string | undefined
+  >({
+    enabled: Boolean(input.questionSetId),
     queryKey: questionKeys.questionSetQuestionsInfiniteList(
       input.questionSetId,
       params,
     ),
     queryFn: ({ pageParam }) =>
       listQuestionSetQuestions({ ...input, cursor: pageParam }),
-    initialPageParam: undefined as string | undefined,
     getNextPageParam: (page) => page.nextCursor ?? undefined,
-    enabled: Boolean(input.questionSetId),
+    initialPageParam: undefined as string | undefined,
     ...options,
   });
 }
@@ -133,9 +217,9 @@ export function useQuestionQuery(
   options?: Omit<UseQueryOptions<QuestionResult>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: questionKeys.questionDetail(input.questionId),
-    queryFn: () => getQuestion(input),
     enabled: Boolean(input.questionId),
+    queryFn: () => getQuestion(input),
+    queryKey: questionKeys.questionDetail(input.questionId),
     ...options,
   });
 }
@@ -157,8 +241,8 @@ export function useQuestionBlueprintsQuery(
   >,
 ) {
   return useQuery({
-    queryKey: questionKeys.questionBlueprintsList(input),
     queryFn: () => listQuestionBlueprints(input),
+    queryKey: questionKeys.questionBlueprintsList(input),
     ...options,
   });
 }
@@ -167,12 +251,38 @@ export function useQuestionBlueprintsInfiniteQuery(
   input?: Omit<ListQuestionBlueprintsInput, "cursor">,
   options?: { enabled?: boolean },
 ) {
-  return useInfiniteQuery({
+  return useInfiniteQuery<
+    QuestionBlueprintsPage,
+    Error,
+    InfiniteData<QuestionBlueprintsPage>,
+    ReturnType<typeof questionKeys.questionBlueprintsInfiniteList>,
+    string | undefined
+  >({
     queryKey: questionKeys.questionBlueprintsInfiniteList(input),
     queryFn: ({ pageParam }) =>
       listQuestionBlueprints({ ...input, cursor: pageParam }),
-    initialPageParam: undefined as string | undefined,
     getNextPageParam: (page) => page.nextCursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
+    ...options,
+  });
+}
+
+export function useQuestionBlueprintDraftsInfiniteQuery(
+  input?: Omit<ListQuestionBlueprintDraftsInput, "cursor">,
+  options?: { enabled?: boolean },
+) {
+  return useInfiniteQuery<
+    QuestionBlueprintDraftSummariesPage,
+    Error,
+    InfiniteData<QuestionBlueprintDraftSummariesPage>,
+    ReturnType<typeof questionKeys.questionBlueprintDraftsInfiniteList>,
+    string | undefined
+  >({
+    queryKey: questionKeys.questionBlueprintDraftsInfiniteList(input),
+    queryFn: ({ pageParam }) =>
+      listQuestionBlueprintDraftSummaries({ ...input, cursor: pageParam }),
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
     ...options,
   });
 }
@@ -185,9 +295,9 @@ export function useQuestionBlueprintQuery(
   >,
 ) {
   return useQuery({
-    queryKey: questionKeys.questionBlueprintDetail(input.questionBlueprintId),
-    queryFn: () => getQuestionBlueprint(input),
     enabled: Boolean(input.questionBlueprintId),
+    queryFn: () => getQuestionBlueprint(input),
+    queryKey: questionKeys.questionBlueprintDetail(input.questionBlueprintId),
     ...options,
   });
 }
@@ -200,46 +310,11 @@ export function useQuestionBlueprintAuthoringQuery(
   >,
 ) {
   return useQuery({
+    enabled: Boolean(input.questionBlueprintId),
+    queryFn: () => getQuestionBlueprintAuthoring(input),
     queryKey: questionKeys.questionBlueprintAuthoring(
       input.questionBlueprintId,
     ),
-    queryFn: () => getQuestionBlueprintAuthoring(input),
-    enabled: Boolean(input.questionBlueprintId),
-    ...options,
-  });
-}
-
-export function useQuestionBlueprintVersionAuthoringQuery(
-  input: GetQuestionBlueprintVersionInput,
-  options?: Omit<
-    UseQueryOptions<QuestionBlueprintAuthoringResult>,
-    "queryKey" | "queryFn"
-  >,
-) {
-  return useQuery({
-    queryKey: questionKeys.questionBlueprintVersionAuthoring(
-      input.questionBlueprintId,
-      input.questionBlueprintVersionId,
-    ),
-    queryFn: () => getQuestionBlueprintVersionAuthoring(input),
-    enabled: Boolean(
-      input.questionBlueprintId && input.questionBlueprintVersionId,
-    ),
-    ...options,
-  });
-}
-
-export function useQuestionBlueprintVersionsQuery(
-  input: GetQuestionBlueprintInput,
-  options?: Omit<
-    UseQueryOptions<QuestionBlueprintVersionsResult>,
-    "queryKey" | "queryFn"
-  >,
-) {
-  return useQuery({
-    queryKey: questionKeys.questionBlueprintVersions(input.questionBlueprintId),
-    queryFn: () => listQuestionBlueprintVersions(input),
-    enabled: Boolean(input.questionBlueprintId),
     ...options,
   });
 }
@@ -252,9 +327,9 @@ export function useQuestionGenerationRunQuery(
   >,
 ) {
   return useQuery({
-    queryKey: questionKeys.generationRunDetail(input.questionGenerationRunId),
-    queryFn: () => getQuestionGenerationRun(input),
     enabled: Boolean(input.questionGenerationRunId),
+    queryFn: () => getQuestionGenerationRun(input),
+    queryKey: questionKeys.generationRunDetail(input.questionGenerationRunId),
     ...options,
   });
 }
@@ -341,11 +416,6 @@ export function useCreateQuestionBlueprint(
         ),
       });
       await queryClient.invalidateQueries({
-        queryKey: questionKeys.questionBlueprintVersions(
-          result.questionBlueprint.id,
-        ),
-      });
-      await queryClient.invalidateQueries({
         queryKey: questionKeys.questionBlueprints(),
       });
       await options?.onSuccess?.(result, variables, onMutateResult, context);
@@ -372,11 +442,6 @@ export function useUpdateQuestionBlueprint(
       );
       await queryClient.invalidateQueries({
         queryKey: questionKeys.questionBlueprintAuthoring(
-          result.questionBlueprint.id,
-        ),
-      });
-      await queryClient.invalidateQueries({
-        queryKey: questionKeys.questionBlueprintVersions(
           result.questionBlueprint.id,
         ),
       });

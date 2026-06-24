@@ -7,14 +7,14 @@
 import type { UserRoleRoleKey } from "./userRoleRoleKey.ts";
 
 export interface UserRole {
+  createdAt: string;
+  expiresAt: string;
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  userId: string;
+  grantedByUserId: string;
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
   roleId: string;
   /** @minLength 1 */
   roleKey: UserRoleRoleKey;
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  grantedByUserId: string;
-  expiresAt: string;
-  createdAt: string;
+  userId: string;
 }

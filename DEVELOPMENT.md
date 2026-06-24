@@ -83,14 +83,14 @@ PR: fix(deploy): add caddy cloudflare proxy module
 Run before PR:
 
 ```bash
-pnpm check-types && pnpm check && pnpm test
+pnpm check:types && pnpm check && pnpm test
 ```
 
 For focused work, package filters are fine:
 
 ```bash
 pnpm --filter @lemma/questions test
-pnpm --filter web check-types
+pnpm --filter web check:types
 ```
 
 CI should stay change-scoped as the repo grows:
@@ -128,6 +128,12 @@ Generated-output rules and commands live in
 
 Packages must use public exports. Do not import from another package's `src/*`.
 The architecture check enforces this.
+Source-time Node/tsx scripts may use `--conditions=source` so workspace imports
+resolve to source exports.
+Browser Vite apps must not set global `resolve.conditions: ["source"]`.
+Browser-safe workspace packages should expose browser-safe source through public
+exports.
+Runtime and server packages should keep runtime exports pointing to `dist/*`.
 
 ## Migrations
 

@@ -1,5 +1,4 @@
 name: Deploy VPS
-
 on:
   workflow_dispatch:
     inputs:
@@ -32,21 +31,17 @@ on:
       - "turbo.json"
       - "!apps/**/*.md"
       - "!packages/**/*.md"
-
 permissions:
   contents: read
   packages: write
-
 concurrency:
   group: deploy-vps
   cancel-in-progress: false
-
 env:
   REGISTRY: ghcr.io
   IMAGE_OWNER: ${{ github.repository_owner }}
   IMAGE_TAG: ${{ github.event.inputs.image_tag || github.sha }}
   SOPS_VERSION: v3.10.2
-
 jobs:
   build:
     name: build and push images
@@ -71,7 +66,7 @@ jobs:
             dockerfile: infra/caddy/Dockerfile
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Setup Buildx
         uses: docker/setup-buildx-action@v4
       - name: Login to GHCR
@@ -99,7 +94,6 @@ jobs:
             LEMMA_ADMIN_API_URL=${{ vars.LEMMA_ADMIN_API_URL }}
             LEMMA_ADMIN_OIDC_ISSUER_URI=${{ vars.LEMMA_ADMIN_OIDC_ISSUER_URI }}
             LEMMA_ADMIN_OIDC_CLIENT_ID=${{ vars.LEMMA_ADMIN_OIDC_CLIENT_ID }}
-
   deploy:
     name: deploy to VPS
     needs: build
@@ -107,7 +101,7 @@ jobs:
     environment: vps
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Show deploy plan
         run: |
           echo "environment: vps"
@@ -116,7 +110,7 @@ jobs:
           echo "compose: infra/production/compose.yml"
           echo "playbook: infra/ansible/playbooks/deploy.yml"
       - name: Install SSH key
-        uses: webfactory/ssh-agent@v0.9.1
+        uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
       - name: Install deploy tooling

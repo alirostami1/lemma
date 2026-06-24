@@ -33,12 +33,12 @@ export function TableBlockEditor({
 
   return (
     <TableCanvas
-      model={model}
-      selection={currentSelection}
-      referencePreviewCache={referencePreviewCache ?? {}}
       disabled={disabled}
+      model={model}
       onModelChange={onModelChange}
       onSelectionChange={(nextSelection) => onSelectionChange?.(nextSelection)}
+      referencePreviewCache={referencePreviewCache ?? {}}
+      selection={currentSelection}
     />
   );
 }

@@ -14,5 +14,10 @@ export type QuestionReferenceSource =
   | {
       schemaVersion: 1;
       type: "workbook_cell" | "workbook_range";
+      /**
+       * Blueprint-local workbook source identifier.
+       * @minLength 1
+       */
+      sourceId: string;
       ref: string;
     };

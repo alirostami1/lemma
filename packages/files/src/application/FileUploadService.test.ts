@@ -56,18 +56,18 @@ function createHarness() {
   const storage = new FakeFileStorage();
   return {
     repository,
-    storage,
     service: new FileUploadService({
-      filesRepository: repository,
-      fileStorage: storage,
-      idGenerator,
       clock,
       config: {
         bucket: "lemma-files",
-        uploadUrlExpiresInSeconds: 900,
         downloadUrlExpiresInSeconds: 900,
+        uploadUrlExpiresInSeconds: 900,
       },
+      fileStorage: storage,
+      filesRepository: repository,
+      idGenerator,
     }),
+    storage,
   };
 }
 
@@ -83,14 +83,14 @@ const idGenerator: IdGenerator = {
 function createUpload(): FileUpload {
   return createFileUploadSession(
     {
-      id: targetUploadId,
-      createdByUserId: ownerUserId,
       bucket: "lemma-files",
+      checksumSha256,
+      contentType,
+      createdByUserId: ownerUserId,
+      expectedByteSize: 42,
+      id: targetUploadId,
       objectKey: "files/workbook.xlsx",
       originalName: "workbook.xlsx",
-      contentType,
-      expectedByteSize: 42,
-      checksumSha256,
       purpose: "workbook",
     },
     at,
@@ -99,17 +99,17 @@ function createUpload(): FileUpload {
 
 function currentUser(id: typeof ownerUserId): CurrentUser {
   return {
+    isAdmin: false,
+    roles: [],
     user: createUser(
       {
+        displayName: "Files User",
+        email: "files@example.com",
         id,
         identityId: `oidc:${id}`,
-        email: "files@example.com",
-        displayName: "Files User",
       },
       at,
     ),
-    roles: [],
-    isAdmin: false,
   };
 }
 

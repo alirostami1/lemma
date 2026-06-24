@@ -37,51 +37,45 @@ export const sharedEnvSchema = z.object({
 });
 
 export const oidcEnvSchema = z.object({
+  LEMMA_OIDC_AUDIENCE: z.string().min(1),
   LEMMA_OIDC_ISSUER_URL: z.url(),
   LEMMA_OIDC_JWKS_URL: z.url(),
-  LEMMA_OIDC_AUDIENCE: z.string().min(1),
 });
 
 export const s3EnvSchema = z.object({
-  LEMMA_S3_REGION: z.string().min(1),
-  LEMMA_S3_BUCKET: z.string().min(1),
   LEMMA_S3_ACCESS_KEY_ID: z.string().min(1),
-  LEMMA_S3_SECRET_ACCESS_KEY: z.string().min(1),
+  LEMMA_S3_BUCKET: z.string().min(1),
+  LEMMA_S3_DOWNLOAD_URL_EXPIRES_IN_SECONDS: z.coerce.number().positive(),
   LEMMA_S3_ENDPOINT: z.url().optional(),
-  LEMMA_S3_PUBLIC_ENDPOINT: z.url(),
   LEMMA_S3_FORCE_PATH_STYLE: z
     .enum(["true", "false"])
     .default("false")
     .transform((value) => value === "true"),
+  LEMMA_S3_PUBLIC_ENDPOINT: z.url(),
+  LEMMA_S3_REGION: z.string().min(1),
+  LEMMA_S3_SECRET_ACCESS_KEY: z.string().min(1),
   LEMMA_S3_UPLOAD_URL_EXPIRES_IN_SECONDS: z.coerce.number().positive(),
-  LEMMA_S3_DOWNLOAD_URL_EXPIRES_IN_SECONDS: z.coerce.number().positive(),
 });
 
 export const workbookEnvSchema = z
   .object({
     LEMMA_WORKBOOK_ENGINE: z.enum(["cached", "libreoffice"]).default("cached"),
-    LEMMA_WORKBOOK_LIBREOFFICE_SERVICE_URL: z.url().optional(),
     LEMMA_WORKBOOK_ENGINE_TIMEOUT_MS: z.coerce
       .number()
       .int()
       .positive()
       .default(30_000),
-    LEMMA_WORKBOOK_VALIDATION_TIMEOUT_MS: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(30_000),
-    LEMMA_WORKBOOK_MAX_FILE_BYTES: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(20 * 1024 * 1024),
-    LEMMA_WORKBOOK_MAX_SHEETS: z.coerce.number().int().positive().default(50),
+    LEMMA_WORKBOOK_LIBREOFFICE_SERVICE_URL: z.url().optional(),
     LEMMA_WORKBOOK_MAX_CELLS: z.coerce
       .number()
       .int()
       .positive()
       .default(500_000),
+    LEMMA_WORKBOOK_MAX_FILE_BYTES: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(20 * 1024 * 1024),
     LEMMA_WORKBOOK_MAX_FORMULAS: z.coerce
       .number()
       .int()
@@ -92,6 +86,12 @@ export const workbookEnvSchema = z
       .int()
       .positive()
       .default(10 * 1024 * 1024),
+    LEMMA_WORKBOOK_MAX_SHEETS: z.coerce.number().int().positive().default(50),
+    LEMMA_WORKBOOK_VALIDATION_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(30_000),
   })
   .superRefine((data, ctx) => {
     if (
@@ -107,9 +107,9 @@ export const workbookEnvSchema = z
   });
 
 export const realtimeEnvSchema = z.object({
-  LEMMA_CENTRIFUGO_PUBLIC_URL: z.url(),
-  LEMMA_CENTRIFUGO_HTTP_API_URL: z.url(),
   LEMMA_CENTRIFUGO_HTTP_API_KEY: z.string().min(1),
+  LEMMA_CENTRIFUGO_HTTP_API_URL: z.url(),
+  LEMMA_CENTRIFUGO_PUBLIC_URL: z.url(),
   LEMMA_CENTRIFUGO_TOKEN_HMAC_SECRET_KEY: z.string().min(32),
   LEMMA_CENTRIFUGO_TOKEN_TTL_SECONDS: z.coerce
     .number()
@@ -149,30 +149,30 @@ export function createWorkbookWorkerConfig(env: Env = process.env) {
     env,
   );
   return Object.freeze({
-    nodeEnv: parsed.NODE_ENV,
     databaseUrl: parsed.LEMMA_WORKBOOK_WORKER_DATABASE_URL,
+    nodeEnv: parsed.NODE_ENV,
     s3: {
-      region: parsed.LEMMA_S3_REGION,
-      bucket: parsed.LEMMA_S3_BUCKET,
       accessKeyId: parsed.LEMMA_S3_ACCESS_KEY_ID,
-      secretAccessKey: parsed.LEMMA_S3_SECRET_ACCESS_KEY,
-      endpoint: parsed.LEMMA_S3_ENDPOINT,
-      publicEndpoint: parsed.LEMMA_S3_PUBLIC_ENDPOINT,
-      forcePathStyle: parsed.LEMMA_S3_FORCE_PATH_STYLE,
-      uploadUrlExpiresInSeconds: parsed.LEMMA_S3_UPLOAD_URL_EXPIRES_IN_SECONDS,
+      bucket: parsed.LEMMA_S3_BUCKET,
       downloadUrlExpiresInSeconds:
         parsed.LEMMA_S3_DOWNLOAD_URL_EXPIRES_IN_SECONDS,
+      endpoint: parsed.LEMMA_S3_ENDPOINT,
+      forcePathStyle: parsed.LEMMA_S3_FORCE_PATH_STYLE,
+      publicEndpoint: parsed.LEMMA_S3_PUBLIC_ENDPOINT,
+      region: parsed.LEMMA_S3_REGION,
+      secretAccessKey: parsed.LEMMA_S3_SECRET_ACCESS_KEY,
+      uploadUrlExpiresInSeconds: parsed.LEMMA_S3_UPLOAD_URL_EXPIRES_IN_SECONDS,
     },
     workbook: {
       engine: parsed.LEMMA_WORKBOOK_ENGINE,
-      libreOfficeServiceUrl: parsed.LEMMA_WORKBOOK_LIBREOFFICE_SERVICE_URL,
       engineTimeoutMs: parsed.LEMMA_WORKBOOK_ENGINE_TIMEOUT_MS,
-      validationTimeoutMs: parsed.LEMMA_WORKBOOK_VALIDATION_TIMEOUT_MS,
-      maxFileBytes: parsed.LEMMA_WORKBOOK_MAX_FILE_BYTES,
-      maxSheets: parsed.LEMMA_WORKBOOK_MAX_SHEETS,
+      libreOfficeServiceUrl: parsed.LEMMA_WORKBOOK_LIBREOFFICE_SERVICE_URL,
       maxCells: parsed.LEMMA_WORKBOOK_MAX_CELLS,
+      maxFileBytes: parsed.LEMMA_WORKBOOK_MAX_FILE_BYTES,
       maxFormulas: parsed.LEMMA_WORKBOOK_MAX_FORMULAS,
       maxResponseBytes: parsed.LEMMA_WORKBOOK_MAX_RESPONSE_BYTES,
+      maxSheets: parsed.LEMMA_WORKBOOK_MAX_SHEETS,
+      validationTimeoutMs: parsed.LEMMA_WORKBOOK_VALIDATION_TIMEOUT_MS,
     },
   });
 }
@@ -180,8 +180,8 @@ export function createWorkbookWorkerConfig(env: Env = process.env) {
 export function createDatabaseConfig(env: Env = process.env) {
   const parsed = parseEnv("database", databaseEnvSchema, env);
   return Object.freeze({
-    nodeEnv: parsed.NODE_ENV,
     databaseUrl: parsed.LEMMA_DATABASE_URL,
+    nodeEnv: parsed.NODE_ENV,
   });
 }
 

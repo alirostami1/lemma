@@ -22,9 +22,9 @@ export function createCurrentUser(input: {
   const at = input.at ?? new Date();
 
   return {
-    user: input.user,
-    roles: input.roles,
     isAdmin: isAdmin(input.roles, at),
+    roles: input.roles,
+    user: input.user,
   };
 }
 

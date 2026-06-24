@@ -49,25 +49,25 @@ export class QuestionLibraryService {
     const limit = normalizeListLimit(command.limit);
     const questions =
       await this.deps.questionsRepository.listQuestionsByOwnerUserId({
-        ownerUserId: toUserId(command.currentUser.user.id),
-        statuses: command.status
-          ? [toQuestionStatus(command.status)]
-          : ["active", "archived"],
         blueprintId: command.blueprintId
           ? toQuestionBlueprintId(command.blueprintId)
           : undefined,
+        cursor: decodeListCursor(command.cursor),
         generationRunId: command.generationRunId
           ? toQuestionGenerationRunId(command.generationRunId)
           : undefined,
         limit: limit + 1,
-        cursor: decodeListCursor(command.cursor),
+        ownerUserId: toUserId(command.currentUser.user.id),
+        statuses: command.status
+          ? [toQuestionStatus(command.status)]
+          : ["active", "archived"],
       });
     return {
-      questions: questions.slice(0, limit),
       nextCursor:
         questions.length > limit
           ? encodeListCursor(questions[limit - 1]?.createdAt)
           : null,
+      questions: questions.slice(0, limit),
     };
   }
 
@@ -105,7 +105,7 @@ export class QuestionLibraryService {
     return {
       grade: await (
         this.deps.questionGradingService ?? new QuestionGradingService()
-      ).grade({ question, answer }),
+      ).grade({ answer, question }),
     };
   }
 

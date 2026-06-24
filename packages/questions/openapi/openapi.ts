@@ -33,28 +33,28 @@ import {
 type OpenApiSchema = Schema["schema"];
 
 const questionTag: Tag = {
-  name: "Questions",
   description:
     "Question sets, question blueprints, question generation, and answer operations.",
+  name: "Questions",
 };
 
-const jsonObject = { type: "object", additionalProperties: true } as const;
+const jsonObject = { additionalProperties: true, type: "object" } as const;
 const uuid = {
-  type: "string",
   pattern: UUID_V7_OPENAPI_PATTERN,
+  type: "string",
 } as const;
 const nullableUuid = {
-  type: ["string", "null"],
-  pattern: UUID_V7_OPENAPI_PATTERN,
   example: "019e8278-6746-768e-b90b-3c6d2fb8267f",
+  pattern: UUID_V7_OPENAPI_PATTERN,
+  type: ["string", "null"],
 } satisfies OpenApiSchema;
 const dateTime = {
-  type: "string",
   format: "date-time",
+  type: "string",
 } satisfies OpenApiSchema;
 const nullableDateTime = {
-  type: ["string", "null"],
   format: "date-time",
+  type: ["string", "null"],
 } satisfies OpenApiSchema;
 
 const questionValueExpressionSchema: Schema = {
@@ -62,22 +62,22 @@ const questionValueExpressionSchema: Schema = {
   schema: {
     oneOf: [
       {
-        type: "object",
-        required: ["schemaVersion", "type", "value"],
         properties: {
-          schemaVersion: { type: "number", enum: [1] },
-          type: { type: "string", enum: ["literal"] },
+          schemaVersion: { enum: [1], type: "number" },
+          type: { enum: ["literal"], type: "string" },
           value: {},
         },
+        required: ["schemaVersion", "type", "value"],
+        type: "object",
       },
       {
-        type: "object",
-        required: ["schemaVersion", "type", "referenceId"],
         properties: {
-          schemaVersion: { type: "number", enum: [1] },
-          type: { type: "string", enum: ["reference"] },
-          referenceId: { type: "string", minLength: 1 },
+          referenceId: { minLength: 1, type: "string" },
+          schemaVersion: { enum: [1], type: "number" },
+          type: { enum: ["reference"], type: "string" },
         },
+        required: ["schemaVersion", "type", "referenceId"],
+        type: "object",
       },
     ],
   },
@@ -87,58 +87,116 @@ const questionReferenceSourceSchema: Schema = {
   schema: {
     oneOf: [
       {
-        type: "object",
-        required: ["schemaVersion", "type", "value"],
         properties: {
-          schemaVersion: { type: "number", enum: [1] },
-          type: { type: "string", enum: ["literal"] },
+          schemaVersion: { enum: [1], type: "number" },
+          type: { enum: ["literal"], type: "string" },
           value: {},
         },
+        required: ["schemaVersion", "type", "value"],
+        type: "object",
       },
       {
-        type: "object",
-        required: ["schemaVersion", "type", "ref"],
         properties: {
-          schemaVersion: { type: "number", enum: [1] },
-          type: { enum: ["workbook_cell", "workbook_range"] },
           ref: { type: "string" },
+          schemaVersion: { enum: [1], type: "number" },
+          sourceId: {
+            description: "Blueprint-local workbook source identifier.",
+            minLength: 1,
+            type: "string",
+          },
+          type: { enum: ["workbook_cell", "workbook_range"] },
         },
+        required: ["schemaVersion", "type", "sourceId", "ref"],
+        type: "object",
       },
     ],
+  },
+};
+const questionBlueprintSourceSchema: Schema = {
+  name: "QuestionBlueprintSource",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      name: { minLength: 1, type: "string" },
+      sourceId: {
+        description: "Blueprint-local source identifier.",
+        minLength: 1,
+        type: "string",
+      },
+      type: { enum: ["workbook"], type: "string" },
+      workbookId: uuid,
+    },
+    required: ["type", "sourceId", "name", "workbookId"],
+    type: "object",
+  },
+};
+const questionBlueprintDraftSourceSchema: Schema = {
+  name: "QuestionBlueprintDraftSource",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      byteSize: { minimum: 1, type: ["integer", "null"] },
+      checksumSha256: {
+        pattern: "^[a-f0-9]{64}$",
+        type: ["string", "null"],
+      },
+      fileId: { format: "uuid", type: ["string", "null"] },
+      name: { minLength: 1, type: "string" },
+      originalName: { type: ["string", "null"] },
+      sourceId: { pattern: "^[A-Za-z][A-Za-z0-9_-]*$", type: "string" },
+      status: {
+        enum: ["local", "uploaded", "validated", "invalid"],
+        type: "string",
+      },
+      type: { enum: ["workbook"], type: "string" },
+      workbookId: { format: "uuid", type: ["string", "null"] },
+    },
+    required: [
+      "type",
+      "sourceId",
+      "name",
+      "fileId",
+      "workbookId",
+      "status",
+      "originalName",
+      "byteSize",
+      "checksumSha256",
+    ],
+    type: "object",
   },
 };
 const blueprintInlineTextSchema: Schema = {
   name: "BlueprintInlineText",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["type", "text"],
     properties: {
-      type: { type: "string", enum: ["text"] },
       text: { type: "string" },
+      type: { enum: ["text"], type: "string" },
     },
+    required: ["type", "text"],
+    type: "object",
   },
 };
 const blueprintInlineReferenceSchema: Schema = {
   name: "BlueprintInlineReference",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["type", "referenceId"],
     properties: {
-      type: { type: "string", enum: ["reference"] },
-      referenceId: { type: "string", minLength: 1 },
-      rangeCell: {
-        type: "object",
-        additionalProperties: false,
-        required: ["rowOffset", "columnOffset"],
-        properties: {
-          rowOffset: { type: "integer", minimum: 0 },
-          columnOffset: { type: "integer", minimum: 0 },
-        },
-      },
       fallbackText: { type: "string" },
+      rangeCell: {
+        additionalProperties: false,
+        properties: {
+          columnOffset: { minimum: 0, type: "integer" },
+          rowOffset: { minimum: 0, type: "integer" },
+        },
+        required: ["rowOffset", "columnOffset"],
+        type: "object",
+      },
+      referenceId: { minLength: 1, type: "string" },
+      type: { enum: ["reference"], type: "string" },
     },
+    required: ["type", "referenceId"],
+    type: "object",
   },
 };
 const blueprintInlineContentSchema: Schema = {
@@ -153,26 +211,26 @@ const blueprintInlineContentSchema: Schema = {
 const renderedInlineTextSchema: Schema = {
   name: "RenderedInlineText",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["type", "text"],
     properties: {
-      type: { type: "string", enum: ["text"] },
       text: { type: "string" },
+      type: { enum: ["text"], type: "string" },
     },
+    required: ["type", "text"],
+    type: "object",
   },
 };
 const renderedInlineValueSchema: Schema = {
   name: "RenderedInlineValue",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["type", "referenceId", "displayValue"],
     properties: {
-      type: { type: "string", enum: ["value"] },
-      referenceId: { type: "string", minLength: 1 },
       displayValue: { type: "string" },
+      referenceId: { minLength: 1, type: "string" },
+      type: { enum: ["value"], type: "string" },
     },
+    required: ["type", "referenceId", "displayValue"],
+    type: "object",
   },
 };
 const renderedInlineContentSchema: Schema = {
@@ -187,55 +245,51 @@ const renderedInlineContentSchema: Schema = {
 const richTextNodeSchema: Schema = {
   name: "RichTextNode",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["type", "text"],
     properties: {
-      type: { type: "string", enum: ["text"] },
       text: { type: "string" },
+      type: { enum: ["text"], type: "string" },
     },
+    required: ["type", "text"],
+    type: "object",
   },
 };
 const richParagraphNodeSchema: Schema = {
   name: "RichParagraphNode",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["type"],
     properties: {
-      type: { type: "string", enum: ["paragraph"] },
-      content: { type: "array", items: schemaRef(richTextNodeSchema) },
+      content: { items: schemaRef(richTextNodeSchema), type: "array" },
+      type: { enum: ["paragraph"], type: "string" },
     },
+    required: ["type"],
+    type: "object",
   },
 };
 const richHeadingNodeSchema: Schema = {
   name: "RichHeadingNode",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["type", "attrs"],
     properties: {
-      type: { type: "string", enum: ["heading"] },
       attrs: {
-        type: "object",
         additionalProperties: false,
+        properties: { level: { maximum: 6, minimum: 1, type: "integer" } },
         required: ["level"],
-        properties: { level: { type: "integer", minimum: 1, maximum: 6 } },
+        type: "object",
       },
-      content: { type: "array", items: schemaRef(richTextNodeSchema) },
+      content: { items: schemaRef(richTextNodeSchema), type: "array" },
+      type: { enum: ["heading"], type: "string" },
     },
+    required: ["type", "attrs"],
+    type: "object",
   },
 };
 const richListItemNodeSchema: Schema = {
   name: "RichListItemNode",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["type", "content"],
     properties: {
-      type: { type: "string", enum: ["list_item"] },
       content: {
-        type: "array",
         items: {
           oneOf: [
             schemaRef(richParagraphNodeSchema),
@@ -243,44 +297,44 @@ const richListItemNodeSchema: Schema = {
             { $ref: "#/components/schemas/RichOrderedListNode" },
           ],
         },
+        type: "array",
       },
+      type: { enum: ["list_item"], type: "string" },
     },
+    required: ["type", "content"],
+    type: "object",
   },
 };
 const richBulletListNodeSchema: Schema = {
   name: "RichBulletListNode",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["type", "content"],
     properties: {
-      type: { type: "string", enum: ["bullet_list"] },
-      content: { type: "array", items: schemaRef(richListItemNodeSchema) },
+      content: { items: schemaRef(richListItemNodeSchema), type: "array" },
+      type: { enum: ["bullet_list"], type: "string" },
     },
+    required: ["type", "content"],
+    type: "object",
   },
 };
 const richOrderedListNodeSchema: Schema = {
   name: "RichOrderedListNode",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["type", "content"],
     properties: {
-      type: { type: "string", enum: ["ordered_list"] },
-      content: { type: "array", items: schemaRef(richListItemNodeSchema) },
+      content: { items: schemaRef(richListItemNodeSchema), type: "array" },
+      type: { enum: ["ordered_list"], type: "string" },
     },
+    required: ["type", "content"],
+    type: "object",
   },
 };
 const richContentSchema: Schema = {
   name: "RichContent",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["type", "content"],
     properties: {
-      type: { type: "string", enum: ["doc"] },
       content: {
-        type: "array",
         items: {
           oneOf: [
             schemaRef(richParagraphNodeSchema),
@@ -289,181 +343,207 @@ const richContentSchema: Schema = {
             schemaRef(richOrderedListNodeSchema),
           ],
         },
+        type: "array",
       },
+      type: { enum: ["doc"], type: "string" },
     },
+    required: ["type", "content"],
+    type: "object",
   },
 };
 const responseFieldSchema: Schema = {
   name: "QuestionResponseField",
   schema: {
-    type: "object",
-    required: ["id", "type"],
     properties: {
       id: { type: "string" },
-      type: { type: "string", enum: ["text", "number", "boolean"] },
       label: { type: "string" },
       required: { type: "boolean" },
+      type: { enum: ["text", "number", "boolean"], type: "string" },
     },
+    required: ["id", "type"],
+    type: "object",
   },
 };
 const questionTextBlockSchema: Schema = {
   name: "QuestionTextBlock",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["id", "type", "content"],
     properties: {
-      id: { type: "string", minLength: 1 },
-      type: { type: "string", enum: ["text"] },
-      content: { type: "array", items: schemaRef(renderedInlineContentSchema) },
+      content: { items: schemaRef(renderedInlineContentSchema), type: "array" },
+      id: { minLength: 1, type: "string" },
+      type: { enum: ["text"], type: "string" },
     },
+    required: ["id", "type", "content"],
+    type: "object",
   },
 };
 
 const questionBlueprintTextBlockSchema: Schema = {
   name: "QuestionBlueprintTextBlock",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["id", "type", "content"],
     properties: {
-      id: { type: "string", minLength: 1 },
-      type: { type: "string", enum: ["text"] },
       content: {
-        type: "array",
         items: schemaRef(blueprintInlineContentSchema),
+        type: "array",
       },
+      id: { minLength: 1, type: "string" },
+      type: { enum: ["text"], type: "string" },
     },
+    required: ["id", "type", "content"],
+    type: "object",
   },
 };
 const publicQuestionBlueprintTextBlockSchema: Schema = {
   name: "PublicQuestionBlueprintTextBlock",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["id", "type", "content"],
     properties: {
-      id: { type: "string", minLength: 1 },
-      type: { type: "string", enum: ["text"] },
-      content: { type: "array", items: schemaRef(blueprintInlineTextSchema) },
+      content: { items: schemaRef(blueprintInlineTextSchema), type: "array" },
+      id: { minLength: 1, type: "string" },
+      type: { enum: ["text"], type: "string" },
     },
+    required: ["id", "type", "content"],
+    type: "object",
   },
 };
 
 const questionRichTextBlockSchema: Schema = {
   name: "QuestionRichTextBlock",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["id", "type", "content"],
     properties: {
-      id: { type: "string", minLength: 1 },
-      type: { type: "string", enum: ["rich_text"] },
       content: schemaRef(richContentSchema),
+      id: { minLength: 1, type: "string" },
+      type: { enum: ["rich_text"], type: "string" },
     },
+    required: ["id", "type", "content"],
+    type: "object",
   },
 };
 const questionSeparatorBlockSchema: Schema = {
   name: "QuestionSeparatorBlock",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["id", "type"],
     properties: {
-      id: { type: "string", minLength: 1 },
-      type: { type: "string", enum: ["separator"] },
+      id: { minLength: 1, type: "string" },
+      type: { enum: ["separator"], type: "string" },
     },
+    required: ["id", "type"],
+    type: "object",
   },
 };
 const questionResponseBlockSchema: Schema = {
   name: "QuestionResponseBlock",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["id", "type", "responseFieldId"],
     properties: {
-      id: { type: "string", minLength: 1 },
-      type: { type: "string", enum: ["response"] },
-      responseFieldId: { type: "string", minLength: 1 },
+      id: { minLength: 1, type: "string" },
       label: { type: "string" },
       placeholder: { type: "string" },
+      responseFieldId: { minLength: 1, type: "string" },
+      type: { enum: ["response"], type: "string" },
     },
+    required: ["id", "type", "responseFieldId"],
+    type: "object",
   },
 };
 const questionReferenceSchema: Schema = {
   name: "QuestionReference",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["id", "source"],
     properties: {
-      id: { type: "string", minLength: 1 },
+      id: { minLength: 1, type: "string" },
       label: { type: "string" },
       source: schemaRef(questionReferenceSourceSchema),
     },
+    required: ["id", "source"],
+    type: "object",
   },
 };
 const questionTableColumnSchema: Schema = {
   name: "QuestionTableColumn",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["id", "label"],
     properties: {
-      id: { type: "string", minLength: 1 },
-      label: { type: "string", minLength: 1 },
+      id: { minLength: 1, type: "string" },
+      label: { minLength: 1, type: "string" },
     },
+    required: ["id", "label"],
+    type: "object",
   },
 };
 const questionTableRowSchema: Schema = {
   name: "QuestionTableRow",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["id", "label"],
     properties: {
-      id: { type: "string", minLength: 1 },
-      label: { type: "string", minLength: 1 },
+      id: { minLength: 1, type: "string" },
+      label: { minLength: 1, type: "string" },
     },
+    required: ["id", "label"],
+    type: "object",
   },
 };
 const questionTableContentCellSchema: Schema = {
   name: "QuestionTableContentCell",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["id", "rowId", "columnId", "type", "text"],
     properties: {
-      id: { type: "string", minLength: 1 },
-      rowId: { type: "string", minLength: 1 },
-      columnId: { type: "string", minLength: 1 },
-      type: { type: "string", enum: ["content"] },
+      columnId: { minLength: 1, type: "string" },
+      id: { minLength: 1, type: "string" },
+      rowId: { minLength: 1, type: "string" },
       text: { type: "string" },
+      type: { enum: ["content"], type: "string" },
     },
+    required: ["id", "rowId", "columnId", "type", "text"],
+    type: "object",
   },
 };
 const questionTableResponseCellSchema: Schema = {
   name: "QuestionTableResponseCell",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["id", "rowId", "columnId", "type", "responseFieldId"],
     properties: {
-      id: { type: "string", minLength: 1 },
-      rowId: { type: "string", minLength: 1 },
-      columnId: { type: "string", minLength: 1 },
-      type: { type: "string", enum: ["response"] },
-      responseFieldId: { type: "string", minLength: 1 },
+      columnId: { minLength: 1, type: "string" },
+      id: { minLength: 1, type: "string" },
       label: { type: "string" },
       placeholder: { type: "string" },
+      responseFieldId: { minLength: 1, type: "string" },
+      rowId: { minLength: 1, type: "string" },
+      type: { enum: ["response"], type: "string" },
     },
+    required: ["id", "rowId", "columnId", "type", "responseFieldId"],
+    type: "object",
   },
 };
 const questionTableBlockSchema: Schema = {
   name: "QuestionTableBlock",
   schema: {
-    type: "object",
     additionalProperties: false,
+    properties: {
+      cells: {
+        items: {
+          oneOf: [
+            schemaRef(questionTableContentCellSchema),
+            schemaRef(questionTableResponseCellSchema),
+          ],
+        },
+        type: "array",
+      },
+      columns: {
+        items: schemaRef(questionTableColumnSchema),
+        type: "array",
+      },
+      id: { minLength: 1, type: "string" },
+      rows: {
+        items: schemaRef(questionTableRowSchema),
+        type: "array",
+      },
+      showColumnNames: { type: "boolean" },
+      showRowNames: { type: "boolean" },
+      type: { enum: ["table"], type: "string" },
+    },
     required: [
       "id",
       "type",
@@ -473,29 +553,7 @@ const questionTableBlockSchema: Schema = {
       "rows",
       "cells",
     ],
-    properties: {
-      id: { type: "string", minLength: 1 },
-      type: { type: "string", enum: ["table"] },
-      showColumnNames: { type: "boolean" },
-      showRowNames: { type: "boolean" },
-      columns: {
-        type: "array",
-        items: schemaRef(questionTableColumnSchema),
-      },
-      rows: {
-        type: "array",
-        items: schemaRef(questionTableRowSchema),
-      },
-      cells: {
-        type: "array",
-        items: {
-          oneOf: [
-            schemaRef(questionTableContentCellSchema),
-            schemaRef(questionTableResponseCellSchema),
-          ],
-        },
-      },
-    },
+    type: "object",
   },
 };
 const questionBlockSchema: Schema = {
@@ -513,31 +571,31 @@ const questionBlockSchema: Schema = {
 const questionBodySchema: Schema = {
   name: "QuestionBody",
   schema: {
-    type: "object",
-    required: ["schemaVersion", "blocks", "responseFields"],
     properties: {
-      schemaVersion: { type: "number", enum: [1] },
-      blocks: { type: "array", items: schemaRef(questionBlockSchema) },
-      responseFields: { type: "array", items: schemaRef(responseFieldSchema) },
+      blocks: { items: schemaRef(questionBlockSchema), type: "array" },
+      responseFields: { items: schemaRef(responseFieldSchema), type: "array" },
+      schemaVersion: { enum: [1], type: "number" },
     },
+    required: ["schemaVersion", "blocks", "responseFields"],
+    type: "object",
   },
 };
 const questionBlueprintTableContentCellSchema: Schema = {
   name: "QuestionBlueprintTableContentCell",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["id", "rowId", "columnId", "type", "content"],
     properties: {
-      id: { type: "string", minLength: 1 },
-      rowId: { type: "string", minLength: 1 },
-      columnId: { type: "string", minLength: 1 },
-      type: { type: "string", enum: ["content"] },
+      columnId: { minLength: 1, type: "string" },
       content: {
-        type: "array",
         items: schemaRef(blueprintInlineContentSchema),
+        type: "array",
       },
+      id: { minLength: 1, type: "string" },
+      rowId: { minLength: 1, type: "string" },
+      type: { enum: ["content"], type: "string" },
     },
+    required: ["id", "rowId", "columnId", "type", "content"],
+    type: "object",
   },
 };
 const gradingSchema: Schema = {
@@ -545,41 +603,41 @@ const gradingSchema: Schema = {
   schema: {
     oneOf: [
       {
-        type: "object",
         additionalProperties: false,
+        properties: { mode: { enum: ["exact"], type: "string" } },
         required: ["mode"],
-        properties: { mode: { type: "string", enum: ["exact"] } },
+        type: "object",
       },
       {
-        type: "object",
         additionalProperties: false,
-        required: ["mode", "tolerance"],
         properties: {
-          mode: { type: "string", enum: ["number"] },
+          mode: { enum: ["number"], type: "string" },
           tolerance: {
-            type: "object",
             additionalProperties: false,
-            required: ["type", "value"],
             properties: {
-              type: { type: "string", enum: ["absolute", "relative"] },
-              value: { type: "number", minimum: 0 },
+              type: { enum: ["absolute", "relative"], type: "string" },
+              value: { minimum: 0, type: "number" },
             },
+            required: ["type", "value"],
+            type: "object",
           },
         },
+        required: ["mode", "tolerance"],
+        type: "object",
       },
       {
-        type: "object",
         additionalProperties: false,
-        required: ["mode"],
         properties: {
-          mode: { type: "string", enum: ["case_insensitive_text"] },
+          mode: { enum: ["case_insensitive_text"], type: "string" },
         },
+        required: ["mode"],
+        type: "object",
       },
       {
-        type: "object",
         additionalProperties: false,
+        properties: { mode: { enum: ["manual"], type: "string" } },
         required: ["mode"],
-        properties: { mode: { type: "string", enum: ["manual"] } },
+        type: "object",
       },
     ],
   },
@@ -587,8 +645,19 @@ const gradingSchema: Schema = {
 const questionBlueprintTableResponseCellSchema: Schema = {
   name: "QuestionBlueprintTableResponseCell",
   schema: {
-    type: "object",
     additionalProperties: false,
+    properties: {
+      columnId: { minLength: 1, type: "string" },
+      correctValueSource: schemaRef(questionValueExpressionSchema),
+      grading: schemaRef(gradingSchema),
+      id: { minLength: 1, type: "string" },
+      label: { type: "string" },
+      placeholder: { type: "string" },
+      points: { exclusiveMinimum: 0, type: "number" },
+      responseFieldId: { minLength: 1, type: "string" },
+      rowId: { minLength: 1, type: "string" },
+      type: { enum: ["response"], type: "string" },
+    },
     required: [
       "id",
       "rowId",
@@ -598,129 +667,101 @@ const questionBlueprintTableResponseCellSchema: Schema = {
       "points",
       "grading",
     ],
-    properties: {
-      id: { type: "string", minLength: 1 },
-      rowId: { type: "string", minLength: 1 },
-      columnId: { type: "string", minLength: 1 },
-      type: { type: "string", enum: ["response"] },
-      responseFieldId: { type: "string", minLength: 1 },
-      label: { type: "string" },
-      placeholder: { type: "string" },
-      correctValueSource: schemaRef(questionValueExpressionSchema),
-      points: { type: "number", exclusiveMinimum: 0 },
-      grading: schemaRef(gradingSchema),
-    },
+    type: "object",
   },
 };
 const questionBlueprintResponseBlockSchema: Schema = {
   name: "QuestionBlueprintResponseBlock",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["id", "type", "responseFieldId", "points", "grading"],
     properties: {
-      id: { type: "string", minLength: 1 },
-      type: { type: "string", enum: ["response"] },
-      responseFieldId: { type: "string", minLength: 1 },
+      correctValueSource: schemaRef(questionValueExpressionSchema),
+      grading: schemaRef(gradingSchema),
+      id: { minLength: 1, type: "string" },
       label: { type: "string" },
       placeholder: { type: "string" },
-      correctValueSource: schemaRef(questionValueExpressionSchema),
-      points: { type: "number", exclusiveMinimum: 0 },
-      grading: schemaRef(gradingSchema),
+      points: { exclusiveMinimum: 0, type: "number" },
+      responseFieldId: { minLength: 1, type: "string" },
+      type: { enum: ["response"], type: "string" },
     },
+    required: ["id", "type", "responseFieldId", "points", "grading"],
+    type: "object",
   },
 };
 const publicQuestionBlueprintResponseBlockSchema: Schema = {
   name: "PublicQuestionBlueprintResponseBlock",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["id", "type", "responseFieldId"],
     properties: {
-      id: { type: "string", minLength: 1 },
-      type: { type: "string", enum: ["response"] },
-      responseFieldId: { type: "string", minLength: 1 },
+      id: { minLength: 1, type: "string" },
       label: { type: "string" },
       placeholder: { type: "string" },
+      responseFieldId: { minLength: 1, type: "string" },
+      type: { enum: ["response"], type: "string" },
     },
+    required: ["id", "type", "responseFieldId"],
+    type: "object",
   },
 };
 const publicQuestionBlueprintTableResponseCellSchema: Schema = {
   name: "PublicQuestionBlueprintTableResponseCell",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["id", "rowId", "columnId", "type", "responseFieldId"],
     properties: {
-      id: { type: "string", minLength: 1 },
-      rowId: { type: "string", minLength: 1 },
-      columnId: { type: "string", minLength: 1 },
-      type: { type: "string", enum: ["response"] },
-      responseFieldId: { type: "string", minLength: 1 },
+      columnId: { minLength: 1, type: "string" },
+      id: { minLength: 1, type: "string" },
       label: { type: "string" },
       placeholder: { type: "string" },
+      responseFieldId: { minLength: 1, type: "string" },
+      rowId: { minLength: 1, type: "string" },
+      type: { enum: ["response"], type: "string" },
     },
+    required: ["id", "rowId", "columnId", "type", "responseFieldId"],
+    type: "object",
   },
 };
 const publicQuestionBlueprintTableContentCellSchema: Schema = {
   name: "PublicQuestionBlueprintTableContentCell",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["id", "rowId", "columnId", "type", "content"],
     properties: {
-      id: { type: "string", minLength: 1 },
-      rowId: { type: "string", minLength: 1 },
-      columnId: { type: "string", minLength: 1 },
-      type: { type: "string", enum: ["content"] },
-      content: { type: "array", items: schemaRef(blueprintInlineTextSchema) },
+      columnId: { minLength: 1, type: "string" },
+      content: { items: schemaRef(blueprintInlineTextSchema), type: "array" },
+      id: { minLength: 1, type: "string" },
+      rowId: { minLength: 1, type: "string" },
+      type: { enum: ["content"], type: "string" },
     },
+    required: ["id", "rowId", "columnId", "type", "content"],
+    type: "object",
   },
 };
 const questionBlueprintTableBlockSchema: Schema = {
   name: "QuestionBlueprintTableBlock",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: [
-      "id",
-      "type",
-      "showColumnNames",
-      "showRowNames",
-      "columns",
-      "rows",
-      "cells",
-    ],
     properties: {
-      id: { type: "string", minLength: 1 },
-      type: { type: "string", enum: ["table"] },
-      showColumnNames: { type: "boolean" },
-      showRowNames: { type: "boolean" },
-      columns: {
-        type: "array",
-        items: schemaRef(questionTableColumnSchema),
-      },
-      rows: {
-        type: "array",
-        items: schemaRef(questionTableRowSchema),
-      },
       cells: {
-        type: "array",
         items: {
           oneOf: [
             schemaRef(questionBlueprintTableContentCellSchema),
             schemaRef(questionBlueprintTableResponseCellSchema),
           ],
         },
+        type: "array",
       },
+      columns: {
+        items: schemaRef(questionTableColumnSchema),
+        type: "array",
+      },
+      id: { minLength: 1, type: "string" },
+      rows: {
+        items: schemaRef(questionTableRowSchema),
+        type: "array",
+      },
+      showColumnNames: { type: "boolean" },
+      showRowNames: { type: "boolean" },
+      type: { enum: ["table"], type: "string" },
     },
-  },
-};
-const publicQuestionBlueprintTableBlockSchema: Schema = {
-  name: "PublicQuestionBlueprintTableBlock",
-  schema: {
-    type: "object",
-    additionalProperties: false,
     required: [
       "id",
       "type",
@@ -730,29 +771,46 @@ const publicQuestionBlueprintTableBlockSchema: Schema = {
       "rows",
       "cells",
     ],
+    type: "object",
+  },
+};
+const publicQuestionBlueprintTableBlockSchema: Schema = {
+  name: "PublicQuestionBlueprintTableBlock",
+  schema: {
+    additionalProperties: false,
     properties: {
-      id: { type: "string", minLength: 1 },
-      type: { type: "string", enum: ["table"] },
-      showColumnNames: { type: "boolean" },
-      showRowNames: { type: "boolean" },
-      columns: {
-        type: "array",
-        items: schemaRef(questionTableColumnSchema),
-      },
-      rows: {
-        type: "array",
-        items: schemaRef(questionTableRowSchema),
-      },
       cells: {
-        type: "array",
         items: {
           oneOf: [
             schemaRef(publicQuestionBlueprintTableContentCellSchema),
             schemaRef(publicQuestionBlueprintTableResponseCellSchema),
           ],
         },
+        type: "array",
       },
+      columns: {
+        items: schemaRef(questionTableColumnSchema),
+        type: "array",
+      },
+      id: { minLength: 1, type: "string" },
+      rows: {
+        items: schemaRef(questionTableRowSchema),
+        type: "array",
+      },
+      showColumnNames: { type: "boolean" },
+      showRowNames: { type: "boolean" },
+      type: { enum: ["table"], type: "string" },
     },
+    required: [
+      "id",
+      "type",
+      "showColumnNames",
+      "showRowNames",
+      "columns",
+      "rows",
+      "cells",
+    ],
+    type: "object",
   },
 };
 const questionBlueprintBlockSchema: Schema = {
@@ -783,199 +841,77 @@ const publicQuestionBlueprintBlockSchema: Schema = {
 const questionBlueprintDocumentSchema: Schema = {
   name: "QuestionBlueprintDocument",
   schema: {
-    type: "object",
-    required: ["schemaVersion", "blocks", "responseFields", "references"],
     properties: {
-      schemaVersion: { type: "number", enum: [1] },
       blocks: {
-        type: "array",
         items: schemaRef(questionBlueprintBlockSchema),
+        type: "array",
       },
-      responseFields: { type: "array", items: schemaRef(responseFieldSchema) },
-      references: { type: "array", items: schemaRef(questionReferenceSchema) },
+      references: { items: schemaRef(questionReferenceSchema), type: "array" },
+      responseFields: { items: schemaRef(responseFieldSchema), type: "array" },
+      schemaVersion: { enum: [1], type: "number" },
     },
+    required: ["schemaVersion", "blocks", "responseFields", "references"],
+    type: "object",
   },
 };
 const publicQuestionBlueprintDocumentSchema: Schema = {
   name: "PublicQuestionBlueprintDocument",
   schema: {
-    type: "object",
-    required: ["schemaVersion", "blocks", "responseFields"],
     properties: {
-      schemaVersion: { type: "number", enum: [1] },
       blocks: {
-        type: "array",
         items: schemaRef(publicQuestionBlueprintBlockSchema),
-      },
-      responseFields: { type: "array", items: schemaRef(responseFieldSchema) },
-    },
-  },
-};
-const questionSolutionSchema: Schema = {
-  name: "QuestionSolution",
-  schema: {
-    type: "object",
-    required: ["schemaVersion", "rules"],
-    properties: {
-      schemaVersion: { type: "number", enum: [1] },
-      rules: {
         type: "array",
-        items: {
-          oneOf: [
-            {
-              type: "object",
-              additionalProperties: false,
-              required: ["type", "responseFieldId", "correctValue", "points"],
-              properties: {
-                type: { type: "string", enum: ["exact"] },
-                responseFieldId: { type: "string", minLength: 1 },
-                correctValue: {},
-                points: { type: "number", exclusiveMinimum: 0 },
-              },
-            },
-            {
-              type: "object",
-              additionalProperties: false,
-              required: [
-                "type",
-                "responseFieldId",
-                "correctValue",
-                "tolerance",
-                "points",
-              ],
-              properties: {
-                type: { type: "string", enum: ["number"] },
-                responseFieldId: { type: "string", minLength: 1 },
-                correctValue: { type: "number" },
-                tolerance: {
-                  type: "object",
-                  additionalProperties: false,
-                  required: ["type", "value"],
-                  properties: {
-                    type: { type: "string", enum: ["absolute", "relative"] },
-                    value: { type: "number", minimum: 0 },
-                  },
-                },
-                points: { type: "number", exclusiveMinimum: 0 },
-              },
-            },
-            {
-              type: "object",
-              additionalProperties: false,
-              required: ["type", "responseFieldId", "correctValue", "points"],
-              properties: {
-                type: { type: "string", enum: ["case_insensitive_text"] },
-                responseFieldId: { type: "string", minLength: 1 },
-                correctValue: { type: "string" },
-                points: { type: "number", exclusiveMinimum: 0 },
-              },
-            },
-            {
-              type: "object",
-              additionalProperties: false,
-              required: ["type", "responseFieldId", "points"],
-              properties: {
-                type: { type: "string", enum: ["manual"] },
-                responseFieldId: { type: "string", minLength: 1 },
-                points: { type: "number", exclusiveMinimum: 0 },
-              },
-            },
-          ],
-        },
       },
+      responseFields: { items: schemaRef(responseFieldSchema), type: "array" },
+      schemaVersion: { enum: [1], type: "number" },
     },
-  },
-};
-const questionSourcePlanSchema: Schema = {
-  name: "QuestionSourcePlan",
-  schema: {
+    required: ["schemaVersion", "blocks", "responseFields"],
     type: "object",
-    required: ["schemaVersion", "references"],
-    properties: {
-      schemaVersion: { type: "number", enum: [1] },
-      references: {
-        type: "array",
-        items: {
-          type: "object",
-          required: ["id", "source"],
-          properties: {
-            id: { type: "string" },
-            source: schemaRef(questionReferenceSourceSchema),
-            resolved: { type: "boolean" },
-          },
-        },
-      },
-    },
   },
 };
 const questionProducerSchema: Schema = {
   name: "QuestionProducer",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["schemaVersion", "compiler"],
     properties: {
-      schemaVersion: { type: "number", enum: [1] },
       compiler: { type: "string" },
+      schemaVersion: { enum: [1], type: "number" },
       source: jsonObject,
     },
+    required: ["schemaVersion", "compiler"],
+    type: "object",
   },
 };
 const questionAnswerSchema: Schema = {
   name: "QuestionAnswer",
   schema: {
-    type: "object",
-    required: ["schemaVersion", "responses"],
     properties: {
-      schemaVersion: { type: "number", enum: [1] },
       responses: {
-        type: "array",
         items: {
-          type: "object",
-          required: ["responseFieldId", "value"],
           properties: { responseFieldId: { type: "string" }, value: {} },
+          required: ["responseFieldId", "value"],
+          type: "object",
         },
+        type: "array",
       },
+      schemaVersion: { enum: [1], type: "number" },
     },
-  },
-};
-const workbookSourceSchema: Schema = {
-  name: "WorkbookSource",
-  schema: {
+    required: ["schemaVersion", "responses"],
     type: "object",
-    required: ["type", "workbookId"],
-    properties: {
-      type: {
-        type: "string",
-        enum: ["workbook_snapshot"],
-      },
-      workbookId: uuid,
-      workbookVersionId: nullableUuid,
-      workbookCalculationId: nullableUuid,
-      workbookSnapshotId: nullableUuid,
-    },
-  },
-};
-const createWorkbookSourceSchema: Schema = {
-  name: "CreateWorkbookSource",
-  schema: {
-    type: "object",
-    required: ["type", "workbookId"],
-    additionalProperties: false,
-    properties: {
-      type: {
-        type: "string",
-        enum: ["workbook_snapshot"],
-      },
-      workbookId: uuid,
-    },
   },
 };
 
 const gradeResultSchema: Schema = {
   name: "GradeResult",
   schema: {
-    type: "object",
+    properties: {
+      details: { items: jsonObject, type: "array" },
+      earnedPoints: { type: "number" },
+      graderVersion: { type: "string" },
+      schemaVersion: { enum: [1], type: "number" },
+      status: { enum: ["graded", "needs_manual_review"], type: "string" },
+      totalPoints: { type: "number" },
+    },
     required: [
       "schemaVersion",
       "totalPoints",
@@ -984,21 +920,33 @@ const gradeResultSchema: Schema = {
       "details",
       "graderVersion",
     ],
-    properties: {
-      schemaVersion: { type: "number", enum: [1] },
-      totalPoints: { type: "number" },
-      earnedPoints: { type: "number" },
-      status: { type: "string", enum: ["graded", "needs_manual_review"] },
-      details: { type: "array", items: jsonObject },
-      graderVersion: { type: "string" },
-    },
+    type: "object",
   },
 };
 
 const questionSetSchema: Schema = {
   name: "QuestionSet",
   schema: {
-    type: "object",
+    properties: {
+      createdAt: dateTime,
+      createdByUserId: uuid,
+      description: {
+        maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
+        type: ["string", "null"],
+      },
+      id: uuid,
+      name: {
+        maxLength: MAX_QUESTION_NAME_LENGTH,
+        minLength: 1,
+        type: "string",
+      },
+      ownerUserId: uuid,
+      status: {
+        enum: [...QUESTION_SET_STATUS_ACCEPTED_VALUES],
+        type: "string",
+      },
+      updatedAt: dateTime,
+    },
     required: [
       "id",
       "ownerUserId",
@@ -1009,33 +957,45 @@ const questionSetSchema: Schema = {
       "createdAt",
       "updatedAt",
     ],
-    properties: {
-      id: uuid,
-      ownerUserId: uuid,
-      createdByUserId: uuid,
-      name: {
-        type: "string",
-        minLength: 1,
-        maxLength: MAX_QUESTION_NAME_LENGTH,
-      },
-      description: {
-        type: ["string", "null"],
-        maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
-      },
-      status: {
-        type: "string",
-        enum: QUESTION_SET_STATUS_ACCEPTED_VALUES as unknown as string[],
-      },
-      createdAt: dateTime,
-      updatedAt: dateTime,
-    },
+    type: "object",
   },
 };
 
 const questionBlueprintSchema: Schema = {
   name: "QuestionBlueprint",
   schema: {
-    type: "object",
+    properties: {
+      archivedAt: nullableDateTime,
+      createdAt: dateTime,
+      createdByUserId: uuid,
+      description: {
+        maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
+        type: ["string", "null"],
+      },
+      document: schemaRef(publicQuestionBlueprintDocumentSchema),
+      id: uuid,
+      name: {
+        maxLength: MAX_QUESTION_NAME_LENGTH,
+        minLength: 1,
+        type: "string",
+      },
+      ownerUserId: uuid,
+      sources: {
+        description:
+          "Blueprint-local source entries attached to this blueprint.",
+        items: schemaRef(questionBlueprintSourceSchema),
+        type: "array",
+      },
+      status: {
+        enum: [...QUESTION_BLUEPRINT_STATUS_ACCEPTED_VALUES],
+        type: "string",
+      },
+      updatedAt: dateTime,
+      visibility: {
+        enum: [...QUESTION_BLUEPRINT_VISIBILITY_ACCEPTED_VALUES],
+        type: "string",
+      },
+    },
     required: [
       "id",
       "ownerUserId",
@@ -1043,116 +1003,52 @@ const questionBlueprintSchema: Schema = {
       "name",
       "description",
       "document",
-      "workbookId",
-      "currentVersionId",
-      "currentVersionNumber",
-      "currentVersion",
+      "sources",
       "visibility",
       "status",
       "archivedAt",
       "createdAt",
       "updatedAt",
     ],
-    properties: {
-      id: uuid,
-      ownerUserId: uuid,
-      createdByUserId: uuid,
-      name: {
-        type: "string",
-        minLength: 1,
-        maxLength: MAX_QUESTION_NAME_LENGTH,
-      },
-      description: {
-        type: ["string", "null"],
-        maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
-      },
-      document: schemaRef(publicQuestionBlueprintDocumentSchema),
-      workbookId: nullableUuid,
-      currentVersionId: uuid,
-      currentVersionNumber: { type: "integer", minimum: 1 },
-      currentVersion: {
-        type: "object",
-        required: [
-          "id",
-          "versionNumber",
-          "workbookId",
-          "createdByUserId",
-          "createdAt",
-        ],
-        properties: {
-          id: uuid,
-          versionNumber: { type: "integer", minimum: 1 },
-          workbookId: nullableUuid,
-          createdByUserId: uuid,
-          createdAt: dateTime,
-        },
-      },
-      visibility: {
-        type: "string",
-        enum: QUESTION_BLUEPRINT_VISIBILITY_ACCEPTED_VALUES as unknown as string[],
-      },
-      status: {
-        type: "string",
-        enum: QUESTION_BLUEPRINT_STATUS_ACCEPTED_VALUES as unknown as string[],
-      },
-      archivedAt: nullableDateTime,
-      createdAt: dateTime,
-      updatedAt: dateTime,
-    },
-  },
-};
-
-const questionBlueprintVersionAssetSchema: Schema = {
-  name: "QuestionBlueprintVersionAsset",
-  schema: {
     type: "object",
-    required: [
-      "questionBlueprintVersionId",
-      "workbookId",
-      "kind",
-      "position",
-      "createdAt",
-    ],
-    properties: {
-      questionBlueprintVersionId: uuid,
-      workbookId: uuid,
-      kind: { type: "string", enum: ["workbook"] },
-      position: { type: "integer", minimum: 0 },
-      createdAt: dateTime,
-    },
-  },
-};
-
-const questionBlueprintVersionSchema: Schema = {
-  name: "QuestionBlueprintVersion",
-  schema: {
-    type: "object",
-    required: [
-      "id",
-      "versionNumber",
-      "workbookId",
-      "sourceAssets",
-      "createdByUserId",
-      "createdAt",
-    ],
-    properties: {
-      id: uuid,
-      versionNumber: { type: "integer", minimum: 1 },
-      workbookId: nullableUuid,
-      sourceAssets: {
-        type: "array",
-        items: schemaRef(questionBlueprintVersionAssetSchema),
-      },
-      createdByUserId: uuid,
-      createdAt: dateTime,
-    },
   },
 };
 
 const questionBlueprintAuthoringSchema: Schema = {
   name: "QuestionBlueprintAuthoring",
   schema: {
-    type: "object",
+    properties: {
+      archivedAt: nullableDateTime,
+      createdAt: dateTime,
+      createdByUserId: uuid,
+      description: {
+        maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
+        type: ["string", "null"],
+      },
+      document: schemaRef(questionBlueprintDocumentSchema),
+      id: uuid,
+      name: {
+        maxLength: MAX_QUESTION_NAME_LENGTH,
+        minLength: 1,
+        type: "string",
+      },
+      ownerUserId: uuid,
+      sources: {
+        description:
+          "Blueprint-local source entries attached to this blueprint.",
+        items: schemaRef(questionBlueprintSourceSchema),
+        type: "array",
+      },
+      status: {
+        enum: [...QUESTION_BLUEPRINT_STATUS_ACCEPTED_VALUES],
+        type: "string",
+      },
+      updatedAt: dateTime,
+      visibility: {
+        enum: [...QUESTION_BLUEPRINT_VISIBILITY_ACCEPTED_VALUES],
+        type: "string",
+      },
+    },
     required: [
       "id",
       "ownerUserId",
@@ -1160,111 +1056,147 @@ const questionBlueprintAuthoringSchema: Schema = {
       "name",
       "description",
       "document",
-      "workbookId",
-      "currentVersionId",
-      "currentVersionNumber",
-      "currentVersion",
-      "selectedVersionId",
-      "selectedVersionNumber",
-      "selectedVersion",
-      "versions",
+      "sources",
       "visibility",
       "status",
       "archivedAt",
       "createdAt",
       "updatedAt",
     ],
+    type: "object",
+  },
+};
+const questionBlueprintDraftSchema: Schema = {
+  name: "QuestionBlueprintDraft",
+  schema: {
+    additionalProperties: false,
     properties: {
-      id: uuid,
-      ownerUserId: uuid,
+      blueprintId: { format: "uuid", type: ["string", "null"] },
+      createdAt: dateTime,
       createdByUserId: uuid,
-      name: {
-        type: "string",
-        minLength: 1,
-        maxLength: MAX_QUESTION_NAME_LENGTH,
-      },
       description: {
-        type: ["string", "null"],
         maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
+        type: ["string", "null"],
       },
       document: schemaRef(questionBlueprintDocumentSchema),
-      workbookId: nullableUuid,
-      currentVersionId: uuid,
-      currentVersionNumber: { type: "integer", minimum: 1 },
-      currentVersion: schemaRef(questionBlueprintVersionSchema),
-      selectedVersionId: uuid,
-      selectedVersionNumber: { type: "integer", minimum: 1 },
-      selectedVersion: schemaRef(questionBlueprintVersionSchema),
-      versions: {
-        type: "array",
-        items: schemaRef(questionBlueprintVersionSchema),
-      },
-      visibility: {
+      id: uuid,
+      lastSavedAt: dateTime,
+      name: {
+        maxLength: MAX_QUESTION_NAME_LENGTH,
+        minLength: 1,
         type: "string",
-        enum: QUESTION_BLUEPRINT_VISIBILITY_ACCEPTED_VALUES as unknown as string[],
+      },
+      ownerUserId: uuid,
+      sources: {
+        items: schemaRef(questionBlueprintDraftSourceSchema),
+        type: "array",
       },
       status: {
+        enum: ["draft", "publishing", "published", "discarded"],
         type: "string",
-        enum: QUESTION_BLUEPRINT_STATUS_ACCEPTED_VALUES as unknown as string[],
       },
-      archivedAt: nullableDateTime,
-      createdAt: dateTime,
       updatedAt: dateTime,
     },
+    required: [
+      "id",
+      "ownerUserId",
+      "createdByUserId",
+      "blueprintId",
+      "name",
+      "description",
+      "document",
+      "sources",
+      "status",
+      "lastSavedAt",
+      "createdAt",
+      "updatedAt",
+    ],
+    type: "object",
   },
 };
 
 const questionSchema: Schema = {
   name: "Question",
   schema: {
-    type: "object",
+    properties: {
+      blueprintId: uuid,
+      body: schemaRef(questionBodySchema),
+      createdAt: dateTime,
+      createdByUserId: uuid,
+      generationRunId: uuid,
+      id: uuid,
+      ownerUserId: uuid,
+      producer: schemaRef(questionProducerSchema),
+      status: {
+        enum: [...QUESTION_STATUS_ACCEPTED_VALUES],
+        type: "string",
+      },
+      updatedAt: dateTime,
+    },
     required: [
       "id",
       "ownerUserId",
       "createdByUserId",
       "blueprintId",
-      "blueprintVersionId",
       "generationRunId",
       "body",
       "producer",
-      "source",
       "status",
       "createdAt",
       "updatedAt",
     ],
-    properties: {
-      id: uuid,
-      ownerUserId: uuid,
-      createdByUserId: uuid,
-      blueprintId: uuid,
-      blueprintVersionId: uuid,
-      generationRunId: uuid,
-      body: schemaRef(questionBodySchema),
-      producer: schemaRef(questionProducerSchema),
-      source: { oneOf: [schemaRef(workbookSourceSchema), { type: "null" }] },
-      status: {
-        type: "string",
-        enum: QUESTION_STATUS_ACCEPTED_VALUES as unknown as string[],
-      },
-      createdAt: dateTime,
-      updatedAt: dateTime,
-    },
+    type: "object",
   },
 };
 
 const questionGenerationRunSchema: Schema = {
   name: "QuestionGenerationRun",
   schema: {
-    type: "object",
+    properties: {
+      attemptNumber: { minimum: 1, type: "integer" },
+      attempts: { minimum: 0, type: "integer" },
+      blueprintId: uuid,
+      createdAt: dateTime,
+      createdByUserId: uuid,
+      errorMessage: { type: ["string", "null"] },
+      finishedAt: nullableDateTime,
+      id: uuid,
+      ownerUserId: uuid,
+      requestedCount: {
+        maximum: MAX_GENERATION_RUN_COUNT,
+        minimum: 1,
+        type: "integer",
+      },
+      result: {
+        oneOf: [
+          {
+            properties: { questionIds: { items: uuid, type: "array" } },
+            required: ["questionIds"],
+            type: "object",
+          },
+          { type: "null" },
+        ],
+      },
+      retryOfRunId: nullableUuid,
+      startedAt: nullableDateTime,
+      status: {
+        enum: [...QUESTION_GENERATION_RUN_STATUS_ACCEPTED_VALUES],
+        type: "string",
+      },
+      targetQuestionSetId: uuid,
+      updatedAt: dateTime,
+      workbookCalculationId: nullableUuid,
+    },
     required: [
       "id",
       "ownerUserId",
       "createdByUserId",
       "blueprintId",
-      "blueprintVersionId",
       "targetQuestionSetId",
       "requestedCount",
-      "source",
+      "workbookCalculationId",
+      "retryOfRunId",
+      "attemptNumber",
       "status",
       "result",
       "errorMessage",
@@ -1274,321 +1206,368 @@ const questionGenerationRunSchema: Schema = {
       "createdAt",
       "updatedAt",
     ],
-    properties: {
-      id: uuid,
-      ownerUserId: uuid,
-      createdByUserId: uuid,
-      blueprintId: uuid,
-      blueprintVersionId: uuid,
-      targetQuestionSetId: uuid,
-      requestedCount: {
-        type: "integer",
-        minimum: 1,
-        maximum: MAX_GENERATION_RUN_COUNT,
-      },
-      source: { oneOf: [schemaRef(workbookSourceSchema), { type: "null" }] },
-      status: {
-        type: "string",
-        enum: QUESTION_GENERATION_RUN_STATUS_ACCEPTED_VALUES as unknown as string[],
-      },
-      result: {
-        oneOf: [
-          {
-            type: "object",
-            required: ["questionIds"],
-            properties: { questionIds: { type: "array", items: uuid } },
-          },
-          { type: "null" },
-        ],
-      },
-      errorMessage: { type: ["string", "null"] },
-      attempts: { type: "integer", minimum: 0 },
-      startedAt: nullableDateTime,
-      finishedAt: nullableDateTime,
-      createdAt: dateTime,
-      updatedAt: dateTime,
-    },
+    type: "object",
   },
 };
 
 const listQuestionSetsResponseSchema: Schema = {
   name: "ListQuestionSetsResponse",
   schema: {
-    type: "object",
-    required: ["questionSets", "nextCursor"],
     properties: {
-      questionSets: {
-        type: "array",
-        items: schemaRef(questionSetSchema),
-      },
       nextCursor: {
         type: ["string", "null"],
       },
+      questionSets: {
+        items: schemaRef(questionSetSchema),
+        type: "array",
+      },
     },
+    required: ["questionSets", "nextCursor"],
+    type: "object",
   },
 };
 const questionSetResponseSchema: Schema = {
   name: "QuestionSetResponse",
   schema: {
-    type: "object",
-    required: ["questionSet"],
     properties: {
       questionSet: schemaRef(questionSetSchema),
     },
+    required: ["questionSet"],
+    type: "object",
   },
 };
 const listQuestionBlueprintsResponseSchema: Schema = {
   name: "ListQuestionBlueprintsResponse",
   schema: {
-    type: "object",
-    required: ["questionBlueprints", "nextCursor"],
     properties: {
-      questionBlueprints: {
-        type: "array",
-        items: schemaRef(questionBlueprintSchema),
-      },
       nextCursor: {
         type: ["string", "null"],
       },
+      questionBlueprints: {
+        items: schemaRef(questionBlueprintSchema),
+        type: "array",
+      },
     },
+    required: ["questionBlueprints", "nextCursor"],
+    type: "object",
   },
 };
 const questionBlueprintResponseSchema: Schema = {
   name: "QuestionBlueprintResponse",
   schema: {
-    type: "object",
-    required: ["questionBlueprint"],
     properties: {
       questionBlueprint: schemaRef(questionBlueprintSchema),
     },
+    required: ["questionBlueprint"],
+    type: "object",
   },
 };
 const questionBlueprintAuthoringResponseSchema: Schema = {
   name: "QuestionBlueprintAuthoringResponse",
   schema: {
-    type: "object",
-    required: ["questionBlueprint"],
     properties: {
       questionBlueprint: schemaRef(questionBlueprintAuthoringSchema),
     },
+    required: ["questionBlueprint"],
+    type: "object",
   },
 };
-const listQuestionBlueprintVersionsResponseSchema: Schema = {
-  name: "ListQuestionBlueprintVersionsResponse",
+const questionBlueprintDraftResponseSchema: Schema = {
+  name: "QuestionBlueprintDraftResponse",
   schema: {
+    properties: { draft: schemaRef(questionBlueprintDraftSchema) },
+    required: ["draft"],
     type: "object",
-    required: ["versions"],
+  },
+};
+const listQuestionBlueprintDraftsResponseSchema: Schema = {
+  name: "ListQuestionBlueprintDraftsResponse",
+  schema: {
     properties: {
-      versions: {
-        type: "array",
-        items: schemaRef(questionBlueprintVersionSchema),
-      },
+      drafts: { items: schemaRef(questionBlueprintDraftSchema), type: "array" },
+      nextCursor: { type: ["string", "null"] },
     },
+    required: ["drafts", "nextCursor"],
+    type: "object",
+  },
+};
+const publishQuestionBlueprintDraftResponseSchema: Schema = {
+  name: "PublishQuestionBlueprintDraftResponse",
+  schema: {
+    properties: {
+      draft: schemaRef(questionBlueprintDraftSchema),
+      questionBlueprint: schemaRef(questionBlueprintSchema),
+    },
+    required: ["draft", "questionBlueprint"],
+    type: "object",
   },
 };
 const listQuestionsResponseSchema: Schema = {
   name: "ListQuestionsResponse",
   schema: {
-    type: "object",
-    required: ["questions", "nextCursor"],
     properties: {
-      questions: {
-        type: "array",
-        items: schemaRef(questionSchema),
-      },
       nextCursor: {
         type: ["string", "null"],
       },
+      questions: {
+        items: schemaRef(questionSchema),
+        type: "array",
+      },
     },
+    required: ["questions", "nextCursor"],
+    type: "object",
   },
 };
 const questionResponseSchema: Schema = {
   name: "QuestionResponse",
   schema: {
-    type: "object",
-    required: ["question"],
     properties: {
       question: schemaRef(questionSchema),
     },
+    required: ["question"],
+    type: "object",
   },
 };
 const listQuestionGenerationRunsResponseSchema: Schema = {
   name: "ListQuestionGenerationRunsResponse",
   schema: {
-    type: "object",
-    required: ["questionGenerationRuns", "nextCursor"],
     properties: {
-      questionGenerationRuns: {
-        type: "array",
-        items: schemaRef(questionGenerationRunSchema),
-      },
       nextCursor: {
         type: ["string", "null"],
       },
+      questionGenerationRuns: {
+        items: schemaRef(questionGenerationRunSchema),
+        type: "array",
+      },
     },
+    required: ["questionGenerationRuns", "nextCursor"],
+    type: "object",
   },
 };
 const questionGenerationRunResponseSchema: Schema = {
   name: "QuestionGenerationRunResponse",
   schema: {
-    type: "object",
-    required: ["questionGenerationRun"],
     properties: {
       questionGenerationRun: schemaRef(questionGenerationRunSchema),
     },
+    required: ["questionGenerationRun"],
+    type: "object",
   },
 };
 const gradeQuestionResponseSchema: Schema = {
   name: "GradeQuestionResponse",
   schema: {
-    type: "object",
-    required: ["grade"],
     properties: { grade: schemaRef(gradeResultSchema) },
+    required: ["grade"],
+    type: "object",
   },
 };
 
 const createQuestionSetRequestSchema: Schema = {
   name: "CreateQuestionSetRequest",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["name"],
     properties: {
-      name: {
-        type: "string",
-        minLength: 1,
-        maxLength: MAX_QUESTION_NAME_LENGTH,
-      },
       description: {
-        type: ["string", "null"],
         maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
+        type: ["string", "null"],
+      },
+      name: {
+        maxLength: MAX_QUESTION_NAME_LENGTH,
+        minLength: 1,
+        type: "string",
       },
     },
+    required: ["name"],
+    type: "object",
   },
 };
 const updateQuestionSetRequestSchema: Schema = {
   name: "UpdateQuestionSetRequest",
   schema: {
-    type: "object",
     additionalProperties: false,
     minProperties: 1,
     properties: {
-      name: {
-        type: "string",
-        minLength: 1,
-        maxLength: MAX_QUESTION_NAME_LENGTH,
-      },
       description: {
-        type: ["string", "null"],
         maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
+        type: ["string", "null"],
+      },
+      name: {
+        maxLength: MAX_QUESTION_NAME_LENGTH,
+        minLength: 1,
+        type: "string",
       },
       status: {
+        enum: [...QUESTION_SET_STATUS_ACCEPTED_VALUES],
         type: "string",
-        enum: QUESTION_SET_STATUS_ACCEPTED_VALUES as unknown as string[],
       },
     },
+    type: "object",
   },
 };
 const createQuestionBlueprintRequestSchema: Schema = {
   name: "CreateQuestionBlueprintRequest",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["name", "document"],
     properties: {
-      name: {
-        type: "string",
-        minLength: 1,
-        maxLength: MAX_QUESTION_NAME_LENGTH,
-      },
       description: {
-        type: ["string", "null"],
         maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
-      },
-      visibility: {
-        type: "string",
-        enum: QUESTION_BLUEPRINT_VISIBILITY_ACCEPTED_VALUES as unknown as string[],
+        type: ["string", "null"],
       },
       document: schemaRef(questionBlueprintDocumentSchema),
-      workbookId: nullableUuid,
+      name: {
+        maxLength: MAX_QUESTION_NAME_LENGTH,
+        minLength: 1,
+        type: "string",
+      },
+      sources: {
+        items: schemaRef(questionBlueprintSourceSchema),
+        type: "array",
+      },
+      visibility: {
+        enum: [...QUESTION_BLUEPRINT_VISIBILITY_ACCEPTED_VALUES],
+        type: "string",
+      },
     },
+    required: ["name", "document", "sources"],
+    type: "object",
   },
 };
 const updateQuestionBlueprintRequestSchema: Schema = {
   name: "UpdateQuestionBlueprintRequest",
   schema: {
-    type: "object",
     additionalProperties: false,
     minProperties: 1,
     properties: {
-      name: {
-        type: "string",
-        minLength: 1,
-        maxLength: MAX_QUESTION_NAME_LENGTH,
-      },
       description: {
-        type: ["string", "null"],
         maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
-      },
-      visibility: {
-        type: "string",
-        enum: QUESTION_BLUEPRINT_VISIBILITY_ACCEPTED_VALUES as unknown as string[],
+        type: ["string", "null"],
       },
       document: schemaRef(questionBlueprintDocumentSchema),
-      workbookId: nullableUuid,
-      status: {
+      name: {
+        maxLength: MAX_QUESTION_NAME_LENGTH,
+        minLength: 1,
         type: "string",
-        enum: QUESTION_BLUEPRINT_STATUS_ACCEPTED_VALUES as unknown as string[],
+      },
+      sources: {
+        items: schemaRef(questionBlueprintSourceSchema),
+        type: "array",
+      },
+      status: {
+        enum: [...QUESTION_BLUEPRINT_STATUS_ACCEPTED_VALUES],
+        type: "string",
+      },
+      visibility: {
+        enum: [...QUESTION_BLUEPRINT_VISIBILITY_ACCEPTED_VALUES],
+        type: "string",
       },
     },
+    type: "object",
+  },
+};
+const createQuestionBlueprintDraftRequestSchema: Schema = {
+  name: "CreateQuestionBlueprintDraftRequest",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      blueprintId: { format: "uuid", type: ["string", "null"] },
+      description: {
+        maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
+        type: ["string", "null"],
+      },
+      document: schemaRef(questionBlueprintDocumentSchema),
+      name: {
+        maxLength: MAX_QUESTION_NAME_LENGTH,
+        minLength: 1,
+        type: "string",
+      },
+      sources: {
+        items: schemaRef(questionBlueprintDraftSourceSchema),
+        type: "array",
+      },
+    },
+    required: ["name", "document", "sources"],
+    type: "object",
+  },
+};
+const updateQuestionBlueprintDraftRequestSchema: Schema = {
+  name: "UpdateQuestionBlueprintDraftRequest",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      description: {
+        maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
+        type: ["string", "null"],
+      },
+      document: schemaRef(questionBlueprintDocumentSchema),
+      name: {
+        maxLength: MAX_QUESTION_NAME_LENGTH,
+        minLength: 1,
+        type: "string",
+      },
+      sources: {
+        items: schemaRef(questionBlueprintDraftSourceSchema),
+        type: "array",
+      },
+    },
+    required: ["name", "description", "document", "sources"],
+    type: "object",
+  },
+};
+const attachQuestionBlueprintDraftSourceFileRequestSchema: Schema = {
+  name: "AttachQuestionBlueprintDraftSourceFileRequest",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      fileId: uuid,
+      sourceId: { pattern: "^[A-Za-z][A-Za-z0-9_-]*$", type: "string" },
+    },
+    required: ["sourceId", "fileId"],
+    type: "object",
   },
 };
 const gradeQuestionRequestSchema: Schema = {
   name: "GradeQuestionRequest",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["answer"],
     properties: { answer: schemaRef(questionAnswerSchema) },
+    required: ["answer"],
+    type: "object",
   },
 };
 const createQuestionGenerationRunRequestSchema: Schema = {
   name: "CreateQuestionGenerationRunRequest",
   schema: {
-    type: "object",
     additionalProperties: false,
-    required: ["count", "blueprintId", "targetQuestionSetId"],
     properties: {
+      blueprintId: uuid,
       count: {
-        type: "integer",
-        minimum: 1,
         maximum: MAX_GENERATION_RUN_COUNT,
+        minimum: 1,
+        type: "integer",
       },
       targetQuestionSetId: uuid,
-      blueprintId: uuid,
-      blueprintVersionId: nullableUuid,
-      source: {
-        oneOf: [schemaRef(createWorkbookSourceSchema), { type: "null" }],
-      },
     },
+    required: ["count", "blueprintId", "targetQuestionSetId"],
+    type: "object",
   },
 };
 
 const upstreamWorkbookResponse: Response = {
   name: "UpstreamWorkbook",
   schema: {
-    description: "UPSTREAM_WORKBOOK",
     content: {
       "application/json": { schema: schemaRef(errorResponseSchema) },
     },
+    description: "UPSTREAM_WORKBOOK",
   },
 };
 
 const questionSetParam: Param = {
   name: "QuestionSetIdParam",
   schema: {
-    name: "questionSetId",
     in: "path",
+    name: "questionSetId",
     required: true,
     schema: uuid,
   },
@@ -1596,17 +1575,17 @@ const questionSetParam: Param = {
 const questionBlueprintParam: Param = {
   name: "QuestionBlueprintIdParam",
   schema: {
-    name: "questionBlueprintId",
     in: "path",
+    name: "questionBlueprintId",
     required: true,
     schema: uuid,
   },
 };
-const questionBlueprintVersionParam: Param = {
-  name: "QuestionBlueprintVersionIdParam",
+const questionBlueprintDraftParam: Param = {
+  name: "QuestionBlueprintDraftIdParam",
   schema: {
-    name: "questionBlueprintVersionId",
     in: "path",
+    name: "draftId",
     required: true,
     schema: uuid,
   },
@@ -1614,8 +1593,8 @@ const questionBlueprintVersionParam: Param = {
 const questionParam: Param = {
   name: "QuestionIdParam",
   schema: {
-    name: "questionId",
     in: "path",
+    name: "questionId",
     required: true,
     schema: uuid,
   },
@@ -1623,8 +1602,8 @@ const questionParam: Param = {
 const questionGenerationRunParam: Param = {
   name: "QuestionGenerationRunIdParam",
   schema: {
-    name: "questionGenerationRunId",
     in: "path",
+    name: "questionGenerationRunId",
     required: true,
     schema: uuid,
   },
@@ -1635,6 +1614,8 @@ export const tags: readonly Tag[] = Object.freeze([questionTag]);
 export const schemas = Object.freeze([
   questionValueExpressionSchema,
   questionReferenceSourceSchema,
+  questionBlueprintSourceSchema,
+  questionBlueprintDraftSourceSchema,
   blueprintInlineTextSchema,
   blueprintInlineReferenceSchema,
   blueprintInlineContentSchema,
@@ -1676,17 +1657,13 @@ export const schemas = Object.freeze([
   publicQuestionBlueprintBlockSchema,
   questionBlueprintDocumentSchema,
   publicQuestionBlueprintDocumentSchema,
-  questionSolutionSchema,
-  questionSourcePlanSchema,
   questionProducerSchema,
   questionAnswerSchema,
-  workbookSourceSchema,
   gradeResultSchema,
   questionSetSchema,
   questionBlueprintSchema,
-  questionBlueprintVersionAssetSchema,
-  questionBlueprintVersionSchema,
   questionBlueprintAuthoringSchema,
+  questionBlueprintDraftSchema,
   questionSchema,
   questionGenerationRunSchema,
   listQuestionSetsResponseSchema,
@@ -1694,7 +1671,9 @@ export const schemas = Object.freeze([
   listQuestionBlueprintsResponseSchema,
   questionBlueprintResponseSchema,
   questionBlueprintAuthoringResponseSchema,
-  listQuestionBlueprintVersionsResponseSchema,
+  questionBlueprintDraftResponseSchema,
+  listQuestionBlueprintDraftsResponseSchema,
+  publishQuestionBlueprintDraftResponseSchema,
   listQuestionsResponseSchema,
   questionResponseSchema,
   gradeQuestionResponseSchema,
@@ -1704,9 +1683,11 @@ export const schemas = Object.freeze([
   updateQuestionSetRequestSchema,
   createQuestionBlueprintRequestSchema,
   updateQuestionBlueprintRequestSchema,
+  createQuestionBlueprintDraftRequestSchema,
+  updateQuestionBlueprintDraftRequestSchema,
+  attachQuestionBlueprintDraftSourceFileRequestSchema,
   gradeQuestionRequestSchema,
   createQuestionGenerationRunRequestSchema,
-  createWorkbookSourceSchema,
 ]);
 export const responses = Object.freeze([
   badRequestResponse,
@@ -1718,126 +1699,151 @@ export const responses = Object.freeze([
 export const params = Object.freeze([
   questionSetParam,
   questionBlueprintParam,
-  questionBlueprintVersionParam,
+  questionBlueprintDraftParam,
   questionParam,
   questionGenerationRunParam,
 ]);
 
 export const paths: Paths = {
-  "/question-sets": {
+  "/question-blueprint-drafts": {
     get: {
-      tags: [tagRef(questionTag)],
-      summary: "List question sets",
-      operationId: "listQuestionSets",
-      security: [keycloakSecurityRequirement],
+      operationId: "listQuestionBlueprintDrafts",
       parameters: [
         {
-          name: "limit",
           in: "query",
-          schema: { type: "integer", minimum: 1, maximum: 100 },
+          name: "limit",
           required: false,
+          schema: { maximum: 100, minimum: 1, type: "integer" },
         },
         {
-          name: "cursor",
           in: "query",
-          schema: { type: "string" },
+          name: "cursor",
           required: false,
+          schema: { type: "string" },
         },
       ],
       responses: {
         "200": {
-          description: "Question sets.",
           content: {
             "application/json": {
-              schema: schemaRef(listQuestionSetsResponseSchema),
+              schema: schemaRef(listQuestionBlueprintDraftsResponseSchema),
             },
           },
+          description: "Question blueprint drafts.",
         },
         "400": responseRef(badRequestResponse),
         "401": responseRef(unauthorizedResponse),
         "403": responseRef(forbiddenResponse),
-        "404": responseRef(notFoundResponse),
-        "409": responseRef(conflictResponse),
-        "502": responseRef(upstreamWorkbookResponse),
       },
+      security: [keycloakSecurityRequirement],
+      summary: "List question blueprint drafts",
+      tags: [tagRef(questionTag)],
     },
     post: {
-      tags: [tagRef(questionTag)],
-      summary: "Create question set",
-      operationId: "createQuestionSet",
-      security: [keycloakSecurityRequirement],
+      operationId: "createQuestionBlueprintDraft",
       requestBody: {
-        required: true,
         content: {
           "application/json": {
-            schema: schemaRef(createQuestionSetRequestSchema),
+            schema: schemaRef(createQuestionBlueprintDraftRequestSchema),
           },
         },
+        required: true,
       },
       responses: {
         "201": {
-          description: "Question set created.",
           content: {
             "application/json": {
-              schema: schemaRef(questionSetResponseSchema),
+              schema: schemaRef(questionBlueprintDraftResponseSchema),
             },
           },
+          description: "Question blueprint draft created.",
         },
         "400": responseRef(badRequestResponse),
         "401": responseRef(unauthorizedResponse),
         "403": responseRef(forbiddenResponse),
         "404": responseRef(notFoundResponse),
-        "409": responseRef(conflictResponse),
-        "502": responseRef(upstreamWorkbookResponse),
       },
+      security: [keycloakSecurityRequirement],
+      summary: "Create question blueprint draft",
+      tags: [tagRef(questionTag)],
     },
   },
-
-  "/question-sets/{questionSetId}": {
-    parameters: [paramRef(questionSetParam)],
-    get: {
-      tags: [tagRef(questionTag)],
-      summary: "Get question set",
-      operationId: "getQuestionSet",
-      security: [keycloakSecurityRequirement],
+  "/question-blueprint-drafts/{draftId}": {
+    delete: {
+      operationId: "discardQuestionBlueprintDraft",
       responses: {
-        "200": {
-          description: "Question set.",
-          content: {
-            "application/json": {
-              schema: schemaRef(questionSetResponseSchema),
-            },
-          },
-        },
-        "400": responseRef(badRequestResponse),
+        "204": { description: "No content" },
         "401": responseRef(unauthorizedResponse),
         "403": responseRef(forbiddenResponse),
         "404": responseRef(notFoundResponse),
         "409": responseRef(conflictResponse),
-        "502": responseRef(upstreamWorkbookResponse),
       },
-    },
-    patch: {
-      tags: [tagRef(questionTag)],
-      summary: "Update question set",
-      operationId: "updateQuestionSet",
       security: [keycloakSecurityRequirement],
+      summary: "Discard question blueprint draft",
+      tags: [tagRef(questionTag)],
+    },
+    get: {
+      operationId: "getQuestionBlueprintDraft",
+      responses: {
+        "200": {
+          content: {
+            "application/json": {
+              schema: schemaRef(questionBlueprintDraftResponseSchema),
+            },
+          },
+          description: "Question blueprint draft.",
+        },
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+        "404": responseRef(notFoundResponse),
+      },
+      security: [keycloakSecurityRequirement],
+      summary: "Get question blueprint draft",
+      tags: [tagRef(questionTag)],
+    },
+    parameters: [paramRef(questionBlueprintDraftParam)],
+    patch: {
+      operationId: "updateQuestionBlueprintDraft",
       requestBody: {
-        required: true,
         content: {
           "application/json": {
-            schema: schemaRef(updateQuestionSetRequestSchema),
+            schema: schemaRef(updateQuestionBlueprintDraftRequestSchema),
           },
         },
+        required: true,
       },
       responses: {
         "200": {
-          description: "Question set updated.",
           content: {
             "application/json": {
-              schema: schemaRef(questionSetResponseSchema),
+              schema: schemaRef(questionBlueprintDraftResponseSchema),
             },
           },
+          description: "Question blueprint draft updated.",
+        },
+        "400": responseRef(badRequestResponse),
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+        "404": responseRef(notFoundResponse),
+        "409": responseRef(conflictResponse),
+      },
+      security: [keycloakSecurityRequirement],
+      summary: "Update question blueprint draft",
+      tags: [tagRef(questionTag)],
+    },
+  },
+  "/question-blueprint-drafts/{draftId}/publish": {
+    parameters: [paramRef(questionBlueprintDraftParam)],
+    post: {
+      operationId: "publishQuestionBlueprintDraft",
+      responses: {
+        "200": {
+          content: {
+            "application/json": {
+              schema: schemaRef(publishQuestionBlueprintDraftResponseSchema),
+            },
+          },
+          description: "Question blueprint draft published.",
         },
         "400": responseRef(badRequestResponse),
         "401": responseRef(unauthorizedResponse),
@@ -1846,116 +1852,79 @@ export const paths: Paths = {
         "409": responseRef(conflictResponse),
         "502": responseRef(upstreamWorkbookResponse),
       },
-    },
-    delete: {
-      tags: [tagRef(questionTag)],
-      summary: "Delete question set",
-      operationId: "deleteQuestionSet",
       security: [keycloakSecurityRequirement],
-      responses: {
-        "204": { description: "No content" },
-        "400": responseRef(badRequestResponse),
-        "401": responseRef(unauthorizedResponse),
-        "403": responseRef(forbiddenResponse),
-        "404": responseRef(notFoundResponse),
-        "409": responseRef(conflictResponse),
-      },
+      summary: "Publish question blueprint draft",
+      tags: [tagRef(questionTag)],
     },
   },
-
-  "/question-sets/{questionSetId}/questions": {
-    parameters: [paramRef(questionSetParam)],
-    get: {
-      tags: [tagRef(questionTag)],
-      summary: "List question set questions",
-      operationId: "listQuestionSetQuestions",
-      security: [keycloakSecurityRequirement],
-      parameters: [
-        {
-          name: "limit",
-          in: "query",
-          schema: { type: "integer", minimum: 1, maximum: 100 },
-          required: false,
-        },
-        {
-          name: "cursor",
-          in: "query",
-          schema: { type: "string" },
-          required: false,
-        },
-      ],
-      responses: {
-        "200": {
-          description: "Question set questions.",
-          content: {
-            "application/json": {
-              schema: schemaRef(listQuestionsResponseSchema),
-            },
+  "/question-blueprint-drafts/{draftId}/source-files": {
+    parameters: [paramRef(questionBlueprintDraftParam)],
+    post: {
+      operationId: "attachQuestionBlueprintDraftSourceFile",
+      requestBody: {
+        content: {
+          "application/json": {
+            schema: schemaRef(
+              attachQuestionBlueprintDraftSourceFileRequestSchema,
+            ),
           },
         },
-        "400": responseRef(badRequestResponse),
-        "401": responseRef(unauthorizedResponse),
-        "403": responseRef(forbiddenResponse),
-        "404": responseRef(notFoundResponse),
-        "409": responseRef(conflictResponse),
-        "502": responseRef(upstreamWorkbookResponse),
+        required: true,
       },
-    },
-  },
-  "/question-sets/{questionSetId}/questions/{questionId}": {
-    parameters: [paramRef(questionSetParam), paramRef(questionParam)],
-    delete: {
-      tags: [tagRef(questionTag)],
-      summary: "Remove question from set",
-      operationId: "removeQuestionFromSet",
-      security: [keycloakSecurityRequirement],
       responses: {
-        "204": { description: "No content" },
+        "200": {
+          content: {
+            "application/json": {
+              schema: schemaRef(questionBlueprintDraftResponseSchema),
+            },
+          },
+          description: "Draft source file attached.",
+        },
         "400": responseRef(badRequestResponse),
         "401": responseRef(unauthorizedResponse),
         "403": responseRef(forbiddenResponse),
         "404": responseRef(notFoundResponse),
         "409": responseRef(conflictResponse),
       },
+      security: [keycloakSecurityRequirement],
+      summary: "Attach source file to question blueprint draft",
+      tags: [tagRef(questionTag)],
     },
   },
   "/question-blueprints": {
     get: {
-      tags: [tagRef(questionTag)],
-      summary: "List question blueprints",
       operationId: "listQuestionBlueprints",
-      security: [keycloakSecurityRequirement],
       parameters: [
         {
+          in: "query",
           name: "limit",
-          in: "query",
-          schema: { type: "integer", minimum: 1, maximum: 100 },
           required: false,
+          schema: { maximum: 100, minimum: 1, type: "integer" },
         },
         {
+          in: "query",
           name: "cursor",
-          in: "query",
-          schema: { type: "string" },
           required: false,
+          schema: { type: "string" },
         },
         {
-          name: "status",
           in: "query",
-          schema: {
-            type: "string",
-            enum: QUESTION_BLUEPRINT_STATUS_ACCEPTED_VALUES as unknown as string[],
-          },
+          name: "status",
           required: false,
+          schema: {
+            enum: [...QUESTION_BLUEPRINT_STATUS_ACCEPTED_VALUES],
+            type: "string",
+          },
         },
       ],
       responses: {
         "200": {
-          description: "Question blueprints.",
           content: {
             "application/json": {
               schema: schemaRef(listQuestionBlueprintsResponseSchema),
             },
           },
+          description: "Question blueprints.",
         },
         "400": responseRef(badRequestResponse),
         "401": responseRef(unauthorizedResponse),
@@ -1964,30 +1933,30 @@ export const paths: Paths = {
         "409": responseRef(conflictResponse),
         "502": responseRef(upstreamWorkbookResponse),
       },
+      security: [keycloakSecurityRequirement],
+      summary: "List question blueprints",
+      tags: [tagRef(questionTag)],
     },
     post: {
-      tags: [tagRef(questionTag)],
-      summary: "Create question blueprint",
       description:
         "Authoring-only. Request may include full blueprint document with value expressions and correct values; learner responses return a public blueprint view.",
       operationId: "createQuestionBlueprint",
-      security: [keycloakSecurityRequirement],
       requestBody: {
-        required: true,
         content: {
           "application/json": {
             schema: schemaRef(createQuestionBlueprintRequestSchema),
           },
         },
+        required: true,
       },
       responses: {
         "201": {
-          description: "Question blueprint created.",
           content: {
             "application/json": {
               schema: schemaRef(questionBlueprintResponseSchema),
             },
           },
+          description: "Question blueprint created.",
         },
         "400": responseRef(badRequestResponse),
         "401": responseRef(unauthorizedResponse),
@@ -1996,23 +1965,36 @@ export const paths: Paths = {
         "409": responseRef(conflictResponse),
         "502": responseRef(upstreamWorkbookResponse),
       },
+      security: [keycloakSecurityRequirement],
+      summary: "Create question blueprint",
+      tags: [tagRef(questionTag)],
     },
   },
   "/question-blueprints/{questionBlueprintId}": {
-    parameters: [paramRef(questionBlueprintParam)],
-    get: {
-      tags: [tagRef(questionTag)],
-      summary: "Get question blueprint",
-      operationId: "getQuestionBlueprint",
+    delete: {
+      operationId: "deleteQuestionBlueprint",
+      responses: {
+        "204": { description: "No content" },
+        "400": responseRef(badRequestResponse),
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+        "404": responseRef(notFoundResponse),
+        "409": responseRef(conflictResponse),
+      },
       security: [keycloakSecurityRequirement],
+      summary: "Delete question blueprint",
+      tags: [tagRef(questionTag)],
+    },
+    get: {
+      operationId: "getQuestionBlueprint",
       responses: {
         "200": {
-          description: "Question blueprint.",
           content: {
             "application/json": {
               schema: schemaRef(questionBlueprintResponseSchema),
             },
           },
+          description: "Question blueprint.",
         },
         "400": responseRef(badRequestResponse),
         "401": responseRef(unauthorizedResponse),
@@ -2021,30 +2003,31 @@ export const paths: Paths = {
         "409": responseRef(conflictResponse),
         "502": responseRef(upstreamWorkbookResponse),
       },
-    },
-    patch: {
+      security: [keycloakSecurityRequirement],
+      summary: "Get question blueprint",
       tags: [tagRef(questionTag)],
-      summary: "Update question blueprint",
+    },
+    parameters: [paramRef(questionBlueprintParam)],
+    patch: {
       description:
         "Authoring-only. Request may include full blueprint document with value expressions and correct values; learner responses return a public blueprint view.",
       operationId: "updateQuestionBlueprint",
-      security: [keycloakSecurityRequirement],
       requestBody: {
-        required: true,
         content: {
           "application/json": {
             schema: schemaRef(updateQuestionBlueprintRequestSchema),
           },
         },
+        required: true,
       },
       responses: {
         "200": {
-          description: "Question blueprint updated.",
           content: {
             "application/json": {
               schema: schemaRef(questionBlueprintResponseSchema),
             },
           },
+          description: "Question blueprint updated.",
         },
         "400": responseRef(badRequestResponse),
         "401": responseRef(unauthorizedResponse),
@@ -2053,39 +2036,24 @@ export const paths: Paths = {
         "409": responseRef(conflictResponse),
         "502": responseRef(upstreamWorkbookResponse),
       },
-    },
-    delete: {
-      tags: [tagRef(questionTag)],
-      summary: "Delete question blueprint",
-      operationId: "deleteQuestionBlueprint",
       security: [keycloakSecurityRequirement],
-      responses: {
-        "204": { description: "No content" },
-        "400": responseRef(badRequestResponse),
-        "401": responseRef(unauthorizedResponse),
-        "403": responseRef(forbiddenResponse),
-        "404": responseRef(notFoundResponse),
-        "409": responseRef(conflictResponse),
-      },
+      summary: "Update question blueprint",
+      tags: [tagRef(questionTag)],
     },
   },
   "/question-blueprints/{questionBlueprintId}/authoring": {
-    parameters: [paramRef(questionBlueprintParam)],
     get: {
-      tags: [tagRef(questionTag)],
-      summary: "Get question blueprint authoring data",
       description:
         "Authoring-only. Returns the private canonical blueprint document for editing.",
       operationId: "getQuestionBlueprintAuthoring",
-      security: [keycloakSecurityRequirement],
       responses: {
         "200": {
-          description: "Question blueprint authoring data.",
           content: {
             "application/json": {
               schema: schemaRef(questionBlueprintAuthoringResponseSchema),
             },
           },
+          description: "Question blueprint authoring data.",
         },
         "400": responseRef(badRequestResponse),
         "401": responseRef(unauthorizedResponse),
@@ -2094,237 +2062,47 @@ export const paths: Paths = {
         "409": responseRef(conflictResponse),
         "502": responseRef(upstreamWorkbookResponse),
       },
+      security: [keycloakSecurityRequirement],
+      summary: "Get question blueprint authoring data",
+      tags: [tagRef(questionTag)],
     },
-  },
-  "/question-blueprints/{questionBlueprintId}/versions": {
     parameters: [paramRef(questionBlueprintParam)],
-    get: {
-      tags: [tagRef(questionTag)],
-      summary: "List question blueprint versions",
-      description:
-        "Authoring-only. Returns immutable version metadata and bound source assets.",
-      operationId: "listQuestionBlueprintVersions",
-      security: [keycloakSecurityRequirement],
-      responses: {
-        "200": {
-          description: "Question blueprint versions.",
-          content: {
-            "application/json": {
-              schema: schemaRef(listQuestionBlueprintVersionsResponseSchema),
-            },
-          },
-        },
-        "400": responseRef(badRequestResponse),
-        "401": responseRef(unauthorizedResponse),
-        "403": responseRef(forbiddenResponse),
-        "404": responseRef(notFoundResponse),
-        "409": responseRef(conflictResponse),
-        "502": responseRef(upstreamWorkbookResponse),
-      },
-    },
-  },
-  "/question-blueprints/{questionBlueprintId}/versions/{questionBlueprintVersionId}/authoring":
-    {
-      parameters: [
-        paramRef(questionBlueprintParam),
-        paramRef(questionBlueprintVersionParam),
-      ],
-      get: {
-        tags: [tagRef(questionTag)],
-        summary: "Get question blueprint version authoring data",
-        description:
-          "Authoring-only. Returns the private canonical document and source assets from one immutable version.",
-        operationId: "getQuestionBlueprintVersionAuthoring",
-        security: [keycloakSecurityRequirement],
-        responses: {
-          "200": {
-            description: "Question blueprint version authoring data.",
-            content: {
-              "application/json": {
-                schema: schemaRef(questionBlueprintAuthoringResponseSchema),
-              },
-            },
-          },
-          "400": responseRef(badRequestResponse),
-          "401": responseRef(unauthorizedResponse),
-          "403": responseRef(forbiddenResponse),
-          "404": responseRef(notFoundResponse),
-          "409": responseRef(conflictResponse),
-          "502": responseRef(upstreamWorkbookResponse),
-        },
-      },
-    },
-
-  "/questions": {
-    get: {
-      tags: [tagRef(questionTag)],
-      summary: "List questions",
-      operationId: "listQuestions",
-      security: [keycloakSecurityRequirement],
-      parameters: [
-        {
-          name: "limit",
-          in: "query",
-          schema: { type: "integer", minimum: 1, maximum: 100 },
-          required: false,
-        },
-        {
-          name: "cursor",
-          in: "query",
-          schema: { type: "string" },
-          required: false,
-        },
-        {
-          name: "status",
-          in: "query",
-          schema: {
-            type: "string",
-            enum: QUESTION_STATUS_ACCEPTED_VALUES as unknown as string[],
-          },
-          required: false,
-        },
-        {
-          name: "blueprintId",
-          in: "query",
-          schema: uuid,
-          required: false,
-        },
-        {
-          name: "generationRunId",
-          in: "query",
-          schema: uuid,
-          required: false,
-        },
-      ],
-      responses: {
-        "200": {
-          description: "Questions.",
-          content: {
-            "application/json": {
-              schema: schemaRef(listQuestionsResponseSchema),
-            },
-          },
-        },
-        "400": responseRef(badRequestResponse),
-        "401": responseRef(unauthorizedResponse),
-        "403": responseRef(forbiddenResponse),
-        "404": responseRef(notFoundResponse),
-        "409": responseRef(conflictResponse),
-        "502": responseRef(upstreamWorkbookResponse),
-      },
-    },
-  },
-  "/questions/{questionId}": {
-    parameters: [paramRef(questionParam)],
-    get: {
-      tags: [tagRef(questionTag)],
-      summary: "Get question",
-      operationId: "getQuestion",
-      security: [keycloakSecurityRequirement],
-      responses: {
-        "200": {
-          description: "Question.",
-          content: {
-            "application/json": {
-              schema: schemaRef(questionResponseSchema),
-            },
-          },
-        },
-        "400": responseRef(badRequestResponse),
-        "401": responseRef(unauthorizedResponse),
-        "403": responseRef(forbiddenResponse),
-        "404": responseRef(notFoundResponse),
-        "409": responseRef(conflictResponse),
-        "502": responseRef(upstreamWorkbookResponse),
-      },
-    },
-    delete: {
-      tags: [tagRef(questionTag)],
-      summary: "Delete question",
-      operationId: "deleteQuestion",
-      security: [keycloakSecurityRequirement],
-      responses: {
-        "204": { description: "No content" },
-        "400": responseRef(badRequestResponse),
-        "401": responseRef(unauthorizedResponse),
-        "403": responseRef(forbiddenResponse),
-        "404": responseRef(notFoundResponse),
-        "409": responseRef(conflictResponse),
-      },
-    },
-  },
-
-  "/questions/{questionId}/grade": {
-    parameters: [paramRef(questionParam)],
-    post: {
-      tags: [tagRef(questionTag)],
-      summary: "Grade question",
-      operationId: "gradeQuestion",
-      security: [keycloakSecurityRequirement],
-      requestBody: {
-        required: true,
-        content: {
-          "application/json": {
-            schema: schemaRef(gradeQuestionRequestSchema),
-          },
-        },
-      },
-      responses: {
-        "200": {
-          description: "Question graded.",
-          content: {
-            "application/json": {
-              schema: schemaRef(gradeQuestionResponseSchema),
-            },
-          },
-        },
-        "400": responseRef(badRequestResponse),
-        "401": responseRef(unauthorizedResponse),
-        "403": responseRef(forbiddenResponse),
-        "404": responseRef(notFoundResponse),
-        "409": responseRef(conflictResponse),
-        "502": responseRef(upstreamWorkbookResponse),
-      },
-    },
   },
 
   "/question-generation-runs": {
     get: {
-      tags: [tagRef(questionTag)],
-      summary: "List question generation runs",
       operationId: "listQuestionGenerationRuns",
-      security: [keycloakSecurityRequirement],
       parameters: [
         {
+          in: "query",
           name: "limit",
-          in: "query",
-          schema: { type: "integer", minimum: 1, maximum: 100 },
           required: false,
+          schema: { maximum: 100, minimum: 1, type: "integer" },
         },
         {
+          in: "query",
           name: "cursor",
-          in: "query",
-          schema: { type: "string" },
           required: false,
+          schema: { type: "string" },
         },
         {
-          name: "status",
           in: "query",
-          schema: {
-            type: "string",
-            enum: QUESTION_GENERATION_RUN_STATUS_ACCEPTED_VALUES as unknown as string[],
-          },
+          name: "status",
           required: false,
+          schema: {
+            enum: [...QUESTION_GENERATION_RUN_STATUS_ACCEPTED_VALUES],
+            type: "string",
+          },
         },
       ],
       responses: {
         "200": {
-          description: "Question generation runs.",
           content: {
             "application/json": {
               schema: schemaRef(listQuestionGenerationRunsResponseSchema),
             },
           },
+          description: "Question generation runs.",
         },
         "400": responseRef(badRequestResponse),
         "401": responseRef(unauthorizedResponse),
@@ -2333,29 +2111,29 @@ export const paths: Paths = {
         "409": responseRef(conflictResponse),
         "502": responseRef(upstreamWorkbookResponse),
       },
+      security: [keycloakSecurityRequirement],
+      summary: "List question generation runs",
+      tags: [tagRef(questionTag)],
     },
     post: {
-      tags: [tagRef(questionTag)],
-      summary: "Create question generation run",
-      description: "Create a generation run from a saved blueprint version.",
+      description: "Create a generation run from the current blueprint state.",
       operationId: "createQuestionGenerationRun",
-      security: [keycloakSecurityRequirement],
       requestBody: {
-        required: true,
         content: {
           "application/json": {
             schema: schemaRef(createQuestionGenerationRunRequestSchema),
           },
         },
+        required: true,
       },
       responses: {
         "201": {
-          description: "Question generation run created.",
           content: {
             "application/json": {
               schema: schemaRef(questionGenerationRunResponseSchema),
             },
           },
+          description: "Question generation run created.",
         },
         "400": responseRef(badRequestResponse),
         "401": responseRef(unauthorizedResponse),
@@ -2364,23 +2142,22 @@ export const paths: Paths = {
         "409": responseRef(conflictResponse),
         "502": responseRef(upstreamWorkbookResponse),
       },
+      security: [keycloakSecurityRequirement],
+      summary: "Create question generation run",
+      tags: [tagRef(questionTag)],
     },
   },
   "/question-generation-runs/{questionGenerationRunId}": {
-    parameters: [paramRef(questionGenerationRunParam)],
     get: {
-      tags: [tagRef(questionTag)],
-      summary: "Get question generation run",
       operationId: "getQuestionGenerationRun",
-      security: [keycloakSecurityRequirement],
       responses: {
         "200": {
-          description: "Question generation run.",
           content: {
             "application/json": {
               schema: schemaRef(questionGenerationRunResponseSchema),
             },
           },
+          description: "Question generation run.",
         },
         "400": responseRef(badRequestResponse),
         "401": responseRef(unauthorizedResponse),
@@ -2389,15 +2166,16 @@ export const paths: Paths = {
         "409": responseRef(conflictResponse),
         "502": responseRef(upstreamWorkbookResponse),
       },
+      security: [keycloakSecurityRequirement],
+      summary: "Get question generation run",
+      tags: [tagRef(questionTag)],
     },
+    parameters: [paramRef(questionGenerationRunParam)],
   },
   "/question-generation-runs/{questionGenerationRunId}/cancel": {
     parameters: [paramRef(questionGenerationRunParam)],
     post: {
-      tags: [tagRef(questionTag)],
-      summary: "Cancel question generation run",
       operationId: "cancelQuestionGenerationRun",
-      security: [keycloakSecurityRequirement],
       responses: {
         "204": { description: "No content" },
         "400": responseRef(badRequestResponse),
@@ -2406,23 +2184,23 @@ export const paths: Paths = {
         "404": responseRef(notFoundResponse),
         "409": responseRef(conflictResponse),
       },
+      security: [keycloakSecurityRequirement],
+      summary: "Cancel question generation run",
+      tags: [tagRef(questionTag)],
     },
   },
   "/question-generation-runs/{questionGenerationRunId}/retry": {
     parameters: [paramRef(questionGenerationRunParam)],
     post: {
-      tags: [tagRef(questionTag)],
-      summary: "Retry question generation run",
       operationId: "retryQuestionGenerationRun",
-      security: [keycloakSecurityRequirement],
       responses: {
         "201": {
-          description: "Question generation run retried.",
           content: {
             "application/json": {
               schema: schemaRef(questionGenerationRunResponseSchema),
             },
           },
+          description: "Question generation run retried.",
         },
         "400": responseRef(badRequestResponse),
         "401": responseRef(unauthorizedResponse),
@@ -2431,32 +2209,363 @@ export const paths: Paths = {
         "409": responseRef(conflictResponse),
         "502": responseRef(upstreamWorkbookResponse),
       },
+      security: [keycloakSecurityRequirement],
+      summary:
+        "Create replacement question generation run from frozen failed run snapshot",
+      tags: [tagRef(questionTag)],
+    },
+  },
+  "/question-sets": {
+    get: {
+      operationId: "listQuestionSets",
+      parameters: [
+        {
+          in: "query",
+          name: "limit",
+          required: false,
+          schema: { maximum: 100, minimum: 1, type: "integer" },
+        },
+        {
+          in: "query",
+          name: "cursor",
+          required: false,
+          schema: { type: "string" },
+        },
+      ],
+      responses: {
+        "200": {
+          content: {
+            "application/json": {
+              schema: schemaRef(listQuestionSetsResponseSchema),
+            },
+          },
+          description: "Question sets.",
+        },
+        "400": responseRef(badRequestResponse),
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+        "404": responseRef(notFoundResponse),
+        "409": responseRef(conflictResponse),
+        "502": responseRef(upstreamWorkbookResponse),
+      },
+      security: [keycloakSecurityRequirement],
+      summary: "List question sets",
+      tags: [tagRef(questionTag)],
+    },
+    post: {
+      operationId: "createQuestionSet",
+      requestBody: {
+        content: {
+          "application/json": {
+            schema: schemaRef(createQuestionSetRequestSchema),
+          },
+        },
+        required: true,
+      },
+      responses: {
+        "201": {
+          content: {
+            "application/json": {
+              schema: schemaRef(questionSetResponseSchema),
+            },
+          },
+          description: "Question set created.",
+        },
+        "400": responseRef(badRequestResponse),
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+        "404": responseRef(notFoundResponse),
+        "409": responseRef(conflictResponse),
+        "502": responseRef(upstreamWorkbookResponse),
+      },
+      security: [keycloakSecurityRequirement],
+      summary: "Create question set",
+      tags: [tagRef(questionTag)],
+    },
+  },
+
+  "/question-sets/{questionSetId}": {
+    delete: {
+      operationId: "deleteQuestionSet",
+      responses: {
+        "204": { description: "No content" },
+        "400": responseRef(badRequestResponse),
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+        "404": responseRef(notFoundResponse),
+        "409": responseRef(conflictResponse),
+      },
+      security: [keycloakSecurityRequirement],
+      summary: "Delete question set",
+      tags: [tagRef(questionTag)],
+    },
+    get: {
+      operationId: "getQuestionSet",
+      responses: {
+        "200": {
+          content: {
+            "application/json": {
+              schema: schemaRef(questionSetResponseSchema),
+            },
+          },
+          description: "Question set.",
+        },
+        "400": responseRef(badRequestResponse),
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+        "404": responseRef(notFoundResponse),
+        "409": responseRef(conflictResponse),
+        "502": responseRef(upstreamWorkbookResponse),
+      },
+      security: [keycloakSecurityRequirement],
+      summary: "Get question set",
+      tags: [tagRef(questionTag)],
+    },
+    parameters: [paramRef(questionSetParam)],
+    patch: {
+      operationId: "updateQuestionSet",
+      requestBody: {
+        content: {
+          "application/json": {
+            schema: schemaRef(updateQuestionSetRequestSchema),
+          },
+        },
+        required: true,
+      },
+      responses: {
+        "200": {
+          content: {
+            "application/json": {
+              schema: schemaRef(questionSetResponseSchema),
+            },
+          },
+          description: "Question set updated.",
+        },
+        "400": responseRef(badRequestResponse),
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+        "404": responseRef(notFoundResponse),
+        "409": responseRef(conflictResponse),
+        "502": responseRef(upstreamWorkbookResponse),
+      },
+      security: [keycloakSecurityRequirement],
+      summary: "Update question set",
+      tags: [tagRef(questionTag)],
+    },
+  },
+
+  "/question-sets/{questionSetId}/questions": {
+    get: {
+      operationId: "listQuestionSetQuestions",
+      parameters: [
+        {
+          in: "query",
+          name: "limit",
+          required: false,
+          schema: { maximum: 100, minimum: 1, type: "integer" },
+        },
+        {
+          in: "query",
+          name: "cursor",
+          required: false,
+          schema: { type: "string" },
+        },
+      ],
+      responses: {
+        "200": {
+          content: {
+            "application/json": {
+              schema: schemaRef(listQuestionsResponseSchema),
+            },
+          },
+          description: "Question set questions.",
+        },
+        "400": responseRef(badRequestResponse),
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+        "404": responseRef(notFoundResponse),
+        "409": responseRef(conflictResponse),
+        "502": responseRef(upstreamWorkbookResponse),
+      },
+      security: [keycloakSecurityRequirement],
+      summary: "List question set questions",
+      tags: [tagRef(questionTag)],
+    },
+    parameters: [paramRef(questionSetParam)],
+  },
+  "/question-sets/{questionSetId}/questions/{questionId}": {
+    delete: {
+      operationId: "removeQuestionFromSet",
+      responses: {
+        "204": { description: "No content" },
+        "400": responseRef(badRequestResponse),
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+        "404": responseRef(notFoundResponse),
+        "409": responseRef(conflictResponse),
+      },
+      security: [keycloakSecurityRequirement],
+      summary: "Remove question from set",
+      tags: [tagRef(questionTag)],
+    },
+    parameters: [paramRef(questionSetParam), paramRef(questionParam)],
+  },
+  "/questions": {
+    get: {
+      operationId: "listQuestions",
+      parameters: [
+        {
+          in: "query",
+          name: "limit",
+          required: false,
+          schema: { maximum: 100, minimum: 1, type: "integer" },
+        },
+        {
+          in: "query",
+          name: "cursor",
+          required: false,
+          schema: { type: "string" },
+        },
+        {
+          in: "query",
+          name: "status",
+          required: false,
+          schema: {
+            enum: [...QUESTION_STATUS_ACCEPTED_VALUES],
+            type: "string",
+          },
+        },
+        {
+          in: "query",
+          name: "blueprintId",
+          required: false,
+          schema: uuid,
+        },
+        {
+          in: "query",
+          name: "generationRunId",
+          required: false,
+          schema: uuid,
+        },
+      ],
+      responses: {
+        "200": {
+          content: {
+            "application/json": {
+              schema: schemaRef(listQuestionsResponseSchema),
+            },
+          },
+          description: "Questions.",
+        },
+        "400": responseRef(badRequestResponse),
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+        "404": responseRef(notFoundResponse),
+        "409": responseRef(conflictResponse),
+        "502": responseRef(upstreamWorkbookResponse),
+      },
+      security: [keycloakSecurityRequirement],
+      summary: "List questions",
+      tags: [tagRef(questionTag)],
+    },
+  },
+  "/questions/{questionId}": {
+    delete: {
+      operationId: "deleteQuestion",
+      responses: {
+        "204": { description: "No content" },
+        "400": responseRef(badRequestResponse),
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+        "404": responseRef(notFoundResponse),
+        "409": responseRef(conflictResponse),
+      },
+      security: [keycloakSecurityRequirement],
+      summary: "Delete question",
+      tags: [tagRef(questionTag)],
+    },
+    get: {
+      operationId: "getQuestion",
+      responses: {
+        "200": {
+          content: {
+            "application/json": {
+              schema: schemaRef(questionResponseSchema),
+            },
+          },
+          description: "Question.",
+        },
+        "400": responseRef(badRequestResponse),
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+        "404": responseRef(notFoundResponse),
+        "409": responseRef(conflictResponse),
+        "502": responseRef(upstreamWorkbookResponse),
+      },
+      security: [keycloakSecurityRequirement],
+      summary: "Get question",
+      tags: [tagRef(questionTag)],
+    },
+    parameters: [paramRef(questionParam)],
+  },
+
+  "/questions/{questionId}/grade": {
+    parameters: [paramRef(questionParam)],
+    post: {
+      operationId: "gradeQuestion",
+      requestBody: {
+        content: {
+          "application/json": {
+            schema: schemaRef(gradeQuestionRequestSchema),
+          },
+        },
+        required: true,
+      },
+      responses: {
+        "200": {
+          content: {
+            "application/json": {
+              schema: schemaRef(gradeQuestionResponseSchema),
+            },
+          },
+          description: "Question graded.",
+        },
+        "400": responseRef(badRequestResponse),
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+        "404": responseRef(notFoundResponse),
+        "409": responseRef(conflictResponse),
+        "502": responseRef(upstreamWorkbookResponse),
+      },
+      security: [keycloakSecurityRequirement],
+      summary: "Grade question",
+      tags: [tagRef(questionTag)],
     },
   },
 };
 
 export const openapi: OpenAPI = {
-  openapi: "3.1.0",
-  info: {
-    title: "Lemma Questions API",
-    version: "0.1.0",
-  },
-  tags: [questionTag],
   components: {
-    securitySchemes: Object.fromEntries([
-      [keycloakSecurityScheme.name, keycloakSecurityScheme.securitySchema],
-    ]),
     parameters: Object.fromEntries(
       params.map((param) => [param.name, param.schema]),
     ),
-    schemas: Object.fromEntries([
-      ...schemas.map((schema) => [schema.name, schema.schema]),
-      [errorResponseSchema.name, errorResponseSchema.schema],
-    ]),
     responses: Object.fromEntries([
       ...responses.map((resp) => [resp.name, resp.schema]),
       [unauthorizedResponse.name, unauthorizedResponse.schema],
     ]),
+    schemas: Object.fromEntries([
+      ...schemas.map((schema) => [schema.name, schema.schema]),
+      [errorResponseSchema.name, errorResponseSchema.schema],
+    ]),
+    securitySchemes: Object.fromEntries([
+      [keycloakSecurityScheme.name, keycloakSecurityScheme.securitySchema],
+    ]),
   },
+  info: {
+    title: "Lemma Questions API",
+    version: "0.1.0",
+  },
+  openapi: "3.1.0",
   paths,
+  tags: [questionTag],
 };

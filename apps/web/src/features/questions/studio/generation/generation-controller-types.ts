@@ -6,8 +6,11 @@ import type {
 export type GenerateBlueprintSource = {
   id: string;
   name: string;
-  workbookId: string | null;
-  currentVersionId?: string;
+  sources: {
+    sourceId: string;
+    name: string;
+    workbookId: string;
+  }[];
 };
 
 export type GenerateQuestionsDialogInput = {
@@ -26,10 +29,12 @@ export type ActiveRunContext = {
 export type GenerateQuestionsDialogSource = {
   kind: "saved_blueprint";
   blueprintId: string;
-  blueprintVersionId: string;
   name: string;
-  workbookId: string | null;
-  workbookName?: string | null;
+  sources: {
+    sourceId: string;
+    name: string;
+    workbookId: string;
+  }[];
 };
 
 export type GenerateQuestionsDialogProps = {

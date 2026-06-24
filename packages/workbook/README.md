@@ -1,7 +1,7 @@
 # @lemma/workbook
 
-Workbook bounded context for blueprint-attached workbook assets, snapshots,
-validation, and calculation orchestration.
+Workbook bounded context for workbooks bound through blueprint source slots,
+snapshots, validation, and calculation orchestration.
 
 ## Main Surface
 
@@ -36,7 +36,7 @@ resolution for single references.
 ```bash
 pnpm --filter @lemma/workbook build
 pnpm --filter @lemma/workbook test
-pnpm --filter @lemma/workbook generate:openapi
+pnpm --filter @lemma/workbook generate:hono
 ```
 
 ## Generated Files

@@ -22,14 +22,14 @@ export function QuestionPlayer({
     <div className="grid gap-4">
       {question.blocks.map((block) => (
         <QuestionBlock
-          key={block.id}
-          block={block}
-          question={question}
           answer={answer}
+          block={block}
           disabled={disabled}
-          referencePreviewCache={referencePreviewCache}
-          onSelectReference={onSelectReference}
+          key={block.id}
           onAnswerChange={onAnswerChange}
+          onSelectReference={onSelectReference}
+          question={question}
+          referencePreviewCache={referencePreviewCache}
         />
       ))}
       {feedback ? (
@@ -68,8 +68,8 @@ function QuestionBlock({
       return (
         <TextQuestionBlock
           content={block.content}
-          referencePreviewCache={referencePreviewCache}
           onSelectReference={onSelectReference}
+          referencePreviewCache={referencePreviewCache}
         />
       );
     case "rich_text":
@@ -84,21 +84,21 @@ function QuestionBlock({
     case "response":
       return (
         <ResponseQuestionBlock
-          block={block}
-          question={question}
           answer={answer}
+          block={block}
           disabled={disabled}
           onAnswerChange={onAnswerChange}
+          question={question}
         />
       );
     case "table":
       return (
         <TableQuestionBlock
-          block={block}
           answer={answer}
+          block={block}
           disabled={disabled}
-          referencePreviewCache={referencePreviewCache}
           onAnswerChange={onAnswerChange}
+          referencePreviewCache={referencePreviewCache}
         />
       );
   }

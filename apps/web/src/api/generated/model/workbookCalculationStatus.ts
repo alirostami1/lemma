@@ -9,9 +9,9 @@ export type WorkbookCalculationStatus =
   (typeof WorkbookCalculationStatus)[keyof typeof WorkbookCalculationStatus];
 
 export const WorkbookCalculationStatus = {
+  cancelled: "cancelled",
+  failed: "failed",
   queued: "queued",
   running: "running",
   succeeded: "succeeded",
-  failed: "failed",
-  cancelled: "cancelled",
 } as const;

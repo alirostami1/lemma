@@ -9,6 +9,6 @@ export type WorkbookSnapshotRangeBatchItemStatus =
   (typeof WorkbookSnapshotRangeBatchItemStatus)[keyof typeof WorkbookSnapshotRangeBatchItemStatus];
 
 export const WorkbookSnapshotRangeBatchItemStatus = {
-  ok: "ok",
   error: "error",
+  ok: "ok",
 } as const;

@@ -43,9 +43,9 @@ export function createTableFromWorkbookRangeReference(input: {
       rowValues.map((value, columnIndex) => {
         if (
           !getWorkbookCellRefAtOffset({
+            columnOffset: columnIndex,
             rangeRef: input.rangeReference.source.ref,
             rowOffset: rowIndex,
-            columnOffset: columnIndex,
           })
         ) {
           throw new Error("Selected range reference is invalid.");
@@ -57,21 +57,21 @@ export function createTableFromWorkbookRangeReference(input: {
         }
 
         return {
-          id: `cell_${rowIndex + 1}_${columnIndex + 1}`,
-          rowId: row.id,
           columnId: column.id,
-          type: "content",
           content: [
             {
-              type: "reference",
-              referenceId: input.rangeReference.id,
-              rangeCell: {
-                rowOffset: rowIndex,
-                columnOffset: columnIndex,
-              },
               fallbackText: value,
+              rangeCell: {
+                columnOffset: columnIndex,
+                rowOffset: rowIndex,
+              },
+              referenceId: input.rangeReference.id,
+              type: "reference",
             },
           ],
+          id: `cell_${rowIndex + 1}_${columnIndex + 1}`,
+          rowId: row.id,
+          type: "content",
         };
       }),
   );
@@ -80,10 +80,10 @@ export function createTableFromWorkbookRangeReference(input: {
     references: [],
     table: {
       ...input.currentModel,
-      rows,
-      columns,
       cells,
+      columns,
       responseFields: [],
+      rows,
     },
   };
 }
@@ -116,7 +116,7 @@ function validateWorkbookRangeMatrix(values: WorkbookRangeMatrix): {
   }
 
   return {
-    rowCount: values.length,
     columnCount,
+    rowCount: values.length,
   };
 }

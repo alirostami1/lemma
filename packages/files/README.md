@@ -20,7 +20,7 @@ File upload and object storage bounded context.
 ```bash
 pnpm --filter @lemma/files build
 pnpm --filter @lemma/files test
-pnpm --filter @lemma/files generate:openapi
+pnpm --filter @lemma/files generate:hono
 ```
 
 ## Generated Files

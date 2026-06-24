@@ -11,8 +11,8 @@ import type {
 import KcPage from "./KcPage";
 
 const kcContextExtension: KcContextExtension = {
-  themeName: "lemma",
   properties: { ...kcEnvDefaults },
+  themeName: "lemma",
 };
 
 const kcContextExtensionPerPage: KcContextExtensionPerPage = {};
@@ -29,8 +29,8 @@ export function createKcPageStory(params: { pageId: PageId }) {
 
   function KcPageStory(props: { kcContext?: DeepPartial<KcContext> }) {
     const kcContextMock = getKcContextMock({
-      pageId,
       overrides: props.kcContext as never,
+      pageId,
     });
 
     return <KcPage kcContext={kcContextMock} />;

@@ -8,9 +8,9 @@ import {
 
 const at = new Date("2026-06-14T00:00:00.000Z");
 const lineage = {
-  requestId: "019e9315-6a87-715f-9861-8654df070d10",
-  correlationId: "019e9315-6a87-715f-9861-8654df070d10",
   causationId: null,
+  correlationId: "019e9315-6a87-715f-9861-8654df070d10",
+  requestId: "019e9315-6a87-715f-9861-8654df070d10",
 };
 
 describe("FailedQueueJobReconciler", () => {
@@ -18,26 +18,26 @@ describe("FailedQueueJobReconciler", () => {
     const repository = new InMemoryFailedQueueJobRepository([
       createFailedJob({
         data: {
-          questionGenerationRunId: "019e9315-6a87-715f-9861-8654df070d02",
           lineage,
+          questionGenerationRunId: "019e9315-6a87-715f-9861-8654df070d02",
         },
       }),
     ]);
     const calls: string[] = [];
     const reconciler = new FailedQueueJobReconciler({
-      repository,
+      clock: { now: () => at },
+      config: createConfig(),
       questionGenerationWorkerService: {
         async reconcileFailedGenerationJob(input) {
           calls.push(input.questionGenerationRunId);
           return {
-            status: "skipped",
             questionGenerationRun: null,
             reason: "not_found",
+            status: "skipped",
           };
         },
       },
-      clock: { now: () => at },
-      config: createConfig(),
+      repository,
     });
 
     assert.equal(await reconciler.runOnce(), 1);
@@ -55,19 +55,19 @@ describe("FailedQueueJobReconciler", () => {
     ]);
     let serviceCalls = 0;
     const reconciler = new FailedQueueJobReconciler({
-      repository,
+      clock: { now: () => at },
+      config: createConfig(),
       questionGenerationWorkerService: {
         async reconcileFailedGenerationJob() {
           serviceCalls += 1;
           return {
-            status: "skipped",
             questionGenerationRun: null,
             reason: "not_found",
+            status: "skipped",
           };
         },
       },
-      clock: { now: () => at },
-      config: createConfig(),
+      repository,
     });
 
     assert.equal(await reconciler.runOnce(), 1);
@@ -79,29 +79,29 @@ describe("FailedQueueJobReconciler", () => {
     const repository = new InMemoryFailedQueueJobRepository([
       createFailedJob({
         data: {
-          questionGenerationRunId: "019e9315-6a87-715f-9861-8654df070d02",
           lineage,
+          questionGenerationRunId: "019e9315-6a87-715f-9861-8654df070d02",
         },
       }),
     ]);
     const reconciler = new FailedQueueJobReconciler({
-      repository,
+      clock: { now: () => at },
+      config: createConfig(),
       questionGenerationWorkerService: {
         async reconcileFailedGenerationJob() {
           throw new Error("database unavailable");
         },
       },
-      clock: { now: () => at },
-      config: createConfig(),
+      repository,
     });
 
     assert.equal(await reconciler.runOnce(), 1);
     assert.equal(repository.completed.length, 0);
     assert.deepEqual(repository.failures, [
       {
-        jobId: "job-1",
         errorMessage: "database unavailable",
         failedAt: at,
+        jobId: "job-1",
       },
     ]);
   });
@@ -150,23 +150,23 @@ class InMemoryFailedQueueJobRepository
 
 function createConfig() {
   return {
-    workerId: "worker-1",
     batchSize: 25,
     intervalMs: 10_000,
     lockTimeoutMs: 60_000,
+    workerId: "worker-1",
   };
 }
 
 function createFailedJob(input: { data: unknown }): FailedQueueJob {
   return {
+    completedOn: at,
+    createdOn: at,
+    data: input.data,
     id: "job-1",
     name: "question-generation.materialize",
-    data: input.data,
     output: { message: "engine failed" },
     retryCount: 3,
     retryLimit: 3,
-    createdOn: at,
     startedOn: at,
-    completedOn: at,
   };
 }

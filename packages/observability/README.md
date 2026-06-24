@@ -12,6 +12,6 @@ Shared observability setup for logging, tracing, and metrics integration.
 
 ```bash
 pnpm --filter @lemma/observability build
-pnpm --filter @lemma/observability check-types
+pnpm --filter @lemma/observability check:types
 pnpm --filter @lemma/observability lint
 ```

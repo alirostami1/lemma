@@ -8,9 +8,9 @@ describe("question player model", () => {
 
     expect(presentable.blocks).toEqual([
       {
+        content: [{ text: "Prompt", type: "text" }],
         id: "prompt",
         type: "text",
-        content: [{ type: "text", text: "Prompt" }],
       },
     ]);
     expect(presentable.responseFields).toEqual([]);
@@ -20,30 +20,28 @@ describe("question player model", () => {
 function question(): Question {
   const timestamp = new Date("2026-06-14T00:00:00Z");
   return {
-    id: "question-1",
-    ownerUserId: "owner",
-    createdByUserId: "creator",
     blueprintId: "blueprint-1",
-    blueprintVersionId: "version-1",
-    generationRunId: "run-1",
     body: {
-      schemaVersion: 1,
       blocks: [
         {
+          content: [{ text: "Prompt", type: "text" }],
           id: "prompt",
           type: "text",
-          content: [{ type: "text", text: "Prompt" }],
         },
       ],
       responseFields: [],
-    },
-    producer: {
       schemaVersion: 1,
-      compiler: "test",
     },
-    source: null,
-    status: "active",
     createdAt: timestamp,
+    createdByUserId: "creator",
+    generationRunId: "run-1",
+    id: "question-1",
+    ownerUserId: "owner",
+    producer: {
+      compiler: "test",
+      schemaVersion: 1,
+    },
+    status: "active",
     updatedAt: timestamp,
   };
 }

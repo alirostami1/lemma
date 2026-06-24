@@ -20,8 +20,8 @@ export function TextQuestionBlock({
       <InlineContentRenderer
         content={content}
         mode="preview"
-        referencePreviewValues={referencePreviewCache}
         onSelectReference={onSelectReference}
+        referencePreviewValues={referencePreviewCache}
       />
     </p>
   );

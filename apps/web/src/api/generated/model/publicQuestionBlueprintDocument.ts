@@ -9,7 +9,7 @@ import type { PublicQuestionBlueprintDocumentSchemaVersion } from "./publicQuest
 import type { QuestionResponseField } from "./questionResponseField.ts";
 
 export interface PublicQuestionBlueprintDocument {
-  schemaVersion: PublicQuestionBlueprintDocumentSchemaVersion;
   blocks: PublicQuestionBlueprintBlock[];
   responseFields: QuestionResponseField[];
+  schemaVersion: PublicQuestionBlueprintDocumentSchemaVersion;
 }

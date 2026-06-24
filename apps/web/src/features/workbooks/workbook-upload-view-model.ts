@@ -31,24 +31,24 @@ export function buildWorkbookUploadViewModel(input: {
   submitLabel: string;
 }): WorkbookUploadViewModel {
   return {
-    selectedFileLabel: input.selectedFile?.name ?? null,
-    submitLabel: getSubmitLabel(input.status, input.submitLabel),
     cancelLabel: input.cancelLabel,
-    isSubmitDisabled:
-      isPending(input.status) ||
-      input.fileValidation.status === "invalid" ||
-      input.name.trim().length === 0,
-    isFileSelectDisabled: isPending(input.status),
-    isCancelDisabled: isPending(input.status),
     errorMessage: input.errorMessage,
     helperText: input.selectedFile
       ? `Selected ${formatWorkbookBytes(input.selectedFile.size)}`
       : null,
+    isCancelDisabled: isPending(input.status),
+    isFileSelectDisabled: isPending(input.status),
+    isSubmitDisabled:
+      isPending(input.status) ||
+      input.fileValidation.status === "invalid" ||
+      input.name.trim().length === 0,
     nameError:
       input.name.trim().length === 0 &&
       (input.hasSubmitted || input.errorMessage === "Name is required.")
         ? "Name is required."
         : null,
+    selectedFileLabel: input.selectedFile?.name ?? null,
+    submitLabel: getSubmitLabel(input.status, input.submitLabel),
   };
 }
 

@@ -1,5 +1,6 @@
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import { reorderComposedBlocks } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import type { TableEditorSelection } from "#/features/questions/table-block-editor";
 import { BlockEditor } from "./block-editor";
@@ -17,6 +18,8 @@ export function BlockList({
   disabled,
   referencePreviewCache,
   workbookEnabled,
+  sources = [],
+  workbookSheetNamesBySourceId,
   onModelChange,
   onSelectBlock,
   onSelectReference,
@@ -32,6 +35,8 @@ export function BlockList({
   disabled?: boolean;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
+  sources?: QuestionBlueprintWorkbookSource[];
+  workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
   onModelChange(model: ComposedEditorModel): void;
   onSelectBlock(blockId: string): void;
   onSelectReference(referenceId: string): void;
@@ -75,19 +80,11 @@ export function BlockList({
       ) : null}
 
       <SortableBlockList
-        items={model.blocks}
         disabled={disabled}
+        items={model.blocks}
         onReorder={(blocks) =>
           onModelChange(reorderComposedBlocks(model, blocks))
         }
-        renderOverlay={(block, style) => (
-          <div
-            className="min-h-10 rounded-lg border border-primary/30 bg-background px-3 py-2 text-xs font-semibold uppercase text-muted-foreground shadow-lg"
-            style={style}
-          >
-            {getComposedBlockLabel(block)}
-          </div>
-        )}
         renderItem={(block, controls) => {
           const selected = block.id === selectedBlockId;
           const shouldRenderInteractiveBody =
@@ -96,9 +93,8 @@ export function BlockList({
             (candidate) => candidate.id === block.id,
           );
           return (
-            <div key={block.id} className="grid gap-3">
+            <div className="grid gap-3" key={block.id}>
               <BlockShell
-                selected={selected}
                 blockLabel={getComposedBlockLabel(block)}
                 bottomAction={
                   <InsertBlockMenu
@@ -109,33 +105,36 @@ export function BlockList({
                     }
                   />
                 }
+                canMoveDown={index < model.blocks.length - 1}
+                canMoveUp={index > 0}
                 disabled={disabled}
                 dragControls={controls}
-                onSelect={() => onSelectBlock(block.id)}
                 onDelete={() => onDeleteBlock(block.id)}
                 onDuplicate={() => onDuplicateBlock(block.id)}
-                onMoveUp={() => onMoveBlock(block.id, "up")}
                 onMoveDown={() => onMoveBlock(block.id, "down")}
-                canMoveUp={index > 0}
-                canMoveDown={index < model.blocks.length - 1}
+                onMoveUp={() => onMoveBlock(block.id, "up")}
+                onSelect={() => onSelectBlock(block.id)}
+                selected={selected}
               >
                 {shouldRenderInteractiveBody ? (
                   <BlockEditor
                     block={block}
                     disabled={disabled}
-                    referencePreviewCache={referencePreviewCache}
+                    getTableSelectionForBlock={getTableSelectionForBlock}
                     model={model}
-                    workbookEnabled={workbookEnabled}
                     onModelChange={onModelChange}
                     onSelectReference={onSelectReference}
                     onTableSelectionChange={onTableSelectionChange}
-                    getTableSelectionForBlock={getTableSelectionForBlock}
+                    referencePreviewCache={referencePreviewCache}
+                    sources={sources}
+                    workbookEnabled={workbookEnabled}
+                    workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
                   />
                 ) : (
                   <BlockPreview
                     block={block}
-                    referencePreviewCache={referencePreviewCache}
                     onSelectReference={onSelectReference}
+                    referencePreviewCache={referencePreviewCache}
                   />
                 )}
               </BlockShell>

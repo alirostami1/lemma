@@ -53,8 +53,8 @@ function updateTableCellValueExpression(
       ...cell,
       content:
         value.type === "reference"
-          ? [{ type: "reference", referenceId: value.referenceId }]
-          : [{ type: "text", text: formatAnswerInputValue(value.value) }],
+          ? [{ referenceId: value.referenceId, type: "reference" }]
+          : [{ text: formatAnswerInputValue(value.value), type: "text" }],
     };
   }
 
@@ -71,15 +71,15 @@ export function addReferenceAndUpdateTableCellValue(input: {
   reference: ComposedReferenceDraft;
 }): ComposedEditorModel {
   return updateTableCellValueInComposedModel({
+    cellId: input.cellId,
     editorModel: {
       ...input.editorModel,
       references: [...input.editorModel.references, input.reference],
     },
     tableBlockId: input.tableBlockId,
-    cellId: input.cellId,
     value: {
-      type: "reference",
       referenceId: input.reference.id,
+      type: "reference",
     },
   });
 }

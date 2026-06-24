@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { computeFileSha256Hex } from "#/domains/files/checksum";
 import {
   useCompleteFileUpload,
   useCreateFileUpload,
@@ -10,6 +9,7 @@ import {
 } from "#/domains/files/upload-validation";
 import { useCreateWorkbook } from "#/domains/workbooks/hooks";
 import type { Workbook } from "#/domains/workbooks/model";
+import { uploadWorkbookFileRuntime } from "#/domains/workbooks/upload-runtime";
 import {
   buildWorkbookUploadViewModel,
   type WorkbookUploadStatus,
@@ -31,9 +31,6 @@ export type WorkbookUploadController = {
   selectedFile: File | null;
   viewModel: WorkbookUploadViewModel;
 };
-
-const WORKBOOK_CONTENT_TYPE =
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 export function useWorkbookUploadController({
   cancelLabel = "Cancel",
@@ -80,13 +77,6 @@ export function useWorkbookUploadController({
   return {
     hasSubmitted,
     name,
-    selectedFile,
-    viewModel,
-    onNameChange: (nextName) => {
-      setName(nextName);
-      setErrorMessage(null);
-      setStatus("idle");
-    },
     onFileChange: (file) => {
       const validation = validateWorkbookUploadFile(file);
       setErrorMessage(
@@ -102,6 +92,11 @@ export function useWorkbookUploadController({
       return {
         accepted: validation.status === "valid",
       };
+    },
+    onNameChange: (nextName) => {
+      setName(nextName);
+      setErrorMessage(null);
+      setStatus("idle");
     },
     onSubmit: async () => {
       setHasSubmitted(true);
@@ -131,36 +126,19 @@ export function useWorkbookUploadController({
       setErrorMessage(null);
 
       try {
-        setStatus("hashing");
-        const checksumSha256 = await computeFileSha256Hex(file);
-
         setStatus("uploading");
-        const { upload, uploadUrl } = await createFileUpload.mutateAsync({
-          byteSize: file.size,
-          checksumSha256,
-          contentType: WORKBOOK_CONTENT_TYPE,
-          originalName: file.name,
-          purpose: "workbook",
-        });
-
-        const storageResponse = await fetch(uploadUrl.url, {
-          method: uploadUrl.method,
-          headers: uploadUrl.headers,
-          body: file,
-        });
-
-        if (!storageResponse.ok) {
-          throw new Error("Source file upload failed.");
-        }
-
-        const completedFile = await completeFileUpload.mutateAsync({
-          uploadId: upload.id,
-        });
-
-        setStatus("creating_source");
-        const workbook = await createWorkbook.mutateAsync({
+        const workbook = await uploadWorkbookFileRuntime({
+          completeFileUpload: (args) => completeFileUpload.mutateAsync(args),
+          createFileUpload: async (args) => {
+            setStatus("hashing");
+            return createFileUpload.mutateAsync(args);
+          },
+          createWorkbook: async (args) => {
+            setStatus("creating_source");
+            return createWorkbook.mutateAsync(args);
+          },
+          file,
           name: trimmedName,
-          fileId: completedFile.id,
         });
 
         await onCreated?.(workbook);
@@ -178,6 +156,8 @@ export function useWorkbookUploadController({
         setStatus("failed");
       }
     },
+    selectedFile,
+    viewModel,
   };
 }
 

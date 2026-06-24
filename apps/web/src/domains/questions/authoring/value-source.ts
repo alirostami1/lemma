@@ -58,6 +58,10 @@ export function isValidWorkbookReferenceSource(
     return source.type === "literal";
   }
 
+  if (!source.sourceId) {
+    return false;
+  }
+
   const parsed = parseWorkbookRef(source.ref);
   if (!parsed) {
     return false;

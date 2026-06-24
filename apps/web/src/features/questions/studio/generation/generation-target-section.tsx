@@ -44,13 +44,13 @@ export function GenerationTargetSection({
     <Field>
       <FieldLabel htmlFor="generate-question-set">Question set</FieldLabel>
       <Select
+        disabled={isSubmitting}
+        onValueChange={onQuestionSetValueChange}
         value={
           questionSetMode === "create_new"
             ? CREATE_NEW_VALUE
             : selectedQuestionSetId
         }
-        disabled={isSubmitting}
-        onValueChange={onQuestionSetValueChange}
       >
         <SelectTrigger id="generate-question-set">
           <SelectValue placeholder="Select question set" />
@@ -77,12 +77,12 @@ export function GenerationTargetSection({
               New question set name
             </FieldLabel>
             <Input
-              id="generate-question-set-name"
-              value={newQuestionSetName}
               disabled={isSubmitting}
+              id="generate-question-set-name"
               onChange={(event) =>
                 onNewQuestionSetNameChange(event.currentTarget.value)
               }
+              value={newQuestionSetName}
             />
             {newQuestionSetNameIssue ? (
               <p className="text-xs text-destructive">
@@ -96,12 +96,12 @@ export function GenerationTargetSection({
               Description
             </FieldLabel>
             <Input
-              id="generate-question-set-description"
-              value={newQuestionSetDescription}
               disabled={isSubmitting}
+              id="generate-question-set-description"
               onChange={(event) =>
                 onNewQuestionSetDescriptionChange(event.currentTarget.value)
               }
+              value={newQuestionSetDescription}
             />
             <FieldDescription>
               Optional. Helps identify question set later.

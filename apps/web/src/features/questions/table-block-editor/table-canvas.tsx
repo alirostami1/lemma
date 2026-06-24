@@ -37,24 +37,24 @@ export function TableCanvas({
             <tr>
               {model.showRowNames ? <th className="w-32" /> : null}
               {model.columns.map((column) => (
-                <th key={column.id} className="min-w-40">
+                <th className="min-w-40" key={column.id}>
                   <button
-                    type="button"
-                    disabled={disabled}
                     className={cn(
                       "w-full rounded-md border border-border/70 bg-background px-3 py-2 text-left text-sm font-medium transition hover:border-primary/60 focus:outline-none focus:ring-2 focus:ring-ring",
                       isTableSelectionEqual(selection, {
-                        type: "column",
                         columnId: column.id,
+                        type: "column",
                       }) && "border-primary ring-2 ring-primary/20",
                     )}
+                    disabled={disabled}
                     onClick={(event) => {
                       event.stopPropagation();
                       onSelectionChange({
-                        type: "column",
                         columnId: column.id,
+                        type: "column",
                       });
                     }}
+                    type="button"
                   >
                     {column.label}
                   </button>
@@ -70,19 +70,19 @@ export function TableCanvas({
               {model.showRowNames ? (
                 <th className="w-32 align-top">
                   <button
-                    type="button"
-                    disabled={disabled}
                     className={cn(
                       "w-full rounded-md border border-border/70 bg-background px-3 py-2 text-left text-sm font-medium transition hover:border-primary/60 focus:outline-none focus:ring-2 focus:ring-ring",
                       isTableSelectionEqual(selection, {
-                        type: "row",
                         rowId: row.id,
+                        type: "row",
                       }) && "border-primary ring-2 ring-primary/20",
                     )}
+                    disabled={disabled}
                     onClick={(event) => {
                       event.stopPropagation();
-                      onSelectionChange({ type: "row", rowId: row.id });
+                      onSelectionChange({ rowId: row.id, type: "row" });
                     }}
+                    type="button"
                   >
                     {row.label}
                   </button>
@@ -100,18 +100,16 @@ export function TableCanvas({
                 const isSelected =
                   cell !== null &&
                   isTableSelectionEqual(selection, {
-                    type: "cell",
                     cellId: cell.id,
+                    type: "cell",
                   });
 
                 return (
-                  <td key={column.id} className="min-w-40 align-top">
+                  <td className="min-w-40 align-top" key={column.id}>
                     <TableCellView
                       cell={cell}
-                      responseField={responseField}
-                      referencePreviewCache={referencePreviewCache ?? {}}
-                      isSelected={isSelected}
                       disabled={disabled}
+                      isSelected={isSelected}
                       onSelect={() => {
                         const result = ensureTableCell(
                           model,
@@ -120,10 +118,12 @@ export function TableCanvas({
                         );
                         if (result.model !== model) onModelChange(result.model);
                         onSelectionChange({
-                          type: "cell",
                           cellId: result.cell.id,
+                          type: "cell",
                         });
                       }}
+                      referencePreviewCache={referencePreviewCache ?? {}}
+                      responseField={responseField}
                     />
                   </td>
                 );

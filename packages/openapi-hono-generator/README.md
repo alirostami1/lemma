@@ -10,7 +10,7 @@ operations.
 ## Used By
 
 - package `orval.config.ts` files
-- generated `src/gen/hono` route helpers
+- generated `src/generated/hono` route helpers
 
 ## Commands
 

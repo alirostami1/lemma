@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.5/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
   "root": true,
   "vcs": {
     "enabled": true,
@@ -23,11 +23,7 @@
   },
   "overrides": [
     {
-      "includes": [
-        "**/src/gen/**/*",
-        "**/src/api/generated/**/*",
-        "**/src/kc.gen.tsx"
-      ],
+      "includes": ["**/src/api/generated/**/*", "**/src/kc.gen.tsx"],
       "linter": {
         "enabled": false
       }
@@ -41,6 +37,20 @@
   },
   "formatter": {
     "useEditorconfig": true
+  },
+  "assist": {
+    "actions": {
+      "recommended": true,
+      "source": {
+        "noDuplicateClasses": "on",
+        "organizeImports": "on",
+        "useSortedAttributes": "on",
+        "useSortedEnumMembers": "on",
+        "useSortedInterfaceMembers": "on",
+        "useSortedPackageJson": "on",
+        "useSortedProperties": "on"
+      }
+    }
   },
   "javascript": {
     "formatter": {

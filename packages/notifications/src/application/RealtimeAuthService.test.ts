@@ -11,17 +11,17 @@ import { RealtimeAuthService } from "./RealtimeAuthService.js";
 
 const now = new Date("2026-06-15T00:00:00.000Z");
 const currentUser = createCurrentUser({
+  at: now,
+  roles: [],
   user: createUser(
     {
+      displayName: "User",
+      email: "user@example.com",
       id: "019e9315-6a87-715f-9861-8654df070e01",
       identityId: "keycloak-subject-user",
-      email: "user@example.com",
-      displayName: "User",
     },
     now,
   ),
-  roles: [],
-  at: now,
 });
 const otherUserId = "019e9315-6a87-715f-9861-8654df070e02";
 const runId = "019e9315-6a87-715f-9861-8654df070e03";
@@ -31,12 +31,6 @@ describe("RealtimeAuthService", () => {
     const signedClaims: unknown[] = [];
     const accessRequirements: unknown[] = [];
     const service = new RealtimeAuthService({
-      tokenSigner: {
-        sign(input) {
-          signedClaims.push(input.claims);
-          return "signed-token";
-        },
-      },
       channelAccessPort: {
         async canSubscribe(input) {
           accessRequirements.push(input.accessRequirement);
@@ -44,25 +38,31 @@ describe("RealtimeAuthService", () => {
         },
       },
       clock: { now: () => now },
+      tokenSigner: {
+        sign(input) {
+          signedClaims.push(input.claims);
+          return "signed-token";
+        },
+      },
       tokenTtlSeconds: 60,
     });
 
     const channel = questionGenerationRunNotificationChannel(runId);
     const result = await service.createSubscriptionToken({
-      currentUser,
       channel,
+      currentUser,
     });
 
     assert.equal(result.token, "signed-token");
     assert.deepEqual(accessRequirements, [
-      { type: "question_generation_run", questionGenerationRunId: runId },
+      { questionGenerationRunId: runId, type: "question_generation_run" },
     ]);
     assert.deepEqual(signedClaims, [
       {
-        sub: currentUser.user.id,
         channel,
-        iat: Math.floor(now.getTime() / 1000),
         exp: Math.floor(result.expiresAt.getTime() / 1000),
+        iat: Math.floor(now.getTime() / 1000),
+        sub: currentUser.user.id,
       },
     ]);
   });
@@ -70,12 +70,6 @@ describe("RealtimeAuthService", () => {
   it("does not sign a token for another user's channel", async () => {
     const signedClaims: unknown[] = [];
     const service = new RealtimeAuthService({
-      tokenSigner: {
-        sign(input) {
-          signedClaims.push(input.claims);
-          return "signed-token";
-        },
-      },
       channelAccessPort: {
         async canSubscribe(input) {
           return (
@@ -85,14 +79,20 @@ describe("RealtimeAuthService", () => {
         },
       },
       clock: { now: () => now },
+      tokenSigner: {
+        sign(input) {
+          signedClaims.push(input.claims);
+          return "signed-token";
+        },
+      },
       tokenTtlSeconds: 60,
     });
 
     await assert.rejects(
       () =>
         service.createSubscriptionToken({
-          currentUser,
           channel: userNotificationChannel(otherUserId),
+          currentUser,
         }),
       ForbiddenNotificationChannelError,
     );
@@ -102,26 +102,26 @@ describe("RealtimeAuthService", () => {
   it("does not sign a token when resource access is denied", async () => {
     const signedClaims: unknown[] = [];
     const service = new RealtimeAuthService({
-      tokenSigner: {
-        sign(input) {
-          signedClaims.push(input.claims);
-          return "signed-token";
-        },
-      },
       channelAccessPort: {
         async canSubscribe() {
           return false;
         },
       },
       clock: { now: () => now },
+      tokenSigner: {
+        sign(input) {
+          signedClaims.push(input.claims);
+          return "signed-token";
+        },
+      },
       tokenTtlSeconds: 60,
     });
 
     await assert.rejects(
       () =>
         service.createSubscriptionToken({
-          currentUser,
           channel: questionGenerationRunNotificationChannel(runId),
+          currentUser,
         }),
       ForbiddenNotificationChannelError,
     );

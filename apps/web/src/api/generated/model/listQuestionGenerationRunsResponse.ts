@@ -7,7 +7,7 @@
 import type { QuestionGenerationRun } from "./questionGenerationRun.ts";
 
 export interface ListQuestionGenerationRunsResponse {
-  questionGenerationRuns: QuestionGenerationRun[];
   /** @nullable */
   nextCursor: string | null;
+  questionGenerationRuns: QuestionGenerationRun[];
 }

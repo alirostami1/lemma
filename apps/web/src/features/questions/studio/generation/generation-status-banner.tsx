@@ -33,12 +33,12 @@ export function GenerationStatusBanner({
         </div>
         {state.canRetry ? (
           <Button
-            type="button"
-            variant="outline"
-            size="sm"
             className="w-fit shrink-0"
             disabled={isRetrying}
             onClick={onRetry}
+            size="sm"
+            type="button"
+            variant="outline"
           >
             <RefreshCw />
             {isRetrying ? "Retrying..." : "Retry"}

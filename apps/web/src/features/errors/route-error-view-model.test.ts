@@ -5,14 +5,14 @@ import { buildRouteErrorViewModel } from "./route-error-view-model";
 
 function createApiError(status: number) {
   return new AppApiError({
-    status,
-    headers: new Headers(),
     body: null,
+    headers: new Headers(),
     payload: {
       code: `HTTP_${status}`,
       message: "API failed.",
       requestId: "request-1",
     },
+    status,
   });
 }
 

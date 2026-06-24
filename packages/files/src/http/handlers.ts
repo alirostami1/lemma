@@ -1,6 +1,6 @@
 import { withHttpErrorHandler } from "@lemma/http";
 import type { FilesService } from "../application/index.js";
-import type { FilesHandlerMap } from "../gen/hono/index.js";
+import type { FilesHandlerMap } from "../generated/hono/index.js";
 import { handleFilesError } from "./errors.js";
 import {
   presentCreateFileUpload,
@@ -22,32 +22,50 @@ function filesHandler<TKey extends keyof FilesHandlerMap>(
 
 export function createFilesHandlers(deps: FilesHandlersDeps): FilesHandlerMap {
   return {
-    listFiles: filesHandler("listFiles", async (c) => {
-      const query = c.req.valid("query");
-      const result = await deps.filesService.listFiles({
+    completeFileUpload: filesHandler("completeFileUpload", async (c) => {
+      const { uploadId } = c.req.valid("param");
+      const result = await deps.filesService.completeFileUpload({
         currentUser: c.var.identity,
-        limit: query.limit,
-        cursor: query.cursor,
-        status: query.status,
-        purpose: query.purpose,
+        uploadId,
       });
 
-      return c.json(presentFiles(result), 200);
+      c.header("Location", `/files/${result.file.id}`);
+      return c.json(presentFile(result), 201);
+    }),
+
+    createFileDownloadUrl: filesHandler("createFileDownloadUrl", async (c) => {
+      const { fileId } = c.req.valid("param");
+      const result = await deps.filesService.createDownloadUrl({
+        currentUser: c.var.identity,
+        fileId,
+      });
+
+      return c.json(presentDownloadFileUrl(result), 200);
     }),
 
     createFileUpload: filesHandler("createFileUpload", async (c) => {
       const body = c.req.valid("json");
 
       const result = await deps.filesService.createFileUpload({
-        currentUser: c.var.identity,
-        originalName: body.originalName,
-        contentType: body.contentType,
         byteSize: body.byteSize,
         checksumSha256: body.checksumSha256,
+        contentType: body.contentType,
+        currentUser: c.var.identity,
+        originalName: body.originalName,
         purpose: body.purpose,
       });
 
       return c.json(presentCreateFileUpload(result), 201);
+    }),
+
+    deleteFile: filesHandler("deleteFile", async (c) => {
+      const { fileId } = c.req.valid("param");
+      await deps.filesService.deleteFile({
+        currentUser: c.var.identity,
+        fileId,
+      });
+
+      return c.body(null, 204);
     }),
 
     getFile: filesHandler("getFile", async (c) => {
@@ -58,6 +76,18 @@ export function createFilesHandlers(deps: FilesHandlersDeps): FilesHandlerMap {
       });
 
       return c.json(presentFile(result), 200);
+    }),
+    listFiles: filesHandler("listFiles", async (c) => {
+      const query = c.req.valid("query");
+      const result = await deps.filesService.listFiles({
+        currentUser: c.var.identity,
+        cursor: query.cursor,
+        limit: query.limit,
+        purpose: query.purpose,
+        status: query.status,
+      });
+
+      return c.json(presentFiles(result), 200);
     }),
 
     updateFile: filesHandler("updateFile", async (c) => {
@@ -74,37 +104,6 @@ export function createFilesHandlers(deps: FilesHandlersDeps): FilesHandlerMap {
       });
 
       return c.json(presentFile(result), 200);
-    }),
-
-    deleteFile: filesHandler("deleteFile", async (c) => {
-      const { fileId } = c.req.valid("param");
-      await deps.filesService.deleteFile({
-        currentUser: c.var.identity,
-        fileId,
-      });
-
-      return c.body(null, 204);
-    }),
-
-    createFileDownloadUrl: filesHandler("createFileDownloadUrl", async (c) => {
-      const { fileId } = c.req.valid("param");
-      const result = await deps.filesService.createDownloadUrl({
-        currentUser: c.var.identity,
-        fileId,
-      });
-
-      return c.json(presentDownloadFileUrl(result), 200);
-    }),
-
-    completeFileUpload: filesHandler("completeFileUpload", async (c) => {
-      const { uploadId } = c.req.valid("param");
-      const result = await deps.filesService.completeFileUpload({
-        currentUser: c.var.identity,
-        uploadId,
-      });
-
-      c.header("Location", `/files/${result.file.id}`);
-      return c.json(presentFile(result), 201);
     }),
   };
 }

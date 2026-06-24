@@ -9,28 +9,28 @@ import type { FileUploadPurpose } from "./fileUploadPurpose.ts";
 import type { FileUploadStatus } from "./fileUploadStatus.ts";
 
 export interface FileUpload {
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  id: string;
+  /** @pattern ^[A-Fa-f0-9]{64}$ */
+  checksumSha256: string;
+  /** @nullable */
+  completedAt: string | null;
+  contentType: FileUploadContentType;
+  createdAt: string;
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
   createdByUserId: string;
-  /**
-   * @minLength 1
-   * @maxLength 500
-   */
-  originalName: string;
-  contentType: FileUploadContentType;
   /**
    * @maximum 26214400
    * @exclusiveMinimum 0
    */
   expectedByteSize: number;
-  /** @pattern ^[A-Fa-f0-9]{64}$ */
-  checksumSha256: string;
-  status: FileUploadStatus;
+  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
+  id: string;
+  /**
+   * @minLength 1
+   * @maxLength 500
+   */
+  originalName: string;
   purpose: FileUploadPurpose;
-  uploadExpiresAt: string;
-  /** @nullable */
-  completedAt: string | null;
-  createdAt: string;
+  status: FileUploadStatus;
   updatedAt: string;
+  uploadExpiresAt: string;
 }

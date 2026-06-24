@@ -5,42 +5,34 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { PublicQuestionBlueprintDocument } from "./publicQuestionBlueprintDocument.ts";
-import type { QuestionBlueprintCurrentVersion } from "./questionBlueprintCurrentVersion.ts";
+import type { QuestionBlueprintSource } from "./questionBlueprintSource.ts";
 import type { QuestionBlueprintStatus } from "./questionBlueprintStatus.ts";
 import type { QuestionBlueprintVisibility } from "./questionBlueprintVisibility.ts";
 
 export interface QuestionBlueprint {
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  id: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  ownerUserId: string;
+  /** @nullable */
+  archivedAt: string | null;
+  createdAt: string;
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
   createdByUserId: string;
-  /**
-   * @minLength 1
-   * @maxLength 160
-   */
-  name: string;
   /**
    * @maxLength 1000
    * @nullable
    */
   description: string | null;
   document: PublicQuestionBlueprintDocument;
-  /**
-   * @nullable
-   * @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
-   */
-  workbookId: string | null;
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  currentVersionId: string;
-  /** @minimum 1 */
-  currentVersionNumber: number;
-  currentVersion: QuestionBlueprintCurrentVersion;
-  visibility: QuestionBlueprintVisibility;
+  id: string;
+  /**
+   * @minLength 1
+   * @maxLength 160
+   */
+  name: string;
+  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
+  ownerUserId: string;
+  /** Blueprint-local source entries attached to this blueprint. */
+  sources: QuestionBlueprintSource[];
   status: QuestionBlueprintStatus;
-  /** @nullable */
-  archivedAt: string | null;
-  createdAt: string;
   updatedAt: string;
+  visibility: QuestionBlueprintVisibility;
 }

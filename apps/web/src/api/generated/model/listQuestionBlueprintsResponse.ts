@@ -7,7 +7,7 @@
 import type { QuestionBlueprint } from "./questionBlueprint.ts";
 
 export interface ListQuestionBlueprintsResponse {
-  questionBlueprints: QuestionBlueprint[];
   /** @nullable */
   nextCursor: string | null;
+  questionBlueprints: QuestionBlueprint[];
 }

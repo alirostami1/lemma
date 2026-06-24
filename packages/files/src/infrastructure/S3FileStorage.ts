@@ -37,9 +37,9 @@ export class S3FileStorage implements FileStorage {
       secretAccessKey: config.secretAccessKey,
     };
     const commonConfig = {
-      region: config.region,
-      forcePathStyle: config.forcePathStyle,
       credentials,
+      forcePathStyle: config.forcePathStyle,
+      region: config.region,
     };
 
     this.client = new S3Client({
@@ -65,9 +65,9 @@ export class S3FileStorage implements FileStorage {
         this.presignClient,
         new PutObjectCommand({
           Bucket: input.bucket,
-          Key: input.key,
-          ContentType: input.contentType,
           ChecksumSHA256: sha256HexToBase64(input.checksumSha256),
+          ContentType: input.contentType,
+          Key: input.key,
         }),
         {
           expiresIn: this.uploadUrlExpiresInSeconds,
@@ -100,8 +100,8 @@ export class S3FileStorage implements FileStorage {
         const result = await this.client.send(
           new HeadObjectCommand({
             Bucket: input.bucket,
-            Key: input.key,
             ChecksumMode: "ENABLED",
+            Key: input.key,
           }),
         );
 

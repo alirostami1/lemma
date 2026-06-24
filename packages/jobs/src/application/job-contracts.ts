@@ -10,6 +10,7 @@ export const WORKBOOK_CALCULATE_JOB = "workbook.calculate";
 /**
  * Job idempotency:
  * - outbox-dispatched jobs use the outbox event id as the queue id.
+ * - workbook calculation jobs use the calculation id as the queue id.
  * - question generation materialization derives the queue id from the run id
  *   because only one materialization job may ever commit a run.
  * - handlers must tolerate retries by checking domain state before side effects.
@@ -17,14 +18,14 @@ export const WORKBOOK_CALCULATE_JOB = "workbook.calculate";
 
 export type QuestionGenerationMaterializeJobData = JsonObject & {
   questionGenerationRunId: string;
-  workbookSnapshotIds: string[];
+  eventWorkbookSnapshotIds: string[];
   lineage: OperationLineage;
 };
 
 export type QuestionGenerationOrchestrateJobData = JsonObject & {
   questionGenerationRunId: string;
   workbookCalculationId: string | null;
-  workbookSnapshotIds: string[];
+  eventWorkbookSnapshotIds: string[];
   workbookCalculationErrorMessage: string | null;
   lineage: OperationLineage;
 };
@@ -42,29 +43,29 @@ export type WorkbookCalculateJobData = JsonObject & {
 export function questionGenerationOrchestrateJobData(input: {
   questionGenerationRunId: string;
   workbookCalculationId?: string | null;
-  workbookSnapshotIds?: readonly string[];
+  eventWorkbookSnapshotIds?: readonly string[];
   workbookCalculationErrorMessage?: string | null;
   lineage: OperationLineage;
 }): QuestionGenerationOrchestrateJobData {
   return {
+    eventWorkbookSnapshotIds: [...(input.eventWorkbookSnapshotIds ?? [])],
+    lineage: input.lineage,
     questionGenerationRunId: input.questionGenerationRunId,
-    workbookCalculationId: input.workbookCalculationId ?? null,
-    workbookSnapshotIds: [...(input.workbookSnapshotIds ?? [])],
     workbookCalculationErrorMessage:
       input.workbookCalculationErrorMessage ?? null,
-    lineage: input.lineage,
+    workbookCalculationId: input.workbookCalculationId ?? null,
   };
 }
 
 export function questionGenerationMaterializeJobData(input: {
   questionGenerationRunId: string;
-  workbookSnapshotIds: readonly string[];
+  eventWorkbookSnapshotIds: readonly string[];
   lineage: OperationLineage;
 }): QuestionGenerationMaterializeJobData {
   return {
-    questionGenerationRunId: input.questionGenerationRunId,
-    workbookSnapshotIds: [...input.workbookSnapshotIds],
+    eventWorkbookSnapshotIds: [...input.eventWorkbookSnapshotIds],
     lineage: input.lineage,
+    questionGenerationRunId: input.questionGenerationRunId,
   };
 }
 
@@ -73,8 +74,8 @@ export function workbookValidateJobData(input: {
   lineage: OperationLineage;
 }): WorkbookValidateJobData {
   return {
-    workbookId: input.workbookId,
     lineage: input.lineage,
+    workbookId: input.workbookId,
   };
 }
 
@@ -83,7 +84,7 @@ export function workbookCalculateJobData(input: {
   lineage: OperationLineage;
 }): WorkbookCalculateJobData {
   return {
-    workbookCalculationId: input.workbookCalculationId,
     lineage: input.lineage,
+    workbookCalculationId: input.workbookCalculationId,
   };
 }

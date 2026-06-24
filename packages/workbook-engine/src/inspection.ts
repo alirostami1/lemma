@@ -24,10 +24,10 @@ export async function inspectXlsx(
     buffer.length > config.maxFileBytes
   ) {
     throw new InvalidWorkbookError("Workbook file is too large.", {
-      sheetCount: 0,
       cellCount: 0,
-      formulaCount: 0,
       forbiddenFeatureFindings: ["file_too_large"],
+      formulaCount: 0,
+      sheetCount: 0,
     });
   }
 
@@ -37,19 +37,19 @@ export async function inspectXlsx(
     const workbookEntry = container.byName.get("xl/workbook.xml");
     if (!container.byName.has("[Content_Types].xml") || !workbookEntry) {
       throw new InvalidWorkbookError("Workbook must be an .xlsx file.", {
-        sheetCount: 0,
         cellCount: 0,
-        formulaCount: 0,
         forbiddenFeatureFindings: ["not_xlsx"],
+        formulaCount: 0,
+        sheetCount: 0,
       });
     }
 
     findings.push(
       ...collectWorkbookXmlFindings(
         await readBoundedXmlPart({
+          config,
           partName: workbookEntry.name,
           read: () => container.readTextEntry(workbookEntry),
-          config,
         }),
       ),
     );
@@ -65,17 +65,17 @@ export async function inspectXlsx(
           throw new InvalidWorkbookError(
             "Workbook has too many relationship parts.",
             {
-              sheetCount,
               cellCount,
-              formulaCount,
               forbiddenFeatureFindings: ["relationship_part_count_exceeded"],
+              formulaCount,
+              sheetCount,
             },
           );
         }
         const xml = await readBoundedXmlPart({
+          config,
           partName: entry.name,
           read: () => container.readTextEntry(entry),
-          config,
         });
         findings.push(...collectRelationshipXmlFindings(entry.name, xml));
       }
@@ -84,9 +84,9 @@ export async function inspectXlsx(
         entry.name.endsWith(".xml")
       ) {
         const xml = await readBoundedXmlPart({
+          config,
           partName: entry.name,
           read: () => container.readTextEntry(entry),
-          config,
         });
         findings.push(...collectWorksheetXmlFindings(xml));
         sheetCount += 1;
@@ -96,10 +96,10 @@ export async function inspectXlsx(
     }
 
     const inspection = {
-      sheetCount,
       cellCount,
-      formulaCount,
       forbiddenFeatureFindings: uniqueFindings(findings),
+      formulaCount,
+      sheetCount,
     };
     rejectInvalidInspection(inspection, config);
     return inspection;
@@ -120,10 +120,10 @@ async function readBoundedXmlPart(input: {
     throw new InvalidWorkbookError(
       `Workbook XML part is too large: ${input.partName}`,
       {
-        sheetCount: 0,
         cellCount: 0,
-        formulaCount: 0,
         forbiddenFeatureFindings: ["xml_part_too_large"],
+        formulaCount: 0,
+        sheetCount: 0,
       },
     );
   }

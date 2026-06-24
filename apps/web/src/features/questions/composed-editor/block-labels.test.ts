@@ -16,12 +16,12 @@ describe("getComposedBlockLabel", () => {
       [createRichTextBlock("rich_text_1"), "Rich text"],
       [
         {
-          id: "response_1",
-          type: "response",
-          responseFieldId: "answer_1",
           correctValueSource: { type: "literal", value: "" },
-          points: 1,
           grading: { mode: "exact" },
+          id: "response_1",
+          points: 1,
+          responseFieldId: "answer_1",
+          type: "response",
         },
         "Answer",
       ],
@@ -38,12 +38,12 @@ describe("getComposedBlockLabel", () => {
     const blocks: ComposedEditorBlock[] = [
       createRichTextBlock("rich_text_1"),
       {
-        id: "response_1",
-        type: "response",
-        responseFieldId: "answer_1",
         correctValueSource: { type: "literal", value: "" },
-        points: 1,
         grading: { mode: "exact" },
+        id: "response_1",
+        points: 1,
+        responseFieldId: "answer_1",
+        type: "response",
       },
       createSeparatorBlock("separator_1"),
     ];

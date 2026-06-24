@@ -74,21 +74,21 @@ export function operationLineage(input: {
   causationId?: string | null;
 }): OperationLineage {
   return {
-    requestId: assertUuidString(input.requestId, "requestId"),
-    correlationId: assertUuidString(input.correlationId, "correlationId"),
     causationId:
       input.causationId === undefined || input.causationId === null
         ? null
         : assertUuidString(input.causationId, "causationId"),
+    correlationId: assertUuidString(input.correlationId, "correlationId"),
+    requestId: assertUuidString(input.requestId, "requestId"),
   };
 }
 
 export function rootOperationLineage(requestId: string): OperationLineage {
   const normalized = assertUuidString(requestId, "requestId");
   return {
-    requestId: normalized,
-    correlationId: normalized,
     causationId: null,
+    correlationId: normalized,
+    requestId: normalized,
   };
 }
 
@@ -97,9 +97,9 @@ export function childOperationLineage(
   causationId: string,
 ): OperationLineage {
   return operationLineage({
-    requestId: lineage.requestId,
-    correlationId: lineage.correlationId,
     causationId,
+    correlationId: lineage.correlationId,
+    requestId: lineage.requestId,
   });
 }
 
@@ -127,9 +127,9 @@ export function parseOperationLineage(input: unknown): OperationLineage {
     throw new TypeError("lineage fields are invalid.");
   }
   return operationLineage({
-    requestId: values.requestId,
-    correlationId: values.correlationId,
     causationId: values.causationId,
+    correlationId: values.correlationId,
+    requestId: values.requestId,
   });
 }
 

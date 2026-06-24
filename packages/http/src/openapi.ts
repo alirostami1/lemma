@@ -47,9 +47,9 @@ export function tagRef<T extends Tag = Tag>(tag: T) {
 export const keycloakSecurityScheme: SecuritySchema = {
   name: "keycloakAccessToken",
   securitySchema: {
-    type: "http",
-    scheme: "bearer",
     bearerFormat: "JWT",
+    scheme: "bearer",
+    type: "http",
   },
 };
 
@@ -72,9 +72,9 @@ export function uuidV7StringSchemaObject(
   example = "019e8278-6746-768e-b90b-3c6d2fb8267f",
 ): OpenAPIV3_1.SchemaObject {
   return {
-    type: "string",
-    pattern: UUID_V7_OPENAPI_PATTERN,
     example,
+    pattern: UUID_V7_OPENAPI_PATTERN,
+    type: "string",
   };
 }
 
@@ -82,8 +82,8 @@ export function uuidV7Param(name: string, example?: string): Param {
   return {
     name,
     schema: {
-      name,
       in: "path",
+      name,
       required: true,
       schema: uuidV7StringSchemaObject(example) as ParameterSchema,
     },
@@ -93,85 +93,85 @@ export function uuidV7Param(name: string, example?: string): Param {
 export const errorResponseSchema: Schema = {
   name: "ErrorResponse",
   schema: {
-    type: "object",
-    required: ["error"],
     properties: {
       error: {
-        type: "object",
-        required: ["code", "message"],
         properties: {
           code: {
             type: "string",
           },
+          details: {},
           message: {
             type: "string",
           },
           requestId: {
             type: "string",
           },
-          details: {},
         },
+        required: ["code", "message"],
+        type: "object",
       },
     },
+    required: ["error"],
+    type: "object",
   },
 };
 
 export const unauthorizedResponse: Response = {
   name: "Unauthorized",
   schema: {
-    description: "Missing or invalid access token.",
     content: {
       "application/json": {
         schema: schemaRef(errorResponseSchema),
       },
     },
+    description: "Missing or invalid access token.",
   },
 };
 
 export const badRequestResponse: Response = {
   name: "BadRequest",
   schema: {
-    description: "Bad request.",
     content: {
       "application/json": {
         schema: schemaRef(errorResponseSchema),
       },
     },
+    description: "Bad request.",
   },
 };
 
 export const forbiddenResponse: Response = {
   name: "Forbidden",
   schema: {
-    description: "Forbidden.",
     content: {
       "application/json": {
         schema: schemaRef(errorResponseSchema),
       },
     },
+    description: "Forbidden.",
   },
 };
 
 export const notFoundResponse: Response = {
   name: "NotFound",
   schema: {
-    description: "Not found.",
     content: {
       "application/json": {
         schema: schemaRef(errorResponseSchema),
       },
     },
+    description: "Not found.",
   },
 };
 
 export const conflictResponse: Response = {
   name: "Conflict",
   schema: {
-    description: "Conflict.",
     content: {
       "application/json": {
         schema: schemaRef(errorResponseSchema),
       },
     },
+    description: "Conflict.",
   },
 };

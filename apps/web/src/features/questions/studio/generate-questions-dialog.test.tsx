@@ -17,9 +17,9 @@ describe("generate questions dialog", () => {
     render(
       <GenerateQuestionsDialog
         {...props({
+          onSubmit,
           questionSets: [questionSet("Recent set")],
           selectedQuestionSetId: "set-recent-set",
-          onSubmit,
         })}
       />,
     );
@@ -32,9 +32,9 @@ describe("generate questions dialog", () => {
     render(
       <GenerateQuestionsDialog
         {...props({
-          questionSetsLoading: true,
           countIssue: "Generation count must be between 1 and 100.",
           isGenerateDisabled: true,
+          questionSetsLoading: true,
         })}
       />,
     );
@@ -60,34 +60,33 @@ function props(
   overrides: Partial<GenerateQuestionsDialogProps> = {},
 ): GenerateQuestionsDialogProps {
   return {
-    open: true,
-    source: {
-      kind: "saved_blueprint",
-      blueprintId: "blueprint-1",
-      blueprintVersionId: "version-1",
-      name: "Blueprint",
-      workbookId: null,
-    },
-    questionSets: [],
-    questionSetsLoading: false,
-    questionSetsErrorMessage: null,
-    questionSetMode: "create_new",
-    selectedQuestionSetId: "",
-    newQuestionSetName: "",
-    newQuestionSetDescription: "",
     countInput: "1",
-    isSubmitting: false,
-    isGenerateDisabled: false,
     countIssue: null,
     existingQuestionSetIssue: null,
+    isGenerateDisabled: false,
+    isSubmitting: false,
+    newQuestionSetDescription: "",
+    newQuestionSetName: "",
     newQuestionSetNameIssue: null,
-    submitError: null,
-    onOpenChange: () => {},
-    onSubmit: () => {},
-    onQuestionSetValueChange: () => {},
-    onNewQuestionSetNameChange: () => {},
-    onNewQuestionSetDescriptionChange: () => {},
     onCountInputChange: () => {},
+    onNewQuestionSetDescriptionChange: () => {},
+    onNewQuestionSetNameChange: () => {},
+    onOpenChange: () => {},
+    onQuestionSetValueChange: () => {},
+    onSubmit: () => {},
+    open: true,
+    questionSetMode: "create_new",
+    questionSets: [],
+    questionSetsErrorMessage: null,
+    questionSetsLoading: false,
+    selectedQuestionSetId: "",
+    source: {
+      blueprintId: "blueprint-1",
+      kind: "saved_blueprint",
+      name: "Blueprint",
+      sources: [],
+    },
+    submitError: null,
     ...overrides,
   };
 }
@@ -98,13 +97,13 @@ function questionSet(
 ): QuestionSet {
   const timestamp = new Date("2026-06-14T00:00:00Z");
   return {
-    id: `set-${name.toLowerCase().replace(/\s+/gu, "-")}`,
-    ownerUserId: "owner",
-    createdByUserId: "creator",
-    name,
-    description: null,
-    status,
     createdAt: timestamp,
+    createdByUserId: "creator",
+    description: null,
+    id: `set-${name.toLowerCase().replace(/\s+/gu, "-")}`,
+    name,
+    ownerUserId: "owner",
+    status,
     updatedAt: timestamp,
   };
 }

@@ -42,10 +42,10 @@ export function parseWorkbookSparseValues(
 ): WorkbookSparseValues {
   try {
     const parsed = XLSX.read(buffer, {
-      type: "buffer",
+      bookVBA: false,
       cellDates: false,
       cellText: true,
-      bookVBA: false,
+      type: "buffer",
     });
     const limits = workbookValueLimits(config);
     if (parsed.SheetNames.length > limits.maxSheets) {
@@ -107,8 +107,8 @@ export function resolveWorkbookValue(
   }
   if ("cells" in sheet) {
     const address = XLSX.utils.encode_cell({
-      r: parsedRef.rowIndex,
       c: parsedRef.columnIndex,
+      r: parsedRef.rowIndex,
     });
     return sheet.cells[address] ?? "";
   }
@@ -130,9 +130,9 @@ export function parseWorkbookRef(ref: string) {
     return null;
   }
   return {
-    sheet: rawSheet,
-    rowIndex: row - 1,
     columnIndex: columnNameToIndex(column),
+    rowIndex: row - 1,
+    sheet: rawSheet,
   };
 }
 
@@ -144,7 +144,7 @@ export function inferWorkbookSparseSheetSize(cells: Record<string, string>) {
     rowCount = Math.max(rowCount, decoded.r + 1);
     columnCount = Math.max(columnCount, decoded.c + 1);
   }
-  return { rowCount, columnCount };
+  return { columnCount, rowCount };
 }
 
 export function normalizeWorkbookSparseValues(
@@ -189,10 +189,10 @@ export function normalizeWorkbookSparseValues(
         ? filterCellTypesForSavedCells(sheet.cellTypes, cells)
         : undefined;
       const normalizedSheet = {
-        name: sheet.name,
         cells,
-        rowCount: inferred.rowCount,
         columnCount: inferred.columnCount,
+        name: sheet.name,
+        rowCount: inferred.rowCount,
       };
       return cellTypes ? { ...normalizedSheet, cellTypes } : normalizedSheet;
     }),
@@ -216,10 +216,10 @@ export function workbookValueLimits(
   config?: WorkbookEngineConfig,
 ): WorkbookValueLimits {
   return {
-    maxSheets: config?.maxSheets ?? 50,
-    maxCells: config?.maxCells ?? 500_000,
     maxCachedValueBytes:
       config?.maxCachedValueBytes ?? config?.maxResponseBytes ?? 10_000_000,
+    maxCells: config?.maxCells ?? 500_000,
+    maxSheets: config?.maxSheets ?? 50,
   };
 }
 
@@ -263,7 +263,7 @@ function sheetToSparseValues(
     rowCount = Math.max(rowCount, decoded.r + 1);
     columnCount = Math.max(columnCount, decoded.c + 1);
   }
-  return { name, cells, cellTypes, rowCount, columnCount };
+  return { cells, cellTypes, columnCount, name, rowCount };
 }
 
 function workbookCellType(cell: XLSX.CellObject | undefined): WorkbookCellType {

@@ -14,6 +14,7 @@ import {
   type WorkbookCalculation,
   type WorkbookSnapshot,
 } from "../domain/index.js";
+import type { WorkbookCalculationSource } from "./workbook-calculation-sources.js";
 
 export {
   WORKBOOK_CALCULATION_FAILED_EVENT,
@@ -39,15 +40,19 @@ export type WorkbookValidationFinishedPayload = JsonObject & {
 
 export type WorkbookCalculationRequestedPayload = JsonObject & {
   workbookCalculationId: string;
-  workbookId: string;
+  sources: WorkbookCalculationSource[];
   requestedCount: number;
   correlationId: string | null;
+  retryOfCalculationId: string | null;
+  attemptNumber: number;
 };
 
 export type WorkbookCalculationFinishedPayload = JsonObject & {
   workbookCalculationId: string;
-  workbookId: string;
+  sources?: WorkbookCalculationSource[];
   correlationId: string | null;
+  retryOfCalculationId: string | null;
+  attemptNumber: number;
   status: WorkbookCalculation["status"];
   requestedCount: number;
   snapshotIds: string[];
@@ -62,15 +67,15 @@ export function workbookValidationRequestedEvent(input: {
 }): DomainEventEnvelope<WorkbookValidationRequestedPayload> {
   return workbookEventEnvelope({
     id: input.id,
-    type: WORKBOOK_VALIDATION_REQUESTED_EVENT,
-    workbook: input.workbook,
     lineage: input.lineage,
     occurredAt: input.occurredAt,
     payload: {
-      workbookId: input.workbook.id,
-      fileId: input.workbook.fileId,
       checksumSha256: input.workbook.checksumSha256,
+      fileId: input.workbook.fileId,
+      workbookId: input.workbook.id,
     },
+    type: WORKBOOK_VALIDATION_REQUESTED_EVENT,
+    workbook: input.workbook,
   });
 }
 
@@ -82,68 +87,74 @@ export function workbookValidationFinishedEvent(input: {
 }): DomainEventEnvelope<WorkbookValidationFinishedPayload> {
   return workbookEventEnvelope({
     id: input.id,
+    lineage: input.lineage,
+    occurredAt: input.occurredAt,
+    payload: {
+      engineVersion: input.workbook.engineVersion,
+      status: input.workbook.status,
+      validationError: input.workbook.validationError,
+      workbookId: input.workbook.id,
+    },
     type:
       input.workbook.status === "valid"
         ? WORKBOOK_VALIDATION_SUCCEEDED_EVENT
         : WORKBOOK_VALIDATION_FAILED_EVENT,
     workbook: input.workbook,
-    lineage: input.lineage,
-    occurredAt: input.occurredAt,
-    payload: {
-      workbookId: input.workbook.id,
-      status: input.workbook.status,
-      engineVersion: input.workbook.engineVersion,
-      validationError: input.workbook.validationError,
-    },
   });
 }
 
 export function workbookCalculationRequestedEvent(input: {
   id: string;
   calculation: WorkbookCalculation;
+  sources: readonly WorkbookCalculationSource[];
   lineage: OperationLineage;
   occurredAt: Date;
 }): DomainEventEnvelope<WorkbookCalculationRequestedPayload> {
   return workbookCalculationEventEnvelope({
-    id: input.id,
-    type: WORKBOOK_CALCULATION_REQUESTED_EVENT,
     calculation: input.calculation,
+    id: input.id,
     lineage: input.lineage,
     occurredAt: input.occurredAt,
     payload: {
-      workbookCalculationId: input.calculation.id,
-      workbookId: input.calculation.workbookId,
-      requestedCount: input.calculation.requestedCount,
+      attemptNumber: input.calculation.attemptNumber,
       correlationId: input.calculation.correlationId,
+      requestedCount: input.calculation.requestedCount,
+      retryOfCalculationId: input.calculation.retryOfCalculationId,
+      sources: input.sources.map((source) => ({ ...source })),
+      workbookCalculationId: input.calculation.id,
     },
+    type: WORKBOOK_CALCULATION_REQUESTED_EVENT,
   });
 }
 
 export function workbookCalculationFinishedEvent(input: {
   id: string;
   calculation: WorkbookCalculation;
+  sources: readonly WorkbookCalculationSource[];
   snapshots?: readonly WorkbookSnapshot[];
   lineage: OperationLineage;
   occurredAt: Date;
 }): DomainEventEnvelope<WorkbookCalculationFinishedPayload> {
   return workbookCalculationEventEnvelope({
+    calculation: input.calculation,
     id: input.id,
+    lineage: input.lineage,
+    occurredAt: input.occurredAt,
+    payload: {
+      attemptNumber: input.calculation.attemptNumber,
+      correlationId: input.calculation.correlationId,
+      errorMessage: input.calculation.errorMessage,
+      requestedCount: input.calculation.requestedCount,
+      retryOfCalculationId: input.calculation.retryOfCalculationId,
+      snapshotIds: input.snapshots?.map((snapshot) => snapshot.id) ?? [],
+      sources: input.sources.map((source) => ({ ...source })),
+      status: input.calculation.status,
+      workbookCalculationId: input.calculation.id,
+    },
     type:
       input.calculation.status === "succeeded"
         ? WORKBOOK_CALCULATION_SUCCEEDED_EVENT
         : WORKBOOK_CALCULATION_FAILED_EVENT,
-    calculation: input.calculation,
-    lineage: input.lineage,
-    occurredAt: input.occurredAt,
-    payload: {
-      workbookCalculationId: input.calculation.id,
-      workbookId: input.calculation.workbookId,
-      correlationId: input.calculation.correlationId,
-      status: input.calculation.status,
-      requestedCount: input.calculation.requestedCount,
-      snapshotIds: input.snapshots?.map((snapshot) => snapshot.id) ?? [],
-      errorMessage: input.calculation.errorMessage,
-    },
   });
 }
 
@@ -156,17 +167,17 @@ function workbookEventEnvelope<TPayload extends JsonObject>(input: {
   payload: TPayload;
 }): DomainEventEnvelope<TPayload> {
   return domainEventEnvelope({
-    id: input.id,
-    type: input.type,
-    schemaVersion: 1,
     aggregate: {
-      type: "workbook",
       id: input.workbook.id,
+      type: "workbook",
     },
-    ownerUserId: input.workbook.ownerUserId,
+    id: input.id,
     lineage: input.lineage,
     occurredAt: input.occurredAt,
+    ownerUserId: input.workbook.ownerUserId,
     payload: input.payload,
+    schemaVersion: 1,
+    type: input.type,
   });
 }
 
@@ -179,16 +190,16 @@ function workbookCalculationEventEnvelope<TPayload extends JsonObject>(input: {
   payload: TPayload;
 }): DomainEventEnvelope<TPayload> {
   return domainEventEnvelope({
-    id: input.id,
-    type: input.type,
-    schemaVersion: 1,
     aggregate: {
-      type: "workbook_calculation",
       id: input.calculation.id,
+      type: "workbook_calculation",
     },
-    ownerUserId: input.calculation.ownerUserId,
+    id: input.id,
     lineage: input.lineage,
     occurredAt: input.occurredAt,
+    ownerUserId: input.calculation.ownerUserId,
     payload: input.payload,
+    schemaVersion: 1,
+    type: input.type,
   });
 }

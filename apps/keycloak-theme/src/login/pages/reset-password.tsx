@@ -18,9 +18,9 @@ export function ResetPasswordPage(props: LemmaPageProps<ResetPasswordContext>) {
 
   return (
     <AuthLayout
-      title={msg("emailForgotTitle")}
       description={msg("emailInstruction")}
       message={hasError ? messagesPerField.getFirstError("username") : null}
+      title={msg("emailForgotTitle")}
     >
       <form
         action={url.loginResetCredentialsUrl}

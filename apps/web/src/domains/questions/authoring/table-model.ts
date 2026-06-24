@@ -24,10 +24,12 @@ export type ReferenceSourceDraft =
     }
   | {
       type: "workbook_cell";
+      sourceId: string;
       ref: string;
     }
   | {
       type: "workbook_range";
+      sourceId: string;
       ref: string;
     };
 
@@ -141,10 +143,51 @@ export type TableBlockPreviewProps = {
 
 export function createDefaultTableEditorModel(): TableEditorModel {
   return {
-    prompt: "Solve this question",
+    cells: [
+      {
+        columnId: "column_1",
+        content: [{ text: "1", type: "text" }],
+        id: "cell_1",
+        rowId: "row_1",
+        type: "content",
+      },
+      {
+        columnId: "column_2",
+        correctValueSource: { type: "literal", value: 3 },
+        grading: { mode: "exact" },
+        id: "cell_2",
+        points: 1,
+        responseFieldId: "answer_1",
+        rowId: "row_1",
+        type: "response",
+      },
+      {
+        columnId: "column_1",
+        content: [{ text: "2", type: "text" }],
+        id: "cell_3",
+        rowId: "row_2",
+        type: "content",
+      },
+      {
+        columnId: "column_2",
+        content: [{ text: "4", type: "text" }],
+        id: "cell_4",
+        rowId: "row_2",
+        type: "content",
+      },
+    ],
     columns: [
       { id: "column_1", label: "Column 1" },
       { id: "column_2", label: "Column 2" },
+    ],
+    prompt: "Solve this question",
+    responseFields: [
+      {
+        id: "answer_1",
+        label: "Answer",
+        required: true,
+        type: "number",
+      },
     ],
     rows: [
       { id: "row_1", label: "Row 1" },
@@ -152,47 +195,6 @@ export function createDefaultTableEditorModel(): TableEditorModel {
     ],
     showColumnNames: true,
     showRowNames: true,
-    responseFields: [
-      {
-        id: "answer_1",
-        type: "number",
-        label: "Answer",
-        required: true,
-      },
-    ],
-    cells: [
-      {
-        id: "cell_1",
-        rowId: "row_1",
-        columnId: "column_1",
-        type: "content",
-        content: [{ type: "text", text: "1" }],
-      },
-      {
-        id: "cell_2",
-        rowId: "row_1",
-        columnId: "column_2",
-        type: "response",
-        responseFieldId: "answer_1",
-        correctValueSource: { type: "literal", value: 3 },
-        points: 1,
-        grading: { mode: "exact" },
-      },
-      {
-        id: "cell_3",
-        rowId: "row_2",
-        columnId: "column_1",
-        type: "content",
-        content: [{ type: "text", text: "2" }],
-      },
-      {
-        id: "cell_4",
-        rowId: "row_2",
-        columnId: "column_2",
-        type: "content",
-        content: [{ type: "text", text: "4" }],
-      },
-    ],
   };
 }
 
@@ -318,28 +320,28 @@ export function tableEditorModelToStaticPreviewModel(
   model: TableEditorModel,
 ): TableBlockPreviewModel {
   return {
-    prompt: model.prompt,
-    columns: [...model.columns],
-    rows: [...model.rows],
-    showColumnNames: model.showColumnNames,
-    showRowNames: model.showRowNames,
-    responseFields: [...model.responseFields],
     cells: model.cells.map((cell) =>
       cell.type === "content"
         ? {
+            columnId: cell.columnId,
+            content: [...cell.content],
             id: cell.id,
             rowId: cell.rowId,
-            columnId: cell.columnId,
             type: "content" as const,
-            content: [...cell.content],
           }
         : {
-            id: cell.id,
-            rowId: cell.rowId,
             columnId: cell.columnId,
-            type: "response" as const,
+            id: cell.id,
             responseFieldId: cell.responseFieldId,
+            rowId: cell.rowId,
+            type: "response" as const,
           },
     ),
+    columns: [...model.columns],
+    prompt: model.prompt,
+    responseFields: [...model.responseFields],
+    rows: [...model.rows],
+    showColumnNames: model.showColumnNames,
+    showRowNames: model.showRowNames,
   };
 }

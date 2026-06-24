@@ -7,30 +7,35 @@
 import type { WorkbookCalculationStatus } from "./workbookCalculationStatus.ts";
 
 export interface WorkbookCalculation {
+  /** @minimum 1 */
+  attemptNumber: number;
+  /** @minimum 0 */
+  attempts: number;
+  /** @nullable */
+  correlationId: string | null;
+  createdAt: string;
+  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
+  createdByUserId: string;
+  /** @nullable */
+  errorMessage: string | null;
+  /** @nullable */
+  finishedAt: string | null;
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
   id: string;
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
   ownerUserId: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  createdByUserId: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  workbookId: string;
   /**
    * @minimum 1
    * @maximum 1000
    */
   requestedCount: number;
-  status: WorkbookCalculationStatus;
-  /** @nullable */
-  correlationId: string | null;
-  /** @nullable */
-  errorMessage: string | null;
-  /** @minimum 0 */
-  attempts: number;
+  /**
+   * @nullable
+   * @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
+   */
+  retryOfCalculationId: string | null;
   /** @nullable */
   startedAt: string | null;
-  /** @nullable */
-  finishedAt: string | null;
-  createdAt: string;
+  status: WorkbookCalculationStatus;
   updatedAt: string;
 }

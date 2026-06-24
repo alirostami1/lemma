@@ -21,7 +21,7 @@ Question authoring, generation, grading, and question set bounded context.
 ```bash
 pnpm --filter @lemma/questions build
 pnpm --filter @lemma/questions test
-pnpm --filter @lemma/questions generate:openapi
+pnpm --filter @lemma/questions generate:hono
 ```
 
 ## Generated Files

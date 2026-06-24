@@ -2,7 +2,7 @@ import type {
   WorkbookCalculationService,
   WorkbookService,
 } from "../application/index.js";
-import { createWorkbookRoutes } from "../gen/hono/index.js";
+import { createWorkbookRoutes } from "../generated/hono/index.js";
 import type { RequireIdentity } from "./env.js";
 import { createWorkbookHandlers } from "./handlers.js";
 
@@ -14,10 +14,10 @@ export type WorkbookRoutesDeps = {
 
 export function workbookRoutes(deps: WorkbookRoutesDeps) {
   return createWorkbookRoutes({
-    requireIdentity: deps.requireIdentity,
     handlers: createWorkbookHandlers({
-      workbookService: deps.workbookService,
       workbookCalculationService: deps.workbookCalculationService,
+      workbookService: deps.workbookService,
     }),
+    requireIdentity: deps.requireIdentity,
   });
 }

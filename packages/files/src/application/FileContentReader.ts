@@ -100,12 +100,12 @@ export class FileContentReader implements FileContentReaderPort {
     assertFileCanBeDownloaded(file);
 
     return {
-      fileId: file.id,
-      ownerUserId: file.ownerUserId,
-      originalName: file.originalName,
-      contentType: file.contentType,
       byteSize: file.byteSize,
       checksumSha256: file.checksumSha256,
+      contentType: file.contentType,
+      fileId: file.id,
+      originalName: file.originalName,
+      ownerUserId: file.ownerUserId,
     };
   }
 

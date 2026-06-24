@@ -6,7 +6,6 @@ module.exports = {
     exclude: {
       path: [
         "(^|/)dist/",
-        "(^|/)gen/",
         "(^|/)generated/",
         "(^|/)node_modules/",
         "(^|/)openapi/",

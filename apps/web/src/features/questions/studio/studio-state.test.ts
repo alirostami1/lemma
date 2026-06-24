@@ -14,22 +14,22 @@ describe("studio state", () => {
 
     expect(
       getInitialStudioDraftSnapshot({
-        routeBlueprintId: "",
         latestDraft,
+        routeBlueprintId: "",
       }),
     ).toBe(latestDraft);
     expect(
       getInitialStudioDraftSnapshot({
-        routeBlueprintId: "blueprint-1",
         latestDraft,
+        routeBlueprintId: "blueprint-1",
       }),
     ).toBeNull();
   });
 
   it("warns before a blueprint route overwrites local draft changes", () => {
     const unsyncedSameBlueprint = createSnapshot({
-      loadedBlueprintId: "blueprint-1",
       lastRemoteSaveSnapshotKey: null,
+      loadedBlueprintId: "blueprint-1",
     });
     const syncedSameBlueprint = {
       ...unsyncedSameBlueprint,
@@ -38,28 +38,17 @@ describe("studio state", () => {
       ),
     };
     const otherBlueprint = createSnapshot({
-      loadedBlueprintId: "blueprint-2",
       lastRemoteSaveSnapshotKey:
         createDraftKeyFromSnapshot(syncedSameBlueprint),
+      loadedBlueprintId: "blueprint-2",
     });
 
     expect(
       shouldWarnBeforeOpeningBlueprint({
         nextBlueprintId: "blueprint-1",
-        nextBlueprintVersionId: "version-1",
         snapshot: syncedSameBlueprint,
       }),
     ).toBe(false);
-    expect(
-      shouldWarnBeforeOpeningBlueprint({
-        nextBlueprintId: "blueprint-1",
-        nextBlueprintVersionId: "version-2",
-        snapshot: {
-          ...syncedSameBlueprint,
-          loadedBlueprintVersionId: "version-1",
-        },
-      }),
-    ).toBe(true);
     expect(
       shouldWarnBeforeOpeningBlueprint({
         nextBlueprintId: "blueprint-1",
@@ -95,7 +84,8 @@ describe("studio state", () => {
       }),
     ).toMatchObject({
       canGenerate: false,
-      generateDisabledReason: "Save changes before generating.",
+      generateDisabledReason:
+        "Save this blueprint before generating questions.",
       phase: "dirty",
       saveState: "autosaved",
     });
@@ -117,7 +107,7 @@ describe("studio state", () => {
         loadError: "Blueprint could not be loaded.",
       }),
     ).toMatchObject({
-      phase: "editing_persisted_version",
+      phase: "editing_saved_blueprint",
       saveError: "Blueprint could not be loaded.",
       saveState: "failed",
     });
@@ -136,16 +126,14 @@ describe("studio state", () => {
 function baseStudioStateInput(): Parameters<typeof getStudioState>[0] {
   return {
     activeGenerationRun: null,
-    currentGenerationSourceExists: true,
-    hasLoadedBlueprint: true,
     hasUnsavedChanges: false,
     isGenerationSubmitting: false,
     isLoadingBlueprint: false,
     isResetPending: false,
     loadError: null,
+    loadedBlueprintId: "blueprint-1",
     localDraftError: null,
     localDraftStatus: "autosaved",
-    loadedBlueprintId: "blueprint-1",
     readinessIssue: null,
     remoteSaveError: null,
     remoteSaveIsSaving: false,
@@ -157,21 +145,20 @@ function createSnapshot(
   input: Partial<StudioDraftSnapshot>,
 ): StudioDraftSnapshot {
   return {
-    schemaVersion: 1,
-    draftKey: "blueprint:blueprint-1",
-    loadedBlueprintId: "blueprint-1",
-    loadedBlueprintVersionId: "version-1",
-    selectedWorkbookId: "",
-    blueprintName: "Blueprint",
-    blueprintDescription: "",
     authoringModel: {
-      schemaVersion: 1,
       blocks: [],
-      responseFields: [],
       references: [],
+      responseFields: [],
+      schemaVersion: 1,
     },
+    blueprintDescription: "",
+    blueprintName: "Blueprint",
+    draftKey: "blueprint:blueprint-1",
     lastLocalSaveTimestamp: 100,
     lastRemoteSaveSnapshotKey: null,
+    loadedBlueprintId: "blueprint-1",
+    schemaVersion: 2,
+    sources: [],
     ...input,
   };
 }
@@ -181,21 +168,22 @@ function createGenerationRun(
 ): QuestionGenerationRun {
   const at = new Date("2026-06-15T00:00:00.000Z");
   return {
+    attemptNumber: 1,
+    attempts: 1,
+    blueprintId: "blueprint-1",
+    createdAt: at,
+    createdByUserId: "user-1",
+    errorMessage: null,
+    finishedAt: null,
     id: "run-1",
     ownerUserId: "user-1",
-    createdByUserId: "user-1",
-    blueprintId: "blueprint-1",
-    blueprintVersionId: "version-1",
-    targetQuestionSetId: "question-set-1",
     requestedCount: 3,
-    source: null,
-    status,
     result: null,
-    errorMessage: null,
-    attempts: 1,
+    retryOfRunId: null,
     startedAt: at,
-    finishedAt: null,
-    createdAt: at,
+    status,
+    targetQuestionSetId: "question-set-1",
     updatedAt: at,
+    workbookCalculationId: null,
   };
 }

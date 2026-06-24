@@ -150,9 +150,9 @@ export function questionBody(input: unknown): QuestionBody {
   const responseFields = validatedResponseFields(input, fail);
   const blocks = validatedBlocks(input, responseFieldIds(responseFields), fail);
   return {
-    schemaVersion: 1,
     blocks,
     responseFields,
+    schemaVersion: 1,
   };
 }
 
@@ -213,16 +213,16 @@ function validatedBlock(
   assertNonEmptyString(block.id, "block.id", failWith);
   if (block.type === "text") {
     return {
+      content: renderedInlineContent(block.content, failWith),
       id: block.id,
       type: "text",
-      content: renderedInlineContent(block.content, failWith),
     };
   }
   if (block.type === "rich_text") {
     return {
+      content: richContent(block.content, failWith),
       id: block.id,
       type: "rich_text",
-      content: richContent(block.content, failWith),
     };
   }
   if (block.type === "response") {
@@ -248,8 +248,8 @@ function validatedResponseBlock(
   }
   return {
     id: block.id as string,
-    type: "response",
     responseFieldId: block.responseFieldId,
+    type: "response",
     ...optionalStringProps(block, ["label", "placeholder"], failWith),
   };
 }
@@ -286,11 +286,11 @@ function validatedTableBlock(
         failWith("table content cells must use plain text");
       }
       return {
+        columnId: cell.columnId,
         id: cell.id,
         rowId: cell.rowId,
-        columnId: cell.columnId,
-        type: "content" as const,
         text: cell.text,
+        type: "content" as const,
       };
     }
     if (cell.type === "response") {
@@ -299,24 +299,24 @@ function validatedTableBlock(
         failWith("response cell references unknown response field");
       }
       return {
-        id: cell.id,
-        rowId: cell.rowId,
         columnId: cell.columnId,
-        type: "response" as const,
+        id: cell.id,
         responseFieldId: cell.responseFieldId,
+        rowId: cell.rowId,
+        type: "response" as const,
         ...optionalStringProps(cell, ["label", "placeholder"], failWith),
       };
     }
     return failWith("table cell type is invalid");
   });
   return {
+    cells,
+    columns,
     id: block.id as string,
-    type: "table",
+    rows,
     showColumnNames: block.showColumnNames,
     showRowNames: block.showRowNames,
-    columns,
-    rows,
-    cells,
+    type: "table",
   };
 }
 
@@ -330,7 +330,7 @@ export function blueprintInlineContent(
     assertPlainRecord(part, "inline content item must be an object", failWith);
     if (part.type === "text") {
       assertString(part.text, "inline text", failWith);
-      return { type: "text", text: part.text };
+      return { text: part.text, type: "text" };
     }
     if (part.type === "reference") {
       assertQuestionReferenceId(
@@ -353,8 +353,8 @@ export function blueprintInlineContent(
           ? undefined
           : inlineReferenceRangeCell(part.rangeCell, failWith);
       return {
-        type: "reference",
         referenceId: part.referenceId,
+        type: "reference",
         ...(rangeCell === undefined ? {} : { rangeCell }),
         ...(part.fallbackText === undefined
           ? {}
@@ -388,8 +388,8 @@ function inlineReferenceRangeCell(
     failWith("inline reference rangeCell offsets must be non-negative");
   }
   return {
-    rowOffset: value.rowOffset,
     columnOffset: value.columnOffset,
+    rowOffset: value.rowOffset,
   };
 }
 
@@ -402,7 +402,7 @@ export function renderedInlineContent(
     assertPlainRecord(part, "inline content item must be an object", failWith);
     if (part.type === "text") {
       assertString(part.text, "inline text", failWith);
-      return { type: "text", text: part.text };
+      return { text: part.text, type: "text" };
     }
     if (part.type === "value") {
       assertQuestionReferenceId(
@@ -412,9 +412,9 @@ export function renderedInlineContent(
       );
       assertString(part.displayValue, "inline value displayValue", failWith);
       return {
-        type: "value",
-        referenceId: part.referenceId,
         displayValue: part.displayValue,
+        referenceId: part.referenceId,
+        type: "value",
       };
     }
     return failWith("inline content type is invalid");
@@ -431,8 +431,8 @@ export function richContent(
   }
   assertArray(value.content, "rich content", failWith);
   return {
-    type: "doc",
     content: value.content.map((node) => richBlockNode(node, failWith)),
+    type: "doc",
   };
 }
 
@@ -450,16 +450,16 @@ function richBlockNode(
       failWith("heading level must be 1 through 6");
     }
     return {
-      type: "heading",
       attrs: { level: node.attrs.level as 1 | 2 | 3 | 4 | 5 | 6 },
+      type: "heading",
       ...richTextContent(node, failWith),
     };
   }
   if (node.type === "bullet_list" || node.type === "ordered_list") {
     assertArray(node.content, "list content", failWith);
     return {
-      type: node.type,
       content: node.content.map((item) => richListItem(item, failWith)),
+      type: node.type,
     };
   }
   failWith("rich node type is invalid");
@@ -475,7 +475,6 @@ function richListItem(
   }
   assertArray(node.content, "list item content", failWith);
   return {
-    type: "list_item",
     content: node.content.map((child) => {
       assertPlainRecord(child, "list item child must be an object", failWith);
       if (child.type === "paragraph") {
@@ -484,12 +483,13 @@ function richListItem(
       if (child.type === "bullet_list" || child.type === "ordered_list") {
         assertArray(child.content, "nested list content", failWith);
         return {
-          type: child.type,
           content: child.content.map((item) => richListItem(item, failWith)),
+          type: child.type,
         };
       }
       return failWith("list item child type is invalid");
     }),
+    type: "list_item",
   };
 }
 
@@ -511,7 +511,7 @@ function richTextContent(
       if ("marks" in child || "attrs" in child) {
         failWith("rich text marks and attrs are not supported");
       }
-      return { type: "text" as const, text: child.text };
+      return { text: child.text, type: "text" as const };
     }),
   };
 }

@@ -30,9 +30,9 @@ export class RealtimeNotificationClient {
     onMessage: RealtimeNotificationHandler;
   }) {
     this.centrifuge = new Centrifuge(env.LEMMA_WEB_REALTIME_URL, {
-      token: input.token,
       getToken: () =>
         createRealtimeConnectionToken().then((result) => result.token),
+      token: input.token,
     });
     this.onMessage = input.onMessage;
   }
@@ -114,8 +114,8 @@ export async function createRealtimeNotificationClient(input: {
   const tokenResult = await createRealtimeConnectionToken();
   const userId = decodeJwtSubject(tokenResult.token);
   const client = new RealtimeNotificationClient({
-    token: tokenResult.token,
     onMessage: input.onMessage,
+    token: tokenResult.token,
   });
   return { client, userId };
 }

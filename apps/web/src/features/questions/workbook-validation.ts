@@ -17,10 +17,15 @@ export function buildWorkbookRangeSelection(
   rows: string[][],
   range: SpreadsheetCellRange,
   options: {
+    sourceId: string | null;
     columnStartIndex?: number;
     rowStartIndex?: number;
-  } = {},
+  },
 ): WorkbookRangeSelection {
+  const sourceId = options.sourceId;
+  if (!sourceId) {
+    throw new Error("Cannot build workbook range selection without source id.");
+  }
   const values: string[][] = [];
 
   for (
@@ -40,14 +45,15 @@ export function buildWorkbookRangeSelection(
   }
 
   const referenceRange = {
-    startRowIndex: range.startRowIndex + (options.rowStartIndex ?? 0),
+    endColumnIndex: range.endColumnIndex + (options.columnStartIndex ?? 0),
     endRowIndex: range.endRowIndex + (options.rowStartIndex ?? 0),
     startColumnIndex: range.startColumnIndex + (options.columnStartIndex ?? 0),
-    endColumnIndex: range.endColumnIndex + (options.columnStartIndex ?? 0),
+    startRowIndex: range.startRowIndex + (options.rowStartIndex ?? 0),
   };
 
   return {
     reference: formatSpreadsheetRange(sheetName, referenceRange),
+    sourceId,
     values,
   };
 }
@@ -90,11 +96,11 @@ export function validateWorkbookRangeSelection(
   }
 
   return {
-    ok: false,
     message: `${messages.join(" ")} Current selection is ${formatDimensionCount(
       rowCount,
       "row",
     )} by ${formatDimensionCount(columnCount, "column")}.`,
+    ok: false,
   };
 }
 

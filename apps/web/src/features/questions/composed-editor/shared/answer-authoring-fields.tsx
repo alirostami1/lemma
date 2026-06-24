@@ -12,6 +12,7 @@ import type {
   TableGrading,
   ValueExpression,
 } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import {
   InspectorField,
@@ -49,7 +50,6 @@ export function AnswerFieldSettings({
     <FieldGroup>
       <InspectorField label="Input type">
         <Select
-          value={responseField.type}
           disabled={disabled}
           onValueChange={(value) => {
             if (!isAnswerFieldType(value)) {
@@ -60,6 +60,7 @@ export function AnswerFieldSettings({
               type: value,
             });
           }}
+          value={responseField.type}
         >
           <SelectTrigger>
             <SelectValue />
@@ -76,33 +77,33 @@ export function AnswerFieldSettings({
         <>
           <InspectorField label="Label">
             <Input
-              id={`${responseField.id}-label`}
-              value={label ?? ""}
               disabled={disabled}
+              id={`${responseField.id}-label`}
               onChange={(event) =>
                 onLabelChange(event.currentTarget.value || undefined)
               }
+              value={label ?? ""}
             />
           </InspectorField>
 
           <InspectorField label="Placeholder">
             <Input
-              id={`${responseField.id}-placeholder`}
-              value={placeholder ?? ""}
               disabled={disabled}
+              id={`${responseField.id}-placeholder`}
               onChange={(event) =>
                 onPlaceholderChange(event.currentTarget.value || undefined)
               }
+              value={placeholder ?? ""}
             />
           </InspectorField>
         </>
       ) : null}
 
       <InspectorSwitchField
-        label="Required"
-        description="Students must provide an answer."
         checked={responseField.required !== false}
+        description="Students must provide an answer."
         disabled={disabled}
+        label="Required"
         onCheckedChange={(checked) =>
           onResponseFieldChange({
             ...responseField,
@@ -120,6 +121,8 @@ export function CorrectAnswerSettings({
   referencePreviewCache,
   valueType,
   workbookEnabled,
+  sources,
+  workbookSheetNamesBySourceId,
   disabled,
   onModelChange,
   onChange,
@@ -130,6 +133,8 @@ export function CorrectAnswerSettings({
   referencePreviewCache: ReferencePreviewCache;
   valueType?: "text" | "number" | "boolean";
   workbookEnabled: boolean;
+  sources: QuestionBlueprintWorkbookSource[];
+  workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onChange(value: ValueExpression): void;
@@ -140,15 +145,17 @@ export function CorrectAnswerSettings({
 }) {
   return (
     <ValueExpressionInput
-      value={value}
-      model={model}
-      referencePreviewCache={referencePreviewCache}
-      valueType={valueType}
-      workbookEnabled={workbookEnabled}
       disabled={disabled}
-      onModelChange={onModelChange}
+      model={model}
       onChange={onChange}
       onCreatedReference={onCreatedReference}
+      onModelChange={onModelChange}
+      referencePreviewCache={referencePreviewCache}
+      sources={sources}
+      value={value}
+      valueType={valueType}
+      workbookEnabled={workbookEnabled}
+      workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
     />
   );
 }
@@ -172,20 +179,19 @@ export function GradingSettings({
     <FieldGroup>
       <InspectorField label="Points">
         <Input
+          disabled={disabled}
           id={`${blockId}-points`}
           inputMode="numeric"
-          value={String(points)}
-          disabled={disabled}
           onChange={(event) => {
             const value = Number(event.currentTarget.value);
             onPointsChange(Number.isFinite(value) ? value : points);
           }}
+          value={String(points)}
         />
       </InspectorField>
 
       <InspectorField label="Grading">
         <Select
-          value={grading.mode}
           disabled={disabled}
           onValueChange={(value) => {
             if (value === "number") {
@@ -208,6 +214,7 @@ export function GradingSettings({
 
             onGradingChange({ mode: "exact" });
           }}
+          value={grading.mode}
         >
           <SelectTrigger>
             <SelectValue />
@@ -227,7 +234,6 @@ export function GradingSettings({
         <>
           <InspectorField label="Tolerance type">
             <Select
-              value={grading.tolerance.type}
               disabled={disabled}
               onValueChange={(value) => {
                 if (value !== "absolute" && value !== "relative") {
@@ -242,6 +248,7 @@ export function GradingSettings({
                   },
                 });
               }}
+              value={grading.tolerance.type}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -255,10 +262,9 @@ export function GradingSettings({
 
           <InspectorField label="Tolerance value">
             <Input
+              disabled={disabled}
               id={`${blockId}-tolerance`}
               inputMode="decimal"
-              value={String(grading.tolerance.value)}
-              disabled={disabled}
               onChange={(event) => {
                 const value = Number(event.currentTarget.value);
                 onGradingChange({
@@ -271,6 +277,7 @@ export function GradingSettings({
                   },
                 });
               }}
+              value={String(grading.tolerance.value)}
             />
           </InspectorField>
         </>

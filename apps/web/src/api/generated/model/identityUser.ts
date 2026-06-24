@@ -7,18 +7,18 @@
 import type { IdentityUserStatus } from "./identityUserStatus.ts";
 
 export interface IdentityUser {
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  id: string;
-  /** @minLength 1 */
-  identityId: string;
-  /** @minLength 1 */
-  email: string;
+  createdAt: string;
   /**
    * @minLength 1
    * @maxLength 150
    */
   displayName: string;
+  /** @minLength 1 */
+  email: string;
+  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
+  id: string;
+  /** @minLength 1 */
+  identityId: string;
   status: IdentityUserStatus;
-  createdAt: string;
   updatedAt: string;
 }

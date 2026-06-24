@@ -33,17 +33,17 @@ type FilesDomainError =
 const errorMapper = {
   FILE_NOT_FOUND: { code: "FILE_NOT_FOUND", status: 404 },
   FILE_NOT_VISIBLE: { code: "FILE_NOT_FOUND", status: 404 },
-  FILE_UPLOAD_NOT_FOUND: { code: "FILE_UPLOAD_NOT_FOUND", status: 404 },
-  FORBIDDEN_FILE_ACTION: { code: "FORBIDDEN_FILE_ACTION", status: 403 },
-  INVALID_DOMAIN_VALUE: { code: "BAD_REQUEST", status: 400 },
-  INVALID_FILE_DATA: { code: "BAD_REQUEST", status: 400 },
-  INVALID_FILE_STATE: { code: "FILE_STATE_CONFLICT", status: 409 },
-  FILE_UPLOAD_EXPIRED: { code: "FILE_UPLOAD_EXPIRED", status: 409 },
   FILE_STORAGE_OBJECT_MISMATCH: { code: "BAD_REQUEST", status: 400 },
   FILE_STORAGE_PROVIDER_ERROR: {
     code: "FILE_STORAGE_PROVIDER_ERROR",
     status: 502,
   },
+  FILE_UPLOAD_EXPIRED: { code: "FILE_UPLOAD_EXPIRED", status: 409 },
+  FILE_UPLOAD_NOT_FOUND: { code: "FILE_UPLOAD_NOT_FOUND", status: 404 },
+  FORBIDDEN_FILE_ACTION: { code: "FORBIDDEN_FILE_ACTION", status: 403 },
+  INVALID_DOMAIN_VALUE: { code: "BAD_REQUEST", status: 400 },
+  INVALID_FILE_DATA: { code: "BAD_REQUEST", status: 400 },
+  INVALID_FILE_STATE: { code: "FILE_STATE_CONFLICT", status: 409 },
 } as const satisfies ErrorMapper<FilesDomainError>;
 
 const filesHttpError = createHttpErrorHandler(errorMapper);
@@ -62,9 +62,9 @@ export function handleFilesError(
       {
         error: {
           code: "BAD_REQUEST",
+          details: error.details,
           message: error.message,
           requestId: c.get("requestId"),
-          details: error.details,
         },
       },
       400,

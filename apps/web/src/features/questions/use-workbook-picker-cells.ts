@@ -23,12 +23,12 @@ export function useWorkbookPickerCells(input: {
 }) {
   return useWorkbookSnapshotCellsQuery(
     {
-      workbookSnapshotId: input.workbookSnapshotId ?? "",
-      sheetIndex: input.activeSheet?.sheetIndex ?? 0,
-      startRow: input.startRow,
-      startColumn: input.startColumn,
-      rowCount: input.rowCount,
       columnCount: input.columnCount,
+      rowCount: input.rowCount,
+      sheetIndex: input.activeSheet?.sheetIndex ?? 0,
+      startColumn: input.startColumn,
+      startRow: input.startRow,
+      workbookSnapshotId: input.workbookSnapshotId ?? "",
     },
     {
       enabled:
@@ -47,16 +47,16 @@ export function useWorkbookPickerRange(input: {
 }) {
   return useWorkbookSnapshotRangeQuery(
     {
-      workbookSnapshotId: input.workbookSnapshotId ?? "",
       ref: input.ref ?? "",
+      workbookSnapshotId: input.workbookSnapshotId ?? "",
     },
     {
-      retry: false,
       enabled:
         input.enabled !== false &&
         input.open &&
         Boolean(input.workbookSnapshotId) &&
         Boolean(input.ref),
+      retry: false,
     },
   );
 }

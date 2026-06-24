@@ -12,13 +12,7 @@ import { useGenerationCommandController } from "./generation/use-generation-comm
 import { useGenerationRetryController } from "./generation/use-generation-retry-controller";
 import { useGenerationStatusController } from "./generation/use-generation-status-controller";
 
-type UseGenerateQuestionsControllerInput = {
-  getWorkbookName(workbookId: string | null): string | null;
-};
-
-export function useGenerateQuestionsController({
-  getWorkbookName,
-}: UseGenerateQuestionsControllerInput): GenerateQuestionsController {
+export function useGenerateQuestionsController(): GenerateQuestionsController {
   const navigate = useNavigate();
   const getQuestionSetName = useQuestionSetNameLookup();
   const [generationError, setGenerationError] = useState<string | null>(null);
@@ -38,13 +32,12 @@ export function useGenerateQuestionsController({
     }
 
     await navigate({
-      to: "/question-sets/$questionSetId",
       params: { questionSetId },
+      to: "/question-sets/$questionSetId",
     });
   }
 
   const command = useGenerationCommandController({
-    getWorkbookName,
     getQuestionSetName,
     onGenerationErrorChange: setGenerationError,
     onRunStarted: (run, context) => {
@@ -57,35 +50,36 @@ export function useGenerateQuestionsController({
   const retry = useGenerationRetryController({
     lastRunContext,
     onGenerationErrorChange: setGenerationError,
+    onRetryStarted: (run, context) => {
+      setLastRun(run);
+      setActiveRunContext(context);
+      setLastRunContext(context);
+    },
     onRetryToastChange: setRetryToastId,
-    onRetryStarted: setActiveRunContext,
   });
 
   const status = useGenerationStatusController({
     activeRunContext,
-    lastRunContext,
+    getQuestionSetName,
     lastRun,
-    retryToastId,
+    lastRunContext,
     onActiveRunContextChange: setActiveRunContext,
+    onGenerationErrorChange: setGenerationError,
     onLastRunChange: setLastRun,
     onLastRunContextChange: setLastRunContext,
-    onGenerationErrorChange: setGenerationError,
-    onRetryToastChange: setRetryToastId,
-    getQuestionSetName,
-    openQuestionSet,
     onRetry: () => {
       void retry.retryLastRun();
     },
+    onRetryToastChange: setRetryToastId,
+    openQuestionSet,
+    retryToastId,
   });
   const generateDialog = useGenerateQuestionsDialogController({
-    open: command.generateDialog.open,
-    source: command.generateDialog.source,
     errorMessage: generationError,
     isGenerating:
       command.isCreateGenerationPending ||
       retry.isRetryGenerationPending ||
       status.isRunLoading,
-    onOpenChange: command.generateDialog.onOpenChange,
     onGenerate: async (dialogInput) => {
       const started = await command.generateDialog.onGenerate(dialogInput);
       if (started) {
@@ -93,17 +87,20 @@ export function useGenerateQuestionsController({
       }
       return started;
     },
+    onOpenChange: command.generateDialog.onOpenChange,
+    open: command.generateDialog.open,
+    source: command.generateDialog.source,
   });
 
   return {
     generateDialog,
     generationStatus: {
-      run: status.run,
       errorMessage: generationError,
       isRetrying: retry.isRetryGenerationPending,
       onRetry: () => {
         void retry.retryLastRun();
       },
+      run: status.run,
     },
     onGenerateBlueprint: command.onGenerateBlueprint,
   };

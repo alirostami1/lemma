@@ -21,10 +21,10 @@ describe("TableCellInspector", () => {
 
     renderTableCellInspector({
       model: createContentModel(),
+      onEditorModelChange,
+      onModelChange,
       referencePreviewCache,
       workbookEnabled: false,
-      onModelChange,
-      onEditorModelChange,
     });
 
     await user.click(screen.getByRole("combobox", { name: "Type" }));
@@ -34,8 +34,8 @@ describe("TableCellInspector", () => {
     const responseCell = nextModel.cells.find((cell) => cell.id === "cell_1");
 
     expect(responseCell).toMatchObject({
-      type: "response",
       responseFieldId: "answer_1",
+      type: "response",
     });
     expect(nextModel.responseFields).toEqual([
       expect.objectContaining({
@@ -64,9 +64,9 @@ describe("TableCellInspector", () => {
 
     renderTableCellInspector({
       model: createAnswerModel(),
+      onModelChange,
       referencePreviewCache: {},
       workbookEnabled: false,
-      onModelChange,
     });
 
     const labelInput = screen.getByDisplayValue("Answer");
@@ -75,8 +75,8 @@ describe("TableCellInspector", () => {
 
     const nextModel = onModelChange.mock.calls.at(-1)?.[0] as TableEditorModel;
     expect(nextModel.cells[0]).toMatchObject({
-      type: "response",
       label: "Score",
+      type: "response",
     });
   });
 
@@ -86,9 +86,9 @@ describe("TableCellInspector", () => {
 
     renderTableCellInspector({
       model: createAnswerModel(),
+      onModelChange,
       referencePreviewCache: {},
       workbookEnabled: false,
-      onModelChange,
     });
 
     await user.clear(screen.getByLabelText("Literal value"));
@@ -96,8 +96,8 @@ describe("TableCellInspector", () => {
 
     const nextModel = onModelChange.mock.calls.at(-1)?.[0] as TableEditorModel;
     expect(nextModel.cells[0]).toMatchObject({
-      type: "response",
       correctValueSource: { type: "literal", value: 42 },
+      type: "response",
     });
   });
 });
@@ -125,20 +125,22 @@ function renderTableCellInspector(input: {
 
     return (
       <TableCellInspector
-        model={model}
-        tableBlockId={tableBlockId}
         cellId={input.cellId ?? "cell_1"}
         editorModel={editorModel}
-        referencePreviewCache={input.referencePreviewCache ?? {}}
-        workbookEnabled={input.workbookEnabled ?? false}
-        onModelChange={(nextModel) => {
-          handleModelChange(nextModel);
-          setModel(nextModel);
-        }}
+        model={model}
         onEditorModelChange={(nextModel) => {
           handleEditorModelChange(nextModel);
           setEditorModel(nextModel);
         }}
+        onModelChange={(nextModel) => {
+          handleModelChange(nextModel);
+          setModel(nextModel);
+        }}
+        referencePreviewCache={input.referencePreviewCache ?? {}}
+        sources={[]}
+        tableBlockId={tableBlockId}
+        workbookEnabled={input.workbookEnabled ?? false}
+        workbookSheetNamesBySourceId={{}}
       />
     );
   }
@@ -151,58 +153,58 @@ function createEditorModelWithTable(
   tableModel: TableEditorModel,
 ): ComposedEditorModel {
   return {
-    schemaVersion: 1,
     blocks: [
       {
         id: tableBlockId,
-        type: "table",
         table: tableModel,
+        type: "table",
       },
     ],
-    responseFields: [],
     references: [],
+    responseFields: [],
+    schemaVersion: 1,
   };
 }
 
 function createContentModel(): TableEditorModel {
   return {
-    prompt: "Prompt",
+    cells: [
+      {
+        columnId: "column_1",
+        content: [{ text: "42", type: "text" }],
+        id: "cell_1",
+        rowId: "row_1",
+        type: "content",
+      },
+    ],
     columns: [{ id: "column_1", label: "Column 1" }],
+    prompt: "Prompt",
+    responseFields: [],
     rows: [{ id: "row_1", label: "Row 1" }],
     showColumnNames: true,
     showRowNames: true,
-    responseFields: [],
-    cells: [
-      {
-        id: "cell_1",
-        rowId: "row_1",
-        columnId: "column_1",
-        type: "content",
-        content: [{ type: "text", text: "42" }],
-      },
-    ],
   };
 }
 
 function createAnswerModel(): TableEditorModel {
   return {
     ...createContentModel(),
-    responseFields: [
-      { id: "answer_1", type: "number", label: "Answer", required: true },
-    ],
     cells: [
       {
-        id: "cell_1",
-        rowId: "row_1",
         columnId: "column_1",
-        type: "response",
-        responseFieldId: "answer_1",
+        correctValueSource: { type: "literal", value: 7 },
+        grading: { mode: "exact" },
+        id: "cell_1",
         label: "Answer",
         placeholder: "Student answer",
-        correctValueSource: { type: "literal", value: 7 },
         points: 1,
-        grading: { mode: "exact" },
+        responseFieldId: "answer_1",
+        rowId: "row_1",
+        type: "response",
       },
+    ],
+    responseFields: [
+      { id: "answer_1", label: "Answer", required: true, type: "number" },
     ],
   };
 }

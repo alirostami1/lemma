@@ -41,12 +41,12 @@ export function createRole(
   at = new Date(),
 ): Role {
   return {
+    createdAt: at,
+    description: roleDescription(input.description),
     id: roleId(input.id),
+    isSystem: input.isSystem ?? false,
     key: globalRoleKey(input.key),
     name: roleName(input.name),
-    description: roleDescription(input.description),
-    isSystem: input.isSystem ?? false,
-    createdAt: at,
     updatedAt: at,
   };
 }
@@ -61,12 +61,12 @@ export function reconstituteRole(input: {
   updatedAt: Date;
 }): Role {
   return {
+    createdAt: input.createdAt,
+    description: roleDescription(input.description),
     id: roleId(input.id),
+    isSystem: input.isSystem,
     key: globalRoleKey(input.key),
     name: roleName(input.name),
-    description: roleDescription(input.description),
-    isSystem: input.isSystem,
-    createdAt: input.createdAt,
     updatedAt: input.updatedAt,
   };
 }
@@ -85,12 +85,12 @@ export function grantUserRole(
     throw new InvalidRoleGrantError("role grant expiry must be in the future");
   }
   return {
-    userId: input.userId,
+    createdAt: at,
+    expiresAt: input.expiresAt,
+    grantedByUserId: input.grantedByUserId,
     roleId: input.roleId,
     roleKey: input.roleKey,
-    grantedByUserId: input.grantedByUserId,
-    expiresAt: input.expiresAt,
-    createdAt: at,
+    userId: input.userId,
   };
 }
 
@@ -103,12 +103,12 @@ export function reconstituteUserGrantedRole(input: {
   createdAt: Date;
 }): UserGrantedRole {
   return {
-    userId: userId(input.userId),
+    createdAt: input.createdAt,
+    expiresAt: input.expiresAt,
+    grantedByUserId: userId(input.grantedByUserId),
     roleId: roleId(input.roleId),
     roleKey: globalRoleKey(input.roleKey),
-    grantedByUserId: userId(input.grantedByUserId),
-    expiresAt: input.expiresAt,
-    createdAt: input.createdAt,
+    userId: userId(input.userId),
   };
 }
 

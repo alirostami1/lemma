@@ -65,6 +65,40 @@ export function newApp({ database, config = defaultConfig }: NewAppDeps) {
     idGenerator: idGenerators.questions,
     clock,
     workbookAccessPort: workbookModule.workbookAccessPort,
+    draftSourceFilePort: {
+      getFileMetadata: async ({ currentUser, fileId }) => {
+        const { file } = await filesModule.filesService.getFile({
+          currentUser,
+          fileId,
+        });
+        return {
+          fileId: file.id,
+          ownerUserId: file.ownerUserId,
+          originalName: file.originalName,
+          contentType: file.contentType,
+          byteSize: file.byteSize,
+          checksumSha256: file.checksumSha256,
+          purpose: file.purpose,
+        };
+      },
+    },
+    workbookRegistrationPort: {
+      registerWorkbookFromFile: async ({
+        currentUser,
+        fileId,
+        name,
+        lineage,
+      }) => {
+        const { workbook } =
+          await workbookModule.workbookService.createWorkbook({
+            currentUser,
+            fileId,
+            name,
+            lineage,
+          });
+        return { workbookId: workbook.id };
+      },
+    },
   });
   const notificationsModule = createNotificationsModule({
     requireIdentity,

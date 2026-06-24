@@ -8,6 +8,6 @@ import type { RichParagraphNodeType } from "./richParagraphNodeType.ts";
 import type { RichTextNode } from "./richTextNode.ts";
 
 export interface RichParagraphNode {
-  type: RichParagraphNodeType;
   content?: RichTextNode[];
+  type: RichParagraphNodeType;
 }

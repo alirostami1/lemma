@@ -11,15 +11,15 @@ import type { QuestionTableColumn } from "./questionTableColumn.ts";
 import type { QuestionTableRow } from "./questionTableRow.ts";
 
 export interface QuestionBlueprintTableBlock {
-  /** @minLength 1 */
-  id: string;
-  type: QuestionBlueprintTableBlockType;
-  showColumnNames: boolean;
-  showRowNames: boolean;
-  columns: QuestionTableColumn[];
-  rows: QuestionTableRow[];
   cells: (
     | QuestionBlueprintTableContentCell
     | QuestionBlueprintTableResponseCell
   )[];
+  columns: QuestionTableColumn[];
+  /** @minLength 1 */
+  id: string;
+  rows: QuestionTableRow[];
+  showColumnNames: boolean;
+  showRowNames: boolean;
+  type: QuestionBlueprintTableBlockType;
 }

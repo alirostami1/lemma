@@ -35,9 +35,9 @@ export class CurrentUserService {
         await this.deps.identityService.listUserRolesForAuthentication(user.id);
 
       return createCurrentUser({
-        user,
-        roles,
         at: this.deps.clock.now(),
+        roles,
+        user,
       });
     });
   }

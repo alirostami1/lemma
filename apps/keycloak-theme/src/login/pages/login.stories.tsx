@@ -4,8 +4,8 @@ import { createKcPageStory } from "../KcPageStory";
 const { KcPageStory } = createKcPageStory({ pageId: "login.ftl" });
 
 const meta = {
-  title: "keycloak/login",
   component: KcPageStory,
+  title: "keycloak/login",
 } satisfies Meta<typeof KcPageStory>;
 
 export default meta;
@@ -18,8 +18,8 @@ export const WithError = {
   args: {
     kcContext: {
       messagesPerField: {
-        getFirstError: () => "Invalid username or password.",
         existsError: () => true,
+        getFirstError: () => "Invalid username or password.",
       },
     },
   },

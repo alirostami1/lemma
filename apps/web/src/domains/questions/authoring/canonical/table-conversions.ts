@@ -35,17 +35,17 @@ export function tableEditorModelToQuestionBlueprintDocument(
   assertStandaloneTableHasOnlyLiteralValues(model);
 
   return {
-    schemaVersion: 1,
     blocks: [
       {
+        content: plainTextToInlineContent(model.prompt),
         id: "prompt",
         type: "text",
-        content: plainTextToInlineContent(model.prompt),
       },
       tableEditorModelToQuestionBlueprintTableBlock(model, "table"),
     ],
-    responseFields: tableEditorModelToResponseFields(model),
     references: [],
+    responseFields: tableEditorModelToResponseFields(model),
+    schemaVersion: 1,
   };
 }
 
@@ -75,40 +75,40 @@ export function tableEditorModelToQuestionBlueprintTableBlock(
   options?: { responseFieldIdPrefix?: string },
 ): QuestionBlueprintTableBlock {
   return {
-    id: blockId,
-    type: "table",
-    columns: model.columns,
-    rows: model.rows,
-    showColumnNames: model.showColumnNames,
-    showRowNames: model.showRowNames,
     cells: model.cells.map((cell) => {
       if (cell.type === "content") {
         return {
+          columnId: cell.columnId,
+          content: cell.content,
           id: toCanonicalTableCellId(blockId, cell.id),
           rowId: cell.rowId,
-          columnId: cell.columnId,
           type: "content" as const,
-          content: cell.content,
         };
       }
 
       return {
-        id: toCanonicalTableCellId(blockId, cell.id),
-        rowId: cell.rowId,
         columnId: cell.columnId,
-        type: "response" as const,
+        correctValueSource: toQuestionValueExpression(cell.correctValueSource),
+        grading: cell.grading,
+        id: toCanonicalTableCellId(blockId, cell.id),
+        points: cell.points,
         responseFieldId: options?.responseFieldIdPrefix
           ? toCanonicalTableAnswerFieldId(blockId, cell.responseFieldId)
           : cell.responseFieldId,
-        correctValueSource: toQuestionValueExpression(cell.correctValueSource),
-        points: cell.points,
-        grading: cell.grading,
+        rowId: cell.rowId,
+        type: "response" as const,
         ...(cell.label === undefined ? {} : { label: cell.label }),
         ...(cell.placeholder === undefined
           ? {}
           : { placeholder: cell.placeholder }),
       };
     }),
+    columns: model.columns,
+    id: blockId,
+    rows: model.rows,
+    showColumnNames: model.showColumnNames,
+    showRowNames: model.showRowNames,
+    type: "table",
   };
 }
 
@@ -143,9 +143,9 @@ export function tableEditorModelToResponseFields(
   validateTableEditorModelAnswers(model);
   return model.responseFields.map((field) => ({
     id: blockId ? toCanonicalTableAnswerFieldId(blockId, field.id) : field.id,
-    type: field.type,
     label: field.label,
     required: field.required,
+    type: field.type,
   }));
 }
 
@@ -171,11 +171,11 @@ export function questionBlueprintTableBlockToTableEditorModel(
   const cells = block.cells.map((cell) => {
     if (cell.type === "content") {
       return {
+        columnId: cell.columnId,
+        content: [...cell.content],
         id: cell.id,
         rowId: cell.rowId,
-        columnId: cell.columnId,
         type: "content" as const,
-        content: [...cell.content],
       };
     }
 
@@ -199,14 +199,14 @@ export function questionBlueprintTableBlockToTableEditorModel(
     }
     tableResponseFieldIds.add(responseFieldId);
     return {
-      id: cell.id,
-      rowId: cell.rowId,
       columnId: cell.columnId,
-      type: "response" as const,
-      responseFieldId,
       correctValueSource: toValueExpression(cell.correctValueSource),
-      points: cell.points,
       grading: cell.grading,
+      id: cell.id,
+      points: cell.points,
+      responseFieldId,
+      rowId: cell.rowId,
+      type: "response" as const,
       ...(cell.label === undefined ? {} : { label: cell.label }),
       ...(cell.placeholder === undefined
         ? {}
@@ -215,15 +215,15 @@ export function questionBlueprintTableBlockToTableEditorModel(
   });
 
   return {
-    prompt: prompt ?? "",
+    cells,
     columns: block.columns,
-    rows: block.rows,
-    showColumnNames: block.showColumnNames,
-    showRowNames: block.showRowNames,
+    prompt: prompt ?? "",
     responseFields: tableResponseFields
       .filter((field) => tableResponseFieldIds.has(field.id))
       .map(questionResponseFieldToTable),
-    cells,
+    rows: block.rows,
+    showColumnNames: block.showColumnNames,
+    showRowNames: block.showRowNames,
   };
 }
 
@@ -241,15 +241,15 @@ export function questionTableBlockToPreviewModel(
   });
 
   return {
-    prompt: "",
+    cells,
     columns: readAxisArray(block.columns),
-    rows: readAxisArray(block.rows),
-    showColumnNames: block.showColumnNames !== false,
-    showRowNames: block.showRowNames !== false,
+    prompt: "",
     responseFields: responseFields
       .filter((field) => tableResponseFieldIds.has(field.id))
       .map(questionResponseFieldToTable),
-    cells,
+    rows: readAxisArray(block.rows),
+    showColumnNames: block.showColumnNames !== false,
+    showRowNames: block.showRowNames !== false,
   };
 }
 
@@ -258,20 +258,20 @@ function tableQuestionCellToPreviewCell(
 ): TableBlockPreviewCell {
   if (cell.type === "content") {
     return {
+      columnId: readString(cell.columnId),
+      content: [{ text: readString(cell.text), type: "text" }],
       id: readString(cell.id),
       rowId: readString(cell.rowId),
-      columnId: readString(cell.columnId),
       type: "content",
-      content: [{ type: "text", text: readString(cell.text) }],
     };
   }
   if (cell.type === "response") {
     return {
-      id: readString(cell.id),
-      rowId: readString(cell.rowId),
       columnId: readString(cell.columnId),
-      type: "response",
+      id: readString(cell.id),
       responseFieldId: readString(cell.responseFieldId),
+      rowId: readString(cell.rowId),
+      type: "response",
     };
   }
   throw new Error("Unsupported table block cell.");

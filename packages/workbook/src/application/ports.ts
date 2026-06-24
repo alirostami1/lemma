@@ -18,17 +18,60 @@ import type {
   WorkbookSparseValues,
   WorkbookStatus,
 } from "../domain/index.js";
+import type { WorkbookCalculationSource } from "./workbook-calculation-sources.js";
+
+export type WorkbookCalculationSourceRecord = WorkbookCalculationSource & {
+  calculationId: WorkbookCalculationId;
+  position: number;
+  createdAt: Date;
+};
+
+export type WorkbookSnapshotGenerationMetadata = {
+  id: WorkbookSnapshotId;
+  calculationId: WorkbookCalculationId;
+  sourceId: string;
+  workbookId: WorkbookId;
+  questionIndex: number;
+  snapshotIndex: number;
+};
 
 export interface WorkbookRepository {
-  listWorkbooksByOwnerUserId(input: {
-    ownerUserId: UserId;
-    statuses?: readonly WorkbookStatus[];
-    limit: number;
-    cursor?: Date;
-  }): Promise<Workbook[]>;
-  findWorkbookById(id: WorkbookId): Promise<Workbook | null>;
+  claimQueuedWorkbookCalculation(
+    id: WorkbookCalculationId,
+    at: Date,
+  ): Promise<WorkbookCalculation | null>;
+  completeWorkbookCalculation(input: {
+    calculation: WorkbookCalculation;
+    snapshots: readonly WorkbookSnapshot[];
+  }): Promise<{
+    calculation: WorkbookCalculation;
+    snapshots: WorkbookSnapshot[];
+  }>;
   createWorkbook(workbook: Workbook): Promise<Workbook>;
-  updateWorkbook(workbook: Workbook): Promise<Workbook | null>;
+  createWorkbookCalculationWithSources(input: {
+    calculation: WorkbookCalculation;
+    sources: readonly WorkbookCalculationSource[];
+  }): Promise<WorkbookCalculation>;
+  createWorkbookSnapshots(
+    snapshots: readonly WorkbookSnapshot[],
+  ): Promise<WorkbookSnapshot[]>;
+  findWorkbookById(id: WorkbookId): Promise<Workbook | null>;
+  findWorkbookByOwnerUserIdAndFileId?(input: {
+    ownerUserId: UserId;
+    fileId: FileId;
+  }): Promise<Workbook | null>;
+  findWorkbookCalculationByCorrelationId(
+    correlationId: string,
+  ): Promise<WorkbookCalculation | null>;
+  findWorkbookCalculationById(
+    id: WorkbookCalculationId,
+  ): Promise<WorkbookCalculation | null>;
+  findWorkbookSnapshotById(
+    id: WorkbookSnapshotId,
+  ): Promise<WorkbookSnapshot | null>;
+  listWorkbookCalculationSources(
+    calculationId: WorkbookCalculationId,
+  ): Promise<WorkbookCalculationSourceRecord[]>;
   listWorkbookCalculationsByOwnerUserId(input: {
     ownerUserId: UserId;
     statuses?: readonly WorkbookCalculationStatus[];
@@ -41,40 +84,24 @@ export interface WorkbookRepository {
     limit: number;
     cursor?: Date;
   }): Promise<WorkbookCalculation[]>;
-  findWorkbookCalculationById(
-    id: WorkbookCalculationId,
-  ): Promise<WorkbookCalculation | null>;
-  findWorkbookCalculationByCorrelationId(
-    correlationId: string,
-  ): Promise<WorkbookCalculation | null>;
-  createWorkbookCalculation(
-    calculation: WorkbookCalculation,
-  ): Promise<WorkbookCalculation>;
-  updateWorkbookCalculation(
-    calculation: WorkbookCalculation,
-  ): Promise<WorkbookCalculation | null>;
-  claimQueuedWorkbookCalculation(
-    id: WorkbookCalculationId,
-    at: Date,
-  ): Promise<WorkbookCalculation | null>;
-  findWorkbookSnapshotById(
-    id: WorkbookSnapshotId,
-  ): Promise<WorkbookSnapshot | null>;
+  listWorkbookSnapshotMetadataForCalculation(
+    calculationId: WorkbookCalculationId,
+  ): Promise<readonly WorkbookSnapshotGenerationMetadata[]>;
   listWorkbookSnapshotsByCalculationId(input: {
     calculationId: WorkbookCalculationId;
     limit: number;
     cursor?: number;
   }): Promise<WorkbookSnapshot[]>;
-  createWorkbookSnapshots(
-    snapshots: readonly WorkbookSnapshot[],
-  ): Promise<WorkbookSnapshot[]>;
-  completeWorkbookCalculation(input: {
-    calculation: WorkbookCalculation;
-    snapshots: readonly WorkbookSnapshot[];
-  }): Promise<{
-    calculation: WorkbookCalculation;
-    snapshots: WorkbookSnapshot[];
-  }>;
+  listWorkbooksByOwnerUserId(input: {
+    ownerUserId: UserId;
+    statuses?: readonly WorkbookStatus[];
+    limit: number;
+    cursor?: Date;
+  }): Promise<Workbook[]>;
+  updateWorkbook(workbook: Workbook): Promise<Workbook | null>;
+  updateWorkbookCalculation(
+    calculation: WorkbookCalculation,
+  ): Promise<WorkbookCalculation | null>;
 }
 
 export type WorkbookFileMetadata = {
@@ -113,10 +140,6 @@ export type WorkbookCalculatorOptions = {
 };
 
 export interface WorkbookCalculator {
-  inspect(
-    path: string,
-    options?: WorkbookCalculatorOptions,
-  ): Promise<WorkbookInspection>;
   calculate(
     path: string,
     options?: WorkbookCalculatorOptions,
@@ -127,6 +150,10 @@ export interface WorkbookCalculator {
     options?: WorkbookCalculatorOptions,
   ): Promise<WorkbookSparseValues[]>;
   health(options?: WorkbookCalculatorOptions): Promise<WorkbookEngineHealth>;
+  inspect(
+    path: string,
+    options?: WorkbookCalculatorOptions,
+  ): Promise<WorkbookInspection>;
 }
 
 export interface Clock {
@@ -135,8 +162,8 @@ export interface Clock {
 
 export interface IdGenerator {
   eventId(): EventId;
-  workbookId(): WorkbookId;
   workbookCalculationId(): WorkbookCalculationId;
+  workbookId(): WorkbookId;
   workbookSnapshotId(): WorkbookSnapshotId;
 }
 
@@ -158,11 +185,12 @@ export interface WorkbookAccessPort {
 
 export interface WorkbookCalculationPort {
   requestCalculation(input: {
+    ownerUserId: UserId;
     createdByUserId: UserId;
-    workbookId: WorkbookId;
     requestedCount: number;
     correlationId?: string | null;
     lineage: OperationLineage;
+    sources: readonly WorkbookCalculationSource[];
   }): Promise<{ workbookCalculationId: WorkbookCalculationId }>;
 }
 

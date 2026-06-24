@@ -40,9 +40,9 @@ export function pushUniqueResponseField(
   ids.add(field.id);
   responseFields.push({
     id: field.id,
-    type: field.type,
     label: field.label,
     required: field.required,
+    type: field.type,
   });
 }
 
@@ -76,9 +76,9 @@ export function questionResponseFieldToComposed(
 ): ComposedResponseField {
   return {
     id: field.id,
-    type: toSupportedResponseFieldType(field.type),
     label: field.label,
     required: field.required,
+    type: toSupportedResponseFieldType(field.type),
   };
 }
 
@@ -87,9 +87,9 @@ export function questionResponseFieldToTable(
 ): TableResponseField {
   return {
     id: field.id,
-    type: toSupportedResponseFieldType(field.type),
     label: field.label,
     required: field.required,
+    type: toSupportedResponseFieldType(field.type),
   };
 }
 
@@ -114,15 +114,17 @@ export function toQuestionReferenceSource(
       };
     case "workbook_cell":
       return {
-        schemaVersion: 1,
-        type: "workbook_cell",
         ref: source.ref,
+        schemaVersion: 1,
+        sourceId: source.sourceId,
+        type: "workbook_cell",
       };
     case "workbook_range":
       return {
-        schemaVersion: 1,
-        type: "workbook_range",
         ref: source.ref,
+        schemaVersion: 1,
+        sourceId: source.sourceId,
+        type: "workbook_range",
       };
     default:
       return assertNever(source);
@@ -136,9 +138,17 @@ export function toReferenceSource(
     case "literal":
       return { type: "literal", value: toTableAnswerValue(source.value) };
     case "workbook_cell":
-      return { type: "workbook_cell", ref: source.ref };
+      return {
+        ref: source.ref,
+        sourceId: source.sourceId,
+        type: "workbook_cell",
+      };
     case "workbook_range":
-      return { type: "workbook_range", ref: source.ref };
+      return {
+        ref: source.ref,
+        sourceId: source.sourceId,
+        type: "workbook_range",
+      };
     default:
       return assertNever(source);
   }
@@ -152,9 +162,9 @@ export function toQuestionValueExpression(
       return { schemaVersion: 1, type: "literal", value: source.value };
     case "reference":
       return {
+        referenceId: source.referenceId,
         schemaVersion: 1,
         type: "reference",
-        referenceId: source.referenceId,
       };
     default:
       return assertNever(source);
@@ -168,7 +178,7 @@ export function toValueExpression(
     case "literal":
       return { type: "literal", value: toTableAnswerValue(source.value) };
     case "reference":
-      return { type: "reference", referenceId: source.referenceId };
+      return { referenceId: source.referenceId, type: "reference" };
     default:
       return assertNever(source);
   }
@@ -190,8 +200,8 @@ export function composedRichContentToCanonicalRichContent(
   content: ComposedRichContent,
 ): RichContent {
   return {
-    type: "doc",
     content: content.content.map(composedRichNodeToCanonical),
+    type: "doc",
   };
 }
 
@@ -205,8 +215,8 @@ function composedRichNodeToCanonical(
     return headingNodeToCanonical(node.level, node.content);
   }
   return {
-    type: node.type,
     content: node.items.map(composedRichListItemToCanonical),
+    type: node.type,
   };
 }
 
@@ -214,8 +224,8 @@ function composedRichListItemToCanonical(
   item: ComposedRichListItem,
 ): RichListItemNode {
   return {
-    type: "list_item",
     content: item.content.map(composedRichNodeToCanonicalListChild),
+    type: "list_item",
   };
 }
 
@@ -226,8 +236,8 @@ function composedRichNodeToCanonicalListChild(
     return paragraphNodeToCanonical(node.content);
   }
   return {
-    type: node.type,
     content: node.items.map(composedRichListItemToCanonical),
+    type: node.type,
   };
 }
 
@@ -237,8 +247,8 @@ function paragraphNodeToCanonical(
   const text = formatInlineBlueprint(content);
   return text.length > 0
     ? {
+        content: [{ text, type: "text" as const }],
         type: "paragraph",
-        content: [{ type: "text" as const, text }],
       }
     : { type: "paragraph" };
 }
@@ -250,19 +260,19 @@ function headingNodeToCanonical(
   const text = formatInlineBlueprint(content);
   return text.length > 0
     ? {
-        type: "heading",
         attrs: { level },
-        content: [{ type: "text" as const, text }],
+        content: [{ text, type: "text" as const }],
+        type: "heading",
       }
-    : { type: "heading", attrs: { level } };
+    : { attrs: { level }, type: "heading" };
 }
 
 export function canonicalRichContentToComposed(
   content: RichContent,
 ): ComposedRichContent {
   return {
-    type: "doc",
     content: content.content.map(canonicalRichNodeToComposed),
+    type: "doc",
   };
 }
 
@@ -271,20 +281,20 @@ function canonicalRichNodeToComposed(
 ): ComposedRichContentNode {
   if (node.type === "paragraph") {
     return {
-      type: "paragraph" as const,
       content: parseInlineBlueprint(readCanonicalRichText(node.content)),
+      type: "paragraph" as const,
     };
   }
   if (node.type === "heading") {
     return {
-      type: "heading" as const,
-      level: Math.min(3, Math.max(1, node.attrs.level)) as 1 | 2 | 3,
       content: parseInlineBlueprint(readCanonicalRichText(node.content)),
+      level: Math.min(3, Math.max(1, node.attrs.level)) as 1 | 2 | 3,
+      type: "heading" as const,
     };
   }
   return {
-    type: node.type,
     items: node.content.map(canonicalRichListItemToComposed),
+    type: node.type,
   };
 }
 
@@ -292,8 +302,8 @@ function canonicalRichListItemToComposed(
   item: RichListItemNode,
 ): ComposedRichListItem {
   return {
-    type: "list_item",
     content: item.content.map(canonicalRichListItemChildToComposed),
+    type: "list_item",
   };
 }
 
@@ -302,13 +312,13 @@ function canonicalRichListItemChildToComposed(
 ): ComposedRichListItem["content"][number] {
   if (child.type === "paragraph") {
     return {
-      type: "paragraph" as const,
       content: parseInlineBlueprint(readCanonicalRichText(child.content)),
+      type: "paragraph" as const,
     };
   }
   return {
-    type: child.type,
     items: child.content.map(canonicalRichListItemToComposed),
+    type: child.type,
   };
 }
 

@@ -9,17 +9,17 @@ import type { CreateFileUploadRequestPurpose } from "./createFileUploadRequestPu
 
 export interface CreateFileUploadRequest {
   /**
-   * @minLength 1
-   * @maxLength 500
-   */
-  originalName: string;
-  contentType: CreateFileUploadRequestContentType;
-  /**
    * @maximum 26214400
    * @exclusiveMinimum 0
    */
   byteSize: number;
   /** @pattern ^[A-Fa-f0-9]{64}$ */
   checksumSha256: string;
+  contentType: CreateFileUploadRequestContentType;
+  /**
+   * @minLength 1
+   * @maxLength 500
+   */
+  originalName: string;
   purpose: CreateFileUploadRequestPurpose;
 }

@@ -69,8 +69,8 @@ export function createBrowserApiClient<TError extends Error = BrowserApiError>({
         throw createError({
           body,
           headers: response.headers,
-          status: response.status,
           payload: toApiErrorPayload(body, response.status),
+          status: response.status,
         });
       }
 
@@ -108,6 +108,7 @@ export function toApiErrorPayload(
         typeof body.error.code === "string"
           ? body.error.code
           : `HTTP_${status}`,
+      details: body.error.details,
       message:
         typeof body.error.message === "string"
           ? body.error.message
@@ -116,7 +117,6 @@ export function toApiErrorPayload(
         typeof body.error.requestId === "string"
           ? body.error.requestId
           : undefined,
-      details: body.error.details,
     };
   }
 

@@ -7,7 +7,7 @@
 import type { Question } from "./question.ts";
 
 export interface ListQuestionsResponse {
-  questions: Question[];
   /** @nullable */
   nextCursor: string | null;
+  questions: Question[];
 }

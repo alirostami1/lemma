@@ -1,13 +1,16 @@
 import type { DatabaseExecutor } from "@lemma/db";
-import type { QuestionsRepository } from "../application/index.js";
+import type {
+  DraftSourceFileMetadata,
+  QuestionsRepository,
+} from "../application/index.js";
 import type {
   Question,
   QuestionBlueprint,
+  QuestionBlueprintDraft,
+  QuestionBlueprintDraftId,
+  QuestionBlueprintDraftStatus,
   QuestionBlueprintId,
   QuestionBlueprintStatus,
-  QuestionBlueprintVersion,
-  QuestionBlueprintVersionAsset,
-  QuestionBlueprintVersionId,
   QuestionGenerationRun,
   QuestionGenerationRunId,
   QuestionGenerationRunStatus,
@@ -20,6 +23,7 @@ import type {
   UserId,
   WorkbookCalculationId,
 } from "../domain/index.js";
+import { KyselyQuestionBlueprintDraftRepository } from "./KyselyQuestionBlueprintDraftRepository.js";
 import { KyselyQuestionBlueprintRepository } from "./KyselyQuestionBlueprintRepository.js";
 import { KyselyQuestionGenerationRunRepository } from "./KyselyQuestionGenerationRunRepository.js";
 import { KyselyQuestionLibraryRepository } from "./KyselyQuestionLibraryRepository.js";
@@ -27,12 +31,14 @@ import { KyselyQuestionSetRepository } from "./KyselyQuestionSetRepository.js";
 
 export class KyselyQuestionsRepository implements QuestionsRepository {
   private readonly blueprints: KyselyQuestionBlueprintRepository;
+  private readonly blueprintDrafts: KyselyQuestionBlueprintDraftRepository;
   private readonly generationRuns: KyselyQuestionGenerationRunRepository;
   private readonly questions: KyselyQuestionLibraryRepository;
   private readonly sets: KyselyQuestionSetRepository;
 
   constructor(db: DatabaseExecutor) {
     this.blueprints = new KyselyQuestionBlueprintRepository(db);
+    this.blueprintDrafts = new KyselyQuestionBlueprintDraftRepository(db);
     this.generationRuns = new KyselyQuestionGenerationRunRepository(db);
     this.questions = new KyselyQuestionLibraryRepository(db);
     this.sets = new KyselyQuestionSetRepository(db);
@@ -80,38 +86,6 @@ export class KyselyQuestionsRepository implements QuestionsRepository {
     return this.blueprints.findQuestionBlueprintById(id);
   }
 
-  findQuestionBlueprintVersionById(
-    id: QuestionBlueprintVersionId,
-  ): Promise<QuestionBlueprintVersion | null> {
-    return this.blueprints.findQuestionBlueprintVersionById(id);
-  }
-
-  findCurrentQuestionBlueprintVersion(
-    blueprintId: QuestionBlueprintId,
-  ): Promise<QuestionBlueprintVersion | null> {
-    return this.blueprints.findCurrentQuestionBlueprintVersion(blueprintId);
-  }
-
-  listQuestionBlueprintVersions(input: {
-    blueprintId: QuestionBlueprintId;
-  }): Promise<QuestionBlueprintVersion[]> {
-    return this.blueprints.listQuestionBlueprintVersions(input);
-  }
-
-  listQuestionBlueprintVersionAssets(input: {
-    blueprintVersionId: QuestionBlueprintVersionId;
-  }): Promise<QuestionBlueprintVersionAsset[]> {
-    return this.blueprints.listQuestionBlueprintVersionAssets(input);
-  }
-
-  listQuestionBlueprintVersionAssetsByVersionIds(input: {
-    blueprintVersionIds: readonly QuestionBlueprintVersionId[];
-  }): Promise<QuestionBlueprintVersionAsset[]> {
-    return this.blueprints.listQuestionBlueprintVersionAssetsByVersionIds(
-      input,
-    );
-  }
-
   listQuestionBlueprintsByOwnerUserId(input: {
     ownerUserId: UserId;
     statuses?: readonly QuestionBlueprintStatus[];
@@ -128,41 +102,45 @@ export class KyselyQuestionsRepository implements QuestionsRepository {
     return this.blueprints.createQuestionBlueprint(blueprint);
   }
 
-  createQuestionBlueprintVersion(
-    version: QuestionBlueprintVersion,
-  ): Promise<QuestionBlueprintVersion> {
-    return this.blueprints.createQuestionBlueprintVersion(version);
-  }
-
-  createQuestionBlueprintWithVersion(input: {
-    blueprint: QuestionBlueprint;
-    version: QuestionBlueprintVersion;
-    assets: readonly QuestionBlueprintVersionAsset[];
-  }): Promise<QuestionBlueprint> {
-    return this.blueprints.createQuestionBlueprintWithVersion(input);
-  }
-
   updateQuestionBlueprint(
     blueprint: QuestionBlueprint,
   ): Promise<QuestionBlueprint | null> {
     return this.blueprints.updateQuestionBlueprint(blueprint);
   }
 
-  updateQuestionBlueprintCurrentVersion(input: {
-    blueprintId: QuestionBlueprintId;
-    currentVersionId: QuestionBlueprintVersionId;
-    workbookId: QuestionBlueprint["workbookId"];
-    updatedAt: Date;
-  }): Promise<QuestionBlueprint | null> {
-    return this.blueprints.updateQuestionBlueprintCurrentVersion(input);
+  findQuestionBlueprintDraftById(
+    id: QuestionBlueprintDraftId,
+  ): Promise<QuestionBlueprintDraft | null> {
+    return this.blueprintDrafts.findQuestionBlueprintDraftById(id);
   }
 
-  updateQuestionBlueprintWithNewVersion(input: {
-    blueprint: QuestionBlueprint;
-    version: QuestionBlueprintVersion;
-    assets: readonly QuestionBlueprintVersionAsset[];
-  }): Promise<QuestionBlueprint | null> {
-    return this.blueprints.updateQuestionBlueprintWithNewVersion(input);
+  listQuestionBlueprintDraftsByOwnerUserId(input: {
+    ownerUserId: UserId;
+    statuses?: readonly QuestionBlueprintDraftStatus[];
+    limit: number;
+    cursor?: Date;
+  }): Promise<QuestionBlueprintDraft[]> {
+    return this.blueprintDrafts.listQuestionBlueprintDraftsByOwnerUserId(input);
+  }
+
+  createQuestionBlueprintDraft(
+    draft: QuestionBlueprintDraft,
+  ): Promise<QuestionBlueprintDraft> {
+    return this.blueprintDrafts.createQuestionBlueprintDraft(draft);
+  }
+
+  updateQuestionBlueprintDraft(
+    draft: QuestionBlueprintDraft,
+  ): Promise<QuestionBlueprintDraft | null> {
+    return this.blueprintDrafts.updateQuestionBlueprintDraft(draft);
+  }
+
+  attachQuestionBlueprintDraftSourceFile(input: {
+    draft: QuestionBlueprintDraft;
+    sourceId: string;
+    file: DraftSourceFileMetadata;
+  }): Promise<QuestionBlueprintDraft | null> {
+    return this.blueprintDrafts.attachQuestionBlueprintDraftSourceFile(input);
   }
 
   findQuestionById(id: QuestionId): Promise<Question | null> {

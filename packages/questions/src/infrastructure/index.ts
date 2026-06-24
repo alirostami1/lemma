@@ -3,4 +3,4 @@ export {
   DenyWorkbookAccessPort,
   UnsupportedWorkbookInternalSnapshotResolverPort,
   UnsupportedWorkbookSnapshotResolverPort,
-} from "./WorkbookQuestionSourceResolver.js";
+} from "./WorkbookQuestionReferenceResolver.js";

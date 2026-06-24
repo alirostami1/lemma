@@ -4,19 +4,19 @@ import { getStudioHistoryShortcut } from "./use-studio-undo-redo-hotkeys";
 describe("studio undo/redo shortcuts", () => {
   it("maps platform shortcuts", () => {
     expect(createShortcut({ key: "z", metaKey: true })).toBe("undo");
-    expect(createShortcut({ key: "z", ctrlKey: true, shiftKey: true })).toBe(
+    expect(createShortcut({ ctrlKey: true, key: "z", shiftKey: true })).toBe(
       "redo",
     );
-    expect(createShortcut({ key: "y", ctrlKey: true })).toBe("redo");
+    expect(createShortcut({ ctrlKey: true, key: "y" })).toBe("redo");
   });
 
   it("ignores unsafe shortcut contexts", () => {
     expect(createShortcut({ key: "z" })).toBeNull();
     expect(
-      createShortcut({ key: "z", metaKey: true, altKey: true }),
+      createShortcut({ altKey: true, key: "z", metaKey: true }),
     ).toBeNull();
     expect(
-      createShortcut({ key: "z", metaKey: true, defaultPrevented: true }),
+      createShortcut({ defaultPrevented: true, key: "z", metaKey: true }),
     ).toBeNull();
   });
 });

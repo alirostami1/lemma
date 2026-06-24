@@ -8,6 +8,6 @@ import type { RichListItemNode } from "./richListItemNode.ts";
 import type { RichOrderedListNodeType } from "./richOrderedListNodeType.ts";
 
 export interface RichOrderedListNode {
-  type: RichOrderedListNodeType;
   content: RichListItemNode[];
+  type: RichOrderedListNodeType;
 }

@@ -10,6 +10,6 @@ Shared configuration helpers for reading and validating runtime environment.
 
 ```bash
 pnpm --filter @lemma/config build
-pnpm --filter @lemma/config check-types
+pnpm --filter @lemma/config check:types
 pnpm --filter @lemma/config lint
 ```

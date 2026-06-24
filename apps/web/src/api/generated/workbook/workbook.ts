@@ -116,7 +116,7 @@ export const getListWorkbooksQueryOptions = <
     signal,
   }) => listWorkbooks(params, { signal, ...requestOptions });
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+  return { queryFn, queryKey, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof listWorkbooks>>,
     TError,
     TData
@@ -288,9 +288,9 @@ export const createWorkbook = async (
 ): Promise<WorkbookResponse> => {
   return authedFetch<WorkbookResponse>(getCreateWorkbookUrl(), {
     ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(createWorkbookRequest),
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    method: "POST",
   });
 };
 
@@ -429,9 +429,9 @@ export const getGetWorkbookQueryOptions = <
   }) => getWorkbook(workbookId, { signal, ...requestOptions });
 
   return {
-    queryKey,
-    queryFn,
     enabled: workbookId !== null && workbookId !== undefined,
+    queryFn,
+    queryKey,
     ...queryOptions,
   } as UseQueryOptions<
     Awaited<ReturnType<typeof getWorkbook>>,
@@ -606,9 +606,9 @@ export const updateWorkbook = async (
 ): Promise<WorkbookResponse> => {
   return authedFetch<WorkbookResponse>(getUpdateWorkbookUrl(workbookId), {
     ...options,
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(updateWorkbookRequest),
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    method: "PATCH",
   });
 };
 
@@ -982,9 +982,9 @@ export const getListWorkbookCalculationsQueryOptions = <
     listWorkbookCalculations(workbookId, params, { signal, ...requestOptions });
 
   return {
-    queryKey,
-    queryFn,
     enabled: workbookId !== null && workbookId !== undefined,
+    queryFn,
+    queryKey,
     ...queryOptions,
   } as UseQueryOptions<
     Awaited<ReturnType<typeof listWorkbookCalculations>>,
@@ -1186,9 +1186,9 @@ export const createWorkbookCalculation = async (
     getCreateWorkbookCalculationUrl(workbookId),
     {
       ...options,
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...options?.headers },
       body: JSON.stringify(createWorkbookCalculationRequest),
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      method: "POST",
     },
   );
 };
@@ -1347,10 +1347,10 @@ export const getGetWorkbookCalculationQueryOptions = <
     });
 
   return {
-    queryKey,
-    queryFn,
     enabled:
       workbookCalculationId !== null && workbookCalculationId !== undefined,
+    queryFn,
+    queryKey,
     ...queryOptions,
   } as UseQueryOptions<
     Awaited<ReturnType<typeof getWorkbookCalculation>>,
@@ -1639,7 +1639,7 @@ export const useCancelWorkbookCalculation = <
 export const getRetryWorkbookCalculationUrl = (
   workbookCalculationId: string,
 ) => {
-  return `/api/v1/workbook-calculations/${workbookCalculationId}/retries`;
+  return `/api/v1/workbook-calculations/${workbookCalculationId}/retry`;
 };
 
 /**
@@ -1832,10 +1832,10 @@ export const getListWorkbookSnapshotsQueryOptions = <
     });
 
   return {
-    queryKey,
-    queryFn,
     enabled:
       workbookCalculationId !== null && workbookCalculationId !== undefined,
+    queryFn,
+    queryKey,
     ...queryOptions,
   } as UseQueryOptions<
     Awaited<ReturnType<typeof listWorkbookSnapshots>>,
@@ -2084,9 +2084,9 @@ export const getGetWorkbookSnapshotQueryOptions = <
     getWorkbookSnapshot(workbookSnapshotId, { signal, ...requestOptions });
 
   return {
-    queryKey,
-    queryFn,
     enabled: workbookSnapshotId !== null && workbookSnapshotId !== undefined,
+    queryFn,
+    queryKey,
     ...queryOptions,
   } as UseQueryOptions<
     Awaited<ReturnType<typeof getWorkbookSnapshot>>,
@@ -2331,9 +2331,9 @@ export const getGetWorkbookSnapshotMetadataQueryOptions = <
     });
 
   return {
-    queryKey,
-    queryFn,
     enabled: workbookSnapshotId !== null && workbookSnapshotId !== undefined,
+    queryFn,
+    queryKey,
     ...queryOptions,
   } as UseQueryOptions<
     Awaited<ReturnType<typeof getWorkbookSnapshotMetadata>>,
@@ -2597,9 +2597,9 @@ export const getListWorkbookSnapshotSheetsQueryOptions = <
     });
 
   return {
-    queryKey,
-    queryFn,
     enabled: workbookSnapshotId !== null && workbookSnapshotId !== undefined,
+    queryFn,
+    queryKey,
     ...queryOptions,
   } as UseQueryOptions<
     Awaited<ReturnType<typeof listWorkbookSnapshotSheets>>,
@@ -2881,13 +2881,13 @@ export const getGetWorkbookSnapshotCellsQueryOptions = <
     });
 
   return {
-    queryKey,
-    queryFn,
     enabled:
       workbookSnapshotId !== null &&
       workbookSnapshotId !== undefined &&
       sheetIndex !== null &&
       sheetIndex !== undefined,
+    queryFn,
+    queryKey,
     ...queryOptions,
   } as UseQueryOptions<
     Awaited<ReturnType<typeof getWorkbookSnapshotCells>>,
@@ -3179,9 +3179,9 @@ export const getGetWorkbookSnapshotRangeQueryOptions = <
     });
 
   return {
-    queryKey,
-    queryFn,
     enabled: workbookSnapshotId !== null && workbookSnapshotId !== undefined,
+    queryFn,
+    queryKey,
     ...queryOptions,
   } as UseQueryOptions<
     Awaited<ReturnType<typeof getWorkbookSnapshotRange>>,
@@ -3387,9 +3387,9 @@ export const getWorkbookSnapshotRangeBatch = async (
     getGetWorkbookSnapshotRangeBatchUrl(workbookSnapshotId),
     {
       ...options,
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...options?.headers },
       body: JSON.stringify(getWorkbookSnapshotRangeBatchRequest),
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      method: "POST",
     },
   );
 };
@@ -3576,9 +3576,9 @@ export const getResolveWorkbookSnapshotValueQueryOptions = <
     });
 
   return {
-    queryKey,
-    queryFn,
     enabled: workbookSnapshotId !== null && workbookSnapshotId !== undefined,
+    queryFn,
+    queryKey,
     ...queryOptions,
   } as UseQueryOptions<
     Awaited<ReturnType<typeof resolveWorkbookSnapshotValue>>,
@@ -3823,7 +3823,7 @@ export const getGetWorkbookEngineHealthQueryOptions = <
     Awaited<ReturnType<typeof getWorkbookEngineHealth>>
   > = ({ signal }) => getWorkbookEngineHealth({ signal, ...requestOptions });
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+  return { queryFn, queryKey, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getWorkbookEngineHealth>>,
     TError,
     TData

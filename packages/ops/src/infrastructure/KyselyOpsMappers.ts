@@ -47,39 +47,39 @@ export type OpsQueueJobRow = {
 
 export function mapOutboxEventRow(row: OpsOutboxEventRow): OpsOutboxEvent {
   return {
-    id: row.id,
-    eventType: row.eventType,
-    aggregateType: row.aggregateType,
     aggregateId: row.aggregateId,
-    ownerUserId: row.ownerUserId,
-    requestId: row.requestId,
-    correlationId: row.correlationId,
-    causationId: row.causationId,
-    status: row.status,
+    aggregateType: row.aggregateType,
     attempts: row.attempts,
     availableAt: row.availableAt,
-    lockedBy: row.lockedBy,
-    lockedAt: row.lockedAt,
-    publishedAt: row.publishedAt,
-    lastError: row.lastError,
+    causationId: row.causationId,
+    correlationId: row.correlationId,
     createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
+    eventType: row.eventType,
+    id: row.id,
+    lastError: row.lastError,
     latestReview: mapReview(row),
+    lockedAt: row.lockedAt,
+    lockedBy: row.lockedBy,
+    ownerUserId: row.ownerUserId,
+    publishedAt: row.publishedAt,
+    requestId: row.requestId,
+    status: row.status,
+    updatedAt: row.updatedAt,
   };
 }
 
 export function mapQueueJobRow(row: OpsQueueJobRow): OpsQueueJob {
   return {
+    completedOn: row.completedOn,
+    createdOn: row.createdOn,
+    data: row.data,
     id: row.id,
     name: row.name,
-    state: row.state,
+    output: row.output,
     retryCount: row.retryCount,
     retryLimit: row.retryLimit,
-    data: row.data,
-    output: row.output,
-    createdOn: row.createdOn,
     startedOn: row.startedOn,
-    completedOn: row.completedOn,
+    state: row.state,
   };
 }
 
@@ -98,9 +98,9 @@ function mapReview(row: OpsOutboxEventRow): OpsOutboxEventReview | null {
   }
   return {
     action: row.reviewAction,
-    note: row.reviewNote,
-    actorUserId: row.reviewActorUserId,
     actorEmail: row.reviewActorEmail,
+    actorUserId: row.reviewActorUserId,
     createdAt: row.reviewCreatedAt,
+    note: row.reviewNote,
   };
 }

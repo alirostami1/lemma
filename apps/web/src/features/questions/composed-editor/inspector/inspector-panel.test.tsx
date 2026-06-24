@@ -12,31 +12,33 @@ describe("InspectorPanel", () => {
     const user = userEvent.setup();
     const onSelectionChange = vi.fn();
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
+          content: [{ referenceId: "reference_1", type: "reference" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "reference", referenceId: "reference_1" }],
         },
       ],
-      responseFields: [],
       references: [
         {
           id: "reference_1",
           source: { type: "literal", value: "alpha" },
         },
       ],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     render(
       <InspectorPanel
         model={model}
-        selection={{ type: "document" }}
-        referencePreviewCache={{}}
-        workbookEnabled={false}
         onModelChange={() => {}}
         onSelectionChange={onSelectionChange}
+        referencePreviewCache={{}}
+        selection={{ type: "document" }}
+        sources={[]}
+        workbookEnabled={false}
+        workbookSheetNamesBySourceId={{}}
       />,
     );
 
@@ -54,26 +56,28 @@ describe("InspectorPanel", () => {
 
   it("shows contextual element settings without block action duplicates", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
+          content: [{ text: "Hello", type: "text" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "text", text: "Hello" }],
         },
       ],
-      responseFields: [],
       references: [],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     render(
       <InspectorPanel
         model={model}
-        selection={{ type: "block", blockId: "text_1" }}
-        referencePreviewCache={{}}
-        workbookEnabled={false}
         onModelChange={() => {}}
         onSelectionChange={() => {}}
+        referencePreviewCache={{}}
+        selection={{ blockId: "text_1", type: "block" }}
+        sources={[]}
+        workbookEnabled={false}
+        workbookSheetNamesBySourceId={{}}
       />,
     );
 
@@ -86,21 +90,23 @@ describe("InspectorPanel", () => {
 
   it("sets a measured sticky offset for the settings panel", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [],
-      responseFields: [],
       references: [],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     render(
       <InspectorPanel
         model={model}
-        selection={{ type: "document" }}
-        referencePreviewCache={{}}
-        workbookEnabled={false}
-        stickyOffset={212}
         onModelChange={() => {}}
         onSelectionChange={() => {}}
+        referencePreviewCache={{}}
+        selection={{ type: "document" }}
+        sources={[]}
+        stickyOffset={212}
+        workbookEnabled={false}
+        workbookSheetNamesBySourceId={{}}
       />,
     );
 

@@ -25,14 +25,14 @@ export function TableQuestionBlock({
 }) {
   return (
     <TableBlockPreview
-      model={block.table}
       answer={questionAnswerToTableAnswerState(answer)}
-      referencePreviewCache={referencePreviewCache}
       disabled={disabled}
-      showPrompt={false}
+      model={block.table}
       onAnswerChange={(nextAnswer) =>
         onAnswerChange(tableAnswerStateToQuestionAnswer(nextAnswer))
       }
+      referencePreviewCache={referencePreviewCache}
+      showPrompt={false}
     />
   );
 }

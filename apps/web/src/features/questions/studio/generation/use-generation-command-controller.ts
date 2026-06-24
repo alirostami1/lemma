@@ -12,14 +12,12 @@ import type {
 import { getGenerateCountIssue } from "./generation-error-state";
 
 type UseGenerationCommandControllerInput = {
-  getWorkbookName(workbookId: string | null): string | null;
   getQuestionSetName(questionSetId: string | null): string | null;
   onGenerationErrorChange(message: string | null): void;
   onRunStarted(run: QuestionGenerationRun, context: ActiveRunContext): void;
 };
 
 export function useGenerationCommandController({
-  getWorkbookName,
   getQuestionSetName,
   onGenerationErrorChange,
   onRunStarted,
@@ -50,11 +48,9 @@ export function useGenerationCommandController({
     try {
       const result = await createGeneration(
         toCreateQuestionGenerationRunInput({
+          blueprintId: dialogSource.blueprintId,
           count: dialogInput.count,
           targetQuestionSetId: dialogInput.targetQuestionSetId,
-          blueprintId: dialogSource.blueprintId,
-          blueprintVersionId: dialogSource.blueprintVersionId,
-          sourceWorkbookId: dialogSource.workbookId,
         }),
       );
 
@@ -82,18 +78,11 @@ export function useGenerationCommandController({
 
   function onGenerateBlueprint(blueprint: GenerateBlueprintSource) {
     onGenerationErrorChange(null);
-    if (!blueprint.currentVersionId) {
-      onGenerationErrorChange("This saved blueprint cannot be generated yet.");
-      return;
-    }
-
     setDialogSource({
-      kind: "saved_blueprint",
       blueprintId: blueprint.id,
-      blueprintVersionId: blueprint.currentVersionId,
+      kind: "saved_blueprint",
       name: blueprint.name,
-      workbookId: blueprint.workbookId,
-      workbookName: getWorkbookName(blueprint.workbookId),
+      sources: blueprint.sources,
     });
     setIsDialogOpen(true);
   }
@@ -110,15 +99,15 @@ export function useGenerationCommandController({
   }
 
   return {
-    dialogSource,
-    isCreateGenerationPending,
-    onGenerateBlueprint,
     clearSource,
+    dialogSource,
     generateDialog: {
+      onGenerate,
+      onOpenChange,
       open: isDialogOpen,
       source: dialogSource,
-      onOpenChange,
-      onGenerate,
     },
+    isCreateGenerationPending,
+    onGenerateBlueprint,
   };
 }

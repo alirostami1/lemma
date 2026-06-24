@@ -27,8 +27,8 @@ describe("auth access helpers", () => {
   });
 
   it("handles empty role requirements intentionally", () => {
-    expect(canAccess(user, { type: "all_roles", roles: [] })).toBe(true);
-    expect(canAccess(user, { type: "any_role", roles: [] })).toBe(false);
+    expect(canAccess(user, { roles: [], type: "all_roles" })).toBe(true);
+    expect(canAccess(user, { roles: [], type: "any_role" })).toBe(false);
   });
 
   it("requires a logged-in user for every requirement", () => {

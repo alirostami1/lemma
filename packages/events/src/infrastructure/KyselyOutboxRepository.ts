@@ -120,11 +120,11 @@ export class KyselyOutboxRepository implements OutboxRepository {
       this.db
         .updateTable("outboxEvents")
         .set({
-          status: "published",
-          publishedAt: input.publishedAt,
-          lockedBy: null,
-          lockedAt: null,
           lastError: null,
+          lockedAt: null,
+          lockedBy: null,
+          publishedAt: input.publishedAt,
+          status: "published",
           updatedAt: input.publishedAt,
         })
         .where("id", "=", input.eventId)
@@ -139,11 +139,11 @@ export class KyselyOutboxRepository implements OutboxRepository {
       await this.db
         .updateTable("outboxEvents")
         .set({
-          status: input.retryAt ? "pending" : "failed",
           availableAt: nextAvailableAt,
-          lockedBy: null,
-          lockedAt: null,
           lastError: input.errorMessage,
+          lockedAt: null,
+          lockedBy: null,
+          status: input.retryAt ? "pending" : "failed",
           updatedAt: input.failedAt,
         })
         .where("id", "=", input.eventId)
@@ -234,8 +234,8 @@ export class KyselyOutboxRepository implements OutboxRepository {
       const row = await this.db
         .insertInto("processedEvents")
         .values({
-          eventId: input.eventId,
           consumer: input.consumer,
+          eventId: input.eventId,
           processedAt: input.processedAt,
         })
         .onConflict((oc) => oc.columns(["eventId", "consumer"]).doNothing())
@@ -261,24 +261,24 @@ export class KyselyOutboxRepository implements OutboxRepository {
 
 function mapEventEnvelopeToInsert(event: DomainEventEnvelope) {
   return {
-    id: event.id,
-    eventType: event.type,
-    schemaVersion: event.schemaVersion,
-    aggregateType: event.aggregate.type,
     aggregateId: event.aggregate.id,
-    ownerUserId: event.ownerUserId ?? null,
-    requestId: event.lineage.requestId,
-    correlationId: event.lineage.correlationId,
-    causationId: event.lineage.causationId,
-    payload: event.payload,
-    status: "pending",
-    availableAt: event.occurredAt,
+    aggregateType: event.aggregate.type,
     attempts: 0,
-    lockedBy: null,
-    lockedAt: null,
-    publishedAt: null,
-    lastError: null,
+    availableAt: event.occurredAt,
+    causationId: event.lineage.causationId,
+    correlationId: event.lineage.correlationId,
     createdAt: event.occurredAt,
+    eventType: event.type,
+    id: event.id,
+    lastError: null,
+    lockedAt: null,
+    lockedBy: null,
+    ownerUserId: event.ownerUserId ?? null,
+    payload: event.payload,
+    publishedAt: null,
+    requestId: event.lineage.requestId,
+    schemaVersion: event.schemaVersion,
+    status: "pending",
     updatedAt: event.occurredAt,
   };
 }
@@ -287,30 +287,30 @@ function mapOutboxEventRowToDomain(
   row: Selectable<OutboxEventsTable>,
 ): OutboxEvent {
   return {
-    id: eventId(row.id),
-    eventType: eventType(row.eventType),
-    schemaVersion: row.schemaVersion,
-    aggregateType: aggregateType(row.aggregateType),
     aggregateId: aggregateId(row.aggregateId),
-    ownerUserId: row.ownerUserId,
-    lineage: {
-      requestId: row.requestId,
-      correlationId: row.correlationId,
-      causationId: row.causationId,
-    },
-    payload: row.payload as JsonObject,
-    status: outboxEventStatus(row.status),
-    availableAt: assertOutboxEventDate(row.availableAt, "availableAt"),
+    aggregateType: aggregateType(row.aggregateType),
     attempts: assertOutboxEventAttempts(row.attempts),
-    lockedBy: row.lockedBy,
+    availableAt: assertOutboxEventDate(row.availableAt, "availableAt"),
+    createdAt: assertOutboxEventDate(row.createdAt, "createdAt"),
+    eventType: eventType(row.eventType),
+    id: eventId(row.id),
+    lastError: row.lastError,
+    lineage: {
+      causationId: row.causationId,
+      correlationId: row.correlationId,
+      requestId: row.requestId,
+    },
     lockedAt: row.lockedAt
       ? assertOutboxEventDate(row.lockedAt, "lockedAt")
       : null,
+    lockedBy: row.lockedBy,
+    ownerUserId: row.ownerUserId,
+    payload: row.payload as JsonObject,
     publishedAt: row.publishedAt
       ? assertOutboxEventDate(row.publishedAt, "publishedAt")
       : null,
-    lastError: row.lastError,
-    createdAt: assertOutboxEventDate(row.createdAt, "createdAt"),
+    schemaVersion: row.schemaVersion,
+    status: outboxEventStatus(row.status),
     updatedAt: assertOutboxEventDate(row.updatedAt, "updatedAt"),
   };
 }

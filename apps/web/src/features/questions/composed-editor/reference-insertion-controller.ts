@@ -31,11 +31,11 @@ export function insertReferenceSyntaxAtSelection({
   const caret = insertionStart + insertedText.length;
 
   return {
-    text: nextText,
     selection: {
-      start: caret,
       end: caret,
+      start: caret,
     },
+    text: nextText,
   };
 }
 

@@ -1,27 +1,33 @@
 import type {
+  DB,
   QuestionBlueprints,
-  QuestionBlueprintVersionAssets,
-  QuestionBlueprintVersions,
   QuestionGenerationRuns,
   QuestionSets,
   Questions,
 } from "@lemma/db/tables";
 import type { JsonObject } from "@lemma/domain";
-import type { Insertable, Selectable, Updateable } from "kysely";
+import {
+  type Insertable,
+  type InsertObject,
+  type Selectable,
+  sql,
+  type Updateable,
+  type UpdateObject,
+} from "kysely";
 import {
   type Question,
   type QuestionBlueprint,
-  type QuestionBlueprintVersion,
-  type QuestionBlueprintVersionAsset,
   type QuestionGenerationRun,
   type QuestionSet,
   reconstituteQuestion,
   reconstituteQuestionBlueprint,
-  reconstituteQuestionBlueprintVersion,
-  reconstituteQuestionBlueprintVersionAsset,
   reconstituteQuestionGenerationRun,
   reconstituteQuestionSet,
 } from "../domain/index.js";
+
+function toMutableJsonObject(value: unknown): JsonObject {
+  return JSON.parse(JSON.stringify(value)) as JsonObject;
+}
 
 export function mapQuestionSetRowToDomain(
   row: Selectable<QuestionSets>,
@@ -33,14 +39,14 @@ export function mapQuestionSetToInsert(
   set: QuestionSet,
 ): Insertable<QuestionSets> {
   return {
-    id: set.id,
-    ownerUserId: set.ownerUserId,
-    createdByUserId: set.createdByUserId,
-    name: set.name,
-    description: set.description,
-    status: set.status,
     archivedAt: set.status === "archived" ? set.updatedAt : null,
     createdAt: set.createdAt,
+    createdByUserId: set.createdByUserId,
+    description: set.description,
+    id: set.id,
+    name: set.name,
+    ownerUserId: set.ownerUserId,
+    status: set.status,
     updatedAt: set.updatedAt,
   };
 }
@@ -49,138 +55,111 @@ export function mapQuestionSetToUpdate(
   set: QuestionSet,
 ): Updateable<QuestionSets> {
   return {
-    name: set.name,
-    description: set.description,
-    status: set.status,
     archivedAt: set.status === "archived" ? set.updatedAt : null,
+    description: set.description,
+    name: set.name,
+    status: set.status,
     updatedAt: set.updatedAt,
   };
 }
 
 export function mapQuestionBlueprintRowToDomain(
-  row: Selectable<QuestionBlueprints>,
+  row: Selectable<QuestionBlueprints> & {
+    document: unknown;
+    sources: unknown;
+  },
 ): QuestionBlueprint {
   return reconstituteQuestionBlueprint(row);
 }
 
-export function mapQuestionBlueprintVersionRowToDomain(
-  row: Selectable<QuestionBlueprintVersions>,
-): QuestionBlueprintVersion {
-  return reconstituteQuestionBlueprintVersion(row);
-}
-
-export function mapQuestionBlueprintVersionAssetRowToDomain(
-  row: Selectable<QuestionBlueprintVersionAssets>,
-): QuestionBlueprintVersionAsset {
-  return reconstituteQuestionBlueprintVersionAsset(row);
-}
-
 export function mapQuestionBlueprintToInsert(
   blueprint: QuestionBlueprint,
-): Insertable<QuestionBlueprints> {
+): InsertObject<DB, "questionBlueprints"> {
   return {
-    id: blueprint.id,
-    ownerUserId: blueprint.ownerUserId,
-    createdByUserId: blueprint.createdByUserId,
-    name: blueprint.name,
-    description: blueprint.description,
-    visibility: blueprint.visibility,
-    status: blueprint.status,
-    createdAt: blueprint.createdAt,
-    updatedAt: blueprint.updatedAt,
-    workbookId: blueprint.workbookId,
-    currentVersionId: blueprint.currentVersionId,
     archivedAt: blueprint.archivedAt,
-  } as Insertable<QuestionBlueprints>;
+    createdAt: blueprint.createdAt,
+    createdByUserId: blueprint.createdByUserId,
+    description: blueprint.description,
+    document: toMutableJsonObject(blueprint.document),
+    id: blueprint.id,
+    name: blueprint.name,
+    ownerUserId: blueprint.ownerUserId,
+    sources: mapJsonArrayToDb(blueprint.sources),
+    status: blueprint.status,
+    updatedAt: blueprint.updatedAt,
+    visibility: blueprint.visibility,
+  };
 }
 
 export function mapQuestionBlueprintToUpdate(
   blueprint: QuestionBlueprint,
-): Updateable<QuestionBlueprints> {
+): UpdateObject<DB, "questionBlueprints"> {
   return {
-    name: blueprint.name,
+    archivedAt: blueprint.archivedAt,
     description: blueprint.description,
-    visibility: blueprint.visibility,
+    document: toMutableJsonObject(blueprint.document),
+    name: blueprint.name,
+    sources: mapJsonArrayToDb(blueprint.sources),
     status: blueprint.status,
     updatedAt: blueprint.updatedAt,
-    archivedAt: blueprint.archivedAt,
-  } as Updateable<QuestionBlueprints>;
-}
-
-export function mapQuestionBlueprintVersionToInsert(
-  version: QuestionBlueprintVersion,
-): Insertable<QuestionBlueprintVersions> {
-  return {
-    id: version.id,
-    questionBlueprintId: version.questionBlueprintId,
-    versionNumber: version.versionNumber,
-    document: version.document as JsonObject,
-    workbookId: version.workbookId,
-    createdByUserId: version.createdByUserId,
-    createdAt: version.createdAt,
-  } as Insertable<QuestionBlueprintVersions>;
-}
-
-export function mapQuestionBlueprintVersionAssetToInsert(
-  asset: QuestionBlueprintVersionAsset,
-): Insertable<QuestionBlueprintVersionAssets> {
-  return {
-    questionBlueprintVersionId: asset.questionBlueprintVersionId,
-    workbookId: asset.workbookId,
-    kind: asset.kind,
-    position: asset.position,
-    createdAt: asset.createdAt,
+    visibility: blueprint.visibility,
   };
 }
 
-export function mapQuestionRowToDomain(row: Selectable<Questions>): Question {
+export function mapJsonArrayToDb(value: readonly JsonObject[]) {
+  return sql<JsonObject[]>`${JSON.stringify(value)}::jsonb`;
+}
+
+export function mapQuestionRowToDomain(
+  row: Selectable<Questions> & { sourceEvidence: unknown; sourcePlan: unknown },
+): Question {
   return reconstituteQuestion({
     ...row,
-    blueprintId: row.blueprintId,
-    blueprintVersionId: row.blueprintVersionId,
+    sourceEvidence: row.sourceEvidence,
+    sourcePlan: row.sourcePlan,
   });
 }
 
 export function mapQuestionToInsert(question: Question): Insertable<Questions> {
   return {
+    blueprintId: question.blueprintId,
+    body: toMutableJsonObject(question.body),
+    createdAt: question.createdAt,
+    createdByUserId: question.createdByUserId,
+    generationRunId: question.generationRunId,
     id: question.id,
     ownerUserId: question.ownerUserId,
-    createdByUserId: question.createdByUserId,
-    blueprintId: question.blueprintId,
-    blueprintVersionId: question.blueprintVersionId,
-    generationRunId: question.generationRunId,
-    body: question.body as JsonObject,
-    solution: question.solution as JsonObject | null,
-    sourcePlan: question.sourcePlan as JsonObject | null,
-    producer: question.producer as JsonObject | null,
-    source: question.source as JsonObject | null,
+    producer: toMutableJsonObject(question.producer),
+    solution: toMutableJsonObject(question.solution),
+    sourceEvidence: question.sourceEvidence,
+    sourcePlan: toMutableJsonObject(question.sourcePlan),
     status: question.status,
-    createdAt: question.createdAt,
     updatedAt: question.updatedAt,
   } as Insertable<Questions>;
 }
 
 export function mapQuestionToUpdate(question: Question): Updateable<Questions> {
   return {
-    body: question.body as JsonObject,
-    solution: question.solution as JsonObject,
-    sourcePlan: question.sourcePlan as JsonObject,
-    producer: question.producer as JsonObject,
-    source: question.source as JsonObject | null,
+    body: toMutableJsonObject(question.body),
+    producer: toMutableJsonObject(question.producer),
+    solution: toMutableJsonObject(question.solution),
+    sourceEvidence: toMutableJsonObject(question.sourceEvidence),
+    sourcePlan: toMutableJsonObject(question.sourcePlan),
     status: question.status,
     updatedAt: question.updatedAt,
   } as Updateable<Questions>;
 }
 
 export function mapQuestionGenerationRunRowToDomain(
-  row: Selectable<QuestionGenerationRuns>,
+  row: Selectable<QuestionGenerationRuns> & {
+    blueprintSnapshot: unknown;
+    workbookCalculationId: string | null;
+  },
 ): QuestionGenerationRun {
   return reconstituteQuestionGenerationRun({
     ...row,
-    blueprintId: row.blueprintId,
-    blueprintVersionId: row.blueprintVersionId,
-    source: row.source,
-    result: row.result,
+    blueprintSnapshot: row.blueprintSnapshot,
+    retryOfRunId: row.retryOfRunId,
   });
 }
 
@@ -188,22 +167,24 @@ export function mapQuestionGenerationRunToInsert(
   run: QuestionGenerationRun,
 ): Insertable<QuestionGenerationRuns> {
   return {
+    attemptNumber: run.attemptNumber,
+    attempts: run.attempts,
+    blueprintId: run.blueprintId,
+    blueprintSnapshot: toMutableJsonObject(run.blueprintSnapshot),
+    createdAt: run.createdAt,
+    createdByUserId: run.createdByUserId,
+    errorMessage: run.errorMessage,
+    finishedAt: run.finishedAt,
     id: run.id,
     ownerUserId: run.ownerUserId,
-    createdByUserId: run.createdByUserId,
-    blueprintId: run.blueprintId,
-    blueprintVersionId: run.blueprintVersionId,
-    targetQuestionSetId: run.targetQuestionSetId,
     requestedCount: run.requestedCount,
-    source: run.source as JsonObject | null,
-    status: run.status,
     result: run.result as JsonObject | null,
-    errorMessage: run.errorMessage,
-    attempts: run.attempts,
+    retryOfRunId: run.retryOfRunId,
     startedAt: run.startedAt,
-    finishedAt: run.finishedAt,
-    createdAt: run.createdAt,
+    status: run.status,
+    targetQuestionSetId: run.targetQuestionSetId,
     updatedAt: run.updatedAt,
+    workbookCalculationId: run.workbookCalculationId,
   };
 }
 
@@ -211,13 +192,16 @@ export function mapQuestionGenerationRunToUpdate(
   run: QuestionGenerationRun,
 ): Updateable<QuestionGenerationRuns> {
   return {
-    source: run.source as JsonObject | null,
-    status: run.status,
-    result: run.result as JsonObject | null,
-    errorMessage: run.errorMessage,
+    attemptNumber: run.attemptNumber,
     attempts: run.attempts,
-    startedAt: run.startedAt,
+    blueprintSnapshot: toMutableJsonObject(run.blueprintSnapshot),
+    errorMessage: run.errorMessage,
     finishedAt: run.finishedAt,
+    result: run.result as JsonObject | null,
+    retryOfRunId: run.retryOfRunId,
+    startedAt: run.startedAt,
+    status: run.status,
     updatedAt: run.updatedAt,
+    workbookCalculationId: run.workbookCalculationId,
   };
 }

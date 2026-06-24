@@ -43,9 +43,9 @@ function gradeQuestionSolution(
       needsManualReview = true;
     }
     const detail = {
+      earnedPoints: earnedPoints ?? 0,
       responseFieldId: rule.responseFieldId,
       totalPoints: rule.points,
-      earnedPoints: earnedPoints ?? 0,
       userAnswer,
     };
     return rule.type === "manual"
@@ -53,18 +53,18 @@ function gradeQuestionSolution(
       : { ...detail, correctAnswer: rule.correctValue };
   });
   return {
-    schemaVersion: 1,
-    totalPoints: details.reduce(
-      (total, detail) => total + detail.totalPoints,
-      0,
-    ),
+    details,
     earnedPoints: details.reduce(
       (total, detail) => total + detail.earnedPoints,
       0,
     ),
-    status: needsManualReview ? "needs_manual_review" : "graded",
-    details,
     graderVersion: "canonical@1",
+    schemaVersion: 1,
+    status: needsManualReview ? "needs_manual_review" : "graded",
+    totalPoints: details.reduce(
+      (total, detail) => total + detail.totalPoints,
+      0,
+    ),
   };
 }
 

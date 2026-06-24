@@ -2,6 +2,7 @@ import type {
   ComposedEditorBlock,
   ComposedEditorModel,
 } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import type { EditorSelection } from "../editor-selection";
 import { SelectedElementInspector } from "./selected-element-inspector";
@@ -12,6 +13,8 @@ export function ElementsTab({
   selectedBlock,
   referencePreviewCache,
   workbookEnabled,
+  sources,
+  workbookSheetNamesBySourceId,
   disabled,
   onModelChange,
   onSelectionChange,
@@ -21,20 +24,24 @@ export function ElementsTab({
   selectedBlock: ComposedEditorBlock | null;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
+  sources: QuestionBlueprintWorkbookSource[];
+  workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onSelectionChange(selection: EditorSelection): void;
 }) {
   return (
     <SelectedElementInspector
-      model={model}
-      selection={selection}
-      selectedBlock={selectedBlock}
-      referencePreviewCache={referencePreviewCache}
-      workbookEnabled={workbookEnabled}
       disabled={disabled}
+      model={model}
       onModelChange={onModelChange}
       onSelectionChange={onSelectionChange}
+      referencePreviewCache={referencePreviewCache}
+      selectedBlock={selectedBlock}
+      selection={selection}
+      sources={sources}
+      workbookEnabled={workbookEnabled}
+      workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
     />
   );
 }

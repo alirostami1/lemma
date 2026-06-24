@@ -30,14 +30,70 @@ import {
 } from "../src/domain/index.ts";
 
 const filesTag: Tag = {
-  name: "Files",
   description: "File upload, file metadata, and file download URL operations.",
+  name: "Files",
 };
 
 const fileSchema: Schema = {
   name: "File",
   schema: {
-    type: "object",
+    properties: {
+      byteSize: {
+        example: 1024,
+        exclusiveMinimum: 0,
+        maximum: MAX_FILE_BYTE_SIZE,
+        type: "integer",
+      },
+      checksumSha256: {
+        example:
+          "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        pattern: "^[A-Fa-f0-9]{64}$",
+        type: "string",
+      },
+      contentType: {
+        enum: FILE_CONTENT_TYPE_ACCEPTED_VALUES as unknown as string[],
+        example:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        type: "string",
+      },
+      createdAt: {
+        format: "date-time",
+        type: "string",
+      },
+      createdByUserId: {
+        ...uuidV7StringSchemaObject(),
+      },
+      deletedAt: {
+        format: "date-time",
+        type: ["string", "null"],
+      },
+      id: {
+        ...uuidV7StringSchemaObject(),
+      },
+      originalName: {
+        example: "workbook.xlsx",
+        maxLength: MAX_ORIGINAL_FILE_NAME_LENGTH,
+        minLength: 1,
+        type: "string",
+      },
+      ownerUserId: {
+        ...uuidV7StringSchemaObject(),
+      },
+      purpose: {
+        enum: FILE_PURPOSE_ACCEPTED_VALUES as unknown as string[],
+        example: "workbook",
+        type: "string",
+      },
+      status: {
+        enum: FILE_STATUS_ACCEPTED_VALUES as unknown as string[],
+        example: "uploaded",
+        type: "string",
+      },
+      updatedAt: {
+        format: "date-time",
+        type: "string",
+      },
+    },
     required: [
       "id",
       "ownerUserId",
@@ -52,70 +108,71 @@ const fileSchema: Schema = {
       "createdAt",
       "updatedAt",
     ],
-    properties: {
-      id: {
-        ...uuidV7StringSchemaObject(),
-      },
-      ownerUserId: {
-        ...uuidV7StringSchemaObject(),
-      },
-      createdByUserId: {
-        ...uuidV7StringSchemaObject(),
-      },
-      originalName: {
-        type: "string",
-        minLength: 1,
-        maxLength: MAX_ORIGINAL_FILE_NAME_LENGTH,
-        example: "workbook.xlsx",
-      },
-      contentType: {
-        type: "string",
-        enum: FILE_CONTENT_TYPE_ACCEPTED_VALUES as unknown as string[],
-        example:
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      },
-      byteSize: {
-        type: "integer",
-        exclusiveMinimum: 0,
-        maximum: MAX_FILE_BYTE_SIZE,
-        example: 1024,
-      },
-      checksumSha256: {
-        type: "string",
-        pattern: "^[A-Fa-f0-9]{64}$",
-        example:
-          "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-      },
-      status: {
-        type: "string",
-        enum: FILE_STATUS_ACCEPTED_VALUES as unknown as string[],
-        example: "uploaded",
-      },
-      purpose: {
-        type: "string",
-        enum: FILE_PURPOSE_ACCEPTED_VALUES as unknown as string[],
-        example: "workbook",
-      },
-      deletedAt: {
-        type: ["string", "null"],
-        format: "date-time",
-      },
-      createdAt: {
-        type: "string",
-        format: "date-time",
-      },
-      updatedAt: {
-        type: "string",
-        format: "date-time",
-      },
-    },
+    type: "object",
   },
 };
 
 const fileUploadSchema: Schema = {
   name: "FileUpload",
   schema: {
-    type: "object",
+    properties: {
+      checksumSha256: {
+        example:
+          "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        pattern: "^[A-Fa-f0-9]{64}$",
+        type: "string",
+      },
+      completedAt: {
+        format: "date-time",
+        type: ["string", "null"],
+      },
+      contentType: {
+        enum: FILE_CONTENT_TYPE_ACCEPTED_VALUES as unknown as string[],
+        example:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        type: "string",
+      },
+      createdAt: {
+        format: "date-time",
+        type: "string",
+      },
+      createdByUserId: {
+        ...uuidV7StringSchemaObject(),
+      },
+      expectedByteSize: {
+        example: 1024,
+        exclusiveMinimum: 0,
+        maximum: MAX_FILE_BYTE_SIZE,
+        type: "integer",
+      },
+      id: {
+        ...uuidV7StringSchemaObject(),
+      },
+      originalName: {
+        example: "workbook.xlsx",
+        maxLength: MAX_ORIGINAL_FILE_NAME_LENGTH,
+        minLength: 1,
+        type: "string",
+      },
+      purpose: {
+        enum: FILE_PURPOSE_ACCEPTED_VALUES as unknown as string[],
+        example: "workbook",
+        type: "string",
+      },
+      status: {
+        enum: FILE_UPLOAD_STATUS_ACCEPTED_VALUES as unknown as string[],
+        example: "initiated",
+        type: "string",
+      },
+      updatedAt: {
+        format: "date-time",
+        type: "string",
+      },
+      uploadExpiresAt: {
+        format: "date-time",
+        type: "string",
+      },
+    },
     required: [
       "id",
       "createdByUserId",
@@ -130,117 +187,48 @@ const fileUploadSchema: Schema = {
       "createdAt",
       "updatedAt",
     ],
-    properties: {
-      id: {
-        ...uuidV7StringSchemaObject(),
-      },
-      createdByUserId: {
-        ...uuidV7StringSchemaObject(),
-      },
-      originalName: {
-        type: "string",
-        minLength: 1,
-        maxLength: MAX_ORIGINAL_FILE_NAME_LENGTH,
-        example: "workbook.xlsx",
-      },
-      contentType: {
-        type: "string",
-        enum: FILE_CONTENT_TYPE_ACCEPTED_VALUES as unknown as string[],
-        example:
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      },
-      expectedByteSize: {
-        type: "integer",
-        exclusiveMinimum: 0,
-        maximum: MAX_FILE_BYTE_SIZE,
-        example: 1024,
-      },
-      checksumSha256: {
-        type: "string",
-        pattern: "^[A-Fa-f0-9]{64}$",
-        example:
-          "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-      },
-      status: {
-        type: "string",
-        enum: FILE_UPLOAD_STATUS_ACCEPTED_VALUES as unknown as string[],
-        example: "initiated",
-      },
-      purpose: {
-        type: "string",
-        enum: FILE_PURPOSE_ACCEPTED_VALUES as unknown as string[],
-        example: "workbook",
-      },
-      uploadExpiresAt: {
-        type: "string",
-        format: "date-time",
-      },
-      completedAt: {
-        type: ["string", "null"],
-        format: "date-time",
-      },
-      createdAt: {
-        type: "string",
-        format: "date-time",
-      },
-      updatedAt: {
-        type: "string",
-        format: "date-time",
-      },
-    },
+    type: "object",
   },
 };
 
 const listFilesResponseSchema: Schema = {
   name: "ListFilesResponse",
   schema: {
-    type: "object",
-    required: ["files", "nextCursor"],
     properties: {
       files: {
-        type: "array",
         items: schemaRef(fileSchema),
+        type: "array",
       },
       nextCursor: {
-        type: ["string", "null"],
         minLength: 1,
+        type: ["string", "null"],
       },
     },
+    required: ["files", "nextCursor"],
+    type: "object",
   },
 };
 
 const fileResponseSchema: Schema = {
   name: "FileResponse",
   schema: {
-    type: "object",
-    required: ["file"],
     properties: {
       file: schemaRef(fileSchema),
     },
+    required: ["file"],
+    type: "object",
   },
 };
 
 const fileUploadUrlSchema: Schema = {
   name: "FileUploadUrl",
   schema: {
-    type: "object",
-    required: ["url", "method", "expiresInSeconds", "headers"],
     properties: {
-      url: {
-        type: "string",
-        format: "uri",
-      },
-      method: {
-        type: "string",
-        enum: ["PUT"],
-      },
       expiresInSeconds: {
-        type: "integer",
         exclusiveMinimum: 0,
+        type: "integer",
       },
       headers: {
-        type: "object",
-        required: ["Content-Type", "x-amz-checksum-sha256"],
         properties: {
           "Content-Type": {
             type: "string",
@@ -249,61 +237,96 @@ const fileUploadUrlSchema: Schema = {
             type: "string",
           },
         },
+        required: ["Content-Type", "x-amz-checksum-sha256"],
+        type: "object",
+      },
+      method: {
+        enum: ["PUT"],
+        type: "string",
+      },
+      url: {
+        format: "uri",
+        type: "string",
       },
     },
+    required: ["url", "method", "expiresInSeconds", "headers"],
+    type: "object",
   },
 };
 
 const fileDownloadUrlSchema: Schema = {
   name: "FileDownloadUrl",
   schema: {
-    type: "object",
-    required: ["url", "method", "expiresInSeconds"],
     properties: {
-      url: {
-        type: "string",
-        format: "uri",
+      expiresInSeconds: {
+        exclusiveMinimum: 0,
+        type: "integer",
       },
       method: {
-        type: "string",
         enum: ["GET"],
+        type: "string",
       },
-      expiresInSeconds: {
-        type: "integer",
-        exclusiveMinimum: 0,
+      url: {
+        format: "uri",
+        type: "string",
       },
     },
+    required: ["url", "method", "expiresInSeconds"],
+    type: "object",
   },
 };
 
 const createFileUploadResponseSchema: Schema = {
   name: "CreateFileUploadResponse",
   schema: {
-    type: "object",
-    required: ["upload", "uploadUrl"],
     properties: {
       upload: schemaRef(fileUploadSchema),
       uploadUrl: schemaRef(fileUploadUrlSchema),
     },
+    required: ["upload", "uploadUrl"],
+    type: "object",
   },
 };
 
 const createFileDownloadUrlResponseSchema: Schema = {
   name: "CreateFileDownloadUrlResponse",
   schema: {
-    type: "object",
-    required: ["download"],
     properties: {
       download: schemaRef(fileDownloadUrlSchema),
     },
+    required: ["download"],
+    type: "object",
   },
 };
 
 const createFileUploadRequestSchema: Schema = {
   name: "CreateFileUploadRequest",
   schema: {
-    type: "object",
     additionalProperties: false,
+    properties: {
+      byteSize: {
+        exclusiveMinimum: 0,
+        maximum: MAX_FILE_BYTE_SIZE,
+        type: "integer",
+      },
+      checksumSha256: {
+        pattern: "^[A-Fa-f0-9]{64}$",
+        type: "string",
+      },
+      contentType: {
+        enum: FILE_CONTENT_TYPE_ACCEPTED_VALUES as unknown as string[],
+        type: "string",
+      },
+      originalName: {
+        maxLength: MAX_ORIGINAL_FILE_NAME_LENGTH,
+        minLength: 1,
+        type: "string",
+      },
+      purpose: {
+        enum: FILE_PURPOSE_ACCEPTED_VALUES as unknown as string[],
+        type: "string",
+      },
+    },
     required: [
       "originalName",
       "contentType",
@@ -311,62 +334,39 @@ const createFileUploadRequestSchema: Schema = {
       "checksumSha256",
       "purpose",
     ],
-    properties: {
-      originalName: {
-        type: "string",
-        minLength: 1,
-        maxLength: MAX_ORIGINAL_FILE_NAME_LENGTH,
-      },
-      contentType: {
-        type: "string",
-        enum: FILE_CONTENT_TYPE_ACCEPTED_VALUES as unknown as string[],
-      },
-      byteSize: {
-        type: "integer",
-        exclusiveMinimum: 0,
-        maximum: MAX_FILE_BYTE_SIZE,
-      },
-      checksumSha256: {
-        type: "string",
-        pattern: "^[A-Fa-f0-9]{64}$",
-      },
-      purpose: {
-        type: "string",
-        enum: FILE_PURPOSE_ACCEPTED_VALUES as unknown as string[],
-      },
-    },
+    type: "object",
   },
 };
 
 const updateFileRequestSchema: Schema = {
   name: "UpdateFileRequest",
   schema: {
-    type: "object",
     additionalProperties: false,
     minProperties: 1,
     properties: {
       originalName: {
-        type: "string",
-        minLength: 1,
         maxLength: MAX_ORIGINAL_FILE_NAME_LENGTH,
+        minLength: 1,
+        type: "string",
       },
       purpose: {
-        type: "string",
         enum: FILE_PURPOSE_ACCEPTED_VALUES as unknown as string[],
+        type: "string",
       },
     },
+    type: "object",
   },
 };
 
 const upstreamStorageResponse: Response = {
   name: "UpstreamStorage",
   schema: {
-    description: "Storage provider operation failed.",
     content: {
       "application/json": {
         schema: schemaRef(errorResponseSchema),
       },
     },
+    description: "Storage provider operation failed.",
   },
 };
 
@@ -402,155 +402,127 @@ export const responses = Object.freeze([
 export const params = Object.freeze([fileParam, fileUploadParam]);
 
 export const paths: Paths = Object.freeze({
-  "/files": {
-    get: {
-      tags: [tagRef(filesTag)],
-      summary: "List files",
-      operationId: "listFiles",
-      security: [keycloakSecurityRequirement],
-      parameters: [
-        {
-          name: "limit",
-          in: "query",
-          required: false,
-          schema: {
-            type: "integer",
-            minimum: 1,
-            maximum: 100,
-            default: 50,
-          },
-        },
-        {
-          name: "cursor",
-          in: "query",
-          required: false,
-          schema: {
-            type: "string",
-            minLength: 1,
-          },
-        },
-        {
-          name: "status",
-          in: "query",
-          required: false,
-          schema: {
-            type: "string",
-            enum: FILE_STATUS_ACCEPTED_VALUES as unknown as string[],
-          },
-        },
-        {
-          name: "purpose",
-          in: "query",
-          required: false,
-          schema: {
-            type: "string",
-            enum: FILE_PURPOSE_ACCEPTED_VALUES as unknown as string[],
-          },
-        },
-      ],
-      responses: {
-        "200": {
-          description: "Files for current user.",
-          content: {
-            "application/json": {
-              schema: schemaRef(listFilesResponseSchema),
-            },
-          },
-        },
-        "401": responseRef(unauthorizedResponse),
-        "403": responseRef(forbiddenResponse),
-        "502": responseRef(upstreamStorageResponse),
-      },
-    },
-  },
-
   "/file-uploads": {
     post: {
-      tags: [tagRef(filesTag)],
-      summary: "Create file upload",
       operationId: "createFileUpload",
-      security: [keycloakSecurityRequirement],
       requestBody: {
-        required: true,
         content: {
           "application/json": {
             schema: schemaRef(createFileUploadRequestSchema),
           },
         },
+        required: true,
       },
       responses: {
         "201": {
-          description: "File upload session created.",
           content: {
             "application/json": {
               schema: schemaRef(createFileUploadResponseSchema),
             },
           },
+          description: "File upload session created.",
         },
         "400": responseRef(badRequestResponse),
         "401": responseRef(unauthorizedResponse),
         "403": responseRef(forbiddenResponse),
         "502": responseRef(upstreamStorageResponse),
       },
+      security: [keycloakSecurityRequirement],
+      summary: "Create file upload",
+      tags: [tagRef(filesTag)],
+    },
+  },
+
+  "/file-uploads/{uploadId}/completions": {
+    parameters: [paramRef(fileUploadParam)],
+    post: {
+      operationId: "completeFileUpload",
+      responses: {
+        "201": {
+          content: {
+            "application/json": {
+              schema: schemaRef(fileResponseSchema),
+            },
+          },
+          description: "File created from completed upload.",
+        },
+        "400": responseRef(badRequestResponse),
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+        "404": responseRef(notFoundResponse),
+        "409": responseRef(conflictResponse),
+        "502": responseRef(upstreamStorageResponse),
+      },
+      security: [keycloakSecurityRequirement],
+      summary: "Complete file upload",
+      tags: [tagRef(filesTag)],
+    },
+  },
+  "/files": {
+    get: {
+      operationId: "listFiles",
+      parameters: [
+        {
+          in: "query",
+          name: "limit",
+          required: false,
+          schema: {
+            default: 50,
+            maximum: 100,
+            minimum: 1,
+            type: "integer",
+          },
+        },
+        {
+          in: "query",
+          name: "cursor",
+          required: false,
+          schema: {
+            minLength: 1,
+            type: "string",
+          },
+        },
+        {
+          in: "query",
+          name: "status",
+          required: false,
+          schema: {
+            enum: FILE_STATUS_ACCEPTED_VALUES as unknown as string[],
+            type: "string",
+          },
+        },
+        {
+          in: "query",
+          name: "purpose",
+          required: false,
+          schema: {
+            enum: FILE_PURPOSE_ACCEPTED_VALUES as unknown as string[],
+            type: "string",
+          },
+        },
+      ],
+      responses: {
+        "200": {
+          content: {
+            "application/json": {
+              schema: schemaRef(listFilesResponseSchema),
+            },
+          },
+          description: "Files for current user.",
+        },
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+        "502": responseRef(upstreamStorageResponse),
+      },
+      security: [keycloakSecurityRequirement],
+      summary: "List files",
+      tags: [tagRef(filesTag)],
     },
   },
 
   "/files/{fileId}": {
-    parameters: [paramRef(fileParam)],
-    get: {
-      tags: [tagRef(filesTag)],
-      summary: "Get file",
-      operationId: "getFile",
-      security: [keycloakSecurityRequirement],
-      responses: {
-        "200": {
-          description: "File.",
-          content: {
-            "application/json": {
-              schema: schemaRef(fileResponseSchema),
-            },
-          },
-        },
-        "401": responseRef(unauthorizedResponse),
-        "403": responseRef(forbiddenResponse),
-        "404": responseRef(notFoundResponse),
-        "502": responseRef(upstreamStorageResponse),
-      },
-    },
-    patch: {
-      tags: [tagRef(filesTag)],
-      summary: "Update file metadata",
-      operationId: "updateFile",
-      security: [keycloakSecurityRequirement],
-      requestBody: {
-        required: true,
-        content: {
-          "application/json": {
-            schema: schemaRef(updateFileRequestSchema),
-          },
-        },
-      },
-      responses: {
-        "200": {
-          description: "File updated.",
-          content: {
-            "application/json": {
-              schema: schemaRef(fileResponseSchema),
-            },
-          },
-        },
-        "400": responseRef(badRequestResponse),
-        "401": responseRef(unauthorizedResponse),
-        "403": responseRef(forbiddenResponse),
-        "404": responseRef(notFoundResponse),
-        "502": responseRef(upstreamStorageResponse),
-      },
-    },
     delete: {
-      tags: [tagRef(filesTag)],
-      summary: "Delete file",
       operationId: "deleteFile",
-      security: [keycloakSecurityRequirement],
       responses: {
         "204": {
           description: "File deletion requested.",
@@ -560,24 +532,74 @@ export const paths: Paths = Object.freeze({
         "404": responseRef(notFoundResponse),
         "502": responseRef(upstreamStorageResponse),
       },
+      security: [keycloakSecurityRequirement],
+      summary: "Delete file",
+      tags: [tagRef(filesTag)],
+    },
+    get: {
+      operationId: "getFile",
+      responses: {
+        "200": {
+          content: {
+            "application/json": {
+              schema: schemaRef(fileResponseSchema),
+            },
+          },
+          description: "File.",
+        },
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+        "404": responseRef(notFoundResponse),
+        "502": responseRef(upstreamStorageResponse),
+      },
+      security: [keycloakSecurityRequirement],
+      summary: "Get file",
+      tags: [tagRef(filesTag)],
+    },
+    parameters: [paramRef(fileParam)],
+    patch: {
+      operationId: "updateFile",
+      requestBody: {
+        content: {
+          "application/json": {
+            schema: schemaRef(updateFileRequestSchema),
+          },
+        },
+        required: true,
+      },
+      responses: {
+        "200": {
+          content: {
+            "application/json": {
+              schema: schemaRef(fileResponseSchema),
+            },
+          },
+          description: "File updated.",
+        },
+        "400": responseRef(badRequestResponse),
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+        "404": responseRef(notFoundResponse),
+        "502": responseRef(upstreamStorageResponse),
+      },
+      security: [keycloakSecurityRequirement],
+      summary: "Update file metadata",
+      tags: [tagRef(filesTag)],
     },
   },
 
   "/files/{fileId}/download-urls": {
     parameters: [paramRef(fileParam)],
     post: {
-      tags: [tagRef(filesTag)],
-      summary: "Create file download URL",
       operationId: "createFileDownloadUrl",
-      security: [keycloakSecurityRequirement],
       responses: {
         "200": {
-          description: "File download URL.",
           content: {
             "application/json": {
               schema: schemaRef(createFileDownloadUrlResponseSchema),
             },
           },
+          description: "File download URL.",
         },
         "400": responseRef(badRequestResponse),
         "401": responseRef(unauthorizedResponse),
@@ -586,58 +608,35 @@ export const paths: Paths = Object.freeze({
         "409": responseRef(conflictResponse),
         "502": responseRef(upstreamStorageResponse),
       },
-    },
-  },
-
-  "/file-uploads/{uploadId}/completions": {
-    parameters: [paramRef(fileUploadParam)],
-    post: {
-      tags: [tagRef(filesTag)],
-      summary: "Complete file upload",
-      operationId: "completeFileUpload",
       security: [keycloakSecurityRequirement],
-      responses: {
-        "201": {
-          description: "File created from completed upload.",
-          content: {
-            "application/json": {
-              schema: schemaRef(fileResponseSchema),
-            },
-          },
-        },
-        "400": responseRef(badRequestResponse),
-        "401": responseRef(unauthorizedResponse),
-        "403": responseRef(forbiddenResponse),
-        "404": responseRef(notFoundResponse),
-        "409": responseRef(conflictResponse),
-        "502": responseRef(upstreamStorageResponse),
-      },
+      summary: "Create file download URL",
+      tags: [tagRef(filesTag)],
     },
   },
 });
 
 export const openapi: OpenAPI = {
-  openapi: "3.1.0",
-  info: {
-    title: "Lemma Files API",
-    version: "0.1.0",
-  },
-  tags: [filesTag],
   components: {
-    securitySchemes: Object.fromEntries([
-      [keycloakSecurityScheme.name, keycloakSecurityScheme.securitySchema],
-    ]),
     parameters: Object.fromEntries(
       params.map((param) => [param.name, param.schema]),
     ),
-    schemas: Object.fromEntries([
-      ...schemas.map((schema) => [schema.name, schema.schema]),
-      [errorResponseSchema.name, errorResponseSchema.schema],
-    ]),
     responses: Object.fromEntries([
       ...responses.map((resp) => [resp.name, resp.schema]),
       [unauthorizedResponse.name, unauthorizedResponse.schema],
     ]),
+    schemas: Object.fromEntries([
+      ...schemas.map((schema) => [schema.name, schema.schema]),
+      [errorResponseSchema.name, errorResponseSchema.schema],
+    ]),
+    securitySchemes: Object.fromEntries([
+      [keycloakSecurityScheme.name, keycloakSecurityScheme.securitySchema],
+    ]),
   },
+  info: {
+    title: "Lemma Files API",
+    version: "0.1.0",
+  },
+  openapi: "3.1.0",
   paths,
+  tags: [filesTag],
 };

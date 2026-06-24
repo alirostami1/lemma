@@ -39,8 +39,8 @@ export function editorBlockToPresentableQuestion(
           ? [
               {
                 id: block.responseFieldId,
-                type: "text",
                 label: block.label,
+                type: "text",
               },
             ]
           : [],
@@ -53,17 +53,17 @@ function editorBlockToPresentableBlock(
   if (block.type === "table") {
     return {
       id: block.id,
-      type: "table",
       table: tableEditorModelToStaticPreviewModel(block.table),
+      type: "table",
     };
   }
   if (block.type === "response") {
     return {
       id: block.id,
-      type: "response",
-      responseFieldId: block.responseFieldId,
       label: block.label,
       placeholder: block.placeholder,
+      responseFieldId: block.responseFieldId,
+      type: "response",
     };
   }
   return block;

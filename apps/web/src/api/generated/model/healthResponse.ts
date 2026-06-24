@@ -8,6 +8,6 @@ import type { HealthResponseChecks } from "./healthResponseChecks.ts";
 import type { HealthResponseStatus } from "./healthResponseStatus.ts";
 
 export interface HealthResponse {
-  status: HealthResponseStatus;
   checks: HealthResponseChecks;
+  status: HealthResponseStatus;
 }

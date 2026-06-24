@@ -21,7 +21,7 @@ export class JobDispatcher {
     jobId: string;
     questionGenerationRunId: string;
     workbookCalculationId?: string | null;
-    workbookSnapshotIds?: readonly string[];
+    eventWorkbookSnapshotIds?: readonly string[];
     workbookCalculationErrorMessage?: string | null;
     lineage: OperationLineage;
     retryLimit?: number;
@@ -32,25 +32,25 @@ export class JobDispatcher {
       input.lineage,
       () =>
         this.deps.jobQueue.enqueueJob({
-          id: input.jobId,
-          name: QUESTION_GENERATION_ORCHESTRATE_JOB,
           data: questionGenerationOrchestrateJobData({
+            eventWorkbookSnapshotIds: input.eventWorkbookSnapshotIds,
+            lineage: input.lineage,
             questionGenerationRunId: input.questionGenerationRunId,
-            workbookCalculationId: input.workbookCalculationId,
-            workbookSnapshotIds: input.workbookSnapshotIds,
             workbookCalculationErrorMessage:
               input.workbookCalculationErrorMessage,
-            lineage: input.lineage,
+            workbookCalculationId: input.workbookCalculationId,
           }),
-          retryLimit: input.retryLimit,
+          id: input.jobId,
+          name: QUESTION_GENERATION_ORCHESTRATE_JOB,
           retryDelaySeconds: input.retryDelaySeconds,
+          retryLimit: input.retryLimit,
         }),
     );
   }
 
   async enqueueQuestionGenerationMaterialization(input: {
     questionGenerationRunId: string;
-    workbookSnapshotIds: readonly string[];
+    eventWorkbookSnapshotIds: readonly string[];
     lineage: OperationLineage;
     retryLimit?: number;
     retryDelaySeconds?: number;
@@ -60,15 +60,15 @@ export class JobDispatcher {
       input.lineage,
       () =>
         this.deps.jobQueue.enqueueJob({
+          data: questionGenerationMaterializeJobData({
+            eventWorkbookSnapshotIds: input.eventWorkbookSnapshotIds,
+            lineage: input.lineage,
+            questionGenerationRunId: input.questionGenerationRunId,
+          }),
           id: input.questionGenerationRunId,
           name: QUESTION_GENERATION_MATERIALIZE_JOB,
-          data: questionGenerationMaterializeJobData({
-            questionGenerationRunId: input.questionGenerationRunId,
-            workbookSnapshotIds: input.workbookSnapshotIds,
-            lineage: input.lineage,
-          }),
-          retryLimit: input.retryLimit,
           retryDelaySeconds: input.retryDelaySeconds,
+          retryLimit: input.retryLimit,
         }),
     );
   }
@@ -82,20 +82,19 @@ export class JobDispatcher {
   }): Promise<string> {
     return this.operation("enqueue_workbook_validation", input.lineage, () =>
       this.deps.jobQueue.enqueueJob({
+        data: workbookValidateJobData({
+          lineage: input.lineage,
+          workbookId: input.workbookId,
+        }),
         id: input.jobId,
         name: WORKBOOK_VALIDATE_JOB,
-        data: workbookValidateJobData({
-          workbookId: input.workbookId,
-          lineage: input.lineage,
-        }),
-        retryLimit: input.retryLimit,
         retryDelaySeconds: input.retryDelaySeconds,
+        retryLimit: input.retryLimit,
       }),
     );
   }
 
   async enqueueWorkbookCalculation(input: {
-    jobId: string;
     workbookCalculationId: string;
     lineage: OperationLineage;
     retryLimit?: number;
@@ -103,14 +102,14 @@ export class JobDispatcher {
   }): Promise<string> {
     return this.operation("enqueue_workbook_calculation", input.lineage, () =>
       this.deps.jobQueue.enqueueJob({
-        id: input.jobId,
-        name: WORKBOOK_CALCULATE_JOB,
         data: workbookCalculateJobData({
-          workbookCalculationId: input.workbookCalculationId,
           lineage: input.lineage,
+          workbookCalculationId: input.workbookCalculationId,
         }),
-        retryLimit: input.retryLimit,
+        id: input.workbookCalculationId,
+        name: WORKBOOK_CALCULATE_JOB,
         retryDelaySeconds: input.retryDelaySeconds,
+        retryLimit: input.retryLimit,
       }),
     );
   }

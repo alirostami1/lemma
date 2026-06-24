@@ -11,9 +11,14 @@ import {
 } from "./studio-readiness";
 
 const readyContext: StudioReadinessContext = {
+  attachedSources: [
+    {
+      name: "Source 1",
+      sourceId: "source_1",
+      workbookId: "workbook_1",
+    },
+  ],
   questionName: "Blueprint",
-  hasWorkbookSelection: true,
-  hasWorkbookPreview: true,
 };
 
 describe("studio readiness", () => {
@@ -46,16 +51,16 @@ describe("studio readiness", () => {
 
   it("requires at least one answer before generating", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
+          content: [{ text: "Prompt only", type: "text" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "text", text: "Prompt only" }],
         },
       ],
-      responseFields: [],
       references: [],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     const readiness = getStudioReadiness(model, readyContext);
@@ -71,62 +76,70 @@ describe("studio readiness", () => {
   it("requires workbook selection for workbook-backed content", () => {
     const model: ComposedEditorModel = {
       ...createDefaultComposedEditorModel(),
-      references: [
-        {
-          id: "revenue",
-          source: { type: "workbook_cell", ref: "'Sheet1'!A1" },
-        },
-      ],
       blocks: [
         {
+          content: [{ referenceId: "revenue", type: "reference" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "reference", referenceId: "revenue" }],
         },
         ...createDefaultComposedEditorModel().blocks.filter(
           (block) => block.type === "response",
         ),
+      ],
+      references: [
+        {
+          id: "revenue",
+          source: {
+            ref: "'Sheet1'!A1",
+            sourceId: "source_1",
+            type: "workbook_cell",
+          },
+        },
       ],
     };
 
     const readiness = getStudioReadiness(model, {
       ...readyContext,
-      hasWorkbookSelection: false,
+      attachedSources: [],
     });
 
     expect(getFirstReadinessIssueMessage(readiness, "save")).toBe(
-      "Select a workbook to reference cells.",
+      "Attach a source before saving this blueprint.",
     );
     expect(
       getFirstReadinessIssueMessage(readiness, "generate_saved_blueprint"),
-    ).toBe("Select a workbook to reference cells.");
+    ).toBe("Attach a source before saving this blueprint.");
   });
 
   it("blocks malformed workbook references", () => {
     const model: ComposedEditorModel = {
       ...createDefaultComposedEditorModel(),
-      references: [
-        {
-          id: "revenue",
-          source: { type: "workbook_cell", ref: "'Sheet1'!A1:B2" },
-        },
-      ],
       blocks: [
         {
+          content: [{ referenceId: "revenue", type: "reference" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "reference", referenceId: "revenue" }],
         },
         ...createDefaultComposedEditorModel().blocks.filter(
           (block) => block.type === "response",
         ),
+      ],
+      references: [
+        {
+          id: "revenue",
+          source: {
+            ref: "'Sheet1'!A1:B2",
+            sourceId: "source_1",
+            type: "workbook_cell",
+          },
+        },
       ],
     };
 
     const readiness = getStudioReadiness(model, readyContext);
 
     expect(getFirstReadinessIssueMessage(readiness, "save")).toBe(
-      "A workbook-backed reference needs a valid source cell or range.",
+      "A workbook-backed reference needs an attached source.",
     );
   });
 
@@ -136,14 +149,18 @@ describe("studio readiness", () => {
       references: [
         {
           id: "unused",
-          source: { type: "workbook_cell", ref: "'Sheet1'!A1" },
+          source: {
+            ref: "'Sheet1'!A1",
+            sourceId: "source_1",
+            type: "workbook_cell",
+          },
         },
       ],
     };
 
     const readiness = getStudioReadiness(model, {
       ...readyContext,
-      hasWorkbookSelection: false,
+      attachedSources: [],
     });
 
     expect(getFirstReadinessIssueMessage(readiness, "save")).toBeNull();
@@ -157,9 +174,9 @@ describe("studio readiness", () => {
       ...createDefaultComposedEditorModel(),
       blocks: [
         {
+          content: [{ referenceId: "missing", type: "reference" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "reference", referenceId: "missing" }],
         },
         ...createDefaultComposedEditorModel().blocks.filter(
           (block) => block.type === "response",
@@ -179,17 +196,17 @@ describe("studio readiness", () => {
       ...createDefaultComposedEditorModel(),
       blocks: [
         {
-          id: "rich_text_1",
-          type: "rich_text",
           content: {
-            type: "doc",
             content: [
               {
+                content: [{ referenceId: "reference_1", type: "reference" }],
                 type: "paragraph",
-                content: [{ type: "reference", referenceId: "reference_1" }],
               },
             ],
+            type: "doc",
           },
+          id: "rich_text_1",
+          type: "rich_text",
         },
         ...createDefaultComposedEditorModel().blocks.filter(
           (block) => block.type === "response",
@@ -210,17 +227,17 @@ describe("studio readiness", () => {
       ...createDefaultComposedEditorModel(),
       blocks: [
         {
-          id: "rich_text_1",
-          type: "rich_text",
           content: {
-            type: "doc",
             content: [
               {
+                content: [{ referenceId: "missing", type: "reference" }],
                 type: "paragraph",
-                content: [{ type: "reference", referenceId: "missing" }],
               },
             ],
+            type: "doc",
           },
+          id: "rich_text_1",
+          type: "rich_text",
         },
         ...createDefaultComposedEditorModel().blocks.filter(
           (block) => block.type === "response",
@@ -237,19 +254,19 @@ describe("studio readiness", () => {
 
   it("reports answer blocks with missing response fields", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
-          id: "response_1",
-          type: "response",
-          responseFieldId: "answer_1",
           correctValueSource: { type: "literal", value: "" },
-          points: 1,
           grading: { mode: "exact" },
+          id: "response_1",
+          points: 1,
+          responseFieldId: "answer_1",
+          type: "response",
         },
       ],
-      responseFields: [],
       references: [],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     const readiness = getStudioReadiness(model, readyContext);
@@ -261,31 +278,31 @@ describe("studio readiness", () => {
 
   it("reports table answer cells that reference missing response fields", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         createTableBlock("table_1", {
-          prompt: "",
+          cells: [
+            {
+              columnId: "column_1",
+              correctValueSource: { type: "literal", value: 1 },
+              grading: { mode: "exact" },
+              id: "cell_1",
+              points: 1,
+              responseFieldId: "answer_1",
+              rowId: "row_1",
+              type: "response",
+            },
+          ],
           columns: [{ id: "column_1", label: "Column 1" }],
+          prompt: "",
+          responseFields: [],
           rows: [{ id: "row_1", label: "Row 1" }],
           showColumnNames: true,
           showRowNames: true,
-          responseFields: [],
-          cells: [
-            {
-              id: "cell_1",
-              rowId: "row_1",
-              columnId: "column_1",
-              type: "response",
-              responseFieldId: "answer_1",
-              correctValueSource: { type: "literal", value: 1 },
-              points: 1,
-              grading: { mode: "exact" },
-            },
-          ],
         }),
       ],
-      responseFields: [],
       references: [],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     const readiness = getStudioReadiness(model, readyContext);

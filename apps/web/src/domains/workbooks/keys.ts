@@ -35,31 +35,47 @@ type SnapshotRangeBatchKeyInput = Omit<
 
 export const workbookKeys = {
   all: ["workbooks"] as const,
-  lists: () => [...workbookKeys.all, "list"] as const,
-  list: (input?: ListWorkbooksInput) =>
-    [...workbookKeys.lists(), input ?? {}] as const,
-  infiniteList: (input?: Omit<ListWorkbooksInput, "cursor">) =>
-    [...workbookKeys.lists(), "infinite", input ?? {}] as const,
-  details: () => [...workbookKeys.all, "detail"] as const,
-  detail: (workbookId: string) =>
-    [...workbookKeys.details(), workbookId] as const,
   calculations: (workbookId: string) =>
     [...workbookKeys.detail(workbookId), "calculations"] as const,
   calculationsList: (workbookId: string, input?: ListCalculationsKeyInput) =>
     [...workbookKeys.calculations(workbookId), input ?? {}] as const,
-  snapshots: (workbookCalculationId: string) =>
+  detail: (workbookId: string) =>
+    [...workbookKeys.details(), workbookId] as const,
+  details: () => [...workbookKeys.all, "detail"] as const,
+  infiniteList: (input?: Omit<ListWorkbooksInput, "cursor">) =>
+    [...workbookKeys.lists(), "infinite", input ?? {}] as const,
+  list: (input?: ListWorkbooksInput) =>
+    [...workbookKeys.lists(), input ?? {}] as const,
+  lists: () => [...workbookKeys.all, "list"] as const,
+  snapshotCells: (workbookSnapshotId: string, input: SnapshotCellsKeyInput) =>
     [
       ...workbookKeys.all,
-      "calculation",
-      workbookCalculationId,
-      "snapshots",
+      "snapshot",
+      workbookSnapshotId,
+      "cells",
+      input,
     ] as const,
-  snapshotsList: (
-    workbookCalculationId: string,
-    input?: ListSnapshotsKeyInput,
-  ) => [...workbookKeys.snapshots(workbookCalculationId), input ?? {}] as const,
   snapshotMetadata: (workbookSnapshotId: string) =>
     [...workbookKeys.all, "snapshot", workbookSnapshotId, "metadata"] as const,
+  snapshotRange: (workbookSnapshotId: string, input?: SnapshotRangeKeyInput) =>
+    [
+      ...workbookKeys.all,
+      "snapshot",
+      workbookSnapshotId,
+      "range",
+      input ?? {},
+    ] as const,
+  snapshotRangeBatch: (
+    workbookSnapshotId: string,
+    input?: SnapshotRangeBatchKeyInput,
+  ) =>
+    [
+      ...workbookKeys.all,
+      "snapshot",
+      workbookSnapshotId,
+      "ranges",
+      input ?? {},
+    ] as const,
   snapshotSheets: (
     workbookSnapshotId: string,
     input?: SnapshotSheetsKeyInput,
@@ -83,31 +99,15 @@ export const workbookKeys = {
       "infinite",
       input ?? {},
     ] as const,
-  snapshotCells: (workbookSnapshotId: string, input: SnapshotCellsKeyInput) =>
+  snapshots: (workbookCalculationId: string) =>
     [
       ...workbookKeys.all,
-      "snapshot",
-      workbookSnapshotId,
-      "cells",
-      input,
+      "calculation",
+      workbookCalculationId,
+      "snapshots",
     ] as const,
-  snapshotRange: (workbookSnapshotId: string, input?: SnapshotRangeKeyInput) =>
-    [
-      ...workbookKeys.all,
-      "snapshot",
-      workbookSnapshotId,
-      "range",
-      input ?? {},
-    ] as const,
-  snapshotRangeBatch: (
-    workbookSnapshotId: string,
-    input?: SnapshotRangeBatchKeyInput,
-  ) =>
-    [
-      ...workbookKeys.all,
-      "snapshot",
-      workbookSnapshotId,
-      "ranges",
-      input ?? {},
-    ] as const,
+  snapshotsList: (
+    workbookCalculationId: string,
+    input?: ListSnapshotsKeyInput,
+  ) => [...workbookKeys.snapshots(workbookCalculationId), input ?? {}] as const,
 };

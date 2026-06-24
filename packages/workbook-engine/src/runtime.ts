@@ -94,16 +94,16 @@ function createCachedWorkbookEngine(
   }
 
   return {
-    name: "cached",
+    async health(): Promise<WorkbookEngineHealth> {
+      return { engine: "cached", ok: true, version: "xlsx-cached" };
+    },
     inspect: (path) => inspectXlsx(path, config),
+    name: "cached",
     readCachedValues: readInspectedCachedValues,
     recalculate: readInspectedCachedValues,
     async recalculateBatch(path, count) {
       const values = await readInspectedCachedValues(path);
       return Array.from({ length: count }, () => values);
-    },
-    async health(): Promise<WorkbookEngineHealth> {
-      return { ok: true, engine: "cached", version: "xlsx-cached" };
     },
   };
 }
@@ -121,45 +121,45 @@ function createLibreOfficeUnoEngine(
     );
   }
   return {
-    name: "libreoffice",
+    async health(options) {
+      return getLibreOfficeWorkerHealth({
+        maxResponseBytes,
+        requestId: options?.requestId,
+        serviceUrl,
+        timeoutMs,
+      });
+    },
     inspect: (path) => inspectXlsx(path, config),
+    name: "libreoffice",
     async readCachedValues(path) {
       await inspectXlsx(path, config);
       return readWorkbookSparseValues(path, config);
     },
     async recalculate(path, options) {
       return postWorkbookToLibreOfficeWorker({
-        serviceUrl,
-        path,
-        timeoutMs,
-        maxResponseBytes,
-        maxSheets: config.maxSheets,
-        maxCells: config.maxCells,
         maxCachedValueBytes:
           config.maxCachedValueBytes ?? config.maxResponseBytes,
+        maxCells: config.maxCells,
+        maxResponseBytes,
+        maxSheets: config.maxSheets,
+        path,
         requestId: options?.requestId,
+        serviceUrl,
+        timeoutMs,
       });
     },
     async recalculateBatch(path, count, options) {
       return postWorkbookBatchToLibreOfficeWorker({
-        serviceUrl,
-        path,
         count,
-        timeoutMs,
-        maxResponseBytes,
-        maxSheets: config.maxSheets,
-        maxCells: config.maxCells,
         maxCachedValueBytes:
           config.maxCachedValueBytes ?? config.maxResponseBytes,
+        maxCells: config.maxCells,
+        maxResponseBytes,
+        maxSheets: config.maxSheets,
+        path,
         requestId: options?.requestId,
-      });
-    },
-    async health(options) {
-      return getLibreOfficeWorkerHealth({
         serviceUrl,
         timeoutMs,
-        maxResponseBytes,
-        requestId: options?.requestId,
       });
     },
   };

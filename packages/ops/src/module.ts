@@ -12,9 +12,9 @@ export function createOpsModule(deps: {
     opsRepository: new KyselyOpsRepository(deps.db),
   });
   const routes = opsRoutes({
-    requireIdentity: deps.requireIdentity,
     opsService,
+    requireIdentity: deps.requireIdentity,
   });
 
-  return { routes, opsService };
+  return { opsService, routes };
 }

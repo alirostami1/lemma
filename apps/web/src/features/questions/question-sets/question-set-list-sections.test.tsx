@@ -47,40 +47,40 @@ describe("QuestionSetListSection", () => {
 
 function controller(): QuestionSetListController {
   return {
+    hasMore: false,
+    initialErrorMessage: null,
+    isInitialLoading: false,
+    isLoadingMore: false,
+    loadMoreErrorMessage: null,
+    onLoadMore: () => {},
+    onRetry: () => {},
+    onRetryLoadMore: () => {},
+    pageError: null,
+    questionSets: [
+      {
+        createdAt: new Date("2026-06-14T00:00:00Z"),
+        createdByUserId: "creator",
+        description: null,
+        id: "set-1",
+        name: "Algebra review",
+        ownerUserId: "owner",
+        status: "active",
+        updatedAt: new Date("2026-06-14T00:00:00Z"),
+      },
+    ],
     viewModel: {
-      title: "Question sets",
       description: "Organize generated questions by question set.",
-      sectionTitle: "Question sets",
-      sectionDescription: "1 question set",
       emptyDescription: "Question sets group generated questions for reuse.",
       items: [
         {
           id: "set-1",
-          title: "Algebra review",
           metadata: "Updated Jun 14, 2026",
+          title: "Algebra review",
         },
       ],
+      sectionDescription: "1 question set",
+      sectionTitle: "Question sets",
+      title: "Question sets",
     },
-    questionSets: [
-      {
-        id: "set-1",
-        ownerUserId: "owner",
-        createdByUserId: "creator",
-        name: "Algebra review",
-        description: null,
-        status: "active",
-        createdAt: new Date("2026-06-14T00:00:00Z"),
-        updatedAt: new Date("2026-06-14T00:00:00Z"),
-      },
-    ],
-    pageError: null,
-    isInitialLoading: false,
-    initialErrorMessage: null,
-    loadMoreErrorMessage: null,
-    isLoadingMore: false,
-    hasMore: false,
-    onRetry: () => {},
-    onLoadMore: () => {},
-    onRetryLoadMore: () => {},
   };
 }

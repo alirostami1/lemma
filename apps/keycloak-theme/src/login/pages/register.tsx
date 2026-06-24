@@ -22,7 +22,7 @@ export function RegisterPage(props: RegisterProps) {
     props;
   const { msg, msgStr } = i18n;
   const { messagesPerField, url } = kcContext;
-  const { kcClsx } = getKcClsx({ doUseDefaultCss, classes });
+  const { kcClsx } = getKcClsx({ classes, doUseDefaultCss });
   const [isFormSubmittable, setIsFormSubmittable] = useState(false);
   const hasFormError = messagesPerField.existsError(
     "firstName",
@@ -34,17 +34,17 @@ export function RegisterPage(props: RegisterProps) {
 
   return (
     <AuthLayout
-      title={msg("doRegister")}
       description={msg("registerTitle")}
       message={hasFormError ? messagesPerField.getFirstError("email") : null}
+      title={msg("doRegister")}
     >
       <form action={url.registrationAction} className="space-y-4" method="post">
         <div className="lemma-keycloak-profile-fields space-y-4">
           <UserProfileFormFields
-            kcContext={kcContext}
+            doMakeUserConfirmPassword={props.doMakeUserConfirmPassword}
             i18n={i18n}
             kcClsx={kcClsx}
-            doMakeUserConfirmPassword={props.doMakeUserConfirmPassword}
+            kcContext={kcContext}
             onIsFormSubmittableValueChange={setIsFormSubmittable}
           />
         </div>

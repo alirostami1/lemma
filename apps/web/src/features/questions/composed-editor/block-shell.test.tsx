@@ -19,12 +19,12 @@ describe("BlockShell", () => {
   afterEach(() => cleanup());
 
   const testDragAttributes = {
-    role: "button",
-    tabIndex: 0,
+    "aria-describedby": "dnd-instructions",
     "aria-disabled": false,
     "aria-pressed": false,
     "aria-roledescription": "sortable",
-    "aria-describedby": "dnd-instructions",
+    role: "button",
+    tabIndex: 0,
   } satisfies DraggableAttributes;
 
   function createTestDragControls(
@@ -32,10 +32,10 @@ describe("BlockShell", () => {
   ): SortableRenderControls {
     return {
       attributes: testDragAttributes,
+      isDragging: false,
       listeners: {},
       setNodeRef: () => {},
       style: {},
-      isDragging: false,
       ...overrides,
     };
   }
@@ -43,17 +43,17 @@ describe("BlockShell", () => {
   it("renders the bottom action slot with hover and focus visibility classes", () => {
     render(
       <BlockShell
-        selected={false}
         blockLabel="Answer"
         bottomAction={<button type="button">Add block</button>}
-        dragControls={createTestDragControls()}
-        canMoveUp
         canMoveDown
-        onSelect={() => {}}
+        canMoveUp
+        dragControls={createTestDragControls()}
         onDelete={() => {}}
         onDuplicate={() => {}}
-        onMoveUp={() => {}}
         onMoveDown={() => {}}
+        onMoveUp={() => {}}
+        onSelect={() => {}}
+        selected={false}
       >
         <div>Content</div>
       </BlockShell>,
@@ -70,16 +70,16 @@ describe("BlockShell", () => {
   it("renders the block label in the shell header", () => {
     render(
       <BlockShell
-        selected={false}
         blockLabel="Answer"
-        dragControls={createTestDragControls()}
-        canMoveUp
         canMoveDown
-        onSelect={() => {}}
+        canMoveUp
+        dragControls={createTestDragControls()}
         onDelete={() => {}}
         onDuplicate={() => {}}
-        onMoveUp={() => {}}
         onMoveDown={() => {}}
+        onMoveUp={() => {}}
+        onSelect={() => {}}
+        selected={false}
       >
         <div>Content</div>
       </BlockShell>,
@@ -93,16 +93,16 @@ describe("BlockShell", () => {
 
     render(
       <BlockShell
-        selected={false}
         blockLabel="Answer"
-        dragControls={createTestDragControls()}
-        canMoveUp
         canMoveDown
-        onSelect={onSelect}
+        canMoveUp
+        dragControls={createTestDragControls()}
         onDelete={() => {}}
         onDuplicate={() => {}}
-        onMoveUp={() => {}}
         onMoveDown={() => {}}
+        onMoveUp={() => {}}
+        onSelect={onSelect}
+        selected={false}
       >
         <div>Content</div>
       </BlockShell>,
@@ -119,16 +119,16 @@ describe("BlockShell", () => {
 
     render(
       <BlockShell
-        selected={false}
         blockLabel="Answer"
-        dragControls={createTestDragControls()}
-        canMoveUp
         canMoveDown
-        onSelect={onSelect}
+        canMoveUp
+        dragControls={createTestDragControls()}
         onDelete={() => {}}
         onDuplicate={onDuplicate}
-        onMoveUp={() => {}}
         onMoveDown={() => {}}
+        onMoveUp={() => {}}
+        onSelect={onSelect}
+        selected={false}
       >
         <div>Content</div>
       </BlockShell>,
@@ -143,16 +143,16 @@ describe("BlockShell", () => {
   it("shows selected state and the block menu", () => {
     render(
       <BlockShell
-        selected
         blockLabel="Answer"
-        dragControls={createTestDragControls()}
-        canMoveUp
         canMoveDown
-        onSelect={() => {}}
+        canMoveUp
+        dragControls={createTestDragControls()}
         onDelete={() => {}}
         onDuplicate={() => {}}
-        onMoveUp={() => {}}
         onMoveDown={() => {}}
+        onMoveUp={() => {}}
+        onSelect={() => {}}
+        selected
       >
         <div>Content</div>
       </BlockShell>,

@@ -23,7 +23,7 @@ type YazlModule = {
 describe("openXlsxZipContainer", () => {
   it("indexes safe zip entries", async () => {
     const container = await openXlsxZipContainer(
-      await makeZip([{ name: "xl/workbook.xml", body: "<workbook />" }]),
+      await makeZip([{ body: "<workbook />", name: "xl/workbook.xml" }]),
       config(),
     );
 
@@ -46,8 +46,8 @@ describe("openXlsxZipContainer", () => {
     await expect(
       openXlsxZipContainer(
         await makeZip([
-          { name: "xl/workbook.xml", body: "" },
-          { name: "xl/workbook.xml", body: "" },
+          { body: "", name: "xl/workbook.xml" },
+          { body: "", name: "xl/workbook.xml" },
         ]),
         config(),
       ),
@@ -57,7 +57,7 @@ describe("openXlsxZipContainer", () => {
   it("rejects path traversal entries", async () => {
     await expect(
       openXlsxZipContainer(
-        makeUnsafeZip([{ name: "../xl/workbook.xml", body: "" }]),
+        makeUnsafeZip([{ body: "", name: "../xl/workbook.xml" }]),
         config(),
       ),
     ).rejects.toThrow(InvalidWorkbookError);
@@ -66,7 +66,7 @@ describe("openXlsxZipContainer", () => {
   it("rejects oversized expanded data", async () => {
     await expect(
       openXlsxZipContainer(
-        await makeZip([{ name: "xl/workbook.xml", body: "abc" }]),
+        await makeZip([{ body: "abc", name: "xl/workbook.xml" }]),
         { ...config(), maxZipTotalUncompressedBytes: 2 },
       ),
     ).rejects.toThrow(InvalidWorkbookError);
@@ -77,12 +77,12 @@ function config(): WorkbookEngineConfig {
   return {
     engine: "cached",
     engineTimeoutMs: 1000,
-    validationTimeoutMs: 1000,
-    maxFileBytes: 1_000_000,
-    maxSheets: 10,
     maxCells: 1000,
+    maxFileBytes: 1_000_000,
     maxFormulas: 100,
     maxResponseBytes: 1_000_000,
+    maxSheets: 10,
+    validationTimeoutMs: 1000,
   };
 }
 

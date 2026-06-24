@@ -88,8 +88,8 @@ export async function runEventConsumer(input: {
   }
   if (
     await input.idempotencyStore.hasProcessedEvent({
-      eventId: input.event.id,
       consumer: input.consumer.name,
+      eventId: input.event.id,
     })
   ) {
     return { status: "already_processed" };
@@ -98,8 +98,8 @@ export async function runEventConsumer(input: {
   const result = await input.consumer.handle(input.event);
   if (result.status === "processed") {
     await input.idempotencyStore.recordProcessedEvent({
-      eventId: input.event.id,
       consumer: input.consumer.name,
+      eventId: input.event.id,
     });
   }
   return result;
@@ -111,7 +111,6 @@ export function registerJobConsumer<TData extends JsonObject>(input: {
   concurrency?: number;
 }): Promise<QueueWorkerRegistration> {
   return input.jobQueue.registerHandler<TData>({
-    name: input.consumer.name,
     batchSize: input.consumer.batchSize ?? 1,
     concurrency: input.consumer.concurrency ?? input.concurrency ?? 1,
     handler: async (jobs) => {
@@ -130,6 +129,7 @@ export function registerJobConsumer<TData extends JsonObject>(input: {
         );
       }
     },
+    name: input.consumer.name,
   });
 }
 
@@ -137,11 +137,6 @@ export function workflowJobConsumer<TData extends JsonObject>(
   definition: WorkflowJobDefinition<TData>,
 ): JobConsumer<TData> {
   return {
-    name: definition.jobName,
-    spanName: `${definition.workflowName}.${definition.stepName}_job`,
-    batchSize: definition.batchSize,
-    concurrency: definition.concurrency,
-    parse: definition.parsePayload,
     attributes: (job) => ({
       "workflow.name": definition.workflowName,
       "workflow.step": definition.stepName,
@@ -150,7 +145,12 @@ export function workflowJobConsumer<TData extends JsonObject>(
       ) as PipelineSpanAttributes),
       ...(definition.attributes?.(job) ?? {}),
     }),
+    batchSize: definition.batchSize,
+    concurrency: definition.concurrency,
     handle: definition.run,
+    name: definition.jobName,
+    parse: definition.parsePayload,
+    spanName: `${definition.workflowName}.${definition.stepName}_job`,
   };
 }
 
@@ -158,11 +158,11 @@ export function outboxEventSpanAttributes(
   event: OutboxEvent,
 ): PipelineSpanAttributes {
   return {
+    "outbox.aggregate_id": event.aggregateId,
+    "outbox.aggregate_type": event.aggregateType,
+    "outbox.attempts": event.attempts,
     "outbox.event_id": event.id,
     "outbox.event_type": event.eventType,
-    "outbox.aggregate_type": event.aggregateType,
-    "outbox.aggregate_id": event.aggregateId,
-    "outbox.attempts": event.attempts,
     ...spanAttributesFromLineage(event.lineage),
   } as PipelineSpanAttributes;
 }

@@ -8,14 +8,14 @@ import type { QuestionTableResponseCellType } from "./questionTableResponseCellT
 
 export interface QuestionTableResponseCell {
   /** @minLength 1 */
-  id: string;
-  /** @minLength 1 */
-  rowId: string;
-  /** @minLength 1 */
   columnId: string;
-  type: QuestionTableResponseCellType;
   /** @minLength 1 */
-  responseFieldId: string;
+  id: string;
   label?: string;
   placeholder?: string;
+  /** @minLength 1 */
+  responseFieldId: string;
+  /** @minLength 1 */
+  rowId: string;
+  type: QuestionTableResponseCellType;
 }

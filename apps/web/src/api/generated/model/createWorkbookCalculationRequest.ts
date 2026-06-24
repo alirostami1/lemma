@@ -6,11 +6,11 @@
  */
 
 export interface CreateWorkbookCalculationRequest {
+  /** @nullable */
+  correlationId?: string | null;
   /**
    * @minimum 1
    * @maximum 1000
    */
   requestedCount: number;
-  /** @nullable */
-  correlationId?: string | null;
 }

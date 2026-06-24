@@ -5,22 +5,26 @@ import type {
   BlueprintInlineContent,
   QuestionBlueprintDocument,
   QuestionBlueprintResponseBlock,
+  QuestionBlueprintSource,
   QuestionBlueprintTableCell,
   QuestionBody,
   QuestionFieldRule,
   QuestionReferenceSource,
   QuestionSolution,
+  QuestionSourceEvidence,
   QuestionSourcePlan,
   QuestionValueExpression,
   RangeCellOffset,
   RenderedInlineContent,
-  WorkbookSnapshotId,
 } from "../domain/index.js";
 import {
   InvalidQuestionBlueprintError,
-  WorkbookQuestionSourceError,
+  WorkbookQuestionReferenceError,
 } from "./errors.js";
-import type { QuestionValueResolverPort } from "./ports.js";
+import type {
+  QuestionValueResolverPort,
+  WorkbookSnapshotForQuestionGeneration,
+} from "./ports.js";
 
 const instrumentation = instrumentService(
   "questions",
@@ -32,11 +36,19 @@ export class CanonicalQuestionMaterializer {
 
   async materialize(input: {
     document: QuestionBlueprintDocument;
-    workbookSnapshotId?: WorkbookSnapshotId | null;
+    sources: readonly QuestionBlueprintSource[];
+    generationRunId: string;
+    questionIndex: number;
+    workbookCalculationId?: string | null;
+    sourceLineageBySourceId?: ReadonlyMap<
+      string,
+      WorkbookSnapshotForQuestionGeneration
+    >;
     currentUser?: CurrentUser;
   }): Promise<{
     body: QuestionBody;
     solution: QuestionSolution;
+    sourceEvidence: QuestionSourceEvidence;
     sourcePlan: QuestionSourcePlan;
   }> {
     return instrumentation.run(
@@ -45,6 +57,8 @@ export class CanonicalQuestionMaterializer {
         attributes: {
           "questions.blueprint.blocks": input.document.blocks.length,
           "questions.blueprint.references": input.document.references.length,
+          "questions.generation_run.id": input.generationRunId,
+          "questions.generation_run.question_index": input.questionIndex,
         },
       },
       () => this.materializeInternal(input),
@@ -53,24 +67,44 @@ export class CanonicalQuestionMaterializer {
 
   private async materializeInternal(input: {
     document: QuestionBlueprintDocument;
-    workbookSnapshotId?: WorkbookSnapshotId | null;
+    sources: readonly QuestionBlueprintSource[];
+    questionIndex: number;
+    workbookCalculationId?: string | null;
+    sourceLineageBySourceId?: ReadonlyMap<
+      string,
+      WorkbookSnapshotForQuestionGeneration
+    >;
     currentUser?: CurrentUser;
   }): Promise<{
     body: QuestionBody;
     solution: QuestionSolution;
+    sourceEvidence: QuestionSourceEvidence;
     sourcePlan: QuestionSourcePlan;
   }> {
     const referenceValues = new Map<string, JsonValue>();
-    const sourceReferences: QuestionSourcePlan["references"] = [];
     const rules: QuestionFieldRule[] = [];
+    const referenceIdsBySourceId = new Map<string, string[]>();
+    const sourcePlanReferences: Array<
+      QuestionSourcePlan["references"][number]
+    > = [];
 
     for (const reference of input.document.references) {
-      const value = await this.resolveReference(input, reference.source);
-      referenceValues.set(reference.id, value);
-      sourceReferences.push({
-        id: reference.id,
-        source: reference.source,
-        resolved: true,
+      const resolution = await this.resolveReference(input, reference.source);
+      referenceValues.set(reference.id, resolution.resolvedValue);
+      if (resolution.sourceId !== undefined) {
+        const referenceIds =
+          referenceIdsBySourceId.get(resolution.sourceId) ?? [];
+        referenceIds.push(reference.id);
+        referenceIdsBySourceId.set(resolution.sourceId, referenceIds);
+      }
+      sourcePlanReferences.push({
+        referenceId: reference.id,
+        ...(resolution.sourceId ? { sourceId: resolution.sourceId } : {}),
+        ...(resolution.ref ? { ref: resolution.ref } : {}),
+        ...(resolution.workbookSnapshotId
+          ? { workbookSnapshotId: resolution.workbookSnapshotId }
+          : {}),
+        value: resolution.resolvedValue,
       });
     }
 
@@ -89,8 +123,8 @@ export class CanonicalQuestionMaterializer {
           this.addRule(rules, block, referenceValues);
           return {
             id: block.id,
-            type: block.type,
             responseFieldId: block.responseFieldId,
+            type: block.type,
             ...(block.label === undefined ? {} : { label: block.label }),
             ...(block.placeholder === undefined
               ? {}
@@ -101,20 +135,20 @@ export class CanonicalQuestionMaterializer {
           block.cells.map(async (cell) => {
             if (cell.type === "content") {
               return {
+                columnId: cell.columnId,
                 id: cell.id,
                 rowId: cell.rowId,
-                columnId: cell.columnId,
-                type: "content" as const,
                 text: renderPlainText(cell.content, referenceValues),
+                type: "content" as const,
               };
             }
             this.addRule(rules, cell, referenceValues);
             return {
-              id: cell.id,
-              rowId: cell.rowId,
               columnId: cell.columnId,
-              type: cell.type,
+              id: cell.id,
               responseFieldId: cell.responseFieldId,
+              rowId: cell.rowId,
+              type: cell.type,
               ...(cell.label === undefined ? {} : { label: cell.label }),
               ...(cell.placeholder === undefined
                 ? {}
@@ -128,35 +162,79 @@ export class CanonicalQuestionMaterializer {
 
     return {
       body: {
-        schemaVersion: 1,
         blocks,
         responseFields: input.document.responseFields,
+        schemaVersion: 1,
       },
-      solution: { schemaVersion: 1, rules },
-      sourcePlan: { schemaVersion: 1, references: sourceReferences },
+      solution: { rules, schemaVersion: 1 },
+      sourceEvidence: {
+        schemaVersion: 1,
+        sources: input.sources.flatMap((source) => {
+          const lineage = input.sourceLineageBySourceId?.get(source.sourceId);
+          const references = referenceIdsBySourceId.get(source.sourceId) ?? [];
+          if (
+            !lineage ||
+            !input.workbookCalculationId ||
+            references.length === 0
+          ) {
+            return [];
+          }
+          return [
+            {
+              questionIndex: lineage.questionIndex,
+              references,
+              snapshotIndex: lineage.snapshotIndex,
+              sourceId: source.sourceId,
+              sourceName: source.name,
+              workbookCalculationId: input.workbookCalculationId,
+              workbookId: lineage.workbookId,
+              workbookSnapshotId: lineage.id,
+            },
+          ];
+        }),
+      },
+      sourcePlan: {
+        references: sourcePlanReferences,
+        schemaVersion: 1,
+      },
     };
   }
 
-  private resolveReference(
+  private async resolveReference(
     input: {
-      workbookSnapshotId?: WorkbookSnapshotId | null;
+      sourceLineageBySourceId?: ReadonlyMap<
+        string,
+        WorkbookSnapshotForQuestionGeneration
+      >;
       currentUser?: CurrentUser;
     },
     source: QuestionReferenceSource,
-  ) {
+  ): Promise<{
+    resolvedValue: JsonValue;
+    sourceId?: string;
+    ref?: string;
+    workbookSnapshotId?: string;
+  }> {
     if (source.type === "literal") {
-      return source.value;
+      return { resolvedValue: source.value };
     }
-    if (!input.workbookSnapshotId) {
-      throw new WorkbookQuestionSourceError(
+    const lineage = input.sourceLineageBySourceId?.get(source.sourceId);
+    if (!lineage) {
+      throw new WorkbookQuestionReferenceError(
         "workbook references require a workbook snapshot",
       );
     }
-    return this.valueResolver.resolveReference({
+    const resolvedValue = await this.valueResolver.resolveReference({
       currentUser: input.currentUser,
-      workbookSnapshotId: input.workbookSnapshotId,
       source,
+      workbookSnapshotId: lineage.id,
     });
+    return {
+      ref: source.ref,
+      resolvedValue,
+      sourceId: source.sourceId,
+      workbookSnapshotId: lineage.id,
+    };
   }
 
   private addRule(
@@ -168,9 +246,9 @@ export class CanonicalQuestionMaterializer {
   ) {
     if (block.grading.mode === "manual") {
       rules.push({
-        type: "manual",
-        responseFieldId: block.responseFieldId,
         points: block.points,
+        responseFieldId: block.responseFieldId,
+        type: "manual",
       });
       return;
     }
@@ -202,26 +280,26 @@ function toRule(
       );
     }
     return {
-      type: "number",
-      responseFieldId,
       correctValue: numericCorrectValue,
       points: block.points,
+      responseFieldId,
       tolerance: block.grading.tolerance,
+      type: "number",
     };
   }
   if (block.grading.mode === "case_insensitive_text") {
     return {
-      type: "case_insensitive_text",
-      responseFieldId,
       correctValue: String(correctValue),
       points: block.points,
+      responseFieldId,
+      type: "case_insensitive_text",
     };
   }
   return {
-    type: "exact",
-    responseFieldId,
     correctValue,
     points: block.points,
+    responseFieldId,
+    type: "exact",
   };
 }
 
@@ -234,11 +312,11 @@ function renderInline(
       return part;
     }
     return {
-      type: "value",
-      referenceId: part.referenceId,
       displayValue: displayValue(
         inlineReferenceValue(part, referenceValues) ?? part.fallbackText ?? "",
       ),
+      referenceId: part.referenceId,
+      type: "value",
     };
   });
 }

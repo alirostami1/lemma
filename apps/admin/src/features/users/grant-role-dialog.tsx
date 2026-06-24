@@ -54,7 +54,7 @@ export function GrantRoleDialog({
   }, [grantableRoles]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Grant role</DialogTitle>
@@ -72,8 +72,8 @@ export function GrantRoleDialog({
                 No ungranted roles available.
               </p>
             ) : (
-              <Select value={roleKey} onValueChange={setRoleKey}>
-                <SelectTrigger id="admin-role-key" className="w-full">
+              <Select onValueChange={setRoleKey} value={roleKey}>
+                <SelectTrigger className="w-full" id="admin-role-key">
                   <SelectValue placeholder="Choose role" />
                 </SelectTrigger>
                 <SelectContent>
@@ -90,8 +90,8 @@ export function GrantRoleDialog({
             <label className="text-sm font-medium" htmlFor="admin-role-expiry">
               Duration
             </label>
-            <Select value={duration} onValueChange={setDuration}>
-              <SelectTrigger id="admin-role-expiry" className="w-full">
+            <Select onValueChange={setDuration} value={duration}>
+              <SelectTrigger className="w-full" id="admin-role-expiry">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -104,18 +104,18 @@ export function GrantRoleDialog({
         </div>
         <DialogFooter>
           <Button
+            onClick={() => onOpenChange(false)}
             type="button"
             variant="outline"
-            onClick={() => onOpenChange(false)}
           >
             Cancel
           </Button>
           <Button
-            type="button"
             disabled={isSaving || rolesLoading || !roleKey}
             onClick={() =>
               onGrant(roleKey, daysFromNow(Number.parseInt(duration, 10)))
             }
+            type="button"
           >
             Grant
           </Button>

@@ -80,7 +80,7 @@ export function isWorkbookContentType(
 
 function invalid(issue: FileValidationIssue): FileValidationResult {
   return {
-    status: "invalid",
     issues: [issue],
+    status: "invalid",
   };
 }

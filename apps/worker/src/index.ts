@@ -3,8 +3,8 @@ import { config } from "./config.js";
 
 const observability = await initializeNodeObservability({
   ...config.observability,
-  serviceName: "lemma-worker",
   deploymentEnvironment: config.nodeEnv,
+  serviceName: "lemma-worker",
 });
 
 const { startWorker } = await import("./worker-main.js");

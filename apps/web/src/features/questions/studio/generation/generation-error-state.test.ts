@@ -23,15 +23,15 @@ describe("generation error state", () => {
   it("maps failed runs to retry state", () => {
     expect(
       getGenerationStatusState(
-        createRun({ status: "failed", errorMessage: "Source failed." }),
+        createRun({ errorMessage: "Source failed.", status: "failed" }),
         null,
       ),
     ).toMatchObject({
-      title: "Generation failed.",
-      description: "Check issue and retry when ready.",
-      message: "Source failed.",
       canRetry: true,
+      description: "Check issue and retry when ready.",
       hidden: false,
+      message: "Source failed.",
+      title: "Generation failed.",
     });
   });
 
@@ -49,22 +49,23 @@ function createRun(
   const { status, ...rest } = overrides;
 
   return {
+    attemptNumber: 1,
+    attempts: 1,
+    blueprintId: "blueprint_1",
+    createdAt: new Date("2026-06-10T00:00:00.000Z"),
+    createdByUserId: "user_1",
+    errorMessage: null,
+    finishedAt: null,
     id: "run_1",
     ownerUserId: "user_1",
-    createdByUserId: "user_1",
-    blueprintId: "blueprint_1",
-    blueprintVersionId: "version_1",
-    targetQuestionSetId: "question_set_1",
     requestedCount: 2,
-    source: null,
-    status,
     result: null,
-    errorMessage: null,
-    attempts: 1,
+    retryOfRunId: null,
     startedAt: null,
-    finishedAt: null,
-    createdAt: new Date("2026-06-10T00:00:00.000Z"),
+    status,
+    targetQuestionSetId: "question_set_1",
     updatedAt: new Date("2026-06-10T00:00:00.000Z"),
+    workbookCalculationId: null,
     ...rest,
   };
 }

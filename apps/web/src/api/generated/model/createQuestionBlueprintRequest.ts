@@ -6,23 +6,20 @@
  */
 import type { CreateQuestionBlueprintRequestVisibility } from "./createQuestionBlueprintRequestVisibility.ts";
 import type { QuestionBlueprintDocument } from "./questionBlueprintDocument.ts";
+import type { QuestionBlueprintSource } from "./questionBlueprintSource.ts";
 
 export interface CreateQuestionBlueprintRequest {
-  /**
-   * @minLength 1
-   * @maxLength 160
-   */
-  name: string;
   /**
    * @maxLength 1000
    * @nullable
    */
   description?: string | null;
-  visibility?: CreateQuestionBlueprintRequestVisibility;
   document: QuestionBlueprintDocument;
   /**
-   * @nullable
-   * @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
+   * @minLength 1
+   * @maxLength 160
    */
-  workbookId?: string | null;
+  name: string;
+  sources: QuestionBlueprintSource[];
+  visibility?: CreateQuestionBlueprintRequestVisibility;
 }

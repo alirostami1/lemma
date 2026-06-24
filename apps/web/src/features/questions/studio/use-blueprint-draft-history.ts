@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
+import type { StudioSource } from "./source/studio-source-model";
 import {
   type StudioHistorySnapshot,
   useStudioHistory,
@@ -10,24 +11,24 @@ type UseBlueprintDraftHistoryInput = {
   authoringModel: ComposedEditorModel;
   blueprintDescription: string;
   blueprintName: string;
-  selectedWorkbookId: string;
+  sources: StudioSource[];
   setAuthoringModel(model: ComposedEditorModel): void;
   setBlueprintDescription(description: string): void;
   setBlueprintName(name: string): void;
   setHasUserEdited(hasUserEdited: boolean): void;
-  setSelectedWorkbookId(workbookId: string): void;
+  setSources(sources: StudioSource[]): void;
 };
 
 export function useBlueprintDraftHistory({
   authoringModel,
   blueprintDescription,
   blueprintName,
-  selectedWorkbookId,
+  sources,
   setAuthoringModel,
   setBlueprintDescription,
   setBlueprintName,
   setHasUserEdited,
-  setSelectedWorkbookId,
+  setSources,
 }: UseBlueprintDraftHistoryInput) {
   const { canRedo, canUndo, recordChange, redo, replaceCurrentSnapshot, undo } =
     useStudioHistory();
@@ -37,9 +38,9 @@ export function useBlueprintDraftHistory({
       authoringModel,
       blueprintDescription,
       blueprintName,
-      selectedWorkbookId,
+      sources,
     }),
-    [authoringModel, blueprintDescription, blueprintName, selectedWorkbookId],
+    [authoringModel, blueprintDescription, blueprintName, sources],
   );
 
   const applyHistorySnapshot = useCallback(
@@ -47,14 +48,9 @@ export function useBlueprintDraftHistory({
       setBlueprintName(snapshot.blueprintName);
       setBlueprintDescription(snapshot.blueprintDescription);
       setAuthoringModel(snapshot.authoringModel);
-      setSelectedWorkbookId(snapshot.selectedWorkbookId);
+      setSources(snapshot.sources);
     },
-    [
-      setAuthoringModel,
-      setBlueprintDescription,
-      setBlueprintName,
-      setSelectedWorkbookId,
-    ],
+    [setAuthoringModel, setBlueprintDescription, setBlueprintName, setSources],
   );
 
   const undoHistory = useCallback(() => {
@@ -140,14 +136,14 @@ export function useBlueprintDraftHistory({
     [currentHistorySnapshot, recordAndApplyHistorySnapshot],
   );
 
-  const setEditableSelectedWorkbookId = useCallback(
-    (workbookId: string) => {
+  const setEditableSources = useCallback(
+    (nextSources: StudioSource[]) => {
       recordAndApplyHistorySnapshot(
         {
           ...currentHistorySnapshot,
-          selectedWorkbookId: workbookId,
+          sources: nextSources,
         },
-        "selected_workbook",
+        "sources",
       );
     },
     [currentHistorySnapshot, recordAndApplyHistorySnapshot],
@@ -162,7 +158,7 @@ export function useBlueprintDraftHistory({
     setEditableAuthoringModel,
     setEditableBlueprintDescription,
     setEditableBlueprintName,
-    setEditableSelectedWorkbookId,
+    setEditableSources,
     undoHistory,
   };
 }

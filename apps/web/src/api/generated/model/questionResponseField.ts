@@ -8,7 +8,7 @@ import type { QuestionResponseFieldType } from "./questionResponseFieldType.ts";
 
 export interface QuestionResponseField {
   id: string;
-  type: QuestionResponseFieldType;
   label?: string;
   required?: boolean;
+  type: QuestionResponseFieldType;
 }

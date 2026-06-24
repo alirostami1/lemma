@@ -4,6 +4,8 @@ import {
   createResetStudioDraftSnapshotState,
   createSavedBlueprintDraftSnapshotState,
 } from "./blueprint-draft-snapshots";
+import type { StudioSource } from "./source/studio-source-model";
+import type { StudioRouteSearch } from "./studio-controller-types";
 import {
   deleteStudioDraftSnapshot,
   writeStudioDraftSnapshot,
@@ -14,9 +16,11 @@ type WritableRef<T> = {
 };
 
 type DraftStatusSetter = (status: "idle" | "autosaved" | "failed") => void;
-type NavigateToStudio = (options: {
+
+type NavigateToStudio = (input: {
   to: "/studio";
-  search: { blueprintId?: string };
+  search: StudioRouteSearch;
+  replace?: boolean;
 }) => unknown;
 
 export function useBlueprintDraftResetAction(input: {
@@ -38,11 +42,10 @@ export function useBlueprintDraftResetAction(input: {
   setLastSavedDraftKey(key: string | null): void;
   setLoadError(error: string | null): void;
   setLoadedBlueprintId(id: string | null): void;
-  setLoadedBlueprintVersionId(id: string | null): void;
   setLocalDraftError(error: string | null): void;
   setLocalDraftStatus: DraftStatusSetter;
   setRecoverySnapshot(snapshot: null): void;
-  setSelectedWorkbookId(workbookId: string): void;
+  setSources(sources: StudioSource[]): void;
 }) {
   return useCallback(() => {
     const {
@@ -59,9 +62,8 @@ export function useBlueprintDraftResetAction(input: {
     input.setBlueprintName(nextSnapshot.blueprintName);
     input.setBlueprintDescription(nextSnapshot.blueprintDescription);
     input.setAuthoringModel(nextAuthoringModel);
-    input.setSelectedWorkbookId("");
+    input.setSources([]);
     input.setLoadedBlueprintId(null);
-    input.setLoadedBlueprintVersionId(null);
     input.setDraftStorageKey(nextDraftStorageKey);
     input.loadedBlueprintKeyRef.current = null;
     input.checkedRecoveryDraftKeyRef.current = nextDraftStorageKey;
@@ -85,7 +87,7 @@ export function useBlueprintDraftResetAction(input: {
     }
 
     input.replaceCurrentSnapshot();
-    void input.navigate({ to: "/studio", search: {} });
+    void input.navigate({ search: {}, to: "/studio" });
   }, [input]);
 }
 
@@ -93,7 +95,6 @@ export function useBlueprintDraftMarkSavedAction(input: {
   authoringModel: ComposedEditorModel;
   draftStorageKey: string;
   loadedBlueprintKeyRef: WritableRef<string | null>;
-  navigate: NavigateToStudio;
   replaceCurrentSnapshot(): void;
   setBlueprintDescription(description: string): void;
   setBlueprintName(name: string): void;
@@ -103,10 +104,9 @@ export function useBlueprintDraftMarkSavedAction(input: {
   setLastRemoteSaveSnapshotKey(key: string | null): void;
   setLastSavedDraftKey(key: string | null): void;
   setLoadedBlueprintId(id: string | null): void;
-  setLoadedBlueprintVersionId(id: string | null): void;
   setLocalDraftError(error: string | null): void;
   setLocalDraftStatus: DraftStatusSetter;
-  setSelectedWorkbookId(workbookId: string): void;
+  setSources(sources: StudioSource[]): void;
 }) {
   return useCallback(
     ({
@@ -114,15 +114,13 @@ export function useBlueprintDraftMarkSavedAction(input: {
       blueprintDescription: nextBlueprintDescription,
       blueprintId,
       blueprintName: nextBlueprintName,
-      blueprintVersionId,
-      workbookId,
+      sources,
     }: {
       authoringModel?: ComposedEditorModel;
       blueprintDescription: string;
       blueprintId: string;
       blueprintName: string;
-      blueprintVersionId?: string | null;
-      workbookId: string;
+      sources: StudioSource[];
     }) => {
       const savedAuthoringModel = nextAuthoringModel ?? input.authoringModel;
       const {
@@ -134,14 +132,12 @@ export function useBlueprintDraftMarkSavedAction(input: {
         blueprintDescription: nextBlueprintDescription,
         blueprintId,
         blueprintName: nextBlueprintName,
-        blueprintVersionId,
-        workbookId,
+        sources,
       });
       input.setBlueprintName(nextBlueprintName);
       input.setBlueprintDescription(nextBlueprintDescription);
-      input.setSelectedWorkbookId(workbookId);
+      input.setSources(sources);
       input.setLoadedBlueprintId(blueprintId);
-      input.setLoadedBlueprintVersionId(blueprintVersionId ?? null);
       input.setDraftStorageKey(nextDraftKey);
       input.loadedBlueprintKeyRef.current = blueprintId;
       input.setHasUserEdited(false);
@@ -159,7 +155,6 @@ export function useBlueprintDraftMarkSavedAction(input: {
         input.setLocalDraftError("Local draft could not be marked as synced.");
       }
       input.replaceCurrentSnapshot();
-      void input.navigate({ to: "/studio", search: { blueprintId } });
     },
     [input],
   );

@@ -9,11 +9,11 @@ export type WorkbookSnapshotCellsCellTypesItemItem =
   (typeof WorkbookSnapshotCellsCellTypesItemItem)[keyof typeof WorkbookSnapshotCellsCellTypesItemItem];
 
 export const WorkbookSnapshotCellsCellTypesItemItem = {
-  string: "string",
-  number: "number",
+  blank: "blank",
   boolean: "boolean",
   date_like: "date_like",
   error: "error",
-  blank: "blank",
   formula_cached: "formula_cached",
+  number: "number",
+  string: "string",
 } as const;

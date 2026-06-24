@@ -5,8 +5,8 @@ export const WORKBOOK_VALIDATION_SUCCEEDED_EVENT =
 export const WORKBOOK_VALIDATION_FAILED_EVENT = "workbook.validation_failed.v1";
 
 export const WORKBOOK_CALCULATION_REQUESTED_EVENT =
-  "workbook_calculation.requested.v1";
+  "workbook_calculation.requested.v2";
 export const WORKBOOK_CALCULATION_SUCCEEDED_EVENT =
-  "workbook_calculation.succeeded.v1";
+  "workbook_calculation.succeeded.v2";
 export const WORKBOOK_CALCULATION_FAILED_EVENT =
-  "workbook_calculation.failed.v1";
+  "workbook_calculation.failed.v2";

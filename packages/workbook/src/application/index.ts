@@ -86,6 +86,10 @@ export { WorkbookCalculationService } from "./WorkbookCalculationService.js";
 export { mapWorkbookFileProviderErrors } from "./WorkbookFileProviderErrorMapper.js";
 export { WorkbookService } from "./WorkbookService.js";
 export { WorkbookSnapshotService } from "./WorkbookSnapshotService.js";
+export {
+  normalizeWorkbookCalculationSources,
+  type WorkbookCalculationSource,
+} from "./workbook-calculation-sources.js";
 export type {
   WorkbookCalculationFinishedPayload,
   WorkbookCalculationRequestedPayload,

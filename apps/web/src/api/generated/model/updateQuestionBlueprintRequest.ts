@@ -5,26 +5,23 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { QuestionBlueprintDocument } from "./questionBlueprintDocument.ts";
+import type { QuestionBlueprintSource } from "./questionBlueprintSource.ts";
 import type { UpdateQuestionBlueprintRequestStatus } from "./updateQuestionBlueprintRequestStatus.ts";
 import type { UpdateQuestionBlueprintRequestVisibility } from "./updateQuestionBlueprintRequestVisibility.ts";
 
 export interface UpdateQuestionBlueprintRequest {
   /**
-   * @minLength 1
-   * @maxLength 160
-   */
-  name?: string;
-  /**
    * @maxLength 1000
    * @nullable
    */
   description?: string | null;
-  visibility?: UpdateQuestionBlueprintRequestVisibility;
   document?: QuestionBlueprintDocument;
   /**
-   * @nullable
-   * @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
+   * @minLength 1
+   * @maxLength 160
    */
-  workbookId?: string | null;
+  name?: string;
+  sources?: QuestionBlueprintSource[];
   status?: UpdateQuestionBlueprintRequestStatus;
+  visibility?: UpdateQuestionBlueprintRequestVisibility;
 }

@@ -1,4 +1,5 @@
 import { useRetryQuestionGenerationRun } from "#/domains/questions";
+import type { QuestionGenerationRun } from "#/domains/questions/model";
 import {
   notifyQuestionGenerationRetryFailed,
   notifyQuestionGenerationRetryStarted,
@@ -11,7 +12,7 @@ type UseGenerationRetryControllerInput = {
   onRetryToastChange(
     toastId: ReturnType<typeof notifyQuestionGenerationRetryStarted> | null,
   ): void;
-  onRetryStarted(context: ActiveRunContext): void;
+  onRetryStarted(run: QuestionGenerationRun, context: ActiveRunContext): void;
 };
 
 export function useGenerationRetryController({
@@ -33,11 +34,16 @@ export function useGenerationRetryController({
     onRetryToastChange(toastId);
 
     try {
-      await retryGeneration({
+      const result = await retryGeneration({
         questionGenerationRunId: lastRunContext.runId,
         questionSetId: lastRunContext.questionSetId,
       });
-      onRetryStarted(lastRunContext);
+      const replacementRun = result.questionGenerationRun;
+      onRetryStarted(replacementRun, {
+        ...lastRunContext,
+        questionSetId: replacementRun.targetQuestionSetId,
+        runId: replacementRun.id,
+      });
     } catch (error) {
       const message =
         error instanceof Error && error.message.length > 0
@@ -45,8 +51,8 @@ export function useGenerationRetryController({
           : "Generation could not be retried.";
       onGenerationErrorChange(message);
       notifyQuestionGenerationRetryFailed({
-        toastId,
         message,
+        toastId,
       });
       onRetryToastChange(null);
     }

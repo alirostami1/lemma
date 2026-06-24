@@ -2,29 +2,32 @@
   "name": "@lemma/error",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
   "sideEffects": false,
+  "type": "module",
   "exports": {
     ".": {
       "types": "./src/error.ts",
-      "development": "./src/error.ts",
+      "source": "./src/error.ts",
       "import": "./dist/error.js",
       "default": "./dist/error.js"
     }
   },
   "scripts": {
-    "check-types": "tsc --noEmit",
     "build": "tsc",
     "check": "biome check",
+    "check:types": "tsc --noEmit",
+    "check:write": "biome check --write",
     "format": "biome format",
-    "lint": "biome lint"
+    "format:write": "biome format --write",
+    "lint": "biome lint",
+    "lint:write": "biome lint --write"
   },
   "devDependencies": {
+    "@biomejs/biome": "catalog:",
     "@lemma/typescript-config": "workspace:*",
-    "hono": "catalog:",
-    "zod": "catalog:",
     "@types/node": "catalog:",
+    "hono": "catalog:",
     "typescript": "catalog:",
-    "@biomejs/biome": "catalog:"
+    "zod": "catalog:"
   }
 }

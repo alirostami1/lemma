@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "radix-nova",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/styles.css",
+    "baseColor": "neutral",
+    "cssVariables": true
+  },
+  "iconLibrary": "lucide",
+  "aliases": {
+    "components": "#/components",
+    "lib": "#/lib",
+    "hooks": "#/hooks",
+    "utils": "@lemma/ui/lib/utils",
+    "ui": "@lemma/ui/components"
+  }
+}

@@ -15,10 +15,10 @@ import {
 describe("reference inspector helpers", () => {
   it("creates a new reference reference", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [],
-      responseFields: [],
       references: [],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     const reference = createUniqueReferenceDraft(model);
@@ -37,70 +37,70 @@ describe("reference inspector helpers", () => {
   it("appends references to text content with spacing", () => {
     expect(
       appendReferenceToInlineContent(
-        [{ type: "text", text: "Revenue:" }],
+        [{ text: "Revenue:", type: "text" }],
         "revenue",
       ),
     ).toEqual([
-      { type: "text", text: "Revenue: " },
-      { type: "reference", referenceId: "revenue" },
+      { text: "Revenue: ", type: "text" },
+      { referenceId: "revenue", type: "reference" },
     ]);
   });
 
   it("adds and inserts a reference with one final model update", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
+          content: [{ text: "Hello", type: "text" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "text", text: "Hello" }],
         },
       ],
-      responseFields: [],
       references: [],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     const reference = createUniqueReferenceDraft(model);
     const nextModel = addReferenceAndInsertIntoTextBlock({
-      model,
       blockId: "text_1",
+      model,
       reference,
     });
 
     expect(nextModel.references).toEqual([reference]);
     expect(nextModel.blocks[0]).toEqual({
+      content: [
+        { text: "Hello ", type: "text" },
+        { referenceId: reference.id, type: "reference" },
+      ],
       id: "text_1",
       type: "text",
-      content: [
-        { type: "text", text: "Hello " },
-        { type: "reference", referenceId: reference.id },
-      ],
     });
   });
 
   it("renames a reference and updates text references", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
+          content: [{ referenceId: "revenue", type: "reference" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "reference", referenceId: "revenue" }],
         },
       ],
-      responseFields: [],
       references: [
         {
           id: "revenue",
           source: { type: "literal", value: "1200" },
         },
       ],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     const result = renameReferenceInModel({
       model,
-      previousReferenceId: "revenue",
       nextReferenceId: "sales",
+      previousReferenceId: "revenue",
     });
 
     expect(result.status).toBe("renamed");
@@ -110,17 +110,15 @@ describe("reference inspector helpers", () => {
 
     expect(result.model.references[0]?.id).toBe("sales");
     expect(result.model.blocks[0]).toEqual({
+      content: [{ referenceId: "sales", type: "reference" }],
       id: "text_1",
       type: "text",
-      content: [{ type: "reference", referenceId: "sales" }],
     });
   });
 
   it("rejects duplicate reference names", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [],
-      responseFields: [],
       references: [
         {
           id: "one",
@@ -131,119 +129,121 @@ describe("reference inspector helpers", () => {
           source: { type: "literal", value: "" },
         },
       ],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     expect(
       renameReferenceInModel({
         model,
-        previousReferenceId: "one",
         nextReferenceId: "two",
+        previousReferenceId: "one",
       }),
     ).toEqual({
-      status: "duplicate_name",
       message: "Reference id already exists.",
+      status: "duplicate_name",
     });
   });
 
   it("rejects invalid reference names", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [],
-      responseFields: [],
       references: [],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     expect(
       renameReferenceInModel({
         model,
-        previousReferenceId: "one",
         nextReferenceId: "1bad",
+        previousReferenceId: "one",
       }),
     ).toEqual({
-      status: "invalid_name",
       message:
         "Reference id must start with a letter and use letters, numbers, underscores, or hyphens.",
+      status: "invalid_name",
     });
   });
 
   it("inserts an existing reference into a selected text block", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
+          content: [{ text: "Hello", type: "text" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "text", text: "Hello" }],
         },
       ],
-      responseFields: [],
       references: [
         {
           id: "revenue",
           source: { type: "literal", value: "1200" },
         },
       ],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     const result = insertReferenceIntoSelectedTextBlock({
       model,
-      selection: { type: "block", blockId: "text_1" },
       referenceId: "revenue",
+      selection: { blockId: "text_1", type: "block" },
     });
 
     expect(result).not.toBeNull();
     expect(result?.blocks[0]).toEqual({
+      content: [
+        { text: "Hello ", type: "text" },
+        { referenceId: "revenue", type: "reference" },
+      ],
       id: "text_1",
       type: "text",
-      content: [
-        { type: "text", text: "Hello " },
-        { type: "reference", referenceId: "revenue" },
-      ],
     });
   });
 
   it("does not insert a reference when the selected item is not a text block", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
           id: "table_1",
-          type: "table",
           table: {
-            prompt: "Prompt",
+            cells: [],
             columns: [],
+            prompt: "Prompt",
+            responseFields: [],
             rows: [],
             showColumnNames: true,
             showRowNames: true,
-            responseFields: [],
-            cells: [],
           },
+          type: "table",
         },
       ],
-      responseFields: [],
       references: [],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     expect(
       insertReferenceIntoSelectedTextBlock({
         model,
-        selection: { type: "table", blockId: "table_1" },
         referenceId: "revenue",
+        selection: { blockId: "table_1", type: "table" },
       }),
     ).toBeNull();
   });
 
   it("removes an unused reference", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [],
-      responseFields: [],
       references: [
         {
           id: "revenue",
           source: { type: "literal", value: "1200" },
         },
       ],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     expect(
@@ -252,31 +252,31 @@ describe("reference inspector helpers", () => {
         referenceId: "revenue",
       }),
     ).toEqual({
-      schemaVersion: 1,
       blocks: [],
-      responseFields: [],
       references: [],
+      responseFields: [],
+      schemaVersion: 1,
     });
   });
 
   it("creates a reference draft from a source", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [],
-      responseFields: [],
       references: [],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     expect(
       createReferenceDraftFromSource({
+        label: "Cell reference",
         model,
         source: { type: "literal", value: "x" },
-        label: "Cell reference",
       }),
     ).toEqual({
       id: "reference_1",
-      source: { type: "literal", value: "x" },
       label: "Cell reference",
+      source: { type: "literal", value: "x" },
     });
   });
 });

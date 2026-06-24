@@ -31,9 +31,9 @@ export function questionValueExpression(
       failWith("question value expression references unknown reference id");
     }
     return {
+      referenceId: input.referenceId,
       schemaVersion: 1,
       type: "reference",
-      referenceId: input.referenceId,
     };
   }
   failWith("question value expression type is invalid");

@@ -62,19 +62,21 @@ describe("BlockList", () => {
 
     render(
       <BlockList
+        getTableSelectionForBlock={() => ({ type: "table" })}
         model={model}
-        selectedBlockId="text_1"
-        referencePreviewCache={{}}
-        workbookEnabled={false}
+        onDeleteBlock={() => {}}
+        onDuplicateBlock={() => {}}
+        onInsertBlock={() => {}}
         onModelChange={() => {}}
+        onMoveBlock={() => {}}
         onSelectBlock={() => {}}
         onSelectReference={() => {}}
         onTableSelectionChange={() => {}}
-        getTableSelectionForBlock={() => ({ type: "table" })}
-        onInsertBlock={() => {}}
-        onDuplicateBlock={() => {}}
-        onDeleteBlock={() => {}}
-        onMoveBlock={() => {}}
+        referencePreviewCache={{}}
+        selectedBlockId="text_1"
+        sources={[]}
+        workbookEnabled={false}
+        workbookSheetNamesBySourceId={{}}
       />,
     );
 
@@ -94,19 +96,21 @@ describe("BlockList", () => {
 
     render(
       <BlockList
+        getTableSelectionForBlock={() => ({ type: "table" })}
         model={model}
-        selectedBlockId={firstBlock.id}
-        referencePreviewCache={{}}
-        workbookEnabled={false}
+        onDeleteBlock={() => {}}
+        onDuplicateBlock={() => {}}
+        onInsertBlock={() => {}}
         onModelChange={() => {}}
+        onMoveBlock={() => {}}
         onSelectBlock={() => {}}
         onSelectReference={() => {}}
         onTableSelectionChange={() => {}}
-        getTableSelectionForBlock={() => ({ type: "table" })}
-        onInsertBlock={() => {}}
-        onDuplicateBlock={() => {}}
-        onDeleteBlock={() => {}}
-        onMoveBlock={() => {}}
+        referencePreviewCache={{}}
+        selectedBlockId={firstBlock.id}
+        sources={[]}
+        workbookEnabled={false}
+        workbookSheetNamesBySourceId={{}}
       />,
     );
 
@@ -131,19 +135,21 @@ describe("BlockList", () => {
 
     const { rerender } = render(
       <BlockList
+        getTableSelectionForBlock={() => ({ type: "table" })}
         model={model}
-        selectedBlockId={null}
-        referencePreviewCache={{}}
-        workbookEnabled={false}
+        onDeleteBlock={() => {}}
+        onDuplicateBlock={() => {}}
+        onInsertBlock={() => {}}
         onModelChange={() => {}}
+        onMoveBlock={() => {}}
         onSelectBlock={() => {}}
         onSelectReference={() => {}}
         onTableSelectionChange={() => {}}
-        getTableSelectionForBlock={() => ({ type: "table" })}
-        onInsertBlock={() => {}}
-        onDuplicateBlock={() => {}}
-        onDeleteBlock={() => {}}
-        onMoveBlock={() => {}}
+        referencePreviewCache={{}}
+        selectedBlockId={null}
+        sources={[]}
+        workbookEnabled={false}
+        workbookSheetNamesBySourceId={{}}
       />,
     );
 
@@ -153,19 +159,21 @@ describe("BlockList", () => {
 
     rerender(
       <BlockList
+        getTableSelectionForBlock={() => ({ type: "table" })}
         model={model}
-        selectedBlockId={firstBlock.id}
-        referencePreviewCache={{}}
-        workbookEnabled={false}
+        onDeleteBlock={() => {}}
+        onDuplicateBlock={() => {}}
+        onInsertBlock={() => {}}
         onModelChange={() => {}}
+        onMoveBlock={() => {}}
         onSelectBlock={() => {}}
         onSelectReference={() => {}}
         onTableSelectionChange={() => {}}
-        getTableSelectionForBlock={() => ({ type: "table" })}
-        onInsertBlock={() => {}}
-        onDuplicateBlock={() => {}}
-        onDeleteBlock={() => {}}
-        onMoveBlock={() => {}}
+        referencePreviewCache={{}}
+        selectedBlockId={firstBlock.id}
+        sources={[]}
+        workbookEnabled={false}
+        workbookSheetNamesBySourceId={{}}
       />,
     );
 

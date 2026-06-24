@@ -1,106 +1,104 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { displayName, emailAddress, identityId } from "@lemma/identity/domain";
 import {
-  createQuestionBlueprintVersion,
+  createQuestionBlueprint,
+  questionBlueprintDescription,
   questionBlueprintDocument,
   questionBlueprintId,
-  questionBlueprintVersionId,
+  questionBlueprintName,
+  questionBlueprintVisibility,
   userId as toUserId,
   workbookId as toWorkbookId,
   type WorkbookId,
-  workbookQuestionSource,
 } from "../domain/index.js";
-import { InvalidQuestionBlueprintError } from "./errors.js";
+import { ForbiddenQuestionActionError } from "./errors.js";
 import type { WorkbookAccessPort } from "./ports.js";
 import { QuestionGenerationSourceResolver } from "./QuestionGenerationSourceResolver.js";
 
-const workbookIdInput = "019e9315-6a87-715f-9861-8654df070c51";
-const workbookId = toWorkbookId(workbookIdInput);
-const otherWorkbookIdInput = "019e9315-6a87-715f-9861-8654df070c52";
-const createdByUserId = toUserId("019e9315-6a87-715f-9861-8654df070c50");
+const ownerUserId = toUserId("019e9315-6a87-715f-9861-8654df070c50");
+const workbookId = toWorkbookId("019e9315-6a87-715f-9861-8654df070c51");
+const currentUser = {
+  isAdmin: false,
+  roles: [],
+  user: {
+    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    displayName: displayName("Test"),
+    email: emailAddress("test@example.com"),
+    id: ownerUserId,
+    identityId: identityId("oidc:test-user"),
+    status: "active",
+    updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+  },
+} as const;
 
 describe("QuestionGenerationSourceResolver", () => {
-  it("derives a workbook source from the selected blueprint version", () => {
-    const resolver = createResolver();
-    const version = createVersion({ workbookId });
+  it("allows generation when all used workbook sources are accessible", async () => {
+    const resolver = createResolver({ accessibleWorkbooks: [workbookId] });
 
-    const source = resolver.resolve({ version, explicitSource: null });
-
-    assert.equal(source?.workbookId, workbookId);
-    assert.equal(source?.workbookSnapshotId, null);
-    assert.equal(source?.workbookCalculationId, null);
-  });
-
-  it("rejects an explicit workbook source that differs from the version workbook", () => {
-    const resolver = createResolver();
-    const version = createVersion({ workbookId });
-    const explicitSource = workbookQuestionSource({
-      type: "workbook_snapshot",
-      workbookId: otherWorkbookIdInput,
+    await resolver.assertAccess({
+      blueprint: createBlueprint({ workbookId }),
+      currentUser,
     });
-
-    assert.throws(
-      () =>
-        resolver.assertExplicitSourceIsAllowed({
-          version,
-          explicitSource,
-        }),
-      InvalidQuestionBlueprintError,
-    );
   });
 
-  it("requires a source when the blueprint document references workbook data", () => {
-    const resolver = createResolver();
-    const version = createVersion({ workbookId: null });
+  it("rejects generation when a used workbook source is inaccessible", async () => {
+    const resolver = createResolver({ accessibleWorkbooks: [] });
 
-    assert.throws(
-      () => resolver.assertRequiredSourcePresent({ version, source: null }),
-      InvalidQuestionBlueprintError,
+    await assert.rejects(
+      () =>
+        resolver.assertAccess({
+          blueprint: createBlueprint({ workbookId }),
+          currentUser,
+        }),
+      ForbiddenQuestionActionError,
     );
   });
 });
 
-function createResolver() {
+function createResolver(input: { accessibleWorkbooks: readonly WorkbookId[] }) {
   return new QuestionGenerationSourceResolver({
     workbookAccessPort: {
-      async canUserAccessWorkbook() {
-        return true;
+      async canUserAccessWorkbook({ workbookId }) {
+        return input.accessibleWorkbooks.includes(workbookId);
       },
     } satisfies WorkbookAccessPort,
   });
 }
 
-function createVersion(input: { workbookId: WorkbookId | null }) {
-  return createQuestionBlueprintVersion(
+function createBlueprint(input: { workbookId: WorkbookId }) {
+  return createQuestionBlueprint(
     {
-      id: questionBlueprintVersionId("019e9315-6a87-715f-9861-8654df070c5a"),
-      questionBlueprintId: questionBlueprintId(
-        "019e9315-6a87-715f-9861-8654df070c59",
-      ),
-      versionNumber: 1,
+      createdByUserId: ownerUserId,
+      description: questionBlueprintDescription(null),
       document: questionBlueprintDocument({
-        schemaVersion: 1,
+        blocks: [],
         references: [
           {
-            id: "revenue",
+            id: "workbook:source_1:cell:Sheet1:A1",
             source: {
-              schemaVersion: 1,
-              type: "workbook_cell",
               ref: "Sheet1!A1",
+              schemaVersion: 1,
+              sourceId: "source_1",
+              type: "workbook_cell",
             },
           },
         ],
-        responseFields: [{ id: "answer", type: "number" }],
-        blocks: [
-          {
-            id: "prompt",
-            type: "text",
-            content: [{ type: "reference", referenceId: "revenue" }],
-          },
-        ],
+        responseFields: [],
+        schemaVersion: 1,
       }),
-      workbookId: input.workbookId,
-      createdByUserId,
+      id: questionBlueprintId("019e9315-6a87-715f-9861-8654df070c59"),
+      name: questionBlueprintName("Revenue"),
+      ownerUserId,
+      sources: [
+        {
+          name: "Source 1",
+          sourceId: "source_1",
+          type: "workbook",
+          workbookId: input.workbookId,
+        },
+      ],
+      visibility: questionBlueprintVisibility("private"),
     },
     new Date("2026-01-01T00:00:00.000Z"),
   );

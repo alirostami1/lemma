@@ -2,12 +2,12 @@
   "name": "@lemma/db",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
   "sideEffects": false,
+  "type": "module",
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "development": "./src/index.ts",
+      "source": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
@@ -16,16 +16,19 @@
     }
   },
   "scripts": {
-    "check-types": "tsc --noEmit",
     "build": "tsc",
-    "migrate:latest": "tsx src/migrate.ts latest",
-    "migrate:down": "tsx src/migrate.ts down",
-    "migrate:up": "tsx src/migrate.ts up",
-    "seed:dev": "tsx src/seed-dev.ts",
-    "generate": "kysely-codegen --camel-case --dialect postgres --log-level info --out-file ./src/types.d.ts",
     "check": "biome check",
+    "check:types": "tsc --noEmit",
+    "check:write": "biome check --write",
     "format": "biome format",
-    "lint": "biome lint"
+    "format:write": "biome format --write",
+    "generate": "node --conditions=source --env-file=.env --import tsx src/generate-types.ts",
+    "lint": "biome lint",
+    "lint:write": "biome lint --write",
+    "migrate:down": "node --conditions=source --env-file=.env --import tsx src/migrate.ts down",
+    "migrate:latest": "node --conditions=source --env-file=.env --import tsx src/migrate.ts latest",
+    "migrate:up": "node --conditions=source --env-file=.env --import tsx src/migrate.ts up",
+    "seed:dev": "node --conditions=source --env-file=.env --import tsx src/seed-dev.ts"
   },
   "dependencies": {
     "@lemma/config": "workspace:*",
@@ -33,12 +36,12 @@
     "pg": "catalog:"
   },
   "devDependencies": {
+    "@biomejs/biome": "catalog:",
     "@lemma/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "@types/pg": "catalog:",
     "kysely-codegen": "^0.20.0",
     "tsx": "catalog:",
-    "typescript": "catalog:",
-    "@biomejs/biome": "catalog:"
+    "typescript": "catalog:"
   }
 }

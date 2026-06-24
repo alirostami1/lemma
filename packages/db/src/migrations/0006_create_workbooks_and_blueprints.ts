@@ -1,0 +1,276 @@
+import { sql } from "kysely";
+import type { MigrationDb } from "./helpers.js";
+
+export async function up(db: MigrationDb): Promise<void> {
+  await db.schema
+    .createTable("workbooks")
+    .addColumn("id", "uuid", (c) => c.primaryKey().defaultTo(sql`uuidv7()`))
+    .addColumn("owner_user_id", "uuid", (c) => c.notNull())
+    .addColumn("created_by_user_id", "uuid", (c) => c.notNull())
+    .addColumn("name", "varchar(160)", (c) => c.notNull())
+    .addColumn("file_id", "uuid", (c) => c.notNull())
+    .addColumn("checksum_sha256", "char(64)", (c) => c.notNull())
+    .addColumn("original_name", "text", (c) => c.notNull())
+    .addColumn("engine", "text", (c) => c.notNull())
+    .addColumn("engine_version", "text")
+    .addColumn("status", "text", (c) =>
+      c.notNull().defaultTo("pending_validation"),
+    )
+    .addColumn("inspection", "jsonb")
+    .addColumn("validation_error", "text")
+    .addColumn("created_at", "timestamptz", (c) =>
+      c.notNull().defaultTo(sql`now()`),
+    )
+    .addColumn("updated_at", "timestamptz", (c) =>
+      c.notNull().defaultTo(sql`now()`),
+    )
+    .addCheckConstraint(
+      "workbooks_name_nonempty_check",
+      sql`length(trim(name)) > 0`,
+    )
+    .addCheckConstraint(
+      "workbooks_original_name_nonempty_check",
+      sql`length(trim(original_name)) > 0`,
+    )
+    .addCheckConstraint(
+      "workbooks_checksum_sha256_check",
+      sql`checksum_sha256 ~ '^[a-f0-9]{64}$'`,
+    )
+    .addCheckConstraint(
+      "workbooks_engine_check",
+      sql`engine in ('cached', 'libreoffice')`,
+    )
+    .addCheckConstraint(
+      "workbooks_status_check",
+      sql`status in ('pending_validation', 'valid', 'invalid', 'archived', 'deleted')`,
+    )
+    .addCheckConstraint(
+      "workbooks_inspection_object_check",
+      sql`inspection is null or jsonb_typeof(inspection) = 'object'`,
+    )
+    .addForeignKeyConstraint(
+      "workbooks_owner_user_id_foreign",
+      ["owner_user_id"],
+      "users",
+      ["id"],
+      (cb) => cb.onDelete("restrict"),
+    )
+    .addForeignKeyConstraint(
+      "workbooks_created_by_user_id_foreign",
+      ["created_by_user_id"],
+      "users",
+      ["id"],
+      (cb) => cb.onDelete("restrict"),
+    )
+    .addForeignKeyConstraint(
+      "workbooks_file_id_foreign",
+      ["file_id"],
+      "files",
+      ["id"],
+      (cb) => cb.onDelete("restrict"),
+    )
+    .execute();
+
+  await db.schema
+    .createIndex("workbooks_owner_user_id_created_at_index")
+    .on("workbooks")
+    .columns(["owner_user_id", "created_at"])
+    .execute();
+  await db.schema
+    .createIndex("workbooks_owner_user_id_status_created_at_index")
+    .on("workbooks")
+    .columns(["owner_user_id", "status", "created_at"])
+    .execute();
+  await db.schema
+    .createIndex("workbooks_file_id_index")
+    .on("workbooks")
+    .column("file_id")
+    .execute();
+  await db.schema
+    .createIndex("workbooks_checksum_sha256_index")
+    .on("workbooks")
+    .column("checksum_sha256")
+    .execute();
+
+  await sql`
+    create trigger workbooks_set_updated_at
+    before update on workbooks
+    for each row
+    execute function set_updated_at()
+  `.execute(db);
+
+  await db.schema
+    .createTable("question_blueprints")
+    .addColumn("id", "uuid", (c) => c.primaryKey().defaultTo(sql`uuidv7()`))
+    .addColumn("owner_user_id", "uuid", (c) => c.notNull())
+    .addColumn("created_by_user_id", "uuid", (c) => c.notNull())
+    .addColumn("name", "varchar(160)", (c) => c.notNull())
+    .addColumn("description", "text")
+    .addColumn("visibility", "text", (c) => c.notNull().defaultTo("private"))
+    .addColumn("document", "jsonb", (c) => c.notNull())
+    .addColumn("sources", "jsonb", (c) =>
+      c.notNull().defaultTo(sql`'[]'::jsonb`),
+    )
+    .addColumn("status", "text", (c) => c.notNull().defaultTo("active"))
+    .addColumn("archived_at", "timestamptz")
+    .addColumn("created_at", "timestamptz", (c) =>
+      c.notNull().defaultTo(sql`now()`),
+    )
+    .addColumn("updated_at", "timestamptz", (c) =>
+      c.notNull().defaultTo(sql`now()`),
+    )
+    .addUniqueConstraint("question_blueprints_owner_user_id_name_unique", [
+      "owner_user_id",
+      "name",
+    ])
+    .addCheckConstraint(
+      "question_blueprints_status_check",
+      sql`status in ('active', 'archived', 'deleted')`,
+    )
+    .addCheckConstraint(
+      "question_blueprints_visibility_check",
+      sql`visibility in ('private', 'shared', 'system')`,
+    )
+    .addCheckConstraint(
+      "question_blueprints_name_nonempty_check",
+      sql`length(trim(name)) > 0`,
+    )
+    .addCheckConstraint(
+      "question_blueprints_document_object_check",
+      sql`jsonb_typeof(document) = 'object'`,
+    )
+    .addCheckConstraint(
+      "question_blueprints_document_schema_version_check",
+      sql`document @> '{"schemaVersion":1}'::jsonb`,
+    )
+    .addCheckConstraint(
+      "question_blueprints_document_blocks_check",
+      sql`document ? 'blocks' and jsonb_typeof(document->'blocks') = 'array'`,
+    )
+    .addCheckConstraint(
+      "question_blueprints_document_response_fields_check",
+      sql`document ? 'responseFields' and jsonb_typeof(document->'responseFields') = 'array'`,
+    )
+    .addCheckConstraint(
+      "question_blueprints_document_references_check",
+      sql`document ? 'references' and jsonb_typeof(document->'references') = 'array'`,
+    )
+    .addCheckConstraint(
+      "question_blueprints_sources_array_check",
+      sql`jsonb_typeof(sources) = 'array'`,
+    )
+    .addForeignKeyConstraint(
+      "question_blueprints_owner_user_id_foreign",
+      ["owner_user_id"],
+      "users",
+      ["id"],
+      (cb) => cb.onDelete("restrict"),
+    )
+    .addForeignKeyConstraint(
+      "question_blueprints_created_by_user_id_foreign",
+      ["created_by_user_id"],
+      "users",
+      ["id"],
+      (cb) => cb.onDelete("restrict"),
+    )
+    .execute();
+
+  await db.schema
+    .createIndex("question_blueprints_owner_user_id_status_created_at_index")
+    .on("question_blueprints")
+    .columns(["owner_user_id", "status", "created_at"])
+    .execute();
+  await db.schema
+    .createIndex("question_blueprints_created_by_user_id_created_at_index")
+    .on("question_blueprints")
+    .columns(["created_by_user_id", "created_at"])
+    .execute();
+  await db.schema
+    .createIndex("question_blueprints_status_updated_at_index")
+    .on("question_blueprints")
+    .columns(["status", "updated_at"])
+    .execute();
+  await sql`
+    create index question_blueprints_sources_gin_index
+    on question_blueprints using gin (sources jsonb_path_ops)
+  `.execute(db);
+
+  await sql`
+    create trigger question_blueprints_set_updated_at
+    before update on question_blueprints
+    for each row
+    execute function set_updated_at()
+  `.execute(db);
+
+  await db.schema
+    .createTable("question_blueprint_members")
+    .addColumn("blueprint_id", "uuid", (c) => c.notNull())
+    .addColumn("user_id", "uuid", (c) => c.notNull())
+    .addColumn("role", "text", (c) => c.notNull())
+    .addColumn("granted_by_user_id", "uuid")
+    .addColumn("expires_at", "timestamptz")
+    .addColumn("created_at", "timestamptz", (c) =>
+      c.notNull().defaultTo(sql`now()`),
+    )
+    .addPrimaryKeyConstraint("question_blueprint_members_primary", [
+      "blueprint_id",
+      "user_id",
+    ])
+    .addCheckConstraint(
+      "question_blueprint_members_role_check",
+      sql`role in ('viewer', 'runner', 'editor', 'manager')`,
+    )
+    .addForeignKeyConstraint(
+      "question_blueprint_members_blueprint_id_foreign",
+      ["blueprint_id"],
+      "question_blueprints",
+      ["id"],
+      (cb) => cb.onDelete("cascade"),
+    )
+    .addForeignKeyConstraint(
+      "question_blueprint_members_user_id_foreign",
+      ["user_id"],
+      "users",
+      ["id"],
+      (cb) => cb.onDelete("cascade"),
+    )
+    .addForeignKeyConstraint(
+      "question_blueprint_members_granted_by_user_id_foreign",
+      ["granted_by_user_id"],
+      "users",
+      ["id"],
+      (cb) => cb.onDelete("set null"),
+    )
+    .execute();
+
+  await db.schema
+    .createIndex("question_blueprint_members_user_id_blueprint_id_index")
+    .on("question_blueprint_members")
+    .columns(["user_id", "blueprint_id"])
+    .execute();
+  await db.schema
+    .createIndex("question_blueprint_members_role_index")
+    .on("question_blueprint_members")
+    .column("role")
+    .execute();
+  await db.schema
+    .createIndex("question_blueprint_members_expires_at_index")
+    .on("question_blueprint_members")
+    .column("expires_at")
+    .execute();
+}
+
+export async function down(db: MigrationDb): Promise<void> {
+  await db.schema.dropTable("question_blueprint_members").execute();
+  await sql`drop trigger if exists question_blueprints_set_updated_at on question_blueprints`.execute(
+    db,
+  );
+  await sql`drop index if exists question_blueprints_sources_gin_index`.execute(
+    db,
+  );
+  await db.schema.dropTable("question_blueprints").execute();
+  await sql`drop trigger if exists workbooks_set_updated_at on workbooks`.execute(
+    db,
+  );
+  await db.schema.dropTable("workbooks").execute();
+}

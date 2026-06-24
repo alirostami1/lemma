@@ -5,15 +5,13 @@ import { buildQuestionBlueprintDraft } from "./blueprint-draft";
 describe("buildQuestionBlueprintDraft", () => {
   it("omits unused references from the saved document", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
+          content: [{ referenceId: "used", type: "reference" }],
           id: "text_1",
           type: "text",
-          content: [{ type: "reference", referenceId: "used" }],
         },
       ],
-      responseFields: [],
       references: [
         {
           id: "used",
@@ -24,13 +22,15 @@ describe("buildQuestionBlueprintDraft", () => {
           source: { type: "literal", value: "beta" },
         },
       ],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     const result = buildQuestionBlueprintDraft({
-      name: "Blueprint",
       description: "",
       model,
-      workbookId: null,
+      name: "Blueprint",
+      sources: [],
     });
 
     expect(result).toMatchObject({
@@ -54,95 +54,93 @@ describe("buildQuestionBlueprintDraft", () => {
 
   it("builds a clean integrated authoring document", () => {
     const model: ComposedEditorModel = {
-      schemaVersion: 1,
       blocks: [
         {
-          id: "rich_text_1",
-          type: "rich_text",
           content: {
-            type: "doc",
             content: [
               {
-                type: "heading",
-                level: 2,
                 content: [
-                  { type: "text", text: "Revenue for " },
-                  { type: "reference", referenceId: "period" },
+                  { text: "Revenue for ", type: "text" },
+                  { referenceId: "period", type: "reference" },
                 ],
+                level: 2,
+                type: "heading",
               },
               {
-                type: "bullet_list",
                 items: [
                   {
-                    type: "list_item",
                     content: [
                       {
-                        type: "paragraph",
                         content: [
-                          { type: "text", text: "Amount: " },
-                          { type: "reference", referenceId: "range" },
+                          { text: "Amount: ", type: "text" },
+                          { referenceId: "range", type: "reference" },
                         ],
+                        type: "paragraph",
                       },
                     ],
+                    type: "list_item",
                   },
                 ],
+                type: "bullet_list",
               },
             ],
+            type: "doc",
           },
+          id: "rich_text_1",
+          type: "rich_text",
         },
         {
           id: "table_1",
-          type: "table",
           table: {
-            prompt: "",
+            cells: [
+              {
+                columnId: "column_1",
+                content: [
+                  {
+                    fallbackText: "200",
+                    rangeCell: { columnOffset: 0, rowOffset: 1 },
+                    referenceId: "range",
+                    type: "reference",
+                  },
+                ],
+                id: "cell_1",
+                rowId: "row_1",
+                type: "content",
+              },
+              {
+                columnId: "column_2",
+                correctValueSource: {
+                  referenceId: "answer",
+                  type: "reference",
+                },
+                grading: { mode: "exact" },
+                id: "cell_2",
+                points: 2,
+                responseFieldId: "table_answer_1",
+                rowId: "row_1",
+                type: "response",
+              },
+            ],
             columns: [
               { id: "column_1", label: "Column 1" },
               { id: "column_2", label: "Column 2" },
             ],
-            rows: [{ id: "row_1", label: "Row 1" }],
-            showColumnNames: true,
-            showRowNames: true,
+            prompt: "",
             responseFields: [
               {
                 id: "table_answer_1",
-                type: "number",
                 label: "Answer",
                 required: true,
+                type: "number",
               },
             ],
-            cells: [
-              {
-                id: "cell_1",
-                rowId: "row_1",
-                columnId: "column_1",
-                type: "content",
-                content: [
-                  {
-                    type: "reference",
-                    referenceId: "range",
-                    rangeCell: { rowOffset: 1, columnOffset: 0 },
-                    fallbackText: "200",
-                  },
-                ],
-              },
-              {
-                id: "cell_2",
-                rowId: "row_1",
-                columnId: "column_2",
-                type: "response",
-                responseFieldId: "table_answer_1",
-                correctValueSource: {
-                  type: "reference",
-                  referenceId: "answer",
-                },
-                points: 2,
-                grading: { mode: "exact" },
-              },
-            ],
+            rows: [{ id: "row_1", label: "Row 1" }],
+            showColumnNames: true,
+            showRowNames: true,
           },
+          type: "table",
         },
       ],
-      responseFields: [],
       references: [
         {
           id: "period",
@@ -150,34 +148,129 @@ describe("buildQuestionBlueprintDraft", () => {
         },
         {
           id: "range",
-          source: { type: "workbook_range", ref: "Sheet1!A1:B2" },
+          source: {
+            ref: "Sheet1!A1:B2",
+            sourceId: "source_1",
+            type: "workbook_range",
+          },
         },
         {
           id: "answer",
-          source: { type: "workbook_cell", ref: "Sheet1!C1" },
+          source: {
+            ref: "Sheet1!C1",
+            sourceId: "source_1",
+            type: "workbook_cell",
+          },
         },
         {
           id: "unused",
-          source: { type: "workbook_cell", ref: "Sheet1!Z99" },
+          source: {
+            ref: "Sheet1!Z99",
+            sourceId: "source_1",
+            type: "workbook_cell",
+          },
         },
       ],
+      responseFields: [],
+      schemaVersion: 1,
     };
 
     const result = buildQuestionBlueprintDraft({
-      name: " Revenue blueprint ",
       description: "  ",
       model,
-      workbookId: "workbook_1",
+      name: " Revenue blueprint ",
+      sources: [
+        {
+          name: "Source 1",
+          sourceId: "source_1",
+          workbookId: "workbook_1",
+        },
+      ],
     });
 
     expect(result).toEqual({
       ok: true,
       value: {
-        name: "Revenue blueprint",
         description: null,
-        workbookId: "workbook_1",
         document: {
-          schemaVersion: 1,
+          blocks: [
+            {
+              content: {
+                content: [
+                  {
+                    attrs: { level: 2 },
+                    content: [
+                      { text: "Revenue for {{ .period }}", type: "text" },
+                    ],
+                    type: "heading",
+                  },
+                  {
+                    content: [
+                      {
+                        content: [
+                          {
+                            content: [
+                              {
+                                text: "Amount: {{ .range }}",
+                                type: "text",
+                              },
+                            ],
+                            type: "paragraph",
+                          },
+                        ],
+                        type: "list_item",
+                      },
+                    ],
+                    type: "bullet_list",
+                  },
+                ],
+                type: "doc",
+              },
+              id: "rich_text_1",
+              type: "rich_text",
+            },
+            {
+              cells: [
+                {
+                  columnId: "column_1",
+                  content: [
+                    {
+                      fallbackText: "200",
+                      rangeCell: { columnOffset: 0, rowOffset: 1 },
+                      referenceId: "range",
+                      type: "reference",
+                    },
+                  ],
+                  id: "cell_1",
+                  rowId: "row_1",
+                  type: "content",
+                },
+                {
+                  columnId: "column_2",
+                  correctValueSource: {
+                    referenceId: "answer",
+                    schemaVersion: 1,
+                    type: "reference",
+                  },
+                  grading: { mode: "exact" },
+                  id: "cell_2",
+                  points: 2,
+                  responseFieldId: "table_1_table_answer_1",
+                  rowId: "row_1",
+                  type: "response",
+                },
+              ],
+              columns: [
+                { id: "column_1", label: "Column 1" },
+                { id: "column_2", label: "Column 2" },
+              ],
+              id: "table_1",
+              rows: [{ id: "row_1", label: "Row 1" }],
+              showColumnNames: true,
+              showRowNames: true,
+              type: "table",
+            },
+          ],
           references: [
             {
               id: "period",
@@ -186,107 +279,40 @@ describe("buildQuestionBlueprintDraft", () => {
             {
               id: "range",
               source: {
-                schemaVersion: 1,
-                type: "workbook_range",
                 ref: "Sheet1!A1:B2",
+                schemaVersion: 1,
+                sourceId: "source_1",
+                type: "workbook_range",
               },
             },
             {
               id: "answer",
               source: {
-                schemaVersion: 1,
-                type: "workbook_cell",
                 ref: "Sheet1!C1",
+                schemaVersion: 1,
+                sourceId: "source_1",
+                type: "workbook_cell",
               },
             },
           ],
           responseFields: [
             {
               id: "table_1_table_answer_1",
-              type: "number",
               label: "Answer",
               required: true,
+              type: "number",
             },
           ],
-          blocks: [
-            {
-              id: "rich_text_1",
-              type: "rich_text",
-              content: {
-                type: "doc",
-                content: [
-                  {
-                    type: "heading",
-                    attrs: { level: 2 },
-                    content: [
-                      { type: "text", text: "Revenue for {{ .period }}" },
-                    ],
-                  },
-                  {
-                    type: "bullet_list",
-                    content: [
-                      {
-                        type: "list_item",
-                        content: [
-                          {
-                            type: "paragraph",
-                            content: [
-                              {
-                                type: "text",
-                                text: "Amount: {{ .range }}",
-                              },
-                            ],
-                          },
-                        ],
-                      },
-                    ],
-                  },
-                ],
-              },
-            },
-            {
-              id: "table_1",
-              type: "table",
-              columns: [
-                { id: "column_1", label: "Column 1" },
-                { id: "column_2", label: "Column 2" },
-              ],
-              rows: [{ id: "row_1", label: "Row 1" }],
-              showColumnNames: true,
-              showRowNames: true,
-              cells: [
-                {
-                  id: "cell_1",
-                  rowId: "row_1",
-                  columnId: "column_1",
-                  type: "content",
-                  content: [
-                    {
-                      type: "reference",
-                      referenceId: "range",
-                      rangeCell: { rowOffset: 1, columnOffset: 0 },
-                      fallbackText: "200",
-                    },
-                  ],
-                },
-                {
-                  id: "cell_2",
-                  rowId: "row_1",
-                  columnId: "column_2",
-                  type: "response",
-                  responseFieldId: "table_1_table_answer_1",
-                  correctValueSource: {
-                    schemaVersion: 1,
-                    type: "reference",
-                    referenceId: "answer",
-                  },
-                  points: 2,
-                  grading: { mode: "exact" },
-                },
-              ],
-            },
-          ],
+          schemaVersion: 1,
         },
+        name: "Revenue blueprint",
+        sources: [
+          {
+            name: "Source 1",
+            sourceId: "source_1",
+            workbookId: "workbook_1",
+          },
+        ],
       },
     });
   });

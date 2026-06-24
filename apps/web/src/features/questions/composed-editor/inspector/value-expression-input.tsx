@@ -18,6 +18,7 @@ import {
   formatAnswerInputValue,
   isValueExpressionType,
 } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import {
   type ReferencePreviewCache,
   resolveValueExpressionPreview,
@@ -32,6 +33,8 @@ type ValueExpressionInputProps = {
   referencePreviewCache: ReferencePreviewCache;
   valueType?: "text" | "number" | "boolean";
   workbookEnabled: boolean;
+  sources?: QuestionBlueprintWorkbookSource[];
+  workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onChange(value: ValueExpression): void;
@@ -47,6 +50,8 @@ export function ValueExpressionInput({
   referencePreviewCache,
   valueType,
   workbookEnabled,
+  sources = [],
+  workbookSheetNamesBySourceId,
   disabled,
   onModelChange,
   onChange,
@@ -59,8 +64,8 @@ export function ValueExpressionInput({
         ) ?? null)
       : null;
   const preview = resolveValueExpressionPreview({
-    value,
     referencePreviewCache,
+    value,
   });
   const literalValue =
     value.type === "literal" ? formatAnswerInputValue(value.value) : "";
@@ -72,7 +77,6 @@ export function ValueExpressionInput({
     <FieldGroup>
       <InspectorField label="Value mode">
         <Select
-          value={value.type}
           disabled={disabled}
           onValueChange={(nextType) => {
             if (!isValueExpressionType(nextType)) {
@@ -91,10 +95,11 @@ export function ValueExpressionInput({
             }
 
             onChange({
-              type: "reference",
               referenceId: value.type === "reference" ? value.referenceId : "",
+              type: "reference",
             });
           }}
+          value={value.type}
         >
           <SelectTrigger aria-label="Value mode">
             <SelectValue />
@@ -109,9 +114,8 @@ export function ValueExpressionInput({
       {value.type === "literal" ? (
         <InspectorField label="Literal value">
           <Input
-            id={literalValueInputId}
-            value={literalValue}
             disabled={disabled}
+            id={literalValueInputId}
             inputMode={valueType === "number" ? "decimal" : undefined}
             onChange={(event) =>
               onChange({
@@ -122,6 +126,7 @@ export function ValueExpressionInput({
                 ),
               })
             }
+            value={literalValue}
           />
         </InspectorField>
       ) : (
@@ -143,26 +148,28 @@ export function ValueExpressionInput({
               </p>
             ) : null}
             <ReferencePickerPopover
-              model={model}
-              selectedReferenceId={value.referenceId || undefined}
-              referencePreviewCache={referencePreviewCache}
-              workbookEnabled={workbookEnabled}
               disabled={disabled}
+              model={model}
+              onCreateAndSelectReference={onCreatedReference}
               onModelChange={onModelChange}
               onSelectReference={(referenceId) =>
-                onChange({ type: "reference", referenceId })
+                onChange({ referenceId, type: "reference" })
               }
-              onCreateAndSelectReference={onCreatedReference}
+              referencePreviewCache={referencePreviewCache}
+              selectedReferenceId={value.referenceId || undefined}
+              sources={sources}
               trigger={
                 <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
                   disabled={disabled}
+                  size="sm"
+                  type="button"
+                  variant="outline"
                 >
                   Choose reference
                 </Button>
               }
+              workbookEnabled={workbookEnabled}
+              workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
             />
           </div>
         </InspectorField>

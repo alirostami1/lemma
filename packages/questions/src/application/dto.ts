@@ -2,8 +2,7 @@ import type {
   GradeResult,
   Question,
   QuestionBlueprint,
-  QuestionBlueprintVersion,
-  QuestionBlueprintVersionAsset,
+  QuestionBlueprintDraft,
   QuestionGenerationRun,
   QuestionSet,
 } from "../domain/index.js";
@@ -13,27 +12,26 @@ export type QuestionSetsResult = {
   questionSets: QuestionSet[];
   nextCursor: string | null;
 };
-export type HydratedQuestionBlueprint = QuestionBlueprint & {
-  currentVersion: HydratedQuestionBlueprintVersion;
-};
-export type HydratedQuestionBlueprintVersion = QuestionBlueprintVersion & {
-  sourceAssets: QuestionBlueprintVersionAsset[];
-};
 export type QuestionBlueprintResult = {
-  questionBlueprint: HydratedQuestionBlueprint;
+  questionBlueprint: QuestionBlueprint;
 };
 export type QuestionBlueprintAuthoringResult = {
-  questionBlueprint: HydratedQuestionBlueprint & {
-    selectedVersion: HydratedQuestionBlueprintVersion;
-    versions: HydratedQuestionBlueprintVersion[];
-  };
-};
-export type QuestionBlueprintVersionsResult = {
-  versions: HydratedQuestionBlueprintVersion[];
+  questionBlueprint: QuestionBlueprint;
 };
 export type QuestionBlueprintsResult = {
-  questionBlueprints: HydratedQuestionBlueprint[];
+  questionBlueprints: QuestionBlueprint[];
   nextCursor: string | null;
+};
+export type QuestionBlueprintDraftResult = {
+  draft: QuestionBlueprintDraft;
+};
+export type QuestionBlueprintDraftsResult = {
+  drafts: QuestionBlueprintDraft[];
+  nextCursor: string | null;
+};
+export type PublishedQuestionBlueprintDraftResult = {
+  draft: QuestionBlueprintDraft;
+  questionBlueprint: QuestionBlueprint;
 };
 export type QuestionResult = { question: Question };
 export type QuestionsResult = {

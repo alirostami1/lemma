@@ -46,34 +46,34 @@ export function HomePage() {
           controller.blueprints.isLoading ||
           controller.blueprints.errorMessage ? (
             <RecentWorkSection
-              title="Saved blueprints"
               action={{
                 label: "Create blueprint",
                 to: "/create",
                 variant: "secondary",
               }}
-              items={controller.viewModel.recentBlueprints}
-              isLoading={controller.blueprints.isLoading}
-              errorMessage={controller.blueprints.errorMessage}
               emptyMessage="No saved blueprints yet."
+              errorMessage={controller.blueprints.errorMessage}
+              isLoading={controller.blueprints.isLoading}
+              items={controller.viewModel.recentBlueprints}
               onRetry={controller.blueprints.onRetry}
+              title="Saved blueprints"
             />
           ) : null}
           {controller.viewModel.recentQuestionSets.length > 0 ||
           controller.questionSets.isLoading ||
           controller.questionSets.errorMessage ? (
             <RecentWorkSection
-              title="Recent question sets"
               action={{
                 label: "View all",
                 to: "/question-sets",
                 variant: "secondary",
               }}
-              items={controller.viewModel.recentQuestionSets}
-              isLoading={controller.questionSets.isLoading}
-              errorMessage={controller.questionSets.errorMessage}
               emptyMessage="No question sets yet."
+              errorMessage={controller.questionSets.errorMessage}
+              isLoading={controller.questionSets.isLoading}
+              items={controller.viewModel.recentQuestionSets}
               onRetry={controller.questionSets.onRetry}
+              title="Recent question sets"
             />
           ) : null}
         </div>

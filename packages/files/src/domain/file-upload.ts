@@ -61,22 +61,22 @@ export function createFileUploadSession(
   }
 
   return {
-    id: fileUploadId(input.id),
-    createdByUserId: userId(input.createdByUserId),
     bucket: fileBucket(input.bucket),
+    checksumSha256: fileChecksumSha256(input.checksumSha256),
+    completedAt: null,
+    contentType: fileContentType(input.contentType),
+    createdAt: at,
+    createdByUserId: userId(input.createdByUserId),
+    expectedByteSize: fileByteSize(input.expectedByteSize),
+    id: fileUploadId(input.id),
+    lastError: null,
+    metadata: fileMetadata(input.metadata ?? {}),
     objectKey: fileObjectKey(input.objectKey),
     originalName: originalFileName(input.originalName),
-    contentType: fileContentType(input.contentType),
-    expectedByteSize: fileByteSize(input.expectedByteSize),
-    checksumSha256: fileChecksumSha256(input.checksumSha256),
     purpose: filePurpose(input.purpose),
     status: "initiated",
-    metadata: fileMetadata(input.metadata ?? {}),
-    uploadExpiresAt: expiresAt,
-    completedAt: null,
-    lastError: null,
-    createdAt: at,
     updatedAt: at,
+    uploadExpiresAt: expiresAt,
   };
 }
 
@@ -99,22 +99,22 @@ export function reconstituteFileUpload(input: {
   updatedAt: Date;
 }): FileUpload {
   return {
-    id: fileUploadId(input.id),
-    createdByUserId: userId(input.createdByUserId),
     bucket: fileBucket(input.bucket),
+    checksumSha256: fileChecksumSha256(input.checksumSha256),
+    completedAt: input.completedAt,
+    contentType: fileContentType(input.contentType),
+    createdAt: input.createdAt,
+    createdByUserId: userId(input.createdByUserId),
+    expectedByteSize: fileByteSize(input.expectedByteSize),
+    id: fileUploadId(input.id),
+    lastError: input.lastError,
+    metadata: fileMetadata(input.metadata),
     objectKey: fileObjectKey(input.objectKey),
     originalName: originalFileName(input.originalName),
-    contentType: fileContentType(input.contentType),
-    expectedByteSize: fileByteSize(input.expectedByteSize),
-    checksumSha256: fileChecksumSha256(input.checksumSha256),
     purpose: filePurpose(input.purpose),
     status: fileUploadStatus(input.status),
-    metadata: fileMetadata(input.metadata),
-    uploadExpiresAt: input.uploadExpiresAt,
-    completedAt: input.completedAt,
-    lastError: input.lastError,
-    createdAt: input.createdAt,
     updatedAt: input.updatedAt,
+    uploadExpiresAt: input.uploadExpiresAt,
   };
 }
 
@@ -125,9 +125,9 @@ export function completeFileUploadSession(
   assertFileUploadCanBeCompleted(upload, at);
   return {
     ...touch(upload, at),
-    status: "verified",
     completedAt: at,
     lastError: null,
+    status: "verified",
   };
 }
 
@@ -142,8 +142,8 @@ export function markFileUploadExpired(
 
   return {
     ...touch(upload, at),
-    status: "expired",
     lastError: reason,
+    status: "expired",
   };
 }
 

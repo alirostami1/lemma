@@ -37,7 +37,7 @@ export function CreateQuestionSetDialog({
   onCancel,
 }: CreateQuestionSetDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       {trigger ? (
         <DialogTrigger asChild>{trigger}</DialogTrigger>
       ) : (
@@ -57,12 +57,12 @@ export function CreateQuestionSetDialog({
             </DialogDescription>
           </DialogHeader>
           <CreateQuestionSetForm
-            name={name}
             errorMessage={errorMessage}
             isSubmitting={isSubmitting}
+            name={name}
+            onCancel={onCancel}
             onNameChange={onNameChange}
             onSubmit={onSubmit}
-            onCancel={onCancel}
           />
         </div>
       </DialogContent>
@@ -91,11 +91,10 @@ export function CreateQuestionSetDialogController({
 
   return (
     <CreateQuestionSetDialog
-      open={open}
-      name={controller.name}
       errorMessage={controller.errorMessage}
       isSubmitting={controller.isSubmitting}
-      trigger={trigger}
+      name={controller.name}
+      onCancel={() => onOpenChange(false)}
       onNameChange={controller.onNameChange}
       onOpenChange={onOpenChange}
       onSubmit={() => {
@@ -107,7 +106,8 @@ export function CreateQuestionSetDialogController({
           setOpen(false);
         });
       }}
-      onCancel={() => onOpenChange(false)}
+      open={open}
+      trigger={trigger}
     />
   );
 }

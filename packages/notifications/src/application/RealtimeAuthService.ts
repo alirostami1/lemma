@@ -38,14 +38,14 @@ export class RealtimeAuthService {
     const issuedAt = this.deps.clock.now();
     const expiresAt = this.expiresAt(issuedAt);
     return {
+      expiresAt,
       token: this.deps.tokenSigner.sign({
         claims: {
-          sub: input.currentUser.user.id,
-          iat: unixSeconds(issuedAt),
           exp: unixSeconds(expiresAt),
+          iat: unixSeconds(issuedAt),
+          sub: input.currentUser.user.id,
         },
       }),
-      expiresAt,
     };
   }
 
@@ -62,9 +62,9 @@ export class RealtimeAuthService {
         getNotificationChannelAccessRequirement(channel);
       if (
         !(await this.deps.channelAccessPort.canSubscribe({
-          currentUser: input.currentUser,
-          channel,
           accessRequirement,
+          channel,
+          currentUser: input.currentUser,
         }))
       ) {
         throw new ForbiddenNotificationChannelError();
@@ -74,15 +74,15 @@ export class RealtimeAuthService {
       const expiresAt = this.expiresAt(issuedAt);
       const canonicalChannel = buildNotificationChannel(channel);
       return {
+        expiresAt,
         token: this.deps.tokenSigner.sign({
           claims: {
-            sub: input.currentUser.user.id,
             channel: canonicalChannel,
-            iat: unixSeconds(issuedAt),
             exp: unixSeconds(expiresAt),
+            iat: unixSeconds(issuedAt),
+            sub: input.currentUser.user.id,
           },
         }),
-        expiresAt,
       };
     });
   }

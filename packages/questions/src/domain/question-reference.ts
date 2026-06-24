@@ -14,6 +14,8 @@ const sheetQualifiedWorkbookRefPattern = new RegExp(
   `^('([^']|'')+'|[A-Za-z_][A-Za-z0-9_ ]*)!${cellRefPattern}(?::${cellRefPattern})?$`,
 );
 const referenceIdPattern = /^[A-Za-z][A-Za-z0-9_-]*$/u;
+const workbookReferenceIdPattern =
+  /^workbook:[^:]+:(?:cell|range):[^:]+:[^:]+(?::[^:]+)?$/u;
 
 export type QuestionReference = {
   id: string;
@@ -23,8 +25,8 @@ export type QuestionReference = {
 
 export type QuestionReferenceSource =
   | { schemaVersion: 1; type: "literal"; value: JsonValue }
-  | { schemaVersion: 1; type: "workbook_cell"; ref: string }
-  | { schemaVersion: 1; type: "workbook_range"; ref: string };
+  | { schemaVersion: 1; type: "workbook_cell"; sourceId: string; ref: string }
+  | { schemaVersion: 1; type: "workbook_range"; sourceId: string; ref: string };
 
 export function assertQuestionReferenceId(
   value: unknown,
@@ -32,6 +34,20 @@ export function assertQuestionReferenceId(
   fail: (message: string) => never,
 ): asserts value is string {
   assertNonEmptyString(value, field, fail);
+  if (workbookReferenceIdPattern.test(value)) {
+    const parts = value.split(":");
+    if (parts.length === 5) {
+      assertQuestionReferenceSourceId(parts[1], "reference sourceId", fail);
+      return;
+    }
+    if (parts.length === 6) {
+      assertQuestionReferenceSourceId(parts[1], "reference sourceId", fail);
+      return;
+    }
+    fail(
+      `${field} must start with a letter and contain only letters, numbers, underscores, or hyphens`,
+    );
+  }
   if (!referenceIdPattern.test(value)) {
     fail(
       `${field} must start with a letter and contain only letters, numbers, underscores, or hyphens`,
@@ -42,6 +58,23 @@ export function assertQuestionReferenceId(
 export function questionReferenceSource(
   input: unknown,
   failWith: (message: string) => never,
+  workbookSourceIds?: ReadonlySet<string>,
+): QuestionReferenceSource {
+  return questionReferenceSourceStrict(input, failWith, workbookSourceIds);
+}
+
+export function questionReferenceSourceFromStore(
+  input: unknown,
+  failWith: (message: string) => never,
+  workbookSourceIds?: ReadonlySet<string>,
+): QuestionReferenceSource {
+  return questionReferenceSourceLegacy(input, failWith, workbookSourceIds);
+}
+
+function questionReferenceSourceStrict(
+  input: unknown,
+  failWith: (message: string) => never,
+  workbookSourceIds?: ReadonlySet<string>,
 ): QuestionReferenceSource {
   assertPlainRecord(
     input,
@@ -54,6 +87,10 @@ export function questionReferenceSource(
     return { schemaVersion: 1, type: "literal", value: input.value };
   }
   if (input.type === "workbook_cell" || input.type === "workbook_range") {
+    assertQuestionReferenceSourceId(input.sourceId, "sourceId", failWith);
+    if (workbookSourceIds && !workbookSourceIds.has(input.sourceId)) {
+      failWith("workbook reference sourceId must reference a workbook source");
+    }
     assertNonEmptyString(input.ref, "ref", failWith);
     if (
       !rawWorkbookRefPattern.test(input.ref) &&
@@ -69,7 +106,76 @@ export function questionReferenceSource(
     if (input.type === "workbook_range" && !input.ref.includes(":")) {
       failWith("workbook_range ref must be a range");
     }
-    return { schemaVersion: 1, type: input.type, ref: input.ref };
+    return {
+      ref: input.ref,
+      schemaVersion: 1,
+      sourceId: input.sourceId,
+      type: input.type,
+    };
   }
   failWith("question reference source type is invalid");
+}
+
+function questionReferenceSourceLegacy(
+  input: unknown,
+  failWith: (message: string) => never,
+  workbookSourceIds?: ReadonlySet<string>,
+): QuestionReferenceSource {
+  assertPlainRecord(
+    input,
+    "question reference source must be an object",
+    failWith,
+  );
+  assertSchemaVersion(input, failWith);
+  if (input.type === "literal") {
+    assertJsonValue(input.value, "value", failWith);
+    return { schemaVersion: 1, type: "literal", value: input.value };
+  }
+  if (input.type === "workbook_cell" || input.type === "workbook_range") {
+    // Legacy stored rows may carry an empty workbook source id.
+    const sourceId = typeof input.sourceId === "string" ? input.sourceId : "";
+    if (sourceId.length > 0) {
+      assertQuestionReferenceSourceId(sourceId, "sourceId", failWith);
+      if (workbookSourceIds && !workbookSourceIds.has(sourceId)) {
+        failWith(
+          "workbook reference sourceId must reference a workbook source",
+        );
+      }
+    }
+    assertNonEmptyString(input.ref, "ref", failWith);
+    if (
+      !rawWorkbookRefPattern.test(input.ref) &&
+      !sheetQualifiedWorkbookRefPattern.test(input.ref)
+    ) {
+      failWith(
+        "workbook reference ref must be a raw or sheet-qualified cell or range reference",
+      );
+    }
+    if (input.type === "workbook_cell" && input.ref.includes(":")) {
+      failWith("workbook_cell ref must not be a range");
+    }
+    if (input.type === "workbook_range" && !input.ref.includes(":")) {
+      failWith("workbook_range ref must be a range");
+    }
+    return {
+      ref: input.ref,
+      schemaVersion: 1,
+      sourceId,
+      type: input.type,
+    };
+  }
+  failWith("question reference source type is invalid");
+}
+
+export function assertQuestionReferenceSourceId(
+  value: unknown,
+  field: string,
+  fail: (message: string) => never,
+): asserts value is string {
+  assertNonEmptyString(value, field, fail);
+  if (!referenceIdPattern.test(value)) {
+    fail(
+      `${field} must start with a letter and contain only letters, numbers, underscores, or hyphens`,
+    );
+  }
 }

@@ -1,12 +1,12 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.5/schema.json",
-  "extends": "//",
-  "files": {
-    "includes": ["src/**/*", "*.ts", "*.tsx", "**/vite.config.ts"]
-  },
+  "$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
   "css": {
     "parser": {
       "tailwindDirectives": true
     }
+  },
+  "extends": "//",
+  "files": {
+    "includes": ["src/**/*", "*.ts", "*.tsx", "**/vite.config.ts"]
   }
 }

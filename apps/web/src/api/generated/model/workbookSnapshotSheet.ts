@@ -7,13 +7,13 @@
 
 export interface WorkbookSnapshotSheet {
   /** @minimum 0 */
-  sheetIndex: number;
+  columnCount: number;
   /** @minLength 1 */
   name: string;
   /** @minimum 0 */
+  nonEmptyCellCount: number;
+  /** @minimum 0 */
   rowCount: number;
   /** @minimum 0 */
-  columnCount: number;
-  /** @minimum 0 */
-  nonEmptyCellCount: number;
+  sheetIndex: number;
 }

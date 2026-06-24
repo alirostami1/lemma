@@ -54,11 +54,11 @@ const applicationErrorMapper = {
     status: 404,
   },
   WORKBOOK_ENGINE_FAILURE: { code: "WORKBOOK_ENGINE_FAILURE", status: 502 },
+  WORKBOOK_FILE_NOT_FOUND: { code: "WORKBOOK_FILE_NOT_FOUND", status: 404 },
   WORKBOOK_FILE_PROVIDER_FAILURE: {
     code: "WORKBOOK_FILE_PROVIDER_FAILURE",
     status: 502,
   },
-  WORKBOOK_FILE_NOT_FOUND: { code: "WORKBOOK_FILE_NOT_FOUND", status: 404 },
   WORKBOOK_FILE_UNAVAILABLE: { code: "WORKBOOK_FILE_UNAVAILABLE", status: 502 },
   WORKBOOK_NOT_FOUND: { code: "WORKBOOK_NOT_FOUND", status: 404 },
   WORKBOOK_REPOSITORY_FAILURE: {
@@ -100,9 +100,9 @@ export function handleWorkbookError(
       c,
       {
         code: mapped.code,
+        details: error.details,
         message: error.message,
         requestId: c.get("requestId"),
-        details: error.details,
       },
       mapped.status,
     );
@@ -112,9 +112,9 @@ export function handleWorkbookError(
       c,
       {
         code: "BAD_REQUEST",
+        details: error.details,
         message: error.message,
         requestId: c.get("requestId"),
-        details: error.details,
       },
       400,
     );

@@ -80,10 +80,10 @@ export function NotificationsPanel({
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Select
-              value={status}
               onValueChange={(value) =>
                 onStatusChange(value as OpsOutboxStatusFilter)
               }
+              value={status}
             >
               <SelectTrigger className="w-full sm:w-40">
                 <SelectValue />
@@ -97,10 +97,10 @@ export function NotificationsPanel({
               </SelectContent>
             </Select>
             <Select
-              value={reviewState}
               onValueChange={(value) =>
                 onReviewStateChange(value as OpsReviewState)
               }
+              value={reviewState}
             >
               <SelectTrigger className="w-full sm:w-40">
                 <SelectValue />
@@ -132,9 +132,9 @@ export function NotificationsPanel({
           <OutboxTable
             events={events}
             isMutating={isMutating}
+            onIgnore={onIgnore}
             onReplay={onReplay}
             onReview={onReview}
-            onIgnore={onIgnore}
           />
         ) : null}
       </CardContent>
@@ -201,32 +201,32 @@ function OutboxTable({
             <TableCell>
               <div className="flex justify-end gap-1">
                 <Button
-                  type="button"
-                  size="icon-sm"
-                  variant="outline"
                   aria-label="Replay event"
                   disabled={isMutating || event.status !== "failed"}
                   onClick={() => onReplay(event.id)}
+                  size="icon-sm"
+                  type="button"
+                  variant="outline"
                 >
                   <RotateCcw />
                 </Button>
                 <Button
-                  type="button"
-                  size="icon-sm"
-                  variant="outline"
                   aria-label="Review event"
                   disabled={isMutating || event.status !== "failed"}
                   onClick={() => onReview(event.id)}
+                  size="icon-sm"
+                  type="button"
+                  variant="outline"
                 >
                   <CheckCircle2 />
                 </Button>
                 <Button
-                  type="button"
-                  size="icon-sm"
-                  variant="outline"
                   aria-label="Ignore event"
                   disabled={isMutating || event.status !== "failed"}
                   onClick={() => onIgnore(event.id)}
+                  size="icon-sm"
+                  type="button"
+                  variant="outline"
                 >
                   <EyeOff />
                 </Button>

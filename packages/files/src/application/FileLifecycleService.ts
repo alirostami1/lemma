@@ -49,7 +49,7 @@ export class FileLifecycleService {
       const upload = await this.deps.filesRepository.findFileUploadById(
         toFileUploadId(command.uploadId),
       );
-      if (!upload || upload.status !== "initiated") {
+      if (upload?.status !== "initiated") {
         return;
       }
 

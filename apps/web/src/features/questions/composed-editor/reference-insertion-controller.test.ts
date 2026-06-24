@@ -5,22 +5,22 @@ describe("reference insertion controller", () => {
   it("inserts a reference at the caret with surrounding spaces", () => {
     expect(
       insertReferenceSyntaxAtSelection({
-        text: "Revenue:",
-        selection: { start: 8, end: 8 },
         referenceId: "revenue",
+        selection: { end: 8, start: 8 },
+        text: "Revenue:",
       }),
     ).toEqual({
+      selection: { end: 23, start: 23 },
       text: "Revenue: {{ .revenue }}",
-      selection: { start: 23, end: 23 },
     });
   });
 
   it("replaces selected text", () => {
     expect(
       insertReferenceSyntaxAtSelection({
-        text: "Revenue amount today",
-        selection: { start: 8, end: 14 },
         referenceId: "revenue",
+        selection: { end: 14, start: 8 },
+        text: "Revenue amount today",
       }).text,
     ).toBe("Revenue {{ .revenue }} today");
   });

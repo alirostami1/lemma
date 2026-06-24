@@ -2,28 +2,32 @@
   "name": "@lemma/domain",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
   "sideEffects": false,
+  "type": "module",
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "development": "./src/index.ts",
+      "source": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     }
   },
   "scripts": {
-    "check-types": "tsc --noEmit",
     "build": "tsc",
-    "test": "pnpm build && node --test dist/**/*.test.js",
     "check": "biome check",
+    "check:types": "tsc --noEmit",
+    "check:write": "biome check --write",
     "format": "biome format",
-    "lint": "biome lint"
+    "format:write": "biome format --write",
+    "lint": "biome lint",
+    "lint:write": "biome lint --write",
+    "test": "node --conditions=source --import tsx --test src/**/*.test.ts"
   },
   "devDependencies": {
+    "@biomejs/biome": "catalog:",
     "@lemma/typescript-config": "workspace:*",
     "@types/node": "catalog:",
-    "typescript": "catalog:",
-    "@biomejs/biome": "catalog:"
+    "tsx": "catalog:",
+    "typescript": "catalog:"
   }
 }

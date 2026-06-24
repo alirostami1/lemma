@@ -1,27 +1,35 @@
 {
-  "openapi": "3.1.0",
+  "components": {
+    "schemas": {
+      "CreateFileRequest": {
+        "properties": { "name": { "type": "string" } },
+        "required": ["name"],
+        "type": "object"
+      },
+      "FileResponse": {
+        "properties": { "file": { "type": "object" } },
+        "required": ["file"],
+        "type": "object"
+      },
+      "HealthResponse": {
+        "properties": { "status": { "type": "string" } },
+        "required": ["status"],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "keycloakAccessToken": {
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
   "info": {
     "title": "Fixture",
     "version": "1.0.0"
   },
-  "security": [{ "keycloakAccessToken": [] }],
+  "openapi": "3.1.0",
   "paths": {
-    "/health": {
-      "get": {
-        "operationId": "health",
-        "security": [],
-        "responses": {
-          "200": {
-            "description": "Healthy.",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/HealthResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
     "/files": {
       "post": {
         "operationId": "createFile",
@@ -34,77 +42,69 @@
         },
         "responses": {
           "202": {
-            "description": "Created.",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/FileResponse" }
               }
-            }
+            },
+            "description": "Created."
           }
         }
       }
     },
     "/files/{fileId}": {
-      "security": [{ "keycloakAccessToken": [] }],
-      "parameters": [
-        {
-          "name": "fileId",
-          "in": "path",
-          "required": true,
-          "schema": { "type": "string" }
-        }
-      ],
-      "get": {
-        "operationId": "getFile",
-        "parameters": [
-          {
-            "name": "cursor",
-            "in": "query",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "File.",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/FileResponse" }
-              }
-            }
-          }
-        }
-      },
       "delete": {
         "operationId": "deleteFile",
         "responses": {
           "204": { "description": "Deleted." }
         }
+      },
+      "get": {
+        "operationId": "getFile",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FileResponse" }
+              }
+            },
+            "description": "File."
+          }
+        }
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "fileId",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "security": [{ "keycloakAccessToken": [] }]
+    },
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HealthResponse" }
+              }
+            },
+            "description": "Healthy."
+          }
+        },
+        "security": []
       }
     }
   },
-  "components": {
-    "securitySchemes": {
-      "keycloakAccessToken": {
-        "type": "http",
-        "scheme": "bearer"
-      }
-    },
-    "schemas": {
-      "CreateFileRequest": {
-        "type": "object",
-        "properties": { "name": { "type": "string" } },
-        "required": ["name"]
-      },
-      "FileResponse": {
-        "type": "object",
-        "properties": { "file": { "type": "object" } },
-        "required": ["file"]
-      },
-      "HealthResponse": {
-        "type": "object",
-        "properties": { "status": { "type": "string" } },
-        "required": ["status"]
-      }
-    }
-  }
+  "security": [{ "keycloakAccessToken": [] }]
 }

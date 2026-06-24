@@ -7,8 +7,8 @@
 import type { FileDownloadUrlMethod } from "./fileDownloadUrlMethod.ts";
 
 export interface FileDownloadUrl {
-  url: string;
-  method: FileDownloadUrlMethod;
   /** @exclusiveMinimum 0 */
   expiresInSeconds: number;
+  method: FileDownloadUrlMethod;
+  url: string;
 }

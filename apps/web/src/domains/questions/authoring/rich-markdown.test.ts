@@ -9,16 +9,16 @@ import {
 describe("rich text markdown conversion", () => {
   it("round-trips paragraphs and inline references", () => {
     const content: ComposedRichContent = {
-      type: "doc",
       content: [
         {
-          type: "paragraph",
           content: [
-            { type: "text", text: "Revenue: " },
-            { type: "reference", referenceId: "revenue" },
+            { text: "Revenue: ", type: "text" },
+            { referenceId: "revenue", type: "reference" },
           ],
+          type: "paragraph",
         },
       ],
+      type: "doc",
     };
 
     expect(markdownToRichContent(richContentToMarkdown(content))).toEqual(
@@ -28,67 +28,67 @@ describe("rich text markdown conversion", () => {
 
   it("parses headings", () => {
     expect(markdownToRichContent("## Heading")).toEqual({
-      type: "doc",
       content: [
         {
-          type: "heading",
+          content: [{ text: "Heading", type: "text" }],
           level: 2,
-          content: [{ type: "text", text: "Heading" }],
+          type: "heading",
         },
       ],
+      type: "doc",
     });
   });
 
   it("normalizes unsupported heading levels to paragraphs", () => {
     expect(markdownToRichContent("#### Title")).toEqual({
-      type: "doc",
       content: [
         {
+          content: [{ text: "#### Title", type: "text" }],
           type: "paragraph",
-          content: [{ type: "text", text: "#### Title" }],
         },
       ],
+      type: "doc",
     });
   });
 
   it("round-trips bullet and ordered nested lists", () => {
     const content: ComposedRichContent = {
-      type: "doc",
       content: [
         {
-          type: "bullet_list",
           items: [
             {
-              type: "list_item",
               content: [
                 {
+                  content: [{ text: "One", type: "text" }],
                   type: "paragraph",
-                  content: [{ type: "text", text: "One" }],
                 },
                 {
-                  type: "ordered_list",
                   items: [
                     {
-                      type: "list_item",
                       content: [
                         {
-                          type: "paragraph",
                           content: [
                             {
-                              type: "reference",
                               referenceId: "nested",
+                              type: "reference",
                             },
                           ],
+                          type: "paragraph",
                         },
                       ],
+                      type: "list_item",
                     },
                   ],
+                  type: "ordered_list",
                 },
               ],
+              type: "list_item",
             },
           ],
+          type: "bullet_list",
         },
       ],
+      type: "doc",
     };
 
     expect(richContentToMarkdown(content)).toBe("- One\n  1. {{ .nested }}");
@@ -102,18 +102,18 @@ describe("rich text markdown toolbar", () => {
   it("toggles heading syntax on selected lines", () => {
     expect(
       toggleMarkdownFormat({
-        markdown: "Title",
-        selectionStart: 0,
-        selectionEnd: 5,
         format: "heading2",
+        markdown: "Title",
+        selectionEnd: 5,
+        selectionStart: 0,
       }).markdown,
     ).toBe("## Title");
     expect(
       toggleMarkdownFormat({
-        markdown: "## Title",
-        selectionStart: 0,
-        selectionEnd: 8,
         format: "heading2",
+        markdown: "## Title",
+        selectionEnd: 8,
+        selectionStart: 0,
       }).markdown,
     ).toBe("Title");
   });
@@ -121,18 +121,18 @@ describe("rich text markdown toolbar", () => {
   it("toggles ordered and bullet list syntax", () => {
     expect(
       toggleMarkdownFormat({
-        markdown: "One\nTwo",
-        selectionStart: 0,
-        selectionEnd: 7,
         format: "orderedList",
+        markdown: "One\nTwo",
+        selectionEnd: 7,
+        selectionStart: 0,
       }).markdown,
     ).toBe("1. One\n2. Two");
     expect(
       toggleMarkdownFormat({
-        markdown: "1. One\n2. Two",
-        selectionStart: 0,
-        selectionEnd: 14,
         format: "bulletList",
+        markdown: "1. One\n2. Two",
+        selectionEnd: 14,
+        selectionStart: 0,
       }).markdown,
     ).toBe("- One\n- Two");
   });

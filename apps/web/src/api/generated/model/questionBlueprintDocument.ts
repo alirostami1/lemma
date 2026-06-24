@@ -10,8 +10,8 @@ import type { QuestionReference } from "./questionReference.ts";
 import type { QuestionResponseField } from "./questionResponseField.ts";
 
 export interface QuestionBlueprintDocument {
-  schemaVersion: QuestionBlueprintDocumentSchemaVersion;
   blocks: QuestionBlueprintBlock[];
-  responseFields: QuestionResponseField[];
   references: QuestionReference[];
+  responseFields: QuestionResponseField[];
+  schemaVersion: QuestionBlueprintDocumentSchemaVersion;
 }

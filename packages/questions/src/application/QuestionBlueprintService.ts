@@ -1,35 +1,27 @@
-import type {
-  QuestionBlueprint,
-  QuestionBlueprintVersion,
-} from "../domain/index.js";
 import {
   createQuestionBlueprint,
-  createQuestionBlueprintVersion,
-  createQuestionBlueprintVersionAssets,
   deleteQuestionBlueprint,
+  InvalidQuestionFieldError,
   questionBlueprintDescription,
   questionBlueprintName,
   questionBlueprintVisibility,
   questionBlueprintId as toQuestionBlueprintId,
   questionBlueprintStatus as toQuestionBlueprintStatus,
-  questionBlueprintVersionId as toQuestionBlueprintVersionId,
   userId as toUserId,
+  updateQuestionBlueprintDefinition,
   updateQuestionBlueprintMetadata,
 } from "../domain/index.js";
 import type {
   CreateQuestionBlueprintCommand,
   ListCommand,
   QuestionBlueprintByIdCommand,
-  QuestionBlueprintVersionByIdCommand,
   UpdateQuestionBlueprintCommand,
 } from "./commands.js";
 import type {
   QuestionBlueprintAuthoringResult,
   QuestionBlueprintResult,
   QuestionBlueprintsResult,
-  QuestionBlueprintVersionsResult,
 } from "./dto.js";
-import { QuestionBlueprintNotFoundError } from "./errors.js";
 import {
   decodeListCursor,
   encodeListCursor,
@@ -46,8 +38,6 @@ import {
   assertQuestionAuthorized,
   findQuestionBlueprintByIdOrThrow,
   hydrateQuestionBlueprint,
-  hydrateQuestionBlueprintVersion,
-  hydrateQuestionBlueprintVersions,
   normalizeCanonicalBlueprintInput,
   persistQuestionBlueprint,
 } from "./question-application-helpers.js";
@@ -67,26 +57,25 @@ export class QuestionBlueprintService {
     const limit = normalizeListLimit(command.limit);
     const blueprints =
       await this.deps.questionsRepository.listQuestionBlueprintsByOwnerUserId({
+        cursor: decodeListCursor(command.cursor),
+        includeSystem: true,
+        limit: limit + 1,
         ownerUserId: toUserId(command.currentUser.user.id),
         statuses: command.status
           ? [toQuestionBlueprintStatus(command.status)]
           : ["active", "archived"],
-        limit: limit + 1,
-        cursor: decodeListCursor(command.cursor),
-        includeSystem: true,
       });
+
     return {
-      questionBlueprints: await Promise.all(
-        blueprints
-          .slice(0, limit)
-          .map((blueprint) =>
-            hydrateQuestionBlueprint(this.deps.questionsRepository, blueprint),
-          ),
-      ),
       nextCursor:
         blueprints.length > limit
           ? encodeListCursor(blueprints[limit - 1]?.createdAt)
           : null,
+      questionBlueprints: await Promise.all(
+        blueprints
+          .slice(0, limit)
+          .map((blueprint) => hydrateQuestionBlueprint(blueprint)),
+      ),
     };
   }
 
@@ -100,55 +89,36 @@ export class QuestionBlueprintService {
       ),
       "You cannot create this question blueprint.",
     );
+    if (command.sources === undefined) {
+      throw new InvalidQuestionFieldError(
+        "sources must be provided when creating question blueprint",
+      );
+    }
+
     const compiled = normalizeCanonicalBlueprintInput({
       document: command.document,
-      workbookId: command.workbookId ?? null,
+      sources: command.sources,
     });
     const at = this.deps.clock.now();
     const blueprint = createQuestionBlueprint(
       {
-        id: toQuestionBlueprintId(this.deps.idGenerator.questionBlueprintId()),
-        ownerUserId: toUserId(command.currentUser.user.id),
         createdByUserId: toUserId(command.currentUser.user.id),
-        name: questionBlueprintName(command.name),
         description: questionBlueprintDescription(command.description ?? null),
-        workbookId: compiled.workbookId,
+        document: compiled.document,
+        id: toQuestionBlueprintId(this.deps.idGenerator.questionBlueprintId()),
+        name: questionBlueprintName(command.name),
+        ownerUserId: toUserId(command.currentUser.user.id),
+        sources: compiled.sources,
         visibility: questionBlueprintVisibility(
           command.visibility ?? "private",
         ),
       },
       at,
     );
-    const version = createQuestionBlueprintVersion(
-      {
-        id: toQuestionBlueprintVersionId(
-          this.deps.idGenerator.questionBlueprintVersionId(),
-        ),
-        questionBlueprintId: blueprint.id,
-        versionNumber: 1,
-        document: compiled.document,
-        workbookId: compiled.workbookId,
-        createdByUserId: blueprint.createdByUserId,
-      },
-      at,
-    );
-    const assets = createQuestionBlueprintVersionAssets(
-      {
-        questionBlueprintVersionId: version.id,
-        workbookIds: compiled.workbookId === null ? [] : [compiled.workbookId],
-      },
-      at,
-    );
-    const saved =
-      await this.deps.questionsRepository.createQuestionBlueprintWithVersion({
-        blueprint,
-        version,
-        assets,
-      });
+
     return {
       questionBlueprint: await hydrateQuestionBlueprint(
-        this.deps.questionsRepository,
-        saved,
+        await this.deps.questionsRepository.createQuestionBlueprint(blueprint),
       ),
     };
   }
@@ -164,10 +134,7 @@ export class QuestionBlueprintService {
       "You cannot view this question blueprint.",
     );
     return {
-      questionBlueprint: await hydrateQuestionBlueprint(
-        this.deps.questionsRepository,
-        questionBlueprint,
-      ),
+      questionBlueprint: await hydrateQuestionBlueprint(questionBlueprint),
     };
   }
 
@@ -181,57 +148,7 @@ export class QuestionBlueprintService {
       canViewQuestionBlueprintAuthoring(command.currentUser, questionBlueprint),
       "You cannot view this question blueprint authoring data.",
     );
-    return {
-      questionBlueprint: await this.hydrateQuestionBlueprintAuthoring(
-        questionBlueprint,
-        null,
-      ),
-    };
-  }
-
-  async getQuestionBlueprintVersionAuthoring(
-    command: QuestionBlueprintVersionByIdCommand,
-  ): Promise<QuestionBlueprintAuthoringResult> {
-    const questionBlueprint = await this.findQuestionBlueprintById(
-      command.questionBlueprintId,
-    );
-    assertQuestionAuthorized(
-      canViewQuestionBlueprintAuthoring(command.currentUser, questionBlueprint),
-      "You cannot view this question blueprint authoring data.",
-    );
-    const version =
-      await this.deps.questionsRepository.findQuestionBlueprintVersionById(
-        toQuestionBlueprintVersionId(command.questionBlueprintVersionId),
-      );
-    if (!version || version.questionBlueprintId !== questionBlueprint.id) {
-      throw new QuestionBlueprintNotFoundError();
-    }
-    return {
-      questionBlueprint: await this.hydrateQuestionBlueprintAuthoring(
-        questionBlueprint,
-        version,
-      ),
-    };
-  }
-
-  async listQuestionBlueprintVersions(
-    command: QuestionBlueprintByIdCommand,
-  ): Promise<QuestionBlueprintVersionsResult> {
-    const questionBlueprint = await this.findQuestionBlueprintById(
-      command.questionBlueprintId,
-    );
-    assertQuestionAuthorized(
-      canViewQuestionBlueprintAuthoring(command.currentUser, questionBlueprint),
-      "You cannot view this question blueprint authoring data.",
-    );
-    return {
-      versions: await hydrateQuestionBlueprintVersions(
-        this.deps.questionsRepository,
-        await this.deps.questionsRepository.listQuestionBlueprintVersions({
-          blueprintId: questionBlueprint.id,
-        }),
-      ),
-    };
+    return { questionBlueprint };
   }
 
   async updateQuestionBlueprint(
@@ -244,29 +161,30 @@ export class QuestionBlueprintService {
       canManageQuestionBlueprint(command.currentUser, blueprint),
       "You cannot update this question blueprint.",
     );
-    const documentChanged = command.patch.document !== undefined;
-    const workbookChanged = command.patch.workbookId !== undefined;
+
     const at = this.deps.clock.now();
     const updatedMetadata = updateQuestionBlueprintMetadata(
       blueprint,
       {
-        name: command.patch.name,
         description: command.patch.description,
-        visibility:
-          command.patch.visibility === undefined
-            ? undefined
-            : questionBlueprintVisibility(command.patch.visibility),
+        name: command.patch.name,
         status:
           command.patch.status === undefined
             ? undefined
             : toQuestionBlueprintStatus(command.patch.status),
+        visibility:
+          command.patch.visibility === undefined
+            ? undefined
+            : questionBlueprintVisibility(command.patch.visibility),
       },
       at,
     );
-    if (!documentChanged && !workbookChanged) {
+
+    const documentChanged = command.patch.document !== undefined;
+    const sourcesChanged = command.patch.sources !== undefined;
+    if (!documentChanged && !sourcesChanged) {
       return {
         questionBlueprint: await hydrateQuestionBlueprint(
-          this.deps.questionsRepository,
           await persistQuestionBlueprint(
             this.deps.questionsRepository,
             updatedMetadata,
@@ -274,68 +192,25 @@ export class QuestionBlueprintService {
         ),
       };
     }
-    const currentVersion =
-      await this.deps.questionsRepository.findCurrentQuestionBlueprintVersion(
-        blueprint.id,
-      );
-    if (!currentVersion) {
-      throw new QuestionBlueprintNotFoundError();
-    }
+
     const compiled = normalizeCanonicalBlueprintInput({
-      document: command.patch.document ?? currentVersion.document,
-      workbookId:
-        command.patch.workbookId !== undefined
-          ? command.patch.workbookId
-          : currentVersion.workbookId,
+      document: command.patch.document ?? blueprint.document,
+      sources: command.patch.sources ?? blueprint.sources,
     });
-    const versions =
-      await this.deps.questionsRepository.listQuestionBlueprintVersions({
-        blueprintId: blueprint.id,
-      });
-    const nextVersionNumber =
-      versions.reduce(
-        (max, version) => Math.max(max, version.versionNumber),
-        0,
-      ) + 1;
-    const version = createQuestionBlueprintVersion(
-      {
-        id: toQuestionBlueprintVersionId(
-          this.deps.idGenerator.questionBlueprintVersionId(),
-        ),
-        questionBlueprintId: blueprint.id,
-        versionNumber: nextVersionNumber,
-        document: compiled.document,
-        workbookId: compiled.workbookId,
-        createdByUserId: toUserId(command.currentUser.user.id),
-      },
-      at,
-    );
-    const assets = createQuestionBlueprintVersionAssets(
-      {
-        questionBlueprintVersionId: version.id,
-        workbookIds: compiled.workbookId === null ? [] : [compiled.workbookId],
-      },
-      at,
-    );
-    const saved =
-      await this.deps.questionsRepository.updateQuestionBlueprintWithNewVersion(
-        {
-          blueprint: {
-            ...updatedMetadata,
-            workbookId: compiled.workbookId,
-            currentVersionId: version.id,
-          },
-          version,
-          assets,
-        },
-      );
-    if (!saved) {
-      throw new QuestionBlueprintNotFoundError();
-    }
+
     return {
       questionBlueprint: await hydrateQuestionBlueprint(
-        this.deps.questionsRepository,
-        saved,
+        await persistQuestionBlueprint(
+          this.deps.questionsRepository,
+          updateQuestionBlueprintDefinition(
+            updatedMetadata,
+            {
+              document: compiled.document,
+              sources: compiled.sources,
+            },
+            at,
+          ),
+        ),
       ),
     };
   }
@@ -358,33 +233,5 @@ export class QuestionBlueprintService {
 
   private findQuestionBlueprintById(id: string) {
     return findQuestionBlueprintByIdOrThrow(this.deps.questionsRepository, id);
-  }
-
-  private async hydrateQuestionBlueprintAuthoring(
-    questionBlueprint: QuestionBlueprint,
-    selectedVersion: QuestionBlueprintVersion | null,
-  ): Promise<QuestionBlueprintAuthoringResult["questionBlueprint"]> {
-    const currentBlueprint = await hydrateQuestionBlueprint(
-      this.deps.questionsRepository,
-      questionBlueprint,
-    );
-    const selected =
-      selectedVersion === null
-        ? currentBlueprint.currentVersion
-        : await hydrateQuestionBlueprintVersion(
-            this.deps.questionsRepository,
-            selectedVersion,
-          );
-    const versions = await hydrateQuestionBlueprintVersions(
-      this.deps.questionsRepository,
-      await this.deps.questionsRepository.listQuestionBlueprintVersions({
-        blueprintId: questionBlueprint.id,
-      }),
-    );
-    return {
-      ...currentBlueprint,
-      selectedVersion: selected,
-      versions,
-    };
   }
 }

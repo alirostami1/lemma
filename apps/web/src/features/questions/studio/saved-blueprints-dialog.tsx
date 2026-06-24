@@ -14,21 +14,31 @@ import {
   ResourceList,
   ResourceListItem,
 } from "@lemma/ui/components/resource-list";
-import { Link } from "@tanstack/react-router";
 import { FolderOpen, Sparkles } from "lucide-react";
-import type { SavedBlueprintListItem } from "./saved-blueprints-view-model";
+import type {
+  SavedBlueprintListItem,
+  SavedDraftListItem,
+} from "./saved-blueprints-view-model";
 
 export type SavedBlueprintsDialogProps = {
   open: boolean;
   onOpenChange(open: boolean): void;
-  items: SavedBlueprintListItem[];
+  drafts: SavedDraftListItem[];
+  blueprints: SavedBlueprintListItem[];
+  isDraftsInitialLoading: boolean;
+  draftsErrorMessage: string | null;
   isInitialLoading: boolean;
   errorMessage: string | null;
   loadMoreErrorMessage: string | null;
-  hasMore: boolean;
-  isLoadingMore: boolean;
+  draftLoadMoreErrorMessage: string | null;
+  hasMoreBlueprints: boolean;
+  hasMoreDrafts: boolean;
+  isLoadingBlueprintsMore: boolean;
+  isLoadingDraftsMore: boolean;
   onRetry(): void;
-  onLoadMore(): void;
+  onLoadMoreDrafts(): void;
+  onLoadMoreBlueprints(): void;
+  onOpenDraft(id: string): void;
   onOpenBlueprint(id: string): void;
   onGenerate(id: string): void;
 };
@@ -36,78 +46,134 @@ export type SavedBlueprintsDialogProps = {
 export function SavedBlueprintsDialog({
   open,
   onOpenChange,
-  items,
+  drafts,
+  blueprints,
+  isDraftsInitialLoading,
+  draftsErrorMessage,
   isInitialLoading,
   errorMessage,
   loadMoreErrorMessage,
-  hasMore,
-  isLoadingMore,
+  draftLoadMoreErrorMessage,
+  hasMoreBlueprints,
+  hasMoreDrafts,
+  isLoadingBlueprintsMore,
+  isLoadingDraftsMore,
   onRetry,
-  onLoadMore,
+  onLoadMoreDrafts,
+  onLoadMoreBlueprints,
+  onOpenDraft,
   onOpenBlueprint,
   onGenerate,
 }: SavedBlueprintsDialogProps) {
-  const description =
-    items.length > 0
-      ? `${items.length} saved blueprint${items.length === 1 ? "" : "s"}`
-      : "No saved blueprints yet.";
+  const draftsDescription =
+    drafts.length > 0
+      ? `${drafts.length} recent draft${drafts.length === 1 ? "" : "s"}`
+      : "Drafts in progress";
+  const blueprintsDescription =
+    blueprints.length > 0
+      ? `${blueprints.length} saved blueprint${blueprints.length === 1 ? "" : "s"}`
+      : "Published blueprints";
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Saved blueprints</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogTitle>Open</DialogTitle>
+          <DialogDescription>
+            Open a draft in progress or a saved blueprint to continue.
+          </DialogDescription>
         </DialogHeader>
         <div className="grid max-h-[65vh] gap-4 overflow-y-auto pr-1">
-          <AsyncPanel
-            isLoading={isInitialLoading}
-            errorMessage={errorMessage}
-            isEmpty={items.length === 0}
-            loading={
-              <p className="text-sm text-muted-foreground">
-                Loading saved blueprints...
-              </p>
-            }
-            error={(message) => (
-              <EmptyState
-                description={message}
-                action={
-                  <Button type="button" variant="outline" onClick={onRetry}>
-                    Retry
-                  </Button>
-                }
-              />
-            )}
-            empty={
-              <EmptyState description="No saved blueprints yet. Save your first blueprint to generate questions from it." />
-            }
+          <section
+            aria-labelledby="recent-drafts-heading"
+            className="grid gap-2"
           >
-            <PaginatedList
-              hasMore={hasMore}
-              isLoadingMore={isLoadingMore}
-              loadMoreErrorMessage={loadMoreErrorMessage}
-              onLoadMore={onLoadMore}
-              onRetryLoadMore={onLoadMore}
+            <h2 className="text-sm font-medium" id="recent-drafts-heading">
+              Recent drafts
+            </h2>
+            <p className="text-sm text-muted-foreground">{draftsDescription}</p>
+            <AsyncPanel
+              empty={<EmptyState description="No drafts yet." />}
+              error={(message) => (
+                <InlineError message={message} onRetry={onRetry} />
+              )}
+              errorMessage={draftsErrorMessage}
+              isEmpty={drafts.length === 0}
+              isLoading={isDraftsInitialLoading}
+              loading={
+                <p className="text-sm text-muted-foreground">
+                  Loading recent drafts...
+                </p>
+              }
             >
-              <ResourceList variant="stacked">
-                {items.map((item) => (
-                  <SavedBlueprintListRow
-                    key={item.id}
-                    item={item}
-                    onOpenBlueprint={() => onOpenBlueprint(item.id)}
-                    onGenerate={() => onGenerate(item.id)}
-                  />
-                ))}
-              </ResourceList>
-            </PaginatedList>
-          </AsyncPanel>
-          {errorMessage && items.length > 0 ? (
-            <InlineError
-              message="Saved blueprints could not be refreshed."
-              onRetry={onRetry}
-            />
-          ) : null}
+              <PaginatedList
+                hasMore={hasMoreDrafts}
+                isLoadingMore={isLoadingDraftsMore}
+                loadMoreErrorMessage={draftLoadMoreErrorMessage}
+                onLoadMore={onLoadMoreDrafts}
+                onRetryLoadMore={onLoadMoreDrafts}
+              >
+                <ResourceList variant="stacked">
+                  {drafts.map((item) => (
+                    <SavedBlueprintListRow
+                      item={item}
+                      key={item.id}
+                      kind="draft"
+                      onOpen={() => onOpenDraft(item.id)}
+                    />
+                  ))}
+                </ResourceList>
+              </PaginatedList>
+            </AsyncPanel>
+          </section>
+
+          <section
+            aria-labelledby="saved-blueprints-heading"
+            className="grid gap-2"
+          >
+            <h2 className="text-sm font-medium" id="saved-blueprints-heading">
+              Saved blueprints
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {blueprintsDescription}
+            </p>
+            <AsyncPanel
+              empty={
+                <EmptyState description="No saved blueprints yet. Save your first blueprint to generate questions from it." />
+              }
+              error={(message) => (
+                <InlineError message={message} onRetry={onRetry} />
+              )}
+              errorMessage={errorMessage}
+              isEmpty={blueprints.length === 0}
+              isLoading={isInitialLoading}
+              loading={
+                <p className="text-sm text-muted-foreground">
+                  Loading saved blueprints...
+                </p>
+              }
+            >
+              <PaginatedList
+                hasMore={hasMoreBlueprints}
+                isLoadingMore={isLoadingBlueprintsMore}
+                loadMoreErrorMessage={loadMoreErrorMessage}
+                onLoadMore={onLoadMoreBlueprints}
+                onRetryLoadMore={onLoadMoreBlueprints}
+              >
+                <ResourceList variant="stacked">
+                  {blueprints.map((item) => (
+                    <SavedBlueprintListRow
+                      item={item}
+                      key={item.id}
+                      kind="blueprint"
+                      onGenerate={() => onGenerate(item.id)}
+                      onOpen={() => onOpenBlueprint(item.id)}
+                    />
+                  ))}
+                </ResourceList>
+              </PaginatedList>
+            </AsyncPanel>
+          </section>
         </div>
       </DialogContent>
     </Dialog>
@@ -116,38 +182,42 @@ export function SavedBlueprintsDialog({
 
 function SavedBlueprintListRow({
   item,
-  onOpenBlueprint,
+  onOpen,
   onGenerate,
+  kind,
 }: {
-  item: SavedBlueprintListItem;
-  onOpenBlueprint(): void;
-  onGenerate(): void;
+  item: SavedBlueprintListItem | SavedDraftListItem;
+  onOpen(): void;
+  onGenerate?(): void;
+  kind: "draft" | "blueprint";
 }) {
+  const openLabel =
+    kind === "draft"
+      ? `Open draft ${item.title}`
+      : `Open blueprint ${item.title}`;
+  const generateLabel = `Generate from ${item.title}`;
+
   return (
     <ResourceListItem
-      variant="display"
       className="rounded-lg border bg-background"
-      title={item.title}
       description={item.description ?? undefined}
       metadata={item.metadata}
+      title={item.title}
       trailingAction={
         <div className="flex flex-wrap items-center gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link
-              to="/studio"
-              search={{ blueprintId: item.id }}
-              onClick={onOpenBlueprint}
-            >
-              <FolderOpen />
-              Open blueprint
-            </Link>
+          <Button onClick={onOpen} size="sm" type="button" variant="outline">
+            <FolderOpen />
+            {openLabel}
           </Button>
-          <Button type="button" size="sm" onClick={onGenerate}>
-            <Sparkles />
-            Generate
-          </Button>
+          {onGenerate ? (
+            <Button onClick={onGenerate} size="sm" type="button">
+              <Sparkles />
+              {generateLabel}
+            </Button>
+          ) : null}
         </div>
       }
+      variant="display"
     />
   );
 }

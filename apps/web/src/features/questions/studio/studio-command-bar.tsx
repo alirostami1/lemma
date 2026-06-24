@@ -3,13 +3,6 @@ import { Button } from "@lemma/ui/components/button";
 import { InlineError } from "@lemma/ui/components/inline-error";
 import { Input } from "@lemma/ui/components/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@lemma/ui/components/select";
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -28,6 +21,7 @@ import {
   Undo2,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import type { StudioRouteSearch } from "./studio-controller-types";
 
 export type StudioCommandBarProps = {
   blueprintDescription: string;
@@ -36,23 +30,16 @@ export type StudioCommandBarProps = {
   canRedo: boolean;
   canUndo: boolean;
   generateDisabledReason: string | null;
+  routeSearch: StudioRouteSearch;
   isSaving: boolean;
   saveState: "saved" | "unsaved" | "saving" | "autosaved" | "failed";
   saveError: string | null;
-  selectedVersionId: string | null;
-  versions: Array<{
-    id: string;
-    versionNumber: number;
-    createdAt: Date;
-    sourceCount: number;
-    isCurrent: boolean;
-  }>;
   onBlueprintDescriptionChange(description: string): void;
   onBlueprintNameChange(name: string): void;
   onGenerate(): void;
   onOpenSaveDialog(): void;
+  onSaveDraft(): void;
   onOpenSavedBlueprints(): void;
-  onOpenVersion(versionId: string): void;
   onReset(): void;
   onRedo(): void;
   onUndo(): void;
@@ -65,22 +52,21 @@ export function StudioCommandBar({
   canRedo,
   canUndo,
   generateDisabledReason,
+  routeSearch,
   isSaving,
   saveState,
   saveError,
-  selectedVersionId,
-  versions,
   onBlueprintDescriptionChange,
   onBlueprintNameChange,
   onGenerate,
   onOpenSaveDialog,
+  onSaveDraft,
   onOpenSavedBlueprints,
-  onOpenVersion,
   onReset,
   onRedo,
   onUndo,
 }: StudioCommandBarProps) {
-  const status = getSaveStatusView(saveState);
+  const status = getSaveStatusLabel({ routeSearch, saveState });
   const StatusIcon = status.Icon;
 
   return (
@@ -100,99 +86,86 @@ export function StudioCommandBar({
                 Blueprint name
               </label>
               <Input
-                id="studio-blueprint-name"
                 aria-label="Blueprint name"
                 className="h-9 font-medium"
+                id="studio-blueprint-name"
                 maxLength={160}
-                value={blueprintName}
                 onChange={(event) =>
                   onBlueprintNameChange(event.currentTarget.value)
                 }
+                value={blueprintName}
               />
               <label className="sr-only" htmlFor="studio-blueprint-description">
                 Blueprint description
               </label>
               <Input
-                id="studio-blueprint-description"
                 aria-label="Blueprint description"
                 className="h-9"
+                id="studio-blueprint-description"
                 maxLength={500}
-                placeholder="Description"
-                value={blueprintDescription}
                 onChange={(event) =>
                   onBlueprintDescriptionChange(event.currentTarget.value)
                 }
+                placeholder="Description"
+                value={blueprintDescription}
               />
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 lg:self-end">
             <ToolbarIconButton
-              label="Saved blueprints"
               disabled={false}
-              onClick={onOpenSavedBlueprints}
               icon={<FolderOpen />}
+              label="Saved blueprints"
+              onClick={onOpenSavedBlueprints}
             />
-            {versions.length > 0 ? (
-              <Select
-                value={selectedVersionId ?? ""}
-                onValueChange={onOpenVersion}
-              >
-                <SelectTrigger aria-label="Blueprint version" className="h-10">
-                  <SelectValue placeholder="Version" />
-                </SelectTrigger>
-                <SelectContent>
-                  {versions.map((version) => (
-                    <SelectItem key={version.id} value={version.id}>
-                      v{version.versionNumber}
-                      {version.isCurrent ? " current" : ""}
-                      {version.sourceCount > 0
-                        ? ` · ${version.sourceCount} source${
-                            version.sourceCount === 1 ? "" : "s"
-                          }`
-                        : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : null}
             <ToolbarIconButton
-              label="Undo"
               disabled={!canUndo}
-              onClick={onUndo}
               icon={<Undo2 />}
+              label="Undo"
+              onClick={onUndo}
             />
             <ToolbarIconButton
-              label="Redo"
               disabled={!canRedo}
-              onClick={onRedo}
               icon={<Redo2 />}
+              label="Redo"
+              onClick={onRedo}
             />
             <ToolbarIconButton
-              label="Reset Studio"
               disabled={false}
-              onClick={onReset}
               icon={<RotateCcw />}
+              label="Reset Studio"
+              onClick={onReset}
             />
             <Button
+              disabled={isSaving}
+              onClick={onSaveDraft}
+              size="lg"
               type="button"
               variant="outline"
-              size="lg"
+            >
+              <Cloud />
+              Save draft
+            </Button>
+            <Button
               disabled={!canGenerate}
-              title={generateDisabledReason ?? undefined}
               onClick={onGenerate}
+              size="lg"
+              title={generateDisabledReason ?? undefined}
+              type="button"
+              variant="outline"
             >
               <Sparkles />
               Generate
             </Button>
             <Button
-              type="button"
-              size="lg"
               disabled={isSaving}
               onClick={onOpenSaveDialog}
+              size="lg"
+              type="button"
             >
               <Save />
-              {isSaving ? "Saving..." : "Save"}
+              {isSaving ? "Publishing..." : "Publish blueprint"}
             </Button>
           </div>
         </div>
@@ -221,12 +194,12 @@ function ToolbarIconButton({
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
-          type="button"
-          variant="outline"
-          size="icon-lg"
           aria-label={label}
           disabled={disabled}
           onClick={onClick}
+          size="icon-lg"
+          type="button"
+          variant="outline"
         >
           {icon}
         </Button>
@@ -236,29 +209,96 @@ function ToolbarIconButton({
   );
 }
 
-function getSaveStatusView(saveState: StudioCommandBarProps["saveState"]): {
+function getSaveStatusLabel(input: {
+  routeSearch: StudioRouteSearch;
+  saveState: StudioCommandBarProps["saveState"];
+}): {
   label: string;
   variant: "default" | "secondary" | "destructive" | "outline";
   Icon: typeof CheckCircle2;
 } {
-  switch (saveState) {
+  if (input.routeSearch.draftId) {
+    if (input.saveState === "saving") {
+      return {
+        Icon: LoaderCircle,
+        label: "Saving draft",
+        variant: "outline",
+      };
+    }
+    if (input.saveState === "failed") {
+      return {
+        Icon: AlertCircle,
+        label: "Draft save failed",
+        variant: "destructive",
+      };
+    }
+    if (input.saveState === "saved") {
+      return { Icon: CheckCircle2, label: "Draft saved", variant: "secondary" };
+    }
+    if (input.saveState === "autosaved") {
+      return { Icon: Cloud, label: "Draft", variant: "outline" };
+    }
+    return {
+      Icon: AlertCircle,
+      label: "Draft",
+      variant: "outline",
+    };
+  }
+
+  if (input.routeSearch.blueprintId) {
+    if (input.saveState === "saving") {
+      return {
+        Icon: LoaderCircle,
+        label: "Saving blueprint",
+        variant: "outline",
+      };
+    }
+    if (input.saveState === "failed") {
+      return {
+        Icon: AlertCircle,
+        label: "Blueprint save failed",
+        variant: "destructive",
+      };
+    }
+    if (input.saveState === "saved") {
+      return {
+        Icon: CheckCircle2,
+        label: "Blueprint",
+        variant: "secondary",
+      };
+    }
+    if (input.saveState === "autosaved") {
+      return {
+        Icon: CheckCircle2,
+        label: "Blueprint",
+        variant: "outline",
+      };
+    }
+    return {
+      Icon: CheckCircle2,
+      label: "Blueprint",
+      variant: "outline",
+    };
+  }
+
+  switch (input.saveState) {
     case "saved":
-      return { label: "Saved", variant: "secondary", Icon: CheckCircle2 };
+      return { Icon: CheckCircle2, label: "Unsaved draft", variant: "outline" };
     case "autosaved":
-      return { label: "Autosaved locally", variant: "outline", Icon: Cloud };
+      return { Icon: Cloud, label: "Autosaved locally", variant: "outline" };
     case "saving":
-      return { label: "Saving...", variant: "outline", Icon: LoaderCircle };
+      return { Icon: LoaderCircle, label: "Saving...", variant: "outline" };
     case "failed":
       return {
+        Icon: AlertCircle,
         label: "Save failed",
         variant: "destructive",
-        Icon: AlertCircle,
       };
     case "unsaved":
       return {
-        label: "Unsaved changes",
-        variant: "outline",
         Icon: AlertCircle,
+        label: "Unsaved draft",
+        variant: "outline",
       };
   }
 }

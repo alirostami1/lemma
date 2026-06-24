@@ -3,25 +3,19 @@ import { requireLogin } from "#/features/auth";
 import { StudioPage, type StudioRouteSearch } from "#/features/questions";
 
 export const Route = createFileRoute("/_layout/studio")({
-  ssr: false,
   beforeLoad: requireLogin,
+  component: RouteComponent,
+  ssr: false,
   validateSearch: (search: Record<string, unknown>): StudioRouteSearch => ({
     blueprintId:
       typeof search.blueprintId === "string" ? search.blueprintId : undefined,
-    blueprintVersionId:
-      typeof search.blueprintVersionId === "string"
-        ? search.blueprintVersionId
-        : undefined,
+    draftId: typeof search.draftId === "string" ? search.draftId : undefined,
   }),
-  component: RouteComponent,
 });
 
 function RouteComponent() {
   const search = Route.useSearch();
   return (
-    <StudioPage
-      blueprintId={search.blueprintId}
-      blueprintVersionId={search.blueprintVersionId}
-    />
+    <StudioPage blueprintId={search.blueprintId} draftId={search.draftId} />
   );
 }

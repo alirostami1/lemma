@@ -4,19 +4,22 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --clearScreen false",
-    "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0",
+    "build": "vite build --configLoader runner",
     "check": "biome check",
+    "check:write": "biome check --write",
+    "dev": "vite --configLoader runner --clearScreen false",
     "format": "biome format",
-    "lint": "biome lint"
+    "format:write": "biome format --write",
+    "lint": "biome lint",
+    "lint:write": "biome lint --write",
+    "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
-    "@lemma/api-contract": "workspace:*",
     "@scalar/api-reference": "^1.55.3"
   },
   "devDependencies": {
-    "vite": "^7.0.0",
-    "@biomejs/biome": "catalog:"
+    "@biomejs/biome": "catalog:",
+    "@lemma/api-contract": "workspace:*",
+    "vite": "^7.0.0"
   }
 }

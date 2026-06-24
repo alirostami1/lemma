@@ -7,7 +7,7 @@
 import type { WorkbookSnapshot } from "./workbookSnapshot.ts";
 
 export interface WorkbookSnapshotsResponse {
-  workbookSnapshots: WorkbookSnapshot[];
   /** @nullable */
   nextCursor: string | null;
+  workbookSnapshots: WorkbookSnapshot[];
 }

@@ -8,8 +8,8 @@ import type { BlueprintInlineText } from "./blueprintInlineText.ts";
 import type { PublicQuestionBlueprintTextBlockType } from "./publicQuestionBlueprintTextBlockType.ts";
 
 export interface PublicQuestionBlueprintTextBlock {
+  content: BlueprintInlineText[];
   /** @minLength 1 */
   id: string;
   type: PublicQuestionBlueprintTextBlockType;
-  content: BlueprintInlineText[];
 }

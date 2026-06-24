@@ -97,7 +97,6 @@ function AddBlockSelect({
   return (
     <Select
       disabled={disabled}
-      value=""
       onValueChange={(value) => {
         if (
           value === "text" ||
@@ -109,6 +108,7 @@ function AddBlockSelect({
           onAdd(value);
         }
       }}
+      value=""
     >
       <SelectTrigger>
         <SelectValue placeholder="Choose block type" />

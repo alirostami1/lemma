@@ -25,9 +25,9 @@ export function QuestionSetListHeader({
 }: Pick<QuestionSetListController, "viewModel">) {
   return (
     <PageHeader
-      title={viewModel.title}
-      description={viewModel.description}
       actions={<CreateQuestionSetDialogController />}
+      description={viewModel.description}
+      title={viewModel.title}
     />
   );
 }
@@ -47,16 +47,8 @@ export function QuestionSetListSection({
       </CardHeader>
       <CardContent>
         <AsyncPanel
-          isLoading={controller.isInitialLoading}
-          errorMessage={controller.initialErrorMessage}
-          isEmpty={controller.questionSets.length === 0}
-          loading={<QuestionSetListSkeleton />}
-          error={(message) => (
-            <InlineError message={message} onRetry={controller.onRetry} />
-          )}
           empty={
             <EmptyState
-              description={controller.viewModel.emptyDescription}
               action={
                 <>
                   <CreateQuestionSetDialogController />
@@ -69,8 +61,16 @@ export function QuestionSetListSection({
                 </>
               }
               className="p-6"
+              description={controller.viewModel.emptyDescription}
             />
           }
+          error={(message) => (
+            <InlineError message={message} onRetry={controller.onRetry} />
+          )}
+          errorMessage={controller.initialErrorMessage}
+          isEmpty={controller.questionSets.length === 0}
+          isLoading={controller.isInitialLoading}
+          loading={<QuestionSetListSkeleton />}
         >
           <PaginatedList
             hasMore={controller.hasMore}
@@ -83,22 +83,22 @@ export function QuestionSetListSection({
               {controller.viewModel.items.map((item) => (
                 <ResourceListItem
                   key={item.id}
-                  variant="navigation"
-                  title={item.title}
                   metadata={item.metadata}
                   navigationAccessory={
                     <ArrowRight className="size-4 text-muted-foreground" />
                   }
                   renderLink={(children, className) => (
                     <Link
-                      to="/question-sets/$questionSetId"
-                      params={{ questionSetId: item.id }}
                       aria-label={`Open ${item.title}`}
                       className={className}
+                      params={{ questionSetId: item.id }}
+                      to="/question-sets/$questionSetId"
                     >
                       {children}
                     </Link>
                   )}
+                  title={item.title}
+                  variant="navigation"
                 />
               ))}
             </ResourceList>

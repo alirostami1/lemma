@@ -7,26 +7,26 @@
 import type { WorkbookSnapshotCellsCellTypesItemItem } from "./workbookSnapshotCellsCellTypesItemItem.ts";
 
 export interface WorkbookSnapshotCells {
-  /** @minimum 0 */
-  sheetIndex: number;
-  /** @minLength 1 */
-  sheetName: string;
-  /** @minimum 1 */
-  startRow: number;
-  /** @minimum 1 */
-  startColumn: number;
-  /** @minimum 0 */
-  rowCount: number;
-  /** @minimum 0 */
-  columnCount: number;
-  /**
-   * @maxItems 200
-   * @items.maxItems 50
-   */
-  rows: string[][];
   /**
    * @maxItems 200
    * @items.maxItems 50
    */
   cellTypes: WorkbookSnapshotCellsCellTypesItemItem[][];
+  /** @minimum 0 */
+  columnCount: number;
+  /** @minimum 0 */
+  rowCount: number;
+  /**
+   * @maxItems 200
+   * @items.maxItems 50
+   */
+  rows: string[][];
+  /** @minimum 0 */
+  sheetIndex: number;
+  /** @minLength 1 */
+  sheetName: string;
+  /** @minimum 1 */
+  startColumn: number;
+  /** @minimum 1 */
+  startRow: number;
 }

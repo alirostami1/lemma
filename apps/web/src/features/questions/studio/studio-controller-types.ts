@@ -1,6 +1,10 @@
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
-import type { QuestionGenerationRun } from "#/domains/questions/model";
+import type {
+  QuestionBlueprintWorkbookSource,
+  QuestionGenerationRun,
+} from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
+import type { LocalWorkbookParseResult } from "#/domains/workbooks/local-xlsx";
 import type {
   WorkbookPickerController,
   WorkbookPickerRequest,
@@ -12,6 +16,10 @@ import type {
   SaveBlueprintDialogInput,
   SaveDialogState,
 } from "./save-blueprint-dialog";
+import type {
+  SavedBlueprintListItem,
+  SavedDraftListItem,
+} from "./saved-blueprints-view-model";
 import type { SourceController } from "./source/use-source-controller";
 import type { StudioReadiness } from "./studio-readiness";
 import type { StudioState } from "./studio-state";
@@ -23,7 +31,7 @@ import type {
 
 export type StudioRouteSearch = {
   blueprintId?: string;
-  blueprintVersionId?: string;
+  draftId?: string;
 };
 
 export type StudioController = {
@@ -32,26 +40,19 @@ export type StudioController = {
     blueprintDescription: string;
     blueprintName: string;
     canGenerate: boolean;
+    routeSearch: StudioRouteSearch;
     canRedo: boolean;
     canUndo: boolean;
     generateDisabledReason: string | null;
     isSaving: boolean;
     saveState: "saved" | "unsaved" | "saving" | "autosaved" | "failed";
     saveError: string | null;
-    selectedVersionId: string | null;
-    versions: Array<{
-      id: string;
-      versionNumber: number;
-      createdAt: Date;
-      sourceCount: number;
-      isCurrent: boolean;
-    }>;
     onBlueprintDescriptionChange(description: string): void;
     onBlueprintNameChange(name: string): void;
     onGenerate(): void;
     onOpenSaveDialog(): void;
+    onSaveDraft(): void;
     onOpenSavedBlueprints(): void;
-    onOpenVersion(versionId: string): void;
     onReset(): void;
     onRedo(): void;
     onUndo(): void;
@@ -64,25 +65,30 @@ export type StudioController = {
     authoringModel: ComposedEditorModel;
     referencePreviewCache: ReferencePreviewCache;
     canUseWorkbookTools: boolean;
+    sources: QuestionBlueprintWorkbookSource[];
+    workbookSheetNamesBySourceId: Readonly<Record<string, readonly string[]>>;
     onAuthoringModelChange(model: ComposedEditorModel): void;
   };
   savedBlueprints: {
     open: boolean;
-    items: Array<{
-      id: string;
-      title: string;
-      description: string | null;
-      metadata: string;
-    }>;
+    drafts: SavedDraftListItem[];
+    isDraftsInitialLoading: boolean;
+    draftsErrorMessage: string | null;
+    draftLoadMoreErrorMessage: string | null;
+    hasMoreDrafts: boolean;
+    isLoadingDraftsMore: boolean;
+    blueprints: SavedBlueprintListItem[];
     isInitialLoading: boolean;
     errorMessage: string | null;
     loadMoreErrorMessage: string | null;
-    hasMore: boolean;
-    isLoadingMore: boolean;
+    hasMoreBlueprints: boolean;
+    isLoadingBlueprintsMore: boolean;
     onOpenChange(open: boolean): void;
     onRetry(): void;
-    onLoadMore(): void;
+    onLoadMoreDrafts(): void;
+    onLoadMoreBlueprints(): void;
     onOpenBlueprint(id: string): void;
+    onOpenDraft(id: string): void;
     onGenerate(id: string): void;
   };
   generationStatus: {
@@ -100,6 +106,7 @@ export type StudioController = {
   };
   generateDialog: GenerateQuestionsDialogProps;
   workbookPicker: {
+    localWorkbook: LocalWorkbookParseResult | null;
     workbookSnapshotId: string | null;
     workbookSheets: WorkbookPickerSheet[];
     hasMoreWorkbookSheets: boolean;
@@ -111,6 +118,10 @@ export type StudioController = {
     onOpenChange(open: boolean): void;
     onLoadMoreWorkbookSheets(): void;
     onSelect(selection: WorkbookRangeSelection): void;
+  };
+  sourcePicker: {
+    open: boolean;
+    onOpenChange(open: boolean): void;
   };
   readiness: StudioReadiness;
 };

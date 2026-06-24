@@ -27,13 +27,13 @@ export async function postWorkbookBatchToLibreOfficeWorker(input: {
   const response = await fetchWithTimeout(
     url,
     {
-      method: "POST",
+      body: new Uint8Array(workbook),
       headers: {
         "content-type":
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         ...workerHeaders(input.requestId),
       },
-      body: new Uint8Array(workbook),
+      method: "POST",
     },
     input.timeoutMs * input.count,
   );
@@ -59,13 +59,13 @@ export async function postWorkbookToLibreOfficeWorker(input: {
   const response = await fetchWithTimeout(
     new URL("/v1/calculations", input.serviceUrl),
     {
-      method: "POST",
+      body: new Uint8Array(workbook),
       headers: {
         "content-type":
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         ...workerHeaders(input.requestId),
       },
-      body: new Uint8Array(workbook),
+      method: "POST",
     },
     input.timeoutMs,
   );
@@ -85,7 +85,7 @@ export async function getLibreOfficeWorkerHealth(input: {
 }): Promise<WorkbookEngineHealth> {
   const response = await fetchWithTimeout(
     new URL("/v1/health", input.serviceUrl),
-    { method: "GET", headers: workerHeaders(input.requestId) },
+    { headers: workerHeaders(input.requestId), method: "GET" },
     input.timeoutMs,
   );
   if (!response.ok) {
@@ -97,8 +97,8 @@ export async function getLibreOfficeWorkerHealth(input: {
     parseWorkerHealth,
   );
   return {
-    ok: parsed.ok,
     engine: "libreoffice",
+    ok: parsed.ok,
     version: parsed.version,
   };
 }
@@ -261,17 +261,17 @@ function parseWorkerValues(
         );
         const inferred = inferWorkbookSparseSheetSize(cells);
         return {
-          name: item.name,
           cells,
-          rowCount:
-            typeof item.rowCount === "number" && Number.isInteger(item.rowCount)
-              ? Math.max(item.rowCount, inferred.rowCount)
-              : inferred.rowCount,
           columnCount:
             typeof item.columnCount === "number" &&
             Number.isInteger(item.columnCount)
               ? Math.max(item.columnCount, inferred.columnCount)
               : inferred.columnCount,
+          name: item.name,
+          rowCount:
+            typeof item.rowCount === "number" && Number.isInteger(item.rowCount)
+              ? Math.max(item.rowCount, inferred.rowCount)
+              : inferred.rowCount,
         };
       }),
     },

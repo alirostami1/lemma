@@ -70,12 +70,12 @@ function createHarness() {
   const storage = new FakeFileStorage();
   return {
     repository,
-    storage,
     service: new FileLifecycleService({
-      filesRepository: repository,
-      fileStorage: storage,
       clock,
+      fileStorage: storage,
+      filesRepository: repository,
     }),
+    storage,
   };
 }
 
@@ -86,14 +86,14 @@ const clock: Clock = {
 function createUpload(): FileUpload {
   return createFileUploadSession(
     {
-      id: targetUploadId,
-      createdByUserId: ownerUserId,
       bucket: "lemma-files",
+      checksumSha256,
+      contentType,
+      createdByUserId: ownerUserId,
+      expectedByteSize: 42,
+      id: targetUploadId,
       objectKey: "files/workbook.xlsx",
       originalName: "workbook.xlsx",
-      contentType,
-      expectedByteSize: 42,
-      checksumSha256,
       purpose: "workbook",
     },
     at,
@@ -103,17 +103,17 @@ function createUpload(): FileUpload {
 function createUploadedFile(): File {
   return createFileFromUpload(
     {
-      id: targetFileId,
-      uploadId: targetUploadId,
-      ownerUserId,
-      createdByUserId: ownerUserId,
       bucket: "lemma-files",
-      objectKey: "files/workbook.xlsx",
-      originalName: "workbook.xlsx",
-      contentType,
       byteSize: 42,
       checksumSha256,
+      contentType,
+      createdByUserId: ownerUserId,
+      id: targetFileId,
+      objectKey: "files/workbook.xlsx",
+      originalName: "workbook.xlsx",
+      ownerUserId,
       purpose: "workbook",
+      uploadId: targetUploadId,
     },
     at,
   );

@@ -88,7 +88,7 @@ export function SaveBlueprintDialog({
     unchangedCopyIssue !== null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="sm:max-w-md">
         <form
           className="grid gap-4"
@@ -118,11 +118,11 @@ export function SaveBlueprintDialog({
             <Field>
               <FieldLabel htmlFor="save-blueprint-name">Name</FieldLabel>
               <Input
+                disabled={isSaving}
                 id="save-blueprint-name"
                 maxLength={160}
-                value={name}
-                disabled={isSaving}
                 onChange={(event) => setName(event.currentTarget.value)}
+                value={name}
               />
               <FieldDescription>{viewModel.helperText}</FieldDescription>
             </Field>
@@ -138,7 +138,7 @@ export function SaveBlueprintDialog({
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" disabled={isSaveDisabled}>
+            <Button disabled={isSaveDisabled} type="submit">
               <Save />
               {isSaving
                 ? "Saving..."
@@ -201,25 +201,25 @@ function SaveModeChoice({
 
       <label className="flex cursor-pointer gap-3 rounded-md border bg-background p-3 text-sm">
         <input
-          type="radio"
-          name="save-blueprint-mode"
           checked={mode === "update_existing"}
+          name="save-blueprint-mode"
           onChange={() => onModeChange("update_existing")}
+          type="radio"
         />
         <span className="grid gap-1">
           <span className="font-medium">Update existing blueprint</span>
           <span className="text-muted-foreground">
-            Replace the saved blueprint with this version.
+            Replace the saved blueprint with these changes.
           </span>
         </span>
       </label>
 
       <label className="flex cursor-pointer gap-3 rounded-md border bg-background p-3 text-sm">
         <input
-          type="radio"
-          name="save-blueprint-mode"
           checked={mode === "save_as_new"}
+          name="save-blueprint-mode"
           onChange={() => onModeChange("save_as_new")}
+          type="radio"
         />
         <span className="grid gap-1">
           <span className="font-medium">Save as new blueprint</span>

@@ -63,10 +63,10 @@ export class IdentityService {
 
       const user = createUser(
         {
+          displayName: identity.displayName ?? identity.preferredUsername,
+          email: identity.email,
           id: this.deps.idGenerator.userId(),
           identityId: identity.identityId,
-          email: identity.email,
-          displayName: identity.displayName ?? identity.preferredUsername,
         },
         this.deps.clock.now(),
       );
@@ -135,9 +135,9 @@ export class IdentityService {
       );
 
       return this.deps.identityRepository.listUsers({
+        limit: input.limit,
         search: input.search,
         status: input.status,
-        limit: input.limit,
       });
     });
   }
@@ -150,8 +150,8 @@ export class IdentityService {
   }): Promise<User> {
     return this.updateUserProfile({
       currentUser: input.currentUser,
-      userId: input.currentUser.user.id,
       patch: input.patch,
+      userId: input.currentUser.user.id,
     });
   }
 
@@ -269,11 +269,11 @@ export class IdentityService {
       await this.deps.identityRepository.grantUserRole(
         grantUserRole(
           {
-            userId: targetUser.id,
+            expiresAt: input.expiresAt,
+            grantedByUserId: input.currentUser.user.id,
             roleId: role.id,
             roleKey: role.key,
-            grantedByUserId: input.currentUser.user.id,
-            expiresAt: input.expiresAt,
+            userId: targetUser.id,
           },
           this.deps.clock.now(),
         ),
@@ -306,11 +306,11 @@ export class IdentityService {
       await this.deps.identityRepository.grantUserRole(
         grantUserRole(
           {
-            userId: targetUser.id,
+            expiresAt: input.expiresAt,
+            grantedByUserId: input.currentUser.user.id,
             roleId: role.id,
             roleKey: role.key,
-            grantedByUserId: input.currentUser.user.id,
-            expiresAt: input.expiresAt,
+            userId: targetUser.id,
           },
           this.deps.clock.now(),
         ),
@@ -335,8 +335,8 @@ export class IdentityService {
       await this.findUserByIdOrThrow(domainUserId);
 
       await this.deps.identityRepository.revokeUserRole({
-        userId: domainUserId,
         roleId: domainRoleId,
+        userId: domainUserId,
       });
     });
   }

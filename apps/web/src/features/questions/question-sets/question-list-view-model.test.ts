@@ -10,18 +10,18 @@ describe("question list view model", () => {
     const items = buildQuestionListViewModel([
       question([
         {
+          content: [{ text: "What is 2 + 2?", type: "text" }],
           id: "prompt",
           type: "text",
-          content: [{ type: "text", text: "What is 2 + 2?" }],
         },
       ]),
     ]);
 
     expect(items[0]).toEqual({
-      id: "question-1",
-      title: "Question 1",
       description: "What is 2 + 2?",
+      id: "question-1",
       metadata: "Generated Jun 14, 2026, 12:00 AM UTC",
+      title: "Question 1",
     });
   });
 
@@ -33,24 +33,22 @@ describe("question list view model", () => {
 function question(blocks: Question["body"]["blocks"]): Question {
   const timestamp = new Date("2026-06-14T00:00:00Z");
   return {
-    id: "question-1",
-    ownerUserId: "owner",
-    createdByUserId: "creator",
     blueprintId: "blueprint-1",
-    blueprintVersionId: "version-1",
-    generationRunId: "run-1",
     body: {
-      schemaVersion: 1,
       blocks,
       responseFields: [],
-    },
-    producer: {
       schemaVersion: 1,
-      compiler: "test",
     },
-    source: null,
-    status: "active",
     createdAt: timestamp,
+    createdByUserId: "creator",
+    generationRunId: "run-1",
+    id: "question-1",
+    ownerUserId: "owner",
+    producer: {
+      compiler: "test",
+      schemaVersion: 1,
+    },
+    status: "active",
     updatedAt: timestamp,
   };
 }

@@ -35,12 +35,10 @@ export function ResponseQuestionBlock({
         {block.label ?? field?.label ?? "Answer"}
       </label>
       <Input
-        id={block.responseFieldId}
-        name={block.responseFieldId}
         disabled={disabled}
+        id={block.responseFieldId}
         inputMode={field?.type === "number" ? "decimal" : undefined}
-        placeholder={block.placeholder ?? "Answer"}
-        value={formatQuestionAnswerValue(value)}
+        name={block.responseFieldId}
         onChange={(event) =>
           onAnswerChange(
             setQuestionAnswerResponse(
@@ -50,6 +48,8 @@ export function ResponseQuestionBlock({
             ),
           )
         }
+        placeholder={block.placeholder ?? "Answer"}
+        value={formatQuestionAnswerValue(value)}
       />
     </div>
   );

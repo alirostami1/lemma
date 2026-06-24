@@ -24,11 +24,11 @@ export function UpdatePasswordPage(
 
   return (
     <AuthLayout
-      title={msg("updatePasswordTitle")}
       description={msg("passwordNew")}
       message={
         hasPasswordError ? messagesPerField.getFirstError("password") : null
       }
+      title={msg("updatePasswordTitle")}
     >
       <form action={url.loginAction} className="space-y-4" method="post">
         <div className="space-y-2">

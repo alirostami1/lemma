@@ -17,7 +17,7 @@ Shared React UI components and styling primitives.
 
 ```bash
 pnpm --filter @lemma/ui build
-pnpm --filter @lemma/ui check-types
+pnpm --filter @lemma/ui check:types
 pnpm --filter @lemma/ui lint
 ```
 

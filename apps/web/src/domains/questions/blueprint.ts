@@ -11,22 +11,28 @@ import type {
 } from "./model";
 
 export interface QuestionBlueprintDraft {
-  questionBlueprintId?: string;
-  name: string;
   description?: string | null;
-  visibility?: QuestionBlueprintVisibility;
   document: QuestionBlueprintDocument;
-  workbookId?: string | null;
+  name: string;
+  questionBlueprintId?: string;
+  sources: QuestionBlueprintDraftWorkbookSource[];
+  visibility?: QuestionBlueprintVisibility;
 }
 
 export interface WorkbookQuestionGenerationSourceDraft {
   workbookId: string;
 }
 
+export interface QuestionBlueprintDraftWorkbookSource {
+  name: string;
+  sourceId: string;
+  workbookId: string;
+}
+
 export function createEmptyQuestionAnswer(): QuestionAnswer {
   return {
-    schemaVersion: 1,
     responses: [],
+    schemaVersion: 1,
   };
 }
 
@@ -34,11 +40,11 @@ export function tableAnswerStateToQuestionAnswer(
   answer: TableAnswerState,
 ): QuestionAnswer {
   return {
-    schemaVersion: 1,
     responses: Object.entries(answer).map(([responseFieldId, value]) => ({
       responseFieldId,
       value,
     })),
+    schemaVersion: 1,
   };
 }
 
@@ -57,19 +63,17 @@ export type QuestionGenerationDraft = {
   targetQuestionSetId: string;
   count: number;
   blueprintId: string;
-  blueprintVersionId?: string | null;
-  sourceWorkbookId?: string | null;
 };
 
 export function toCreateQuestionBlueprintInput(
   draft: QuestionBlueprintDraft,
 ): CreateQuestionBlueprintInput {
   return {
-    name: draft.name,
     description: draft.description,
-    visibility: draft.visibility,
     document: draft.document,
-    workbookId: draft.workbookId,
+    name: draft.name,
+    sources: draft.sources,
+    visibility: draft.visibility,
   };
 }
 
@@ -77,12 +81,12 @@ export function toUpdateQuestionBlueprintInput(
   draft: QuestionBlueprintDraft & { questionBlueprintId: string },
 ): UpdateQuestionBlueprintInput {
   return {
-    questionBlueprintId: draft.questionBlueprintId,
-    name: draft.name,
     description: draft.description,
-    visibility: draft.visibility,
     document: draft.document,
-    workbookId: draft.workbookId,
+    name: draft.name,
+    questionBlueprintId: draft.questionBlueprintId,
+    sources: draft.sources,
+    visibility: draft.visibility,
   };
 }
 
@@ -90,11 +94,9 @@ export function toCreateQuestionGenerationRunInput(
   draft: QuestionGenerationDraft,
 ): CreateQuestionGenerationRunInput {
   return {
+    blueprintId: draft.blueprintId,
     count: draft.count,
     targetQuestionSetId: draft.targetQuestionSetId,
-    blueprintId: draft.blueprintId,
-    blueprintVersionId: draft.blueprintVersionId,
-    sourceWorkbookId: draft.sourceWorkbookId ?? null,
   };
 }
 

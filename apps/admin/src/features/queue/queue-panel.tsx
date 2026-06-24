@@ -60,10 +60,10 @@ export function QueuePanel({
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Select
-              value={state}
               onValueChange={(value) =>
                 onStateChange(value as OpsQueueStateFilter)
               }
+              value={state}
             >
               <SelectTrigger className="w-full sm:w-44">
                 <SelectValue />

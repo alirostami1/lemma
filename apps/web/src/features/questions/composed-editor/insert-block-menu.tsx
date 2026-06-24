@@ -23,11 +23,11 @@ const blockMenuItems: Array<{
   label: string;
   Icon: LucideIcon;
 }> = [
-  { type: "text", label: "Text", Icon: Type },
-  { type: "rich_text", label: "Rich text", Icon: Pilcrow },
-  { type: "response", label: "Answer", Icon: CircleDot },
-  { type: "table", label: "Table", Icon: Table2 },
-  { type: "separator", label: "Divider", Icon: Minus },
+  { Icon: Type, label: "Text", type: "text" },
+  { Icon: Pilcrow, label: "Rich text", type: "rich_text" },
+  { Icon: CircleDot, label: "Answer", type: "response" },
+  { Icon: Table2, label: "Table", type: "table" },
+  { Icon: Minus, label: "Divider", type: "separator" },
 ];
 
 export function InsertBlockMenu({
@@ -43,13 +43,13 @@ export function InsertBlockMenu({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
+          aria-label="Add block"
+          disabled={disabled}
+          onClick={(event) => event.stopPropagation()}
+          size={compact ? "icon" : "sm"}
+          title={compact ? "Add block" : undefined}
           type="button"
           variant={compact ? "ghost" : "outline"}
-          size={compact ? "icon" : "sm"}
-          disabled={disabled}
-          aria-label="Add block"
-          title={compact ? "Add block" : undefined}
-          onClick={(event) => event.stopPropagation()}
         >
           <Plus />
           {compact ? null : "Add block"}
@@ -58,8 +58,8 @@ export function InsertBlockMenu({
       <DropdownMenuContent align="start" className="w-56">
         {blockMenuItems.map(({ type, label, Icon }) => (
           <DropdownMenuItem
-            key={type}
             className="gap-2"
+            key={type}
             onSelect={() => onInsert(type)}
           >
             <Icon className="size-4" />

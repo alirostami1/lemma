@@ -21,16 +21,16 @@ export function App() {
       return (
         <AdminFrame>
           <AccessCard
-            title="Authentication unavailable"
-            description={getAuthenticationUnavailableMessage(
-              oidc.initializationError,
-            )}
             action={
-              <Button type="button" onClick={() => window.location.reload()}>
+              <Button onClick={() => window.location.reload()} type="button">
                 <RefreshCw />
                 Retry
               </Button>
             }
+            description={getAuthenticationUnavailableMessage(
+              oidc.initializationError,
+            )}
+            title="Authentication unavailable"
           />
         </AdminFrame>
       );
@@ -39,19 +39,19 @@ export function App() {
     return (
       <AdminFrame>
         <AccessCard
-          title="Sign in required"
-          description="Sign in with an admin account to continue."
           action={
             <Button
-              type="button"
               onClick={() =>
                 void oidc.login({ redirectUrl: env.LEMMA_ADMIN_APP_URL })
               }
+              type="button"
             >
               <LogIn />
               Sign in
             </Button>
           }
+          description="Sign in with an admin account to continue."
+          title="Sign in required"
         />
       </AdminFrame>
     );
@@ -105,7 +105,7 @@ function AdminFrame({
               <span className="max-w-64 truncate text-sm text-muted-foreground">
                 {accountName}
               </span>
-              <Button type="button" variant="outline" onClick={onSignOut}>
+              <Button onClick={onSignOut} type="button" variant="outline">
                 <LogOut />
                 Sign out
               </Button>

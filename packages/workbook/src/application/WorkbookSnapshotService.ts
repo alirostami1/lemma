@@ -71,16 +71,16 @@ export class WorkbookSnapshotService {
         await this.deps.workbookRepository.listWorkbookSnapshotsByCalculationId(
           {
             calculationId: calculation.id,
-            limit: limit + 1,
             cursor: decodeSnapshotIndexCursor(command.cursor),
+            limit: limit + 1,
           },
         );
       return {
-        workbookSnapshots: snapshots.slice(0, limit),
         nextCursor:
           snapshots.length > limit
             ? encodeSnapshotIndexCursor(snapshots[limit - 1]?.snapshotIndex)
             : null,
+        workbookSnapshots: snapshots.slice(0, limit),
       };
     });
   }
@@ -123,8 +123,8 @@ export class WorkbookSnapshotService {
       const snapshot = (await this.getWorkbookSnapshot(command))
         .workbookSnapshot;
       return listWorkbookSnapshotSheets(snapshot, {
-        limit: command.limit,
         cursor: command.cursor,
+        limit: command.limit,
       });
     });
   }
@@ -137,11 +137,11 @@ export class WorkbookSnapshotService {
         .workbookSnapshot;
       return {
         workbookSnapshotCells: createWorkbookSnapshotCells(snapshot, {
-          sheetIndex: command.sheetIndex,
-          startRow: command.startRow,
-          startColumn: command.startColumn,
-          rowCount: command.rowCount,
           columnCount: command.columnCount,
+          rowCount: command.rowCount,
+          sheetIndex: command.sheetIndex,
+          startColumn: command.startColumn,
+          startRow: command.startRow,
         }),
       };
     });

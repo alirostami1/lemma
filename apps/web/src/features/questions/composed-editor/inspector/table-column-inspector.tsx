@@ -39,9 +39,8 @@ export function TableColumnInspector({
       <InspectorSection title="Column">
         <InspectorField label="Label">
           <Input
-            id={`${column.id}-label`}
-            value={column.label}
             disabled={disabled}
+            id={`${column.id}-label`}
             onChange={(event) =>
               onModelChange(
                 updateTableColumnLabel(
@@ -51,38 +50,39 @@ export function TableColumnInspector({
                 ),
               )
             }
+            value={column.label}
           />
         </InspectorField>
       </InspectorSection>
       <InspectorSection title="Column actions">
         <div className="grid grid-cols-2 gap-2">
           <Button
-            type="button"
-            variant="outline"
             disabled={disabled || columnIndex === 0}
             onClick={() => onModelChange(moveColumnLeft(model, column.id))}
+            type="button"
+            variant="outline"
           >
             <ArrowLeft />
             Left
           </Button>
           <Button
-            type="button"
-            variant="outline"
             disabled={disabled || columnIndex === model.columns.length - 1}
             onClick={() => onModelChange(moveColumnRight(model, column.id))}
+            type="button"
+            variant="outline"
           >
             <ArrowRight />
             Right
           </Button>
         </div>
         <Button
-          type="button"
-          variant="destructive"
           disabled={disabled}
           onClick={() => {
             onModelChange(deleteTableColumn(model, column.id));
             onSelectionChange({ type: "table" });
           }}
+          type="button"
+          variant="destructive"
         >
           <Trash2 />
           Delete column

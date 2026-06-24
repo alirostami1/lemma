@@ -3,4 +3,4 @@ export {
   questionSetNotificationChannel,
   userNotificationChannel,
   workbookCalculationNotificationChannel,
-} from "@lemma/notifications/domain";
+} from "@lemma/notifications/browser";

@@ -100,9 +100,9 @@ function createState(
   overrides: Partial<SaveDialogState> = {},
 ): SaveDialogState {
   return {
+    currentName: "Question blueprint",
     hasExistingBlueprint: false,
     isDirty: true,
-    currentName: "Question blueprint",
     validationIssue: null,
     ...overrides,
   };

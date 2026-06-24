@@ -15,7 +15,7 @@ workbook validation, workbook calculation, and failed queue reconciliation.
 pnpm --filter worker dev
 pnpm --filter worker build
 pnpm --filter worker test
-pnpm --filter worker check-types
+pnpm --filter worker check:types
 ```
 
 ## Notes

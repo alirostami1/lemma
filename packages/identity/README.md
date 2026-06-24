@@ -21,7 +21,7 @@ operations.
 ```bash
 pnpm --filter @lemma/identity build
 pnpm --filter @lemma/identity test
-pnpm --filter @lemma/identity generate:openapi
+pnpm --filter @lemma/identity generate:hono
 ```
 
 ## Generated Files

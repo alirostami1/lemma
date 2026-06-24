@@ -8,8 +8,8 @@ const mutateAsync = vi.fn();
 
 vi.mock("#/domains/questions", () => ({
   useCreateQuestionSet: () => ({
-    mutateAsync,
     isPending: false,
+    mutateAsync,
   }),
 }));
 
@@ -24,13 +24,13 @@ describe("CreateQuestionSetDialog", () => {
     const onCreated = vi.fn();
     mutateAsync.mockResolvedValueOnce({
       questionSet: {
-        id: "set_1",
-        ownerUserId: "user_1",
-        createdByUserId: "user_1",
-        name: "Math practice",
-        description: null,
-        status: "active",
         createdAt: new Date("2026-06-08T00:00:00.000Z"),
+        createdByUserId: "user_1",
+        description: null,
+        id: "set_1",
+        name: "Math practice",
+        ownerUserId: "user_1",
+        status: "active",
         updatedAt: new Date("2026-06-08T00:00:00.000Z"),
       },
     });

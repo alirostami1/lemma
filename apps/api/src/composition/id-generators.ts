@@ -8,8 +8,8 @@ import type { IdGenerator as IdentityIdGenerator } from "@lemma/identity/applica
 import { userId as toIdentityUserId } from "@lemma/identity/domain";
 import type { IdGenerator as QuestionsIdGenerator } from "@lemma/questions/application";
 import {
+  questionBlueprintDraftId as toQuestionBlueprintDraftId,
   questionBlueprintId as toQuestionBlueprintId,
-  questionBlueprintVersionId as toQuestionBlueprintVersionId,
   questionGenerationRunId as toQuestionGenerationRunId,
   questionId as toQuestionId,
   questionSetId as toQuestionSetId,
@@ -47,7 +47,7 @@ export function createIdGenerators(): ApiIdGenerators {
     questions: {
       questionSetId: () => toQuestionSetId(uuidv7()),
       questionBlueprintId: () => toQuestionBlueprintId(uuidv7()),
-      questionBlueprintVersionId: () => toQuestionBlueprintVersionId(uuidv7()),
+      questionBlueprintDraftId: () => toQuestionBlueprintDraftId(uuidv7()),
       questionId: () => toQuestionId(uuidv7()),
       questionGenerationRunId: () => toQuestionGenerationRunId(uuidv7()),
       eventId: () => toEventId(uuidv7()),

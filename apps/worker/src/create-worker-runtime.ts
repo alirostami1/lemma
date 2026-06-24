@@ -16,8 +16,8 @@ import {
   WorkbookQuestionValueResolverAdapter,
 } from "@lemma/questions/application";
 import {
+  questionBlueprintDraftId as toQuestionBlueprintDraftId,
   questionBlueprintId as toQuestionBlueprintId,
-  questionBlueprintVersionId as toQuestionBlueprintVersionId,
   questionGenerationRunId as toQuestionGenerationRunId,
   questionId as toQuestionId,
   questionSetId as toQuestionSetId,
@@ -62,48 +62,48 @@ export function createWorkerRuntime(
     now: () => new Date(),
   };
   const jobQueue = new PgBossJobQueue({
-    connectionString: config.databaseUrl,
     applicationName: config.workerId,
+    connectionString: config.databaseUrl,
   });
   const notificationProjector = new NotificationProjector({
     realtimePublisher: new CentrifugoRealtimePublisher({
-      apiUrl: config.realtime.httpApiUrl,
       apiKey: config.realtime.httpApiKey,
+      apiUrl: config.realtime.httpApiUrl,
     }),
   });
   const outboxService = new OutboxService({
-    outboxRepository: createKyselyOutboxRepository(database.executor),
     clock,
+    outboxRepository: createKyselyOutboxRepository(database.executor),
   });
   const jobDispatcher = new JobDispatcher({ jobQueue });
   const filesModule = createFilesModule({
+    clock,
+    config: {
+      bucket: config.s3.bucket,
+      downloadUrlExpiresInSeconds: config.s3.downloadUrlExpiresInSeconds,
+      uploadUrlExpiresInSeconds: config.s3.uploadUrlExpiresInSeconds,
+    },
     db: database.executor,
-    requireIdentity: unsupportedRequireIdentity,
     idGenerator: {
       fileId: () => toFileId(uuidv7()),
       fileUploadId: () => toFileUploadId(uuidv7()),
     },
-    clock,
-    config: {
-      bucket: config.s3.bucket,
-      uploadUrlExpiresInSeconds: config.s3.uploadUrlExpiresInSeconds,
-      downloadUrlExpiresInSeconds: config.s3.downloadUrlExpiresInSeconds,
-    },
+    requireIdentity: unsupportedRequireIdentity,
     storageConfig: config.s3,
   });
   const workbookModule = createWorkbookModule({
+    clock,
     db: database,
-    requireIdentity: unsupportedRequireIdentity,
     fileProvider: {
       getWorkbookFileMetadata: async (input) => {
         const file =
           await filesModule.fileContentReaderPort.getFileContentMetadata(input);
         return {
-          fileId: file.fileId,
-          originalName: file.originalName,
-          contentType: file.contentType,
           byteSize: file.byteSize,
           checksumSha256: file.checksumSha256,
+          contentType: file.contentType,
+          fileId: file.fileId,
+          originalName: file.originalName,
         };
       },
       getWorkbookFileMetadataForOwnerUserId: async (input) => {
@@ -112,23 +112,23 @@ export function createWorkerRuntime(
             input,
           );
         return {
-          fileId: file.fileId,
-          originalName: file.originalName,
-          contentType: file.contentType,
           byteSize: file.byteSize,
           checksumSha256: file.checksumSha256,
+          contentType: file.contentType,
+          fileId: file.fileId,
+          originalName: file.originalName,
         };
       },
       readWorkbookFileContent: async (input) => {
         const file =
           await filesModule.fileContentReaderPort.readFileContent(input);
         return {
+          byteSize: file.byteSize,
+          bytes: file.bytes,
+          checksumSha256: file.checksumSha256,
+          contentType: file.contentType,
           fileId: file.fileId,
           originalName: file.originalName,
-          contentType: file.contentType,
-          byteSize: file.byteSize,
-          checksumSha256: file.checksumSha256,
-          bytes: file.bytes,
         };
       },
       readWorkbookFileContentForOwnerUserId: async (input) => {
@@ -137,86 +137,87 @@ export function createWorkerRuntime(
             input,
           );
         return {
+          byteSize: file.byteSize,
+          bytes: file.bytes,
+          checksumSha256: file.checksumSha256,
+          contentType: file.contentType,
           fileId: file.fileId,
           originalName: file.originalName,
-          contentType: file.contentType,
-          byteSize: file.byteSize,
-          checksumSha256: file.checksumSha256,
-          bytes: file.bytes,
         };
       },
     },
-    workbookConfig: config.workbook,
     idGenerator: {
       eventId: () => toEventId(uuidv7()),
-      workbookId: () => toWorkbookId(uuidv7()),
       workbookCalculationId: () => toWorkbookCalculationId(uuidv7()),
+      workbookId: () => toWorkbookId(uuidv7()),
       workbookSnapshotId: () => toWorkbookSnapshotId(uuidv7()),
     },
-    clock,
+    requireIdentity: unsupportedRequireIdentity,
+    workbookConfig: config.workbook,
   });
   const questionsRepository = new KyselyQuestionsRepository(database.executor);
   const questionGenerationWorkerService = new QuestionGenerationWorkerService({
-    questionsRepository,
-    questionValueResolverPort: new WorkbookQuestionValueResolverAdapter({
-      workbookSnapshotResolverPort: workbookModule.workbookSnapshotResolverPort,
-      workbookInternalSnapshotResolverPort:
-        workbookModule.workbookInternalSnapshotResolverPort,
-    }),
-    workbookCalculationPort: workbookModule.workbookCalculationPort,
+    clock,
+    idGenerator: {
+      eventId: () => toEventId(uuidv7()),
+      questionBlueprintDraftId: () => toQuestionBlueprintDraftId(uuidv7()),
+      questionBlueprintId: () => toQuestionBlueprintId(uuidv7()),
+      questionGenerationRunId: () => toQuestionGenerationRunId(uuidv7()),
+      questionId: () => toQuestionId(uuidv7()),
+      questionSetId: () => toQuestionSetId(uuidv7()),
+    },
     questionGenerationTransaction: {
       transaction: (fn) =>
         database.transaction((tx) =>
           fn({
-            questionsRepository: new KyselyQuestionsRepository(tx),
             outboxRepository: createKyselyOutboxRepository(tx),
+            questionsRepository: new KyselyQuestionsRepository(tx),
           }),
         ),
     },
-    idGenerator: {
-      questionSetId: () => toQuestionSetId(uuidv7()),
-      questionBlueprintId: () => toQuestionBlueprintId(uuidv7()),
-      questionBlueprintVersionId: () => toQuestionBlueprintVersionId(uuidv7()),
-      questionId: () => toQuestionId(uuidv7()),
-      questionGenerationRunId: () => toQuestionGenerationRunId(uuidv7()),
-      eventId: () => toEventId(uuidv7()),
-    },
-    clock,
+    questionsRepository,
+    questionValueResolverPort: new WorkbookQuestionValueResolverAdapter({
+      workbookInternalSnapshotResolverPort:
+        workbookModule.workbookInternalSnapshotResolverPort,
+      workbookSnapshotResolverPort: workbookModule.workbookSnapshotResolverPort,
+    }),
+    workbookCalculationPort: workbookModule.workbookCalculationPort,
+    workbookSnapshotReadPort: workbookModule.workbookSnapshotReadPort,
   });
   const outboxDispatcher = new OutboxPollingDispatcher({
-    outboxService,
+    clock,
+    config: {
+      batchSize: config.outbox.batchSize,
+      lockTimeoutMs: config.outbox.lockTimeoutMs,
+      maxAttempts: config.outbox.maxAttempts,
+      pollIntervalMs: config.outbox.pollIntervalMs,
+      queueRetryDelaySeconds: config.queue.retryDelaySeconds,
+      queueRetryLimit: config.queue.retryLimit,
+      retryDelayMs: config.outbox.retryDelayMs,
+      workerId: config.workerId,
+    },
     jobDispatcher,
     notificationProjector,
-    clock,
-    config: {
-      workerId: config.workerId,
-      batchSize: config.outbox.batchSize,
-      pollIntervalMs: config.outbox.pollIntervalMs,
-      lockTimeoutMs: config.outbox.lockTimeoutMs,
-      retryDelayMs: config.outbox.retryDelayMs,
-      maxAttempts: config.outbox.maxAttempts,
-      queueRetryLimit: config.queue.retryLimit,
-      queueRetryDelaySeconds: config.queue.retryDelaySeconds,
-    },
+    outboxService,
   });
   const outboxCleanupScheduler = new OutboxCleanupScheduler({
-    outboxService,
     config: config.outboxCleanup,
+    outboxService,
   });
   const failedQueueJobReconciler = new FailedQueueJobReconciler({
-    repository: new KyselyFailedQueueJobReconciliationRepository(database),
-    questionGenerationWorkerService,
     clock,
     config: {
-      workerId: config.workerId,
       batchSize: config.queue.failedJobReconcileBatchSize,
       intervalMs: config.queue.failedJobReconcileIntervalMs,
       lockTimeoutMs: config.queue.failedJobReconcileLockTimeoutMs,
+      workerId: config.workerId,
     },
+    questionGenerationWorkerService,
+    repository: new KyselyFailedQueueJobReconciliationRepository(database),
   });
   const operationalMetrics = new WorkerOperationalMetrics({
-    db: database,
     clock,
+    db: database,
   });
   let unregisterQuestionGenerationWorker: (() => Promise<void>) | undefined;
   let unregisterWorkbookValidationWorker: (() => Promise<void>) | undefined;
@@ -227,24 +228,24 @@ export function createWorkerRuntime(
       await jobQueue.start();
       const questionGenerationRegistration =
         await registerQuestionGenerationWorker({
-          jobQueue,
-          jobDispatcher,
-          questionGenerationWorkerService,
           concurrency: config.queue.questionGenerationConcurrency,
-          retryLimit: config.queue.retryLimit,
+          jobDispatcher,
+          jobQueue,
+          questionGenerationWorkerService,
           retryDelaySeconds: config.queue.retryDelaySeconds,
+          retryLimit: config.queue.retryLimit,
         });
       const workbookValidationRegistration =
         await registerWorkbookValidationWorker({
+          concurrency: config.queue.workbookValidationConcurrency,
           jobQueue,
           workbookService: workbookModule.workbookService,
-          concurrency: config.queue.workbookValidationConcurrency,
         });
       const workbookCalculationRegistration =
         await registerWorkbookCalculationWorker({
+          concurrency: config.queue.workbookCalculationConcurrency,
           jobQueue,
           workbookCalculationService: workbookModule.workbookCalculationService,
-          concurrency: config.queue.workbookCalculationConcurrency,
         });
       unregisterQuestionGenerationWorker =
         questionGenerationRegistration.unregister;

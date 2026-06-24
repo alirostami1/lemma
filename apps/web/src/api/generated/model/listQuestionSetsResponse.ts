@@ -7,7 +7,7 @@
 import type { QuestionSet } from "./questionSet.ts";
 
 export interface ListQuestionSetsResponse {
-  questionSets: QuestionSet[];
   /** @nullable */
   nextCursor: string | null;
+  questionSets: QuestionSet[];
 }

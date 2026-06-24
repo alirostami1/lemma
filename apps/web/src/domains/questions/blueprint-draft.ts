@@ -9,7 +9,7 @@ export type BuildQuestionBlueprintDraftInput = {
   name: string;
   description: string;
   model: ComposedEditorModel;
-  workbookId: string | null;
+  sources: QuestionBlueprintDraft["sources"];
 };
 
 export type BuildQuestionBlueprintDraftResult =
@@ -29,8 +29,8 @@ export function buildQuestionBlueprintDraft(
   const name = input.name.trim();
   if (name.length === 0) {
     return {
-      ok: false,
       code: "missing_name",
+      ok: false,
     };
   }
 
@@ -38,20 +38,20 @@ export function buildQuestionBlueprintDraft(
     return {
       ok: true,
       value: {
-        name,
         description:
           input.description.trim().length > 0 ? input.description.trim() : null,
         document: composedEditorModelToQuestionBlueprintDocument(
           stripUnusedComposedReferences(input.model),
         ),
-        workbookId: input.workbookId,
+        name,
+        sources: input.sources,
       },
     };
   } catch (error) {
     return {
-      ok: false,
-      code: "invalid_document",
       cause: error,
+      code: "invalid_document",
+      ok: false,
     };
   }
 }

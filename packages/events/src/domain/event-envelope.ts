@@ -54,16 +54,16 @@ export function domainEventEnvelope<TPayload extends JsonObject>(
 ): DomainEventEnvelope<TPayload> {
   assertJsonObject(input.payload, "payload");
   return {
-    id: eventId(input.id),
-    type: eventType(input.type),
-    schemaVersion: assertPositiveInteger(input.schemaVersion, "schemaVersion"),
     aggregate: {
-      type: aggregateType(input.aggregate.type),
       id: aggregateId(input.aggregate.id),
+      type: aggregateType(input.aggregate.type),
     },
-    ownerUserId: input.ownerUserId ?? null,
+    id: eventId(input.id),
     lineage: operationLineage(input.lineage),
     occurredAt: assertDate(input.occurredAt, "occurredAt"),
+    ownerUserId: input.ownerUserId ?? null,
     payload: input.payload,
+    schemaVersion: assertPositiveInteger(input.schemaVersion, "schemaVersion"),
+    type: eventType(input.type),
   };
 }

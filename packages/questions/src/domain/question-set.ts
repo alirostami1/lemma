@@ -44,13 +44,13 @@ export function createQuestionSet(
   at: Date,
 ): QuestionSet {
   return {
-    id: input.id,
-    ownerUserId: input.ownerUserId,
-    createdByUserId: input.createdByUserId,
-    name: input.name,
-    description: input.description,
-    status: "active",
     createdAt: at,
+    createdByUserId: input.createdByUserId,
+    description: input.description,
+    id: input.id,
+    name: input.name,
+    ownerUserId: input.ownerUserId,
+    status: "active",
     updatedAt: at,
   };
 }
@@ -66,13 +66,13 @@ export function reconstituteQuestionSet(input: {
   updatedAt: Date;
 }): QuestionSet {
   return {
-    id: questionSetId(input.id),
-    ownerUserId: userId(input.ownerUserId),
-    createdByUserId: userId(input.createdByUserId),
-    name: questionSetName(input.name),
-    description: questionSetDescription(input.description),
-    status: questionSetStatus(input.status),
     createdAt: input.createdAt,
+    createdByUserId: userId(input.createdByUserId),
+    description: questionSetDescription(input.description),
+    id: questionSetId(input.id),
+    name: questionSetName(input.name),
+    ownerUserId: userId(input.ownerUserId),
+    status: questionSetStatus(input.status),
     updatedAt: input.updatedAt,
   };
 }
@@ -85,11 +85,11 @@ export function renameQuestionSet(
   assertQuestionSetCanChange(set);
   return {
     ...touch(set, at),
-    name: patch.name !== undefined ? questionSetName(patch.name) : set.name,
     description:
       patch.description !== undefined
         ? questionSetDescription(patch.description)
         : set.description,
+    name: patch.name !== undefined ? questionSetName(patch.name) : set.name,
     status:
       patch.status !== undefined ? questionSetStatus(patch.status) : set.status,
   };
@@ -115,11 +115,11 @@ export function createQuestionSetQuestion(
   at: Date,
 ): QuestionSetQuestion {
   return {
-    questionSetId: input.questionSetId,
-    questionId: input.questionId,
     addedByUserId: input.addedByUserId,
-    position: input.position ?? null,
     createdAt: at,
+    position: input.position ?? null,
+    questionId: input.questionId,
+    questionSetId: input.questionSetId,
   };
 }
 

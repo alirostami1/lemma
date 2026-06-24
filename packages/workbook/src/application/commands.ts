@@ -1,5 +1,6 @@
 import type { OperationLineage } from "@lemma/domain";
 import type { CurrentUser } from "@lemma/identity/application";
+import type { WorkbookCalculationSource } from "./workbook-calculation-sources.js";
 
 export type ListCommand = {
   currentUser: CurrentUser;
@@ -32,7 +33,9 @@ export type ListWorkbookCalculationsCommand = ListCommand & {
   status?: string;
 };
 
-export type CreateWorkbookCalculationCommand = WorkbookByIdCommand & {
+export type CreateWorkbookCalculationCommand = {
+  currentUser: CurrentUser;
+  sources: readonly WorkbookCalculationSource[];
   requestedCount: number;
   correlationId?: string | null;
   lineage: OperationLineage;

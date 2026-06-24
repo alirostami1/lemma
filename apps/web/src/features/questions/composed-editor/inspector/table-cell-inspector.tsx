@@ -12,6 +12,7 @@ import type {
   TableEditorModel,
   TableResponseField,
 } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import {
   makeContentCell,
@@ -43,6 +44,8 @@ export function TableCellInspector({
   editorModel,
   referencePreviewCache,
   workbookEnabled,
+  sources = [],
+  workbookSheetNamesBySourceId,
   disabled,
   onModelChange,
   onEditorModelChange,
@@ -53,6 +56,8 @@ export function TableCellInspector({
   editorModel: ComposedEditorModel;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
+  sources?: QuestionBlueprintWorkbookSource[];
+  workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
   disabled?: boolean;
   onModelChange(model: TableEditorModel): void;
   onEditorModelChange(model: ComposedEditorModel): void;
@@ -74,7 +79,6 @@ export function TableCellInspector({
       <InspectorSection title="Cell">
         <InspectorField label="Type">
           <Select
-            value={cell.type}
             disabled={disabled}
             onValueChange={(value) => {
               if (value === "content") {
@@ -85,6 +89,7 @@ export function TableCellInspector({
                 onModelChange(makeResponseCell(model, cell.id));
               }
             }}
+            value={cell.type}
           >
             <SelectTrigger aria-label="Type">
               <SelectValue placeholder="Cell type" />
@@ -99,29 +104,33 @@ export function TableCellInspector({
       {cell.type === "content" ? (
         <InspectorSection title="Content">
           <ContentCellSettings
-            model={model}
             cell={cell}
-            tableBlockId={tableBlockId}
-            editorModel={editorModel}
-            referencePreviewCache={referencePreviewCache}
-            workbookEnabled={workbookEnabled}
             disabled={disabled}
-            onModelChange={onModelChange}
+            editorModel={editorModel}
+            model={model}
             onEditorModelChange={onEditorModelChange}
+            onModelChange={onModelChange}
+            referencePreviewCache={referencePreviewCache}
+            sources={sources}
+            tableBlockId={tableBlockId}
+            workbookEnabled={workbookEnabled}
+            workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
           />
         </InspectorSection>
       ) : (
         <AnswerCellSettings
-          model={model}
           cell={cell}
-          tableBlockId={tableBlockId}
-          editorModel={editorModel}
-          responseField={responseField}
-          referencePreviewCache={referencePreviewCache}
-          workbookEnabled={workbookEnabled}
           disabled={disabled}
-          onModelChange={onModelChange}
+          editorModel={editorModel}
+          model={model}
           onEditorModelChange={onEditorModelChange}
+          onModelChange={onModelChange}
+          referencePreviewCache={referencePreviewCache}
+          responseField={responseField}
+          sources={sources}
+          tableBlockId={tableBlockId}
+          workbookEnabled={workbookEnabled}
+          workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
         />
       )}
     </div>
@@ -135,6 +144,8 @@ function ContentCellSettings({
   editorModel,
   referencePreviewCache,
   workbookEnabled,
+  sources,
+  workbookSheetNamesBySourceId,
   disabled,
   onModelChange,
   onEditorModelChange,
@@ -145,6 +156,8 @@ function ContentCellSettings({
   editorModel: ComposedEditorModel;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
+  sources: QuestionBlueprintWorkbookSource[];
+  workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
   disabled?: boolean;
   onModelChange(model: TableEditorModel): void;
   onEditorModelChange(model: ComposedEditorModel): void;
@@ -152,25 +165,27 @@ function ContentCellSettings({
   return (
     <TextAuthoringContent
       content={cell.content}
-      referencePreviewCache={referencePreviewCache}
-      model={editorModel}
-      workbookEnabled={workbookEnabled}
       disabled={disabled}
+      model={editorModel}
       onChange={(content) =>
         onModelChange(updateContentCellContent(model, cell.id, content))
       }
-      onModelChange={onEditorModelChange}
-      onSelectReference={() => undefined}
       onCreatedReference={({ nextModel, nextContent }) => {
         onEditorModelChange(
           updateTableContentCellInlineContentInComposedModel({
-            editorModel: nextModel,
-            tableBlockId,
             cellId: cell.id,
             content: nextContent,
+            editorModel: nextModel,
+            tableBlockId,
           }),
         );
       }}
+      onModelChange={onEditorModelChange}
+      onSelectReference={() => undefined}
+      referencePreviewCache={referencePreviewCache}
+      sources={sources}
+      workbookEnabled={workbookEnabled}
+      workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
     />
   );
 }
@@ -183,6 +198,8 @@ function AnswerCellSettings({
   responseField,
   referencePreviewCache,
   workbookEnabled,
+  sources,
+  workbookSheetNamesBySourceId,
   disabled,
   onModelChange,
   onEditorModelChange,
@@ -194,6 +211,8 @@ function AnswerCellSettings({
   responseField: TableResponseField | null | undefined;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
+  sources: QuestionBlueprintWorkbookSource[];
+  workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
   disabled?: boolean;
   onModelChange(model: TableEditorModel): void;
   onEditorModelChange(model: ComposedEditorModel): void;
@@ -212,12 +231,12 @@ function AnswerCellSettings({
             </p>
           </div>
           <Button
-            type="button"
-            variant="outline"
             disabled={disabled}
             onClick={() =>
               onModelChange(repairMissingAnswerFieldForCell(model, cell.id))
             }
+            type="button"
+            variant="outline"
           >
             Repair answer field
           </Button>
@@ -227,15 +246,8 @@ function AnswerCellSettings({
         <>
           <InspectorSection title="Input">
             <AnswerFieldSettings
-              responseField={responseField}
-              label={cell.label}
-              placeholder={cell.placeholder}
               disabled={disabled}
-              onResponseFieldChange={(field) =>
-                onModelChange(
-                  updateResponseFieldForCell(model, cell.id, () => field),
-                )
-              }
+              label={cell.label}
               onLabelChange={(label) =>
                 onModelChange(
                   updateTableCell(model, cell.id, (current) =>
@@ -254,24 +266,21 @@ function AnswerCellSettings({
                   ),
                 )
               }
+              onResponseFieldChange={(field) =>
+                onModelChange(
+                  updateResponseFieldForCell(model, cell.id, () => field),
+                )
+              }
+              placeholder={cell.placeholder}
+              responseField={responseField}
             />
           </InspectorSection>
 
           <InspectorSection title="Scoring">
             <GradingSettings
               blockId={cell.id}
-              points={cell.points}
-              grading={cell.grading}
               disabled={disabled}
-              onPointsChange={(points) =>
-                onModelChange(
-                  updateTableCell(model, cell.id, (current) =>
-                    current.type === "response"
-                      ? { ...current, points }
-                      : current,
-                  ),
-                )
-              }
+              grading={cell.grading}
               onGradingChange={(grading) =>
                 onModelChange(
                   updateTableCell(model, cell.id, (current) =>
@@ -281,18 +290,23 @@ function AnswerCellSettings({
                   ),
                 )
               }
+              onPointsChange={(points) =>
+                onModelChange(
+                  updateTableCell(model, cell.id, (current) =>
+                    current.type === "response"
+                      ? { ...current, points }
+                      : current,
+                  ),
+                )
+              }
+              points={cell.points}
             />
           </InspectorSection>
 
           <InspectorSection title="Correct answer">
             <CorrectAnswerSettings
-              value={cell.correctValueSource}
-              model={editorModel}
-              referencePreviewCache={referencePreviewCache}
-              valueType={responseField.type}
-              workbookEnabled={workbookEnabled}
               disabled={disabled}
-              onModelChange={onEditorModelChange}
+              model={editorModel}
               onChange={(valueSource) =>
                 onModelChange(
                   updateResponseCellCorrectValueSource(
@@ -305,16 +319,23 @@ function AnswerCellSettings({
               onCreatedReference={({ nextModel, referenceId }) => {
                 onEditorModelChange(
                   updateTableCellValueInComposedModel({
+                    cellId: cell.id,
                     editorModel: nextModel,
                     tableBlockId,
-                    cellId: cell.id,
                     value: {
-                      type: "reference",
                       referenceId,
+                      type: "reference",
                     },
                   }),
                 );
               }}
+              onModelChange={onEditorModelChange}
+              referencePreviewCache={referencePreviewCache}
+              sources={sources}
+              value={cell.correctValueSource}
+              valueType={responseField.type}
+              workbookEnabled={workbookEnabled}
+              workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
             />
           </InspectorSection>
         </>

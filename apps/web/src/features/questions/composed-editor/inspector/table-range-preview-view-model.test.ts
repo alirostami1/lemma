@@ -5,15 +5,15 @@ import { getTableRangePreviewViewModel } from "./table-range-preview-view-model"
 describe("getTableRangePreviewViewModel", () => {
   it("requires a preview before the range can be applied", () => {
     expect(getTableRangePreviewViewModel(null)).toEqual({
-      status: "not_ready",
       message: "Select a workbook to preview this range.",
+      status: "not_ready",
     });
   });
 
   it("rejects unresolved previews", () => {
     expect(getTableRangePreviewViewModel(errorPreview())).toEqual({
-      status: "not_ready",
       message: "This range is not ready to preview.",
+      status: "not_ready",
     });
   });
 
@@ -21,8 +21,8 @@ describe("getTableRangePreviewViewModel", () => {
     expect(
       getTableRangePreviewViewModel(resolvedPreview([[1], [1, 2]])),
     ).toEqual({
-      status: "invalid",
       message: "Selected range must be a rectangular 2D array.",
+      status: "invalid",
     });
   });
 
@@ -35,29 +35,29 @@ describe("getTableRangePreviewViewModel", () => {
         ]),
       ),
     ).toEqual({
-      status: "ready",
-      rowCount: 2,
       columnCount: 2,
       displayValue: "preview",
+      rowCount: 2,
+      status: "ready",
     });
   });
 });
 
 function resolvedPreview(rawValue: unknown): ReferencePreviewCache[string] {
   return {
-    referenceId: "reference_1",
-    status: "resolved",
     displayValue: "preview",
     rawValue,
+    referenceId: "reference_1",
+    status: "resolved",
     updatedAt: 1,
   };
 }
 
 function errorPreview(): ReferencePreviewCache[string] {
   return {
+    displayValue: "not ready",
     referenceId: "reference_1",
     status: "error",
-    displayValue: "not ready",
     updatedAt: 1,
   };
 }

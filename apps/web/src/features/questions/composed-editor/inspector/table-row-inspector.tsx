@@ -37,46 +37,46 @@ export function TableRowInspector({
       <InspectorSection title="Row">
         <InspectorField label="Label">
           <Input
-            id={`${row.id}-label`}
-            value={row.label}
             disabled={disabled}
+            id={`${row.id}-label`}
             onChange={(event) =>
               onModelChange(
                 updateTableRowLabel(model, row.id, event.currentTarget.value),
               )
             }
+            value={row.label}
           />
         </InspectorField>
       </InspectorSection>
       <InspectorSection title="Row actions">
         <div className="grid grid-cols-2 gap-2">
           <Button
-            type="button"
-            variant="outline"
             disabled={disabled || rowIndex === 0}
             onClick={() => onModelChange(moveRowUp(model, row.id))}
+            type="button"
+            variant="outline"
           >
             <ArrowUp />
             Up
           </Button>
           <Button
-            type="button"
-            variant="outline"
             disabled={disabled || rowIndex === model.rows.length - 1}
             onClick={() => onModelChange(moveRowDown(model, row.id))}
+            type="button"
+            variant="outline"
           >
             <ArrowDown />
             Down
           </Button>
         </div>
         <Button
-          type="button"
-          variant="destructive"
           disabled={disabled}
           onClick={() => {
             onModelChange(deleteTableRow(model, row.id));
             onSelectionChange({ type: "table" });
           }}
+          type="button"
+          variant="destructive"
         >
           <Trash2 />
           Delete row

@@ -10,6 +10,6 @@ export type IdentityUserStatus =
 
 export const IdentityUserStatus = {
   active: "active",
-  disabled: "disabled",
   deleted: "deleted",
+  disabled: "disabled",
 } as const;

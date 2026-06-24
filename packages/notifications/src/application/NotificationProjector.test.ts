@@ -18,9 +18,9 @@ const ownerUserId = "019e9315-6a87-715f-9861-8654df070e01";
 const runId = "019e9315-6a87-715f-9861-8654df070e02";
 const workbookCalculationId = "019e9315-6a87-715f-9861-8654df070e05";
 const lineage = {
-  requestId: "019e9315-6a87-715f-9861-8654df070e04",
-  correlationId: "019e9315-6a87-715f-9861-8654df070e04",
   causationId: null,
+  correlationId: "019e9315-6a87-715f-9861-8654df070e04",
+  requestId: "019e9315-6a87-715f-9861-8654df070e04",
 };
 
 describe("NotificationProjector", () => {
@@ -74,17 +74,17 @@ describe("NotificationProjector", () => {
 function createOutboxEvent(): OutboxEvent {
   return outboxEventFromEnvelope(
     domainEventEnvelope({
-      id: "019e9315-6a87-715f-9861-8654df070e03",
-      type: QUESTION_GENERATION_RUN_SUCCEEDED_EVENT,
-      schemaVersion: 1,
       aggregate: {
-        type: "question_generation_run",
         id: runId,
+        type: "question_generation_run",
       },
-      ownerUserId,
+      id: "019e9315-6a87-715f-9861-8654df070e03",
       lineage,
       occurredAt: at,
+      ownerUserId,
       payload: { questionGenerationRunId: runId, questionIds: [] },
+      schemaVersion: 1,
+      type: QUESTION_GENERATION_RUN_SUCCEEDED_EVENT,
     }),
   );
 }
@@ -92,25 +92,25 @@ function createOutboxEvent(): OutboxEvent {
 function createWorkbookCalculationOutboxEvent(): OutboxEvent {
   return outboxEventFromEnvelope(
     domainEventEnvelope({
-      id: "019e9315-6a87-715f-9861-8654df070e06",
-      type: "workbook_calculation.succeeded.v1",
-      schemaVersion: 1,
       aggregate: {
-        type: "workbook_calculation",
         id: workbookCalculationId,
+        type: "workbook_calculation",
       },
-      ownerUserId,
+      id: "019e9315-6a87-715f-9861-8654df070e06",
       lineage,
       occurredAt: at,
+      ownerUserId,
       payload: {
-        workbookCalculationId,
-        workbookId: "019e9315-6a87-715f-9861-8654df070e07",
         correlationId: null,
-        status: "succeeded",
+        errorMessage: null,
         requestedCount: 1,
         snapshotIds: [],
-        errorMessage: null,
+        status: "succeeded",
+        workbookCalculationId,
+        workbookId: "019e9315-6a87-715f-9861-8654df070e07",
       },
+      schemaVersion: 1,
+      type: "workbook_calculation.succeeded.v2",
     }),
   );
 }

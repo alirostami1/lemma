@@ -17,28 +17,28 @@ export function getTableRangePreviewViewModel(
 ): TableRangePreviewViewModel {
   if (!preview) {
     return {
-      status: "not_ready",
       message: "Select a workbook to preview this range.",
+      status: "not_ready",
     };
   }
 
   if (preview.status !== "resolved") {
     return {
-      status: "not_ready",
       message: "This range is not ready to preview.",
+      status: "not_ready",
     };
   }
 
   const values = preview.rawValue;
   if (!Array.isArray(values)) {
     return {
-      status: "invalid",
       message: "Selected range must be a rectangular 2D array.",
+      status: "invalid",
     };
   }
 
   if (values.length === 0) {
-    return { status: "empty", message: "Selected range is empty." };
+    return { message: "Selected range is empty.", status: "empty" };
   }
 
   const columnCount = values.reduce(
@@ -46,7 +46,7 @@ export function getTableRangePreviewViewModel(
     0,
   );
   if (columnCount === 0) {
-    return { status: "empty", message: "Selected range is empty." };
+    return { message: "Selected range is empty.", status: "empty" };
   }
 
   const rectangular = values.every(
@@ -54,15 +54,15 @@ export function getTableRangePreviewViewModel(
   );
   if (!rectangular) {
     return {
-      status: "invalid",
       message: "Selected range must be a rectangular 2D array.",
+      status: "invalid",
     };
   }
 
   return {
-    status: "ready",
-    rowCount: values.length,
     columnCount,
     displayValue: preview.displayValue,
+    rowCount: values.length,
+    status: "ready",
   };
 }

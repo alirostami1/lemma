@@ -9,30 +9,30 @@ import type { WorkbookInspection } from "./workbookInspection.ts";
 import type { WorkbookStatus } from "./workbookStatus.ts";
 
 export interface Workbook {
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  id: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  ownerUserId: string;
+  /** @pattern ^[A-Fa-f0-9]{64}$ */
+  checksumSha256: string;
+  createdAt: string;
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
   createdByUserId: string;
+  engine: WorkbookEngine;
+  /** @nullable */
+  engineVersion: string | null;
+  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
+  fileId: string;
+  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
+  id: string;
+  inspection: WorkbookInspection | null;
   /**
    * @minLength 1
    * @maxLength 160
    */
   name: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  fileId: string;
-  /** @pattern ^[A-Fa-f0-9]{64}$ */
-  checksumSha256: string;
   /** @minLength 1 */
   originalName: string;
-  engine: WorkbookEngine;
-  /** @nullable */
-  engineVersion: string | null;
+  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
+  ownerUserId: string;
   status: WorkbookStatus;
-  inspection: WorkbookInspection | null;
+  updatedAt: string;
   /** @nullable */
   validationError: string | null;
-  createdAt: string;
-  updatedAt: string;
 }

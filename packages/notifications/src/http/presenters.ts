@@ -16,7 +16,7 @@ function toRealtimeTokenDto(
   result: RealtimeTokenResult,
 ): RealtimeTokenResponseDto {
   return {
-    token: result.token,
     expiresAt: presentDate(result.expiresAt),
+    token: result.token,
   };
 }

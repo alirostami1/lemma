@@ -1,6 +1,6 @@
 export const primaryNavigation = [
-  { to: "/", label: "Home" },
-  { to: "/studio", label: "Studio" },
-  { to: "/create", label: "Create" },
-  { to: "/question-sets", label: "Question Sets" },
+  { label: "Home", to: "/" },
+  { label: "Studio", to: "/studio" },
+  { label: "Create", to: "/create" },
+  { label: "Question Sets", to: "/question-sets" },
 ] as const;

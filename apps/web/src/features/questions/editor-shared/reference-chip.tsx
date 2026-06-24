@@ -17,12 +17,12 @@ export function ReferenceChip({
   if (onSelect) {
     return (
       <button
-        type="button"
         className={getChipClassName(status)}
         onClick={(event) => {
           event.stopPropagation();
           onSelect(referenceId);
         }}
+        type="button"
       >
         {content}
       </button>

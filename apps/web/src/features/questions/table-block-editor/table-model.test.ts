@@ -8,10 +8,50 @@ import {
 } from "#/features/questions/table-block-editor";
 
 const baseModel: TableEditorModel = {
-  prompt: "",
+  cells: [
+    {
+      columnId: "column_1",
+      content: [{ text: "A", type: "text" }],
+      id: "cell_1",
+      rowId: "row_1",
+      type: "content",
+    },
+    {
+      columnId: "column_2",
+      correctValueSource: { type: "literal", value: "B" },
+      grading: { mode: "exact" },
+      id: "cell_2",
+      points: 1,
+      responseFieldId: "answer_1",
+      rowId: "row_1",
+      type: "response",
+    },
+    {
+      columnId: "column_1",
+      content: [{ text: "C", type: "text" }],
+      id: "cell_3",
+      rowId: "row_2",
+      type: "content",
+    },
+    {
+      columnId: "column_2",
+      content: [{ text: "D", type: "text" }],
+      id: "cell_4",
+      rowId: "row_2",
+      type: "content",
+    },
+  ],
   columns: [
     { id: "column_1", label: "Column 1" },
     { id: "column_2", label: "Column 2" },
+  ],
+  prompt: "",
+  responseFields: [
+    {
+      id: "answer_1",
+      required: true,
+      type: "text",
+    },
   ],
   rows: [
     { id: "row_1", label: "Row 1" },
@@ -19,46 +59,6 @@ const baseModel: TableEditorModel = {
   ],
   showColumnNames: true,
   showRowNames: true,
-  responseFields: [
-    {
-      id: "answer_1",
-      type: "text",
-      required: true,
-    },
-  ],
-  cells: [
-    {
-      id: "cell_1",
-      rowId: "row_1",
-      columnId: "column_1",
-      type: "content",
-      content: [{ type: "text", text: "A" }],
-    },
-    {
-      id: "cell_2",
-      rowId: "row_1",
-      columnId: "column_2",
-      type: "response",
-      responseFieldId: "answer_1",
-      correctValueSource: { type: "literal", value: "B" },
-      points: 1,
-      grading: { mode: "exact" },
-    },
-    {
-      id: "cell_3",
-      rowId: "row_2",
-      columnId: "column_1",
-      type: "content",
-      content: [{ type: "text", text: "C" }],
-    },
-    {
-      id: "cell_4",
-      rowId: "row_2",
-      columnId: "column_2",
-      type: "content",
-      content: [{ type: "text", text: "D" }],
-    },
-  ],
 };
 
 describe("table reorder helpers", () => {

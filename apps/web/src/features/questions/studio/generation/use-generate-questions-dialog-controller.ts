@@ -99,8 +99,8 @@ export function useGenerateQuestionsDialogController(
     if (questionSetMode === "create_new") {
       try {
         const result = await createQuestionSet.mutateAsync({
-          name: newQuestionSetName.trim(),
           description: newQuestionSetDescription.trim() || null,
+          name: newQuestionSetName.trim(),
         });
         targetQuestionSetId = result.questionSet.id;
         targetQuestionSetName = result.questionSet.name;
@@ -124,29 +124,18 @@ export function useGenerateQuestionsDialogController(
   }
 
   return {
-    open: input.open,
-    source: input.source,
-    questionSets,
-    questionSetsLoading: questionSetsQuery.isLoading,
-    questionSetsErrorMessage:
-      questionSetsQuery.isError && !questionSetsQuery.data
-        ? "Question sets could not be loaded."
-        : null,
-    questionSetMode,
-    selectedQuestionSetId,
-    newQuestionSetName,
-    newQuestionSetDescription,
     countInput,
-    isSubmitting,
-    isGenerateDisabled: isSubmitting || disabledIssue !== null,
     countIssue,
     existingQuestionSetIssue,
+    isGenerateDisabled: isSubmitting || disabledIssue !== null,
+    isSubmitting,
+    newQuestionSetDescription,
+    newQuestionSetName,
     newQuestionSetNameIssue,
-    submitError,
+    onCountInputChange: setCountInput,
+    onNewQuestionSetDescriptionChange: setNewQuestionSetDescription,
+    onNewQuestionSetNameChange: setNewQuestionSetName,
     onOpenChange: input.onOpenChange,
-    onSubmit: () => {
-      void onSubmit();
-    },
     onQuestionSetValueChange: (value) => {
       if (value === CREATE_NEW_VALUE) {
         setQuestionSetMode("create_new");
@@ -155,9 +144,20 @@ export function useGenerateQuestionsDialogController(
       setQuestionSetMode("existing");
       setSelectedQuestionSetId(value);
     },
-    onNewQuestionSetNameChange: setNewQuestionSetName,
-    onNewQuestionSetDescriptionChange: setNewQuestionSetDescription,
-    onCountInputChange: setCountInput,
+    onSubmit: () => {
+      void onSubmit();
+    },
+    open: input.open,
+    questionSetMode,
+    questionSets,
+    questionSetsErrorMessage:
+      questionSetsQuery.isError && !questionSetsQuery.data
+        ? "Question sets could not be loaded."
+        : null,
+    questionSetsLoading: questionSetsQuery.isLoading,
+    selectedQuestionSetId,
+    source: input.source,
+    submitError,
   };
 }
 

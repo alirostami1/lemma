@@ -65,17 +65,17 @@ export async function generateHonoRoutesSource(
   const document = await resolveOpenApiDocument(options.input);
 
   return buildHonoRoutesSource({
-    routeName: options.routeName,
     envType: options.envType,
     envTypeImport: options.envTypeImport,
-    requireIdentityType: options.requireIdentityType,
-    requireIdentityTypeImport: options.requireIdentityTypeImport,
-    validationHook: options.validationHook,
-    validationHookImport: options.validationHookImport,
-    zValidatorImport: options.zValidatorImport,
     operations: collectOperations(document, {
       authSecurityScheme: options.authSecurityScheme ?? "keycloakAccessToken",
     }),
+    requireIdentityType: options.requireIdentityType,
+    requireIdentityTypeImport: options.requireIdentityTypeImport,
+    routeName: options.routeName,
+    validationHook: options.validationHook,
+    validationHookImport: options.validationHookImport,
+    zValidatorImport: options.zValidatorImport,
   });
 }
 
@@ -122,30 +122,30 @@ export function buildHonoRoutesSource(options: BuildHonoRoutesOptions) {
 
   const generatedImports = buildImports([
     {
-      name: envType,
-      isType: true,
       from: envTypeImport,
+      isType: true,
+      name: envType,
     },
     {
-      name: requireIdentityType,
-      isType: true,
       from: requireIdentityTypeImport,
+      isType: true,
+      name: requireIdentityType,
     },
     ...(needsZValidator
       ? [
           {
-            name: "zValidator",
-            isType: false,
             from: zValidatorImport,
+            isType: false,
+            name: "zValidator",
           },
         ]
       : []),
     ...(validationHook
       ? [
           {
-            name: validationHook,
-            isType: false,
             from: validationHookImport,
+            isType: false,
+            name: validationHook,
           },
         ]
       : []),
@@ -243,20 +243,20 @@ export function collectOperations(
         ...(operation.parameters ?? []),
       ];
       operations.push({
-        operationId: operation.operationId,
-        method,
-        path,
+        hasJsonBody: hasJsonRequestBody(operation.requestBody, document),
         honoPath: toHonoRoutePath(path),
+        method,
+        operationId: operation.operationId,
+        path,
         pathParams: getParameterNames(parameters, "path", path),
         queryParams: getParameterNames(parameters, "query"),
-        hasJsonBody: hasJsonRequestBody(operation.requestBody, document),
+        responses: getResponses(operation.responses, document),
         secured: hasOperationSecurity(
           document,
           path,
           method,
           options.authSecurityScheme,
         ),
-        responses: getResponses(operation.responses, document),
       });
     }
   }
