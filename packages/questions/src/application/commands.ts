@@ -47,12 +47,21 @@ export type CreateQuestionBlueprintDraftCommand = ListCommand & {
   document: unknown;
   sources: unknown;
 };
+export type CreateQuestionBlueprintEditDraftCommand = ListCommand & {
+  blueprintId: string;
+  mode?: "resume_or_create";
+};
 export type QuestionBlueprintDraftByIdCommand = ListCommand & {
   draftId: string;
 };
+export type DiscardQuestionBlueprintDraftCommand =
+  QuestionBlueprintDraftByIdCommand & {
+    expectedRevision: number;
+  };
 export type UpdateQuestionBlueprintDraftCommand =
   QuestionBlueprintDraftByIdCommand & {
     patch: {
+      expectedRevision: number;
       name: string;
       description: string | null;
       document: unknown;
@@ -61,11 +70,14 @@ export type UpdateQuestionBlueprintDraftCommand =
   };
 export type AttachQuestionBlueprintDraftSourceFileCommand =
   QuestionBlueprintDraftByIdCommand & {
+    expectedRevision: number;
     sourceId: string;
     fileId: string;
   };
 export type PublishQuestionBlueprintDraftCommand =
   QuestionBlueprintDraftByIdCommand & {
+    expectedRevision: number;
+    idempotencyKey: string;
     lineage: OperationLineage;
   };
 

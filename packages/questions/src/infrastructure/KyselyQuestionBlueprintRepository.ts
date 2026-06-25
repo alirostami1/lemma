@@ -3,6 +3,7 @@ import type {
   QuestionBlueprint,
   QuestionBlueprintId,
   QuestionBlueprintStatus,
+  QuestionBlueprintVersion,
   QuestionBlueprintVersionId,
   UserId,
 } from "../domain/index.js";
@@ -15,6 +16,7 @@ import {
   mapQuestionBlueprintRowToDomain,
   mapQuestionBlueprintToInsert,
   mapQuestionBlueprintToUpdate,
+  mapQuestionBlueprintVersionRowToDomain,
   mapQuestionBlueprintVersionToInsert,
 } from "./KyselyQuestionMappers.js";
 
@@ -28,6 +30,17 @@ export class KyselyQuestionBlueprintRepository {
       .where("questionBlueprints.id", "=", id)
       .executeTakeFirst();
     return row ? mapQuestionBlueprintRowToDomain(row) : null;
+  }
+
+  async findQuestionBlueprintVersionById(
+    id: QuestionBlueprintVersionId,
+  ): Promise<QuestionBlueprintVersion | null> {
+    const row = await this.db
+      .selectFrom("questionBlueprintVersions")
+      .selectAll()
+      .where("id", "=", id)
+      .executeTakeFirst();
+    return row ? mapQuestionBlueprintVersionRowToDomain(row) : null;
   }
 
   async listQuestionBlueprintsByOwnerUserId(input: {
@@ -156,7 +169,7 @@ async function updateQuestionBlueprintDefinitionInTransaction(
   return row ? mapQuestionBlueprintRowToDomain(row) : null;
 }
 
-async function insertQuestionBlueprintVersion(
+export async function insertQuestionBlueprintVersion(
   db: DatabaseExecutor,
   input: {
     blueprint: QuestionBlueprint;

@@ -30,6 +30,20 @@ export class QuestionBlueprintDraftNotFoundError extends QuestionsApplicationErr
   }
 }
 
+export class QuestionBlueprintDraftRevisionConflictError extends QuestionsApplicationError {
+  readonly applicationCode = "DRAFT_REVISION_CONFLICT";
+  constructor(message = "question blueprint draft revision conflict") {
+    super(message);
+  }
+}
+
+export class QuestionBlueprintBaseVersionConflictError extends QuestionsApplicationError {
+  readonly applicationCode = "BLUEPRINT_BASE_VERSION_CONFLICT";
+  constructor(message = "question blueprint base version conflict") {
+    super(message);
+  }
+}
+
 export class QuestionNotFoundError extends QuestionsApplicationError {
   readonly applicationCode = "QUESTION_NOT_FOUND";
   constructor(message = "question not found") {
