@@ -134,6 +134,8 @@ export interface QuestionBlueprintDrafts {
   name: string;
   ownerUserId: string;
   publishedAt: Timestamp | null;
+  publishedVersionId: string | null;
+  publishIdempotencyKey: string | null;
   revision: Generated<number>;
   sources: Generated<Json>;
   status: Generated<string>;
