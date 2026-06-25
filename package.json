@@ -24,7 +24,7 @@
     "dependency-cruiser": "^17.4.3",
     "lefthook": "^2.1.9",
     "markdownlint-cli2": "^0.22.1",
-    "turbo": "^2.9.8",
+    "turbo": "^2.9.18",
     "typescript": "catalog:"
   },
   "packageManager": "pnpm@11.7.0",
