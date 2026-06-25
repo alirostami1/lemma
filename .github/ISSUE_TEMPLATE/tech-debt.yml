@@ -1,8 +1,13 @@
 name: Tech Debt
 description: Improve code health without product behavior change
-title: "[Tech Debt]: "
+title: "<area>: "
 labels: ["tech-debt"]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Use one issue per logical cleanup. Title format: `<area>: <problem or outcome>`.
+
   - type: textarea
     id: problem
     attributes:
@@ -20,17 +25,59 @@ body:
       required: true
 
   - type: textarea
-    id: constraints
+    id: scope
     attributes:
-      label: Constraints
+      label: Scope
+      description: What should be changed?
+      placeholder: |
+        -
+    validations:
+      required: true
+
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
       description: What must not change?
       placeholder: |
-        - No behavior change
-        - Keep public APIs stable unless noted
+        - No product behavior change
+        - No public API change unless explicitly listed
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: What proves this cleanup is complete?
+      placeholder: |
+        -
+    validations:
+      required: true
 
   - type: textarea
     id: validation
     attributes:
       label: Validation
+      description: Commands/checks that should pass.
       placeholder: |
-        - `pnpm check-types && pnpm check && pnpm test`
+        - `pnpm check:types`
+        - `pnpm check`
+        - `pnpm test`
+    validations:
+      required: true
+
+  - type: textarea
+    id: risk
+    attributes:
+      label: Risk
+      description: API, migration, deploy, data, security, or compatibility risks.
+      placeholder: |
+        - None known
+
+  - type: textarea
+    id: changelog
+    attributes:
+      label: Changelog impact
+      description: Developer-workflow or contributor-facing note, if any.
+      placeholder: |
+        - Notable changelog note:
+        - Or: no changelog note needed because ...

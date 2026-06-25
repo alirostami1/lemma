@@ -36,7 +36,7 @@ jobs:
       github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
-      - name: Check branch, title, and issue link
+      - name: Check branch, title, issue link, and PR body sections
         env:
           PR_BRANCH: ${{ github.head_ref }}
           PR_TITLE: ${{ github.event.pull_request.title }}
@@ -48,19 +48,41 @@ jobs:
           branch='^(fix|feat|chore|docs|test|refactor|ci|build)/[0-9]+-[a-z0-9][a-z0-9-]*$'
 
           if ! printf '%s' "$PR_BRANCH" | grep -Eq "$branch"; then
-            echo "Branch must match: <type>/<issue-number>-<short-slug>"
+            echo "::error::Branch must match: <type>/<issue-number>-<short-slug>"
             exit 1
           fi
 
           if ! printf '%s' "$PR_TITLE" | grep -Eq "$conventional"; then
-            echo "PR title must match: <type>(<scope>): <imperative summary>"
+            echo "::error::PR title must match: <type>(<scope>): <imperative summary>"
             exit 1
           fi
 
-          if ! printf '%s' "$PR_BODY" | grep -Eiq '(^|[[:space:]])Closes #[0-9]+'; then
-            echo "PR body must include: Closes #<issue-number>"
+          branch_issue="$(printf '%s' "$PR_BRANCH" | cut -d/ -f2 | cut -d- -f1)"
+
+          if ! printf '%s' "$PR_BODY" | grep -Eiq "(^|[[:space:]])Closes #${branch_issue}([^0-9]|$)"; then
+            echo "::error::PR body must include: Closes #${branch_issue}"
             exit 1
           fi
+
+          required_sections='
+          ## Summary
+          ## What changed
+          ## Validation
+          ## API changes
+          ## Migration notes
+          ## Generated files
+          ## Changelog
+          ## Risk
+          ## Follow-up / out of scope
+          '
+
+          printf '%s' "$required_sections" | while IFS= read -r section; do
+            [ -z "$section" ] && continue
+            if ! printf '%s' "$PR_BODY" | grep -Fq "$section"; then
+              echo "::error::PR body is missing required section: $section"
+              exit 1
+            fi
+          done
   docs-validation:
     name: docs validation
     needs: changes

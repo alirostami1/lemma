@@ -1,8 +1,13 @@
 name: Feature
 description: Propose product capability
-title: "[Feature]: "
+title: "<area>: "
 labels: ["feature"]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Use one issue per logical feature. Title format: `<area>: <problem or outcome>`.
+
   - type: textarea
     id: goal
     attributes:
@@ -20,10 +25,18 @@ body:
       required: true
 
   - type: textarea
-    id: acceptance
+    id: desired-outcome
     attributes:
-      label: Acceptance criteria
-      description: What proves this is done?
+      label: Desired outcome
+      description: What should be true after this is done?
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What should be included?
       placeholder: |
         -
     validations:
@@ -34,3 +47,46 @@ body:
     attributes:
       label: Out of scope
       description: What should not be included?
+      placeholder: |
+        -
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: What proves this is done?
+      placeholder: |
+        -
+    validations:
+      required: true
+
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation
+      description: Commands/checks that should pass.
+      placeholder: |
+        - `pnpm check:types`
+        - `pnpm check`
+        - `pnpm test`
+    validations:
+      required: true
+
+  - type: textarea
+    id: risk
+    attributes:
+      label: Risk
+      description: API, migration, deploy, data, security, or compatibility risks.
+      placeholder: |
+        - None known
+
+  - type: textarea
+    id: changelog
+    attributes:
+      label: Changelog impact
+      description: User-facing, API, migration, deployment, or developer-workflow note.
+      placeholder: |
+        - Notable changelog note:
+        - Or: no changelog note needed because ...

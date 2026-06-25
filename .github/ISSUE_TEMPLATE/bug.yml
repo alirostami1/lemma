@@ -1,13 +1,18 @@
 name: Bug
 description: Report broken behavior
-title: "[Bug]: "
+title: "<area>: "
 labels: ["bug"]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Use one issue per logical bug. Title format: `<area>: <problem or outcome>`.
+
   - type: textarea
     id: problem
     attributes:
       label: Problem
-      description: What is broken?
+      description: What is broken? Include the user/operator/developer impact.
     validations:
       required: true
 
@@ -23,9 +28,31 @@ body:
     id: reproduce
     attributes:
       label: Reproduction
-      description: Steps, data, route, or command.
+      description: Steps, data, route, command, screenshots, or logs.
+      placeholder: |
+        1.
+        2.
+        3.
     validations:
       required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What should be changed?
+      placeholder: |
+        -
+    validations:
+      required: true
+
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: What should not be included?
+      placeholder: |
+        -
 
   - type: textarea
     id: acceptance
@@ -36,3 +63,23 @@ body:
         -
     validations:
       required: true
+
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation
+      description: Commands/checks that should pass.
+      placeholder: |
+        - `pnpm check:types`
+        - `pnpm check`
+        - `pnpm test`
+    validations:
+      required: true
+
+  - type: textarea
+    id: risk
+    attributes:
+      label: Risk
+      description: API, migration, deploy, data, security, or compatibility risks.
+      placeholder: |
+        - None known
