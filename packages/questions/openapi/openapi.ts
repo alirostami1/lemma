@@ -165,6 +165,19 @@ const questionBlueprintDraftSourceSchema: Schema = {
     type: "object",
   },
 };
+const questionBlueprintDraftSourceIntentSchema: Schema = {
+  name: "QuestionBlueprintDraftSourceIntent",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      name: { minLength: 1, type: "string" },
+      sourceId: { pattern: "^[A-Za-z][A-Za-z0-9_-]*$", type: "string" },
+      type: { enum: ["workbook"], type: "string" },
+    },
+    required: ["type", "sourceId", "name"],
+    type: "object",
+  },
+};
 const blueprintInlineTextSchema: Schema = {
   name: "BlueprintInlineText",
   schema: {
@@ -968,6 +981,7 @@ const questionBlueprintSchema: Schema = {
       archivedAt: nullableDateTime,
       createdAt: dateTime,
       createdByUserId: uuid,
+      currentVersionId: uuid,
       description: {
         maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
         type: ["string", "null"],
@@ -1000,6 +1014,7 @@ const questionBlueprintSchema: Schema = {
       "id",
       "ownerUserId",
       "createdByUserId",
+      "currentVersionId",
       "name",
       "description",
       "document",
@@ -1021,6 +1036,7 @@ const questionBlueprintAuthoringSchema: Schema = {
       archivedAt: nullableDateTime,
       createdAt: dateTime,
       createdByUserId: uuid,
+      currentVersionId: uuid,
       description: {
         maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
         type: ["string", "null"],
@@ -1053,6 +1069,7 @@ const questionBlueprintAuthoringSchema: Schema = {
       "id",
       "ownerUserId",
       "createdByUserId",
+      "currentVersionId",
       "name",
       "description",
       "document",
@@ -1071,13 +1088,15 @@ const questionBlueprintDraftSchema: Schema = {
   schema: {
     additionalProperties: false,
     properties: {
-      blueprintId: { format: "uuid", type: ["string", "null"] },
+      baseVersionId: nullableUuid,
+      blueprintId: nullableUuid,
       createdAt: dateTime,
       createdByUserId: uuid,
       description: {
         maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
         type: ["string", "null"],
       },
+      discardedAt: nullableDateTime,
       document: schemaRef(questionBlueprintDocumentSchema),
       id: uuid,
       lastSavedAt: dateTime,
@@ -1087,6 +1106,9 @@ const questionBlueprintDraftSchema: Schema = {
         type: "string",
       },
       ownerUserId: uuid,
+      publishedAt: nullableDateTime,
+      publishedVersionId: nullableUuid,
+      revision: { minimum: 1, type: "integer" },
       sources: {
         items: schemaRef(questionBlueprintDraftSourceSchema),
         type: "array",
@@ -1101,13 +1123,18 @@ const questionBlueprintDraftSchema: Schema = {
       "id",
       "ownerUserId",
       "createdByUserId",
+      "revision",
       "blueprintId",
+      "baseVersionId",
+      "publishedVersionId",
       "name",
       "description",
       "document",
       "sources",
       "status",
       "lastSavedAt",
+      "publishedAt",
+      "discardedAt",
       "createdAt",
       "updatedAt",
     ],
@@ -1115,6 +1142,53 @@ const questionBlueprintDraftSchema: Schema = {
   },
 };
 
+const questionBlueprintVersionSchema: Schema = {
+  name: "QuestionBlueprintVersion",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      blueprintId: uuid,
+      createdAt: dateTime,
+      createdByUserId: uuid,
+      description: {
+        maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
+        type: ["string", "null"],
+      },
+      document: schemaRef(questionBlueprintDocumentSchema),
+      id: uuid,
+      name: {
+        maxLength: MAX_QUESTION_NAME_LENGTH,
+        minLength: 1,
+        type: "string",
+      },
+      ownerUserId: uuid,
+      parentVersionId: nullableUuid,
+      publishedAt: dateTime,
+      sources: {
+        description:
+          "Immutable blueprint-local source entries pinned by this version.",
+        items: schemaRef(questionBlueprintSourceSchema),
+        type: "array",
+      },
+      versionNumber: { minimum: 1, type: "integer" },
+    },
+    required: [
+      "id",
+      "blueprintId",
+      "versionNumber",
+      "parentVersionId",
+      "ownerUserId",
+      "createdByUserId",
+      "name",
+      "description",
+      "document",
+      "sources",
+      "publishedAt",
+      "createdAt",
+    ],
+    type: "object",
+  },
+};
 const questionSchema: Schema = {
   name: "Question",
   schema: {
@@ -1280,6 +1354,17 @@ const questionBlueprintDraftResponseSchema: Schema = {
     type: "object",
   },
 };
+const questionBlueprintEditDraftResponseSchema: Schema = {
+  name: "QuestionBlueprintEditDraftResponse",
+  schema: {
+    properties: {
+      draft: schemaRef(questionBlueprintDraftSchema),
+      resolution: { enum: ["created", "resumed"], type: "string" },
+    },
+    required: ["draft", "resolution"],
+    type: "object",
+  },
+};
 const listQuestionBlueprintDraftsResponseSchema: Schema = {
   name: "ListQuestionBlueprintDraftsResponse",
   schema: {
@@ -1297,8 +1382,9 @@ const publishQuestionBlueprintDraftResponseSchema: Schema = {
     properties: {
       draft: schemaRef(questionBlueprintDraftSchema),
       questionBlueprint: schemaRef(questionBlueprintSchema),
+      questionBlueprintVersion: schemaRef(questionBlueprintVersionSchema),
     },
-    required: ["draft", "questionBlueprint"],
+    required: ["draft", "questionBlueprint", "questionBlueprintVersion"],
     type: "object",
   },
 };
@@ -1470,7 +1556,7 @@ const createQuestionBlueprintDraftRequestSchema: Schema = {
   schema: {
     additionalProperties: false,
     properties: {
-      blueprintId: { format: "uuid", type: ["string", "null"] },
+      blueprintId: nullableUuid,
       description: {
         maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
         type: ["string", "null"],
@@ -1482,11 +1568,21 @@ const createQuestionBlueprintDraftRequestSchema: Schema = {
         type: "string",
       },
       sources: {
-        items: schemaRef(questionBlueprintDraftSourceSchema),
+        items: schemaRef(questionBlueprintDraftSourceIntentSchema),
         type: "array",
       },
     },
     required: ["name", "document", "sources"],
+    type: "object",
+  },
+};
+const createQuestionBlueprintEditDraftRequestSchema: Schema = {
+  name: "CreateQuestionBlueprintEditDraftRequest",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      mode: { enum: ["resume_or_create"], type: "string" },
+    },
     type: "object",
   },
 };
@@ -1495,6 +1591,7 @@ const updateQuestionBlueprintDraftRequestSchema: Schema = {
   schema: {
     additionalProperties: false,
     properties: {
+      expectedRevision: { minimum: 1, type: "integer" },
       description: {
         maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
         type: ["string", "null"],
@@ -1506,11 +1603,40 @@ const updateQuestionBlueprintDraftRequestSchema: Schema = {
         type: "string",
       },
       sources: {
-        items: schemaRef(questionBlueprintDraftSourceSchema),
+        items: schemaRef(questionBlueprintDraftSourceIntentSchema),
         type: "array",
       },
     },
-    required: ["name", "description", "document", "sources"],
+    required: [
+      "expectedRevision",
+      "name",
+      "description",
+      "document",
+      "sources",
+    ],
+    type: "object",
+  },
+};
+const publishQuestionBlueprintDraftRequestSchema: Schema = {
+  name: "PublishQuestionBlueprintDraftRequest",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      expectedRevision: { minimum: 1, type: "integer" },
+      idempotencyKey: { maxLength: 128, minLength: 1, type: "string" },
+    },
+    required: ["expectedRevision", "idempotencyKey"],
+    type: "object",
+  },
+};
+const discardQuestionBlueprintDraftRequestSchema: Schema = {
+  name: "DiscardQuestionBlueprintDraftRequest",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      expectedRevision: { minimum: 1, type: "integer" },
+    },
+    required: ["expectedRevision"],
     type: "object",
   },
 };
@@ -1519,10 +1645,11 @@ const attachQuestionBlueprintDraftSourceFileRequestSchema: Schema = {
   schema: {
     additionalProperties: false,
     properties: {
+      expectedRevision: { minimum: 1, type: "integer" },
       fileId: uuid,
       sourceId: { pattern: "^[A-Za-z][A-Za-z0-9_-]*$", type: "string" },
     },
-    required: ["sourceId", "fileId"],
+    required: ["sourceId", "fileId", "expectedRevision"],
     type: "object",
   },
 };
@@ -1663,7 +1790,9 @@ export const schemas = Object.freeze([
   questionSetSchema,
   questionBlueprintSchema,
   questionBlueprintAuthoringSchema,
+  questionBlueprintDraftSourceIntentSchema,
   questionBlueprintDraftSchema,
+  questionBlueprintVersionSchema,
   questionSchema,
   questionGenerationRunSchema,
   listQuestionSetsResponseSchema,
@@ -1672,6 +1801,7 @@ export const schemas = Object.freeze([
   questionBlueprintResponseSchema,
   questionBlueprintAuthoringResponseSchema,
   questionBlueprintDraftResponseSchema,
+  questionBlueprintEditDraftResponseSchema,
   listQuestionBlueprintDraftsResponseSchema,
   publishQuestionBlueprintDraftResponseSchema,
   listQuestionsResponseSchema,
@@ -1684,7 +1814,10 @@ export const schemas = Object.freeze([
   createQuestionBlueprintRequestSchema,
   updateQuestionBlueprintRequestSchema,
   createQuestionBlueprintDraftRequestSchema,
+  createQuestionBlueprintEditDraftRequestSchema,
   updateQuestionBlueprintDraftRequestSchema,
+  publishQuestionBlueprintDraftRequestSchema,
+  discardQuestionBlueprintDraftRequestSchema,
   attachQuestionBlueprintDraftSourceFileRequestSchema,
   gradeQuestionRequestSchema,
   createQuestionGenerationRunRequestSchema,
@@ -1768,11 +1901,21 @@ export const paths: Paths = {
       tags: [tagRef(questionTag)],
     },
   },
-  "/question-blueprint-drafts/{draftId}": {
-    delete: {
+  "/question-blueprint-drafts/{draftId}/discard": {
+    parameters: [paramRef(questionBlueprintDraftParam)],
+    post: {
       operationId: "discardQuestionBlueprintDraft",
+      requestBody: {
+        content: {
+          "application/json": {
+            schema: schemaRef(discardQuestionBlueprintDraftRequestSchema),
+          },
+        },
+        required: true,
+      },
       responses: {
         "204": { description: "No content" },
+        "400": responseRef(badRequestResponse),
         "401": responseRef(unauthorizedResponse),
         "403": responseRef(forbiddenResponse),
         "404": responseRef(notFoundResponse),
@@ -1782,6 +1925,8 @@ export const paths: Paths = {
       summary: "Discard question blueprint draft",
       tags: [tagRef(questionTag)],
     },
+  },
+  "/question-blueprint-drafts/{draftId}": {
     get: {
       operationId: "getQuestionBlueprintDraft",
       responses: {
@@ -1836,6 +1981,14 @@ export const paths: Paths = {
     parameters: [paramRef(questionBlueprintDraftParam)],
     post: {
       operationId: "publishQuestionBlueprintDraft",
+      requestBody: {
+        content: {
+          "application/json": {
+            schema: schemaRef(publishQuestionBlueprintDraftRequestSchema),
+          },
+        },
+        required: true,
+      },
       responses: {
         "200": {
           content: {
@@ -2038,6 +2191,45 @@ export const paths: Paths = {
       },
       security: [keycloakSecurityRequirement],
       summary: "Update question blueprint",
+      tags: [tagRef(questionTag)],
+    },
+  },
+  "/question-blueprints/{questionBlueprintId}/edit-draft": {
+    parameters: [paramRef(questionBlueprintParam)],
+    post: {
+      operationId: "createQuestionBlueprintEditDraft",
+      requestBody: {
+        content: {
+          "application/json": {
+            schema: schemaRef(createQuestionBlueprintEditDraftRequestSchema),
+          },
+        },
+      },
+      responses: {
+        "200": {
+          content: {
+            "application/json": {
+              schema: schemaRef(questionBlueprintEditDraftResponseSchema),
+            },
+          },
+          description: "Existing edit draft resumed.",
+        },
+        "201": {
+          content: {
+            "application/json": {
+              schema: schemaRef(questionBlueprintEditDraftResponseSchema),
+            },
+          },
+          description: "Edit draft created.",
+        },
+        "400": responseRef(badRequestResponse),
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+        "404": responseRef(notFoundResponse),
+        "409": responseRef(conflictResponse),
+      },
+      security: [keycloakSecurityRequirement],
+      summary: "Create or resume question blueprint edit draft",
       tags: [tagRef(questionTag)],
     },
   },
