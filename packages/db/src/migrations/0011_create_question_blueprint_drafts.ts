@@ -17,6 +17,8 @@ export async function up(db: MigrationDb): Promise<void> {
     .addColumn("created_by_user_id", "uuid", (c) => c.notNull())
     .addColumn("blueprint_id", "uuid")
     .addColumn("base_version_id", "uuid")
+    .addColumn("published_version_id", "uuid")
+    .addColumn("publish_idempotency_key", "text")
     .addColumn("revision", "integer", (c) => c.notNull().defaultTo(1))
     .addColumn("name", "text", (c) => c.notNull())
     .addColumn("description", "text")
@@ -46,7 +48,15 @@ export async function up(db: MigrationDb): Promise<void> {
       "question_blueprint_drafts_target_base_pair_check",
       sql`(base_version_id is null or blueprint_id is not null)
         and (status not in ('draft', 'publishing') or blueprint_id is null or base_version_id is not null)
-        and (status <> 'published' or blueprint_id is not null)`,
+        and (status <> 'published' or blueprint_id is not null)
+        and (status <> 'published' or published_version_id is not null)
+        and (status <> 'published' or publish_idempotency_key is not null)
+        and (status = 'published' or published_version_id is null)
+        and (status = 'published' or publish_idempotency_key is null)`,
+    )
+    .addCheckConstraint(
+      "question_blueprint_drafts_publish_idempotency_key_check",
+      sql`publish_idempotency_key is null or length(trim(publish_idempotency_key)) between 1 and 128`,
     )
     .addCheckConstraint(
       "question_blueprint_drafts_document_object_check",
@@ -84,12 +94,27 @@ export async function up(db: MigrationDb): Promise<void> {
       ["id"],
       (cb) => cb.onDelete("restrict"),
     )
+    .addForeignKeyConstraint(
+      "question_blueprint_drafts_published_version_id_foreign",
+      ["published_version_id"],
+      "question_blueprint_versions",
+      ["id"],
+      (cb) => cb.onDelete("restrict"),
+    )
     .execute();
 
   await sql`
     alter table question_blueprint_drafts
     add constraint question_blueprint_drafts_base_version_same_blueprint_foreign
     foreign key (base_version_id, blueprint_id)
+    references question_blueprint_versions(id, blueprint_id)
+    on delete restrict
+  `.execute(db);
+
+  await sql`
+    alter table question_blueprint_drafts
+    add constraint question_blueprint_drafts_published_version_same_blueprint_foreign
+    foreign key (published_version_id, blueprint_id)
     references question_blueprint_versions(id, blueprint_id)
     on delete restrict
   `.execute(db);

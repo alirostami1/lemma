@@ -3,6 +3,7 @@ import type {
   Question,
   QuestionBlueprint,
   QuestionBlueprintDraft,
+  QuestionBlueprintVersion,
   QuestionGenerationRun,
   QuestionSet,
 } from "../domain/index.js";
@@ -25,6 +26,9 @@ export type QuestionBlueprintsResult = {
 export type QuestionBlueprintDraftResult = {
   draft: QuestionBlueprintDraft;
 };
+export type QuestionBlueprintEditDraftResult = QuestionBlueprintDraftResult & {
+  resolution: "created" | "resumed";
+};
 export type QuestionBlueprintDraftsResult = {
   drafts: QuestionBlueprintDraft[];
   nextCursor: string | null;
@@ -32,6 +36,7 @@ export type QuestionBlueprintDraftsResult = {
 export type PublishedQuestionBlueprintDraftResult = {
   draft: QuestionBlueprintDraft;
   questionBlueprint: QuestionBlueprint;
+  questionBlueprintVersion: QuestionBlueprintVersion;
 };
 export type QuestionResult = { question: Question };
 export type QuestionsResult = {

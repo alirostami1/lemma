@@ -8,7 +8,9 @@ import type { Context } from "hono";
 import {
   type ForbiddenQuestionActionError,
   type InvalidQuestionBlueprintError,
+  type QuestionBlueprintBaseVersionConflictError,
   type QuestionBlueprintDraftNotFoundError,
+  type QuestionBlueprintDraftRevisionConflictError,
   type QuestionBlueprintNotFoundError,
   type QuestionGenerationRunNotFoundError,
   type QuestionNotFoundError,
@@ -44,6 +46,8 @@ type QuestionsDomainError =
 type QuestionsApplicationErrorType =
   | ForbiddenQuestionActionError
   | InvalidQuestionBlueprintError
+  | QuestionBlueprintBaseVersionConflictError
+  | QuestionBlueprintDraftRevisionConflictError
   | QuestionGenerationRunNotFoundError
   | QuestionNotFoundError
   | QuestionSetNotFoundError
@@ -53,6 +57,11 @@ type QuestionsApplicationErrorType =
   | WorkbookQuestionReferenceError;
 
 const applicationErrorMapper = {
+  BLUEPRINT_BASE_VERSION_CONFLICT: {
+    code: "BLUEPRINT_BASE_VERSION_CONFLICT",
+    status: 409,
+  },
+  DRAFT_REVISION_CONFLICT: { code: "DRAFT_REVISION_CONFLICT", status: 409 },
   FORBIDDEN_QUESTION_ACTION: { code: "FORBIDDEN_QUESTION_ACTION", status: 403 },
   INVALID_QUESTION_BLUEPRINT: { code: "BAD_REQUEST", status: 400 },
   QUESTION_BLUEPRINT_DRAFT_NOT_FOUND: {

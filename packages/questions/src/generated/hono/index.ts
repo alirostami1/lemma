@@ -20,6 +20,7 @@ import type {
   PublishQuestionBlueprintDraftResponse,
   QuestionBlueprintAuthoringResponse,
   QuestionBlueprintDraftResponse,
+  QuestionBlueprintEditDraftResponse,
   QuestionBlueprintResponse,
   QuestionGenerationRunResponse,
   QuestionResponse,
@@ -31,11 +32,14 @@ import {
   CancelQuestionGenerationRunParams,
   CreateQuestionBlueprintBody,
   CreateQuestionBlueprintDraftBody,
+  CreateQuestionBlueprintEditDraftBody,
+  CreateQuestionBlueprintEditDraftParams,
   CreateQuestionGenerationRunBody,
   CreateQuestionSetBody,
   DeleteQuestionBlueprintParams,
   DeleteQuestionParams,
   DeleteQuestionSetParams,
+  DiscardQuestionBlueprintDraftBody,
   DiscardQuestionBlueprintDraftParams,
   GetQuestionBlueprintAuthoringParams,
   GetQuestionBlueprintDraftParams,
@@ -52,6 +56,7 @@ import {
   ListQuestionSetQuestionsQueryParams,
   ListQuestionSetsQueryParams,
   ListQuestionsQueryParams,
+  PublishQuestionBlueprintDraftBody,
   PublishQuestionBlueprintDraftParams,
   RemoveQuestionFromSetParams,
   RetryQuestionGenerationRunParams,
@@ -76,67 +81,6 @@ type TypedHandlerResponse<T extends Record<string, unknown>> =
   | HandlerResponse<T>
   | Promise<Response | HandlerResponse<T>>
   | Promise<void>;
-type ListQuestionSetsResponses = {
-  "200": ListQuestionSetsResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-  "502": ErrorResponse;
-};
-type CreateQuestionSetResponses = {
-  "201": QuestionSetResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-  "502": ErrorResponse;
-};
-type GetQuestionSetResponses = {
-  "200": QuestionSetResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-  "502": ErrorResponse;
-};
-type UpdateQuestionSetResponses = {
-  "200": QuestionSetResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-  "502": ErrorResponse;
-};
-type DeleteQuestionSetResponses = {
-  "204": unknown;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-};
-type ListQuestionSetQuestionsResponses = {
-  "200": ListQuestionsResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-  "502": ErrorResponse;
-};
-type RemoveQuestionFromSetResponses = {
-  "204": unknown;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-};
 type ListQuestionBlueprintDraftsResponses = {
   "200": ListQuestionBlueprintDraftsResponse;
   "400": ErrorResponse;
@@ -149,6 +93,14 @@ type CreateQuestionBlueprintDraftResponses = {
   "401": ErrorResponse;
   "403": ErrorResponse;
   "404": ErrorResponse;
+};
+type DiscardQuestionBlueprintDraftResponses = {
+  "204": unknown;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
 };
 type GetQuestionBlueprintDraftResponses = {
   "200": QuestionBlueprintDraftResponse;
@@ -164,21 +116,6 @@ type UpdateQuestionBlueprintDraftResponses = {
   "404": ErrorResponse;
   "409": ErrorResponse;
 };
-type DiscardQuestionBlueprintDraftResponses = {
-  "204": unknown;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-};
-type AttachQuestionBlueprintDraftSourceFileResponses = {
-  "200": QuestionBlueprintDraftResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-};
 type PublishQuestionBlueprintDraftResponses = {
   "200": PublishQuestionBlueprintDraftResponse;
   "400": ErrorResponse;
@@ -187,6 +124,14 @@ type PublishQuestionBlueprintDraftResponses = {
   "404": ErrorResponse;
   "409": ErrorResponse;
   "502": ErrorResponse;
+};
+type AttachQuestionBlueprintDraftSourceFileResponses = {
+  "200": QuestionBlueprintDraftResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
 };
 type ListQuestionBlueprintsResponses = {
   "200": ListQuestionBlueprintsResponse;
@@ -206,6 +151,14 @@ type CreateQuestionBlueprintResponses = {
   "409": ErrorResponse;
   "502": ErrorResponse;
 };
+type DeleteQuestionBlueprintResponses = {
+  "204": unknown;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+};
 type GetQuestionBlueprintResponses = {
   "200": QuestionBlueprintResponse;
   "400": ErrorResponse;
@@ -224,8 +177,9 @@ type UpdateQuestionBlueprintResponses = {
   "409": ErrorResponse;
   "502": ErrorResponse;
 };
-type DeleteQuestionBlueprintResponses = {
-  "204": unknown;
+type CreateQuestionBlueprintEditDraftResponses = {
+  "200": QuestionBlueprintEditDraftResponse;
+  "201": QuestionBlueprintEditDraftResponse;
   "400": ErrorResponse;
   "401": ErrorResponse;
   "403": ErrorResponse;
@@ -234,41 +188,6 @@ type DeleteQuestionBlueprintResponses = {
 };
 type GetQuestionBlueprintAuthoringResponses = {
   "200": QuestionBlueprintAuthoringResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-  "502": ErrorResponse;
-};
-type ListQuestionsResponses = {
-  "200": ListQuestionsResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-  "502": ErrorResponse;
-};
-type GetQuestionResponses = {
-  "200": QuestionResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-  "502": ErrorResponse;
-};
-type DeleteQuestionResponses = {
-  "204": unknown;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-};
-type GradeQuestionResponses = {
-  "200": GradeQuestionResponse;
   "400": ErrorResponse;
   "401": ErrorResponse;
   "403": ErrorResponse;
@@ -320,59 +239,103 @@ type RetryQuestionGenerationRunResponses = {
   "409": ErrorResponse;
   "502": ErrorResponse;
 };
+type ListQuestionSetsResponses = {
+  "200": ListQuestionSetsResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
+type CreateQuestionSetResponses = {
+  "201": QuestionSetResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
+type DeleteQuestionSetResponses = {
+  "204": unknown;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+};
+type GetQuestionSetResponses = {
+  "200": QuestionSetResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
+type UpdateQuestionSetResponses = {
+  "200": QuestionSetResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
+type ListQuestionSetQuestionsResponses = {
+  "200": ListQuestionsResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
+type RemoveQuestionFromSetResponses = {
+  "204": unknown;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+};
+type ListQuestionsResponses = {
+  "200": ListQuestionsResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
+type DeleteQuestionResponses = {
+  "204": unknown;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+};
+type GetQuestionResponses = {
+  "200": QuestionResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
+type GradeQuestionResponses = {
+  "200": GradeQuestionResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
 export type QuestionsHandlerMap = {
-  listQuestionSets: Handler<
-    QuestionsAppEnv,
-    "/question-sets",
-    { out: { query: z.infer<typeof ListQuestionSetsQueryParams> } },
-    TypedHandlerResponse<ListQuestionSetsResponses>
-  >;
-  createQuestionSet: Handler<
-    QuestionsAppEnv,
-    "/question-sets",
-    { out: { json: z.infer<typeof CreateQuestionSetBody> } },
-    TypedHandlerResponse<CreateQuestionSetResponses>
-  >;
-  getQuestionSet: Handler<
-    QuestionsAppEnv,
-    "/question-sets/:questionSetId",
-    { out: { param: z.infer<typeof GetQuestionSetParams> } },
-    TypedHandlerResponse<GetQuestionSetResponses>
-  >;
-  updateQuestionSet: Handler<
-    QuestionsAppEnv,
-    "/question-sets/:questionSetId",
-    {
-      out: {
-        param: z.infer<typeof UpdateQuestionSetParams>;
-        json: z.infer<typeof UpdateQuestionSetBody>;
-      };
-    },
-    TypedHandlerResponse<UpdateQuestionSetResponses>
-  >;
-  deleteQuestionSet: Handler<
-    QuestionsAppEnv,
-    "/question-sets/:questionSetId",
-    { out: { param: z.infer<typeof DeleteQuestionSetParams> } },
-    TypedHandlerResponse<DeleteQuestionSetResponses>
-  >;
-  listQuestionSetQuestions: Handler<
-    QuestionsAppEnv,
-    "/question-sets/:questionSetId/questions",
-    {
-      out: {
-        param: z.infer<typeof ListQuestionSetQuestionsParams>;
-        query: z.infer<typeof ListQuestionSetQuestionsQueryParams>;
-      };
-    },
-    TypedHandlerResponse<ListQuestionSetQuestionsResponses>
-  >;
-  removeQuestionFromSet: Handler<
-    QuestionsAppEnv,
-    "/question-sets/:questionSetId/questions/:questionId",
-    { out: { param: z.infer<typeof RemoveQuestionFromSetParams> } },
-    TypedHandlerResponse<RemoveQuestionFromSetResponses>
-  >;
   listQuestionBlueprintDrafts: Handler<
     QuestionsAppEnv,
     "/question-blueprint-drafts",
@@ -384,6 +347,17 @@ export type QuestionsHandlerMap = {
     "/question-blueprint-drafts",
     { out: { json: z.infer<typeof CreateQuestionBlueprintDraftBody> } },
     TypedHandlerResponse<CreateQuestionBlueprintDraftResponses>
+  >;
+  discardQuestionBlueprintDraft: Handler<
+    QuestionsAppEnv,
+    "/question-blueprint-drafts/:draftId/discard",
+    {
+      out: {
+        param: z.infer<typeof DiscardQuestionBlueprintDraftParams>;
+        json: z.infer<typeof DiscardQuestionBlueprintDraftBody>;
+      };
+    },
+    TypedHandlerResponse<DiscardQuestionBlueprintDraftResponses>
   >;
   getQuestionBlueprintDraft: Handler<
     QuestionsAppEnv,
@@ -402,11 +376,16 @@ export type QuestionsHandlerMap = {
     },
     TypedHandlerResponse<UpdateQuestionBlueprintDraftResponses>
   >;
-  discardQuestionBlueprintDraft: Handler<
+  publishQuestionBlueprintDraft: Handler<
     QuestionsAppEnv,
-    "/question-blueprint-drafts/:draftId",
-    { out: { param: z.infer<typeof DiscardQuestionBlueprintDraftParams> } },
-    TypedHandlerResponse<DiscardQuestionBlueprintDraftResponses>
+    "/question-blueprint-drafts/:draftId/publish",
+    {
+      out: {
+        param: z.infer<typeof PublishQuestionBlueprintDraftParams>;
+        json: z.infer<typeof PublishQuestionBlueprintDraftBody>;
+      };
+    },
+    TypedHandlerResponse<PublishQuestionBlueprintDraftResponses>
   >;
   attachQuestionBlueprintDraftSourceFile: Handler<
     QuestionsAppEnv,
@@ -419,12 +398,6 @@ export type QuestionsHandlerMap = {
     },
     TypedHandlerResponse<AttachQuestionBlueprintDraftSourceFileResponses>
   >;
-  publishQuestionBlueprintDraft: Handler<
-    QuestionsAppEnv,
-    "/question-blueprint-drafts/:draftId/publish",
-    { out: { param: z.infer<typeof PublishQuestionBlueprintDraftParams> } },
-    TypedHandlerResponse<PublishQuestionBlueprintDraftResponses>
-  >;
   listQuestionBlueprints: Handler<
     QuestionsAppEnv,
     "/question-blueprints",
@@ -436,6 +409,12 @@ export type QuestionsHandlerMap = {
     "/question-blueprints",
     { out: { json: z.infer<typeof CreateQuestionBlueprintBody> } },
     TypedHandlerResponse<CreateQuestionBlueprintResponses>
+  >;
+  deleteQuestionBlueprint: Handler<
+    QuestionsAppEnv,
+    "/question-blueprints/:questionBlueprintId",
+    { out: { param: z.infer<typeof DeleteQuestionBlueprintParams> } },
+    TypedHandlerResponse<DeleteQuestionBlueprintResponses>
   >;
   getQuestionBlueprint: Handler<
     QuestionsAppEnv,
@@ -454,46 +433,22 @@ export type QuestionsHandlerMap = {
     },
     TypedHandlerResponse<UpdateQuestionBlueprintResponses>
   >;
-  deleteQuestionBlueprint: Handler<
+  createQuestionBlueprintEditDraft: Handler<
     QuestionsAppEnv,
-    "/question-blueprints/:questionBlueprintId",
-    { out: { param: z.infer<typeof DeleteQuestionBlueprintParams> } },
-    TypedHandlerResponse<DeleteQuestionBlueprintResponses>
+    "/question-blueprints/:questionBlueprintId/edit-draft",
+    {
+      out: {
+        param: z.infer<typeof CreateQuestionBlueprintEditDraftParams>;
+        json: z.infer<typeof CreateQuestionBlueprintEditDraftBody>;
+      };
+    },
+    TypedHandlerResponse<CreateQuestionBlueprintEditDraftResponses>
   >;
   getQuestionBlueprintAuthoring: Handler<
     QuestionsAppEnv,
     "/question-blueprints/:questionBlueprintId/authoring",
     { out: { param: z.infer<typeof GetQuestionBlueprintAuthoringParams> } },
     TypedHandlerResponse<GetQuestionBlueprintAuthoringResponses>
-  >;
-  listQuestions: Handler<
-    QuestionsAppEnv,
-    "/questions",
-    { out: { query: z.infer<typeof ListQuestionsQueryParams> } },
-    TypedHandlerResponse<ListQuestionsResponses>
-  >;
-  getQuestion: Handler<
-    QuestionsAppEnv,
-    "/questions/:questionId",
-    { out: { param: z.infer<typeof GetQuestionParams> } },
-    TypedHandlerResponse<GetQuestionResponses>
-  >;
-  deleteQuestion: Handler<
-    QuestionsAppEnv,
-    "/questions/:questionId",
-    { out: { param: z.infer<typeof DeleteQuestionParams> } },
-    TypedHandlerResponse<DeleteQuestionResponses>
-  >;
-  gradeQuestion: Handler<
-    QuestionsAppEnv,
-    "/questions/:questionId/grade",
-    {
-      out: {
-        param: z.infer<typeof GradeQuestionParams>;
-        json: z.infer<typeof GradeQuestionBody>;
-      };
-    },
-    TypedHandlerResponse<GradeQuestionResponses>
   >;
   listQuestionGenerationRuns: Handler<
     QuestionsAppEnv,
@@ -525,63 +480,93 @@ export type QuestionsHandlerMap = {
     { out: { param: z.infer<typeof RetryQuestionGenerationRunParams> } },
     TypedHandlerResponse<RetryQuestionGenerationRunResponses>
   >;
+  listQuestionSets: Handler<
+    QuestionsAppEnv,
+    "/question-sets",
+    { out: { query: z.infer<typeof ListQuestionSetsQueryParams> } },
+    TypedHandlerResponse<ListQuestionSetsResponses>
+  >;
+  createQuestionSet: Handler<
+    QuestionsAppEnv,
+    "/question-sets",
+    { out: { json: z.infer<typeof CreateQuestionSetBody> } },
+    TypedHandlerResponse<CreateQuestionSetResponses>
+  >;
+  deleteQuestionSet: Handler<
+    QuestionsAppEnv,
+    "/question-sets/:questionSetId",
+    { out: { param: z.infer<typeof DeleteQuestionSetParams> } },
+    TypedHandlerResponse<DeleteQuestionSetResponses>
+  >;
+  getQuestionSet: Handler<
+    QuestionsAppEnv,
+    "/question-sets/:questionSetId",
+    { out: { param: z.infer<typeof GetQuestionSetParams> } },
+    TypedHandlerResponse<GetQuestionSetResponses>
+  >;
+  updateQuestionSet: Handler<
+    QuestionsAppEnv,
+    "/question-sets/:questionSetId",
+    {
+      out: {
+        param: z.infer<typeof UpdateQuestionSetParams>;
+        json: z.infer<typeof UpdateQuestionSetBody>;
+      };
+    },
+    TypedHandlerResponse<UpdateQuestionSetResponses>
+  >;
+  listQuestionSetQuestions: Handler<
+    QuestionsAppEnv,
+    "/question-sets/:questionSetId/questions",
+    {
+      out: {
+        param: z.infer<typeof ListQuestionSetQuestionsParams>;
+        query: z.infer<typeof ListQuestionSetQuestionsQueryParams>;
+      };
+    },
+    TypedHandlerResponse<ListQuestionSetQuestionsResponses>
+  >;
+  removeQuestionFromSet: Handler<
+    QuestionsAppEnv,
+    "/question-sets/:questionSetId/questions/:questionId",
+    { out: { param: z.infer<typeof RemoveQuestionFromSetParams> } },
+    TypedHandlerResponse<RemoveQuestionFromSetResponses>
+  >;
+  listQuestions: Handler<
+    QuestionsAppEnv,
+    "/questions",
+    { out: { query: z.infer<typeof ListQuestionsQueryParams> } },
+    TypedHandlerResponse<ListQuestionsResponses>
+  >;
+  deleteQuestion: Handler<
+    QuestionsAppEnv,
+    "/questions/:questionId",
+    { out: { param: z.infer<typeof DeleteQuestionParams> } },
+    TypedHandlerResponse<DeleteQuestionResponses>
+  >;
+  getQuestion: Handler<
+    QuestionsAppEnv,
+    "/questions/:questionId",
+    { out: { param: z.infer<typeof GetQuestionParams> } },
+    TypedHandlerResponse<GetQuestionResponses>
+  >;
+  gradeQuestion: Handler<
+    QuestionsAppEnv,
+    "/questions/:questionId/grade",
+    {
+      out: {
+        param: z.infer<typeof GradeQuestionParams>;
+        json: z.infer<typeof GradeQuestionBody>;
+      };
+    },
+    TypedHandlerResponse<GradeQuestionResponses>
+  >;
 };
 export function createQuestionsRoutes(deps: {
   requireIdentity: RequireIdentity;
   handlers: QuestionsHandlerMap;
 }) {
   const app = new Hono<QuestionsAppEnv>();
-  app.get(
-    "/question-sets",
-    deps.requireIdentity,
-    zValidator("query", ListQuestionSetsQueryParams, validationHook),
-    deps.handlers.listQuestionSets,
-  );
-
-  app.post(
-    "/question-sets",
-    deps.requireIdentity,
-    zValidator("json", CreateQuestionSetBody, validationHook),
-    deps.handlers.createQuestionSet,
-  );
-
-  app.get(
-    "/question-sets/:questionSetId",
-    deps.requireIdentity,
-    zValidator("param", GetQuestionSetParams, validationHook),
-    deps.handlers.getQuestionSet,
-  );
-
-  app.patch(
-    "/question-sets/:questionSetId",
-    deps.requireIdentity,
-    zValidator("param", UpdateQuestionSetParams, validationHook),
-    zValidator("json", UpdateQuestionSetBody, validationHook),
-    deps.handlers.updateQuestionSet,
-  );
-
-  app.delete(
-    "/question-sets/:questionSetId",
-    deps.requireIdentity,
-    zValidator("param", DeleteQuestionSetParams, validationHook),
-    deps.handlers.deleteQuestionSet,
-  );
-
-  app.get(
-    "/question-sets/:questionSetId/questions",
-    deps.requireIdentity,
-    zValidator("param", ListQuestionSetQuestionsParams, validationHook),
-    zValidator("query", ListQuestionSetQuestionsQueryParams, validationHook),
-    deps.handlers.listQuestionSetQuestions,
-  );
-
-  app.delete(
-    "/question-sets/:questionSetId/questions/:questionId",
-    deps.requireIdentity,
-    zValidator("param", RemoveQuestionFromSetParams, validationHook),
-    deps.handlers.removeQuestionFromSet,
-  );
-
   app.get(
     "/question-blueprint-drafts",
     deps.requireIdentity,
@@ -594,6 +579,14 @@ export function createQuestionsRoutes(deps: {
     deps.requireIdentity,
     zValidator("json", CreateQuestionBlueprintDraftBody, validationHook),
     deps.handlers.createQuestionBlueprintDraft,
+  );
+
+  app.post(
+    "/question-blueprint-drafts/:draftId/discard",
+    deps.requireIdentity,
+    zValidator("param", DiscardQuestionBlueprintDraftParams, validationHook),
+    zValidator("json", DiscardQuestionBlueprintDraftBody, validationHook),
+    deps.handlers.discardQuestionBlueprintDraft,
   );
 
   app.get(
@@ -611,11 +604,12 @@ export function createQuestionsRoutes(deps: {
     deps.handlers.updateQuestionBlueprintDraft,
   );
 
-  app.delete(
-    "/question-blueprint-drafts/:draftId",
+  app.post(
+    "/question-blueprint-drafts/:draftId/publish",
     deps.requireIdentity,
-    zValidator("param", DiscardQuestionBlueprintDraftParams, validationHook),
-    deps.handlers.discardQuestionBlueprintDraft,
+    zValidator("param", PublishQuestionBlueprintDraftParams, validationHook),
+    zValidator("json", PublishQuestionBlueprintDraftBody, validationHook),
+    deps.handlers.publishQuestionBlueprintDraft,
   );
 
   app.post(
@@ -634,13 +628,6 @@ export function createQuestionsRoutes(deps: {
     deps.handlers.attachQuestionBlueprintDraftSourceFile,
   );
 
-  app.post(
-    "/question-blueprint-drafts/:draftId/publish",
-    deps.requireIdentity,
-    zValidator("param", PublishQuestionBlueprintDraftParams, validationHook),
-    deps.handlers.publishQuestionBlueprintDraft,
-  );
-
   app.get(
     "/question-blueprints",
     deps.requireIdentity,
@@ -653,6 +640,13 @@ export function createQuestionsRoutes(deps: {
     deps.requireIdentity,
     zValidator("json", CreateQuestionBlueprintBody, validationHook),
     deps.handlers.createQuestionBlueprint,
+  );
+
+  app.delete(
+    "/question-blueprints/:questionBlueprintId",
+    deps.requireIdentity,
+    zValidator("param", DeleteQuestionBlueprintParams, validationHook),
+    deps.handlers.deleteQuestionBlueprint,
   );
 
   app.get(
@@ -670,11 +664,12 @@ export function createQuestionsRoutes(deps: {
     deps.handlers.updateQuestionBlueprint,
   );
 
-  app.delete(
-    "/question-blueprints/:questionBlueprintId",
+  app.post(
+    "/question-blueprints/:questionBlueprintId/edit-draft",
     deps.requireIdentity,
-    zValidator("param", DeleteQuestionBlueprintParams, validationHook),
-    deps.handlers.deleteQuestionBlueprint,
+    zValidator("param", CreateQuestionBlueprintEditDraftParams, validationHook),
+    zValidator("json", CreateQuestionBlueprintEditDraftBody, validationHook),
+    deps.handlers.createQuestionBlueprintEditDraft,
   );
 
   app.get(
@@ -682,35 +677,6 @@ export function createQuestionsRoutes(deps: {
     deps.requireIdentity,
     zValidator("param", GetQuestionBlueprintAuthoringParams, validationHook),
     deps.handlers.getQuestionBlueprintAuthoring,
-  );
-
-  app.get(
-    "/questions",
-    deps.requireIdentity,
-    zValidator("query", ListQuestionsQueryParams, validationHook),
-    deps.handlers.listQuestions,
-  );
-
-  app.get(
-    "/questions/:questionId",
-    deps.requireIdentity,
-    zValidator("param", GetQuestionParams, validationHook),
-    deps.handlers.getQuestion,
-  );
-
-  app.delete(
-    "/questions/:questionId",
-    deps.requireIdentity,
-    zValidator("param", DeleteQuestionParams, validationHook),
-    deps.handlers.deleteQuestion,
-  );
-
-  app.post(
-    "/questions/:questionId/grade",
-    deps.requireIdentity,
-    zValidator("param", GradeQuestionParams, validationHook),
-    zValidator("json", GradeQuestionBody, validationHook),
-    deps.handlers.gradeQuestion,
   );
 
   app.get(
@@ -746,6 +712,86 @@ export function createQuestionsRoutes(deps: {
     deps.requireIdentity,
     zValidator("param", RetryQuestionGenerationRunParams, validationHook),
     deps.handlers.retryQuestionGenerationRun,
+  );
+
+  app.get(
+    "/question-sets",
+    deps.requireIdentity,
+    zValidator("query", ListQuestionSetsQueryParams, validationHook),
+    deps.handlers.listQuestionSets,
+  );
+
+  app.post(
+    "/question-sets",
+    deps.requireIdentity,
+    zValidator("json", CreateQuestionSetBody, validationHook),
+    deps.handlers.createQuestionSet,
+  );
+
+  app.delete(
+    "/question-sets/:questionSetId",
+    deps.requireIdentity,
+    zValidator("param", DeleteQuestionSetParams, validationHook),
+    deps.handlers.deleteQuestionSet,
+  );
+
+  app.get(
+    "/question-sets/:questionSetId",
+    deps.requireIdentity,
+    zValidator("param", GetQuestionSetParams, validationHook),
+    deps.handlers.getQuestionSet,
+  );
+
+  app.patch(
+    "/question-sets/:questionSetId",
+    deps.requireIdentity,
+    zValidator("param", UpdateQuestionSetParams, validationHook),
+    zValidator("json", UpdateQuestionSetBody, validationHook),
+    deps.handlers.updateQuestionSet,
+  );
+
+  app.get(
+    "/question-sets/:questionSetId/questions",
+    deps.requireIdentity,
+    zValidator("param", ListQuestionSetQuestionsParams, validationHook),
+    zValidator("query", ListQuestionSetQuestionsQueryParams, validationHook),
+    deps.handlers.listQuestionSetQuestions,
+  );
+
+  app.delete(
+    "/question-sets/:questionSetId/questions/:questionId",
+    deps.requireIdentity,
+    zValidator("param", RemoveQuestionFromSetParams, validationHook),
+    deps.handlers.removeQuestionFromSet,
+  );
+
+  app.get(
+    "/questions",
+    deps.requireIdentity,
+    zValidator("query", ListQuestionsQueryParams, validationHook),
+    deps.handlers.listQuestions,
+  );
+
+  app.delete(
+    "/questions/:questionId",
+    deps.requireIdentity,
+    zValidator("param", DeleteQuestionParams, validationHook),
+    deps.handlers.deleteQuestion,
+  );
+
+  app.get(
+    "/questions/:questionId",
+    deps.requireIdentity,
+    zValidator("param", GetQuestionParams, validationHook),
+    deps.handlers.getQuestion,
+  );
+
+  app.post(
+    "/questions/:questionId/grade",
+    deps.requireIdentity,
+    zValidator("param", GradeQuestionParams, validationHook),
+    zValidator("json", GradeQuestionBody, validationHook),
+    deps.handlers.gradeQuestion,
   );
   return app;
 }

@@ -13,6 +13,7 @@ import type {
   QuestionBlueprintId,
   QuestionBlueprintSource,
   QuestionBlueprintStatus,
+  QuestionBlueprintVersion,
   QuestionBlueprintVersionId,
   QuestionGenerationRun,
   QuestionGenerationRunId,
@@ -33,6 +34,7 @@ import type {
 export interface QuestionsRepository {
   attachQuestionBlueprintDraftSourceFile(input: {
     draft: QuestionBlueprintDraft;
+    expectedRevision: number;
     sourceId: string;
     file: DraftSourceFileMetadata;
   }): Promise<QuestionBlueprintDraft | null>;
@@ -41,6 +43,14 @@ export interface QuestionsRepository {
     questions: readonly Question[];
     memberships: readonly QuestionSetQuestion[];
   }): Promise<QuestionGenerationRun | null>;
+  createOrResumeQuestionBlueprintEditDraft(input: {
+    draft: QuestionBlueprintDraft;
+    ownerUserId: UserId;
+    blueprintId: QuestionBlueprintId;
+  }): Promise<{
+    draft: QuestionBlueprintDraft;
+    resolution: "created" | "resumed";
+  }>;
   createQuestionBlueprint(
     blueprint: QuestionBlueprint,
   ): Promise<QuestionBlueprint>;
@@ -52,6 +62,10 @@ export interface QuestionsRepository {
   ): Promise<QuestionGenerationRun>;
   createQuestionSet(set: QuestionSet): Promise<QuestionSet>;
   deleteQuestion(question: Question): Promise<Question | null>;
+  findActiveQuestionBlueprintDraftByOwnerAndBlueprint(input: {
+    ownerUserId: UserId;
+    blueprintId: QuestionBlueprintId;
+  }): Promise<QuestionBlueprintDraft | null>;
 
   findQuestionBlueprintById(
     id: QuestionBlueprintId,
@@ -59,6 +73,9 @@ export interface QuestionsRepository {
   findQuestionBlueprintDraftById(
     id: QuestionBlueprintDraftId,
   ): Promise<QuestionBlueprintDraft | null>;
+  findQuestionBlueprintVersionById(
+    id: QuestionBlueprintVersionId,
+  ): Promise<QuestionBlueprintVersion | null>;
 
   findQuestionById(id: QuestionId): Promise<Question | null>;
 
@@ -107,6 +124,20 @@ export interface QuestionsRepository {
     limit: number;
     cursor?: Date;
   }): Promise<Question[]>;
+  publishQuestionBlueprintDraft(input: {
+    blueprintId: QuestionBlueprintId;
+    draftId: QuestionBlueprintDraftId;
+    expectedRevision: number;
+    idempotencyKey: string;
+    ownerUserId: UserId;
+    sourceMaterialization: readonly PublishSourceMaterialization[];
+    publishedAt: Date;
+    versionId: QuestionBlueprintVersionId;
+  }): Promise<{
+    draft: QuestionBlueprintDraft;
+    questionBlueprint: QuestionBlueprint;
+    questionBlueprintVersion: QuestionBlueprintVersion;
+  } | null>;
   removeQuestionFromSet(input: {
     questionSetId: QuestionSetId;
     questionId: QuestionId;
@@ -118,14 +149,20 @@ export interface QuestionsRepository {
     blueprint: QuestionBlueprint;
     versionId: QuestionBlueprintVersionId;
   }): Promise<QuestionBlueprint | null>;
-  updateQuestionBlueprintDraft(
-    draft: QuestionBlueprintDraft,
-  ): Promise<QuestionBlueprintDraft | null>;
+  updateQuestionBlueprintDraftWithExpectedRevision(input: {
+    draft: QuestionBlueprintDraft;
+    expectedRevision: number;
+  }): Promise<QuestionBlueprintDraft | null>;
   updateQuestionGenerationRun(
     run: QuestionGenerationRun,
   ): Promise<QuestionGenerationRun | null>;
   updateQuestionSet(set: QuestionSet): Promise<QuestionSet | null>;
 }
+
+export type PublishSourceMaterialization = {
+  sourceId: string;
+  workbookId: WorkbookId;
+};
 
 export interface WorkbookCalculationPort {
   requestCalculation(input: {
@@ -225,6 +262,16 @@ export interface DraftSourceFilePort {
 }
 
 export interface WorkbookRegistrationPort {
+  /**
+   * Prepare workbook materialization for publish.
+   *
+   * This is a pre-#101/#102 bridge for source artifacts. Implementations must be
+   * idempotent for the same owner + file + source-name intent and must be safe if
+   * the enclosing draft publish later fails. Repeating the same request must
+   * return the same reusable workbook/materialization or an equivalent
+   * already-prepared one; it must not create publish-only state that requires the
+   * draft transaction to commit.
+   */
   registerWorkbookFromFile(input: {
     currentUser: CurrentUser;
     fileId: string;

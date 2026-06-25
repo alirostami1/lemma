@@ -170,7 +170,7 @@ export function buildHonoRoutesSource(options: BuildHonoRoutesOptions) {
     'import { Hono } from "hono";',
     'import type { Handler, TypedResponse } from "hono";',
     'import type { StatusCode } from "hono/utils/http-status";',
-    needsZodImport ? 'import * as z from "zod";' : "",
+    needsZodImport ? 'import type * as z from "zod";' : "",
     responseTypeImports.length > 0
       ? `import type {\n${responseTypeImports.map((name) => `  ${name},`).join("\n")}\n} from "../types/index.js";`
       : "",
@@ -522,27 +522,27 @@ type GeneratedImport = {
 };
 
 function buildImports(imports: GeneratedImport[]) {
-  const byModule = new Map<string, GeneratedImport[]>();
+  const byModuleAndKind = new Map<string, GeneratedImport[]>();
 
   for (const item of imports) {
-    const existing = byModule.get(item.from) ?? [];
+    const key = `${item.isType ? "type" : "value"}:${item.from}`;
+    const existing = byModuleAndKind.get(key) ?? [];
     existing.push(item);
-    byModule.set(item.from, existing);
+    byModuleAndKind.set(key, existing);
   }
 
-  return Array.from(byModule.entries())
-    .map(([from, items]) => {
+  return Array.from(byModuleAndKind.values())
+    .map((items) => {
       const uniqueItems = Array.from(
         new Map(
           items.map((item) => [`${item.isType}:${item.name}`, item]),
         ).values(),
       ).sort((a, b) => a.name.localeCompare(b.name));
+      const { from, isType } = uniqueItems[0]!;
 
       return [
-        "import {",
-        ...uniqueItems.map((item) =>
-          item.isType ? `  type ${item.name},` : `  ${item.name},`,
-        ),
+        isType ? "import type {" : "import {",
+        ...uniqueItems.map((item) => `  ${item.name},`),
         `} from "${from}";`,
       ].join("\n");
     })
