@@ -5,6 +5,7 @@ import type {
   QuestionBlueprintAuthoringResult,
   QuestionBlueprintDraftResult,
   QuestionBlueprintDraftsResult,
+  QuestionBlueprintEditDraftResult,
   QuestionBlueprintResult,
   QuestionBlueprintsResult,
   QuestionGenerationRunResultDto,
@@ -25,7 +26,9 @@ import type {
   QuestionBlueprintAuthoringResponse,
   QuestionBlueprintDraftResponse,
   QuestionBlueprint as QuestionBlueprintDto,
+  QuestionBlueprintEditDraftResponse,
   QuestionBlueprintResponse,
+  QuestionBlueprintVersion as QuestionBlueprintVersionDto,
   QuestionGenerationRun as QuestionGenerationRunDto,
   QuestionGenerationRunResponse,
   QuestionResponse,
@@ -36,12 +39,31 @@ export const presentQuestionBlueprintDraft = (
   result: QuestionBlueprintDraftResult,
 ): QuestionBlueprintDraftResponse => ({
   draft: {
-    ...result.draft,
+    baseVersionId: result.draft.baseVersionId,
+    blueprintId: result.draft.blueprintId,
     createdAt: presentDate(result.draft.createdAt),
+    createdByUserId: result.draft.createdByUserId,
+    description: result.draft.description,
+    discardedAt: presentNullableDate(result.draft.discardedAt),
+    document: result.draft.document,
+    id: result.draft.id,
     lastSavedAt: presentDate(result.draft.lastSavedAt),
+    name: result.draft.name,
+    ownerUserId: result.draft.ownerUserId,
+    publishedAt: presentNullableDate(result.draft.publishedAt),
+    publishedVersionId: result.draft.publishedVersionId,
+    revision: result.draft.revision,
     sources: [...result.draft.sources],
+    status: result.draft.status,
     updatedAt: presentDate(result.draft.updatedAt),
   },
+});
+
+export const presentQuestionBlueprintEditDraft = (
+  result: QuestionBlueprintEditDraftResult,
+): QuestionBlueprintEditDraftResponse => ({
+  ...presentQuestionBlueprintDraft({ draft: result.draft }),
+  resolution: result.resolution,
 });
 
 export const presentQuestionBlueprintDrafts = (
@@ -58,6 +80,9 @@ export const presentPublishedQuestionBlueprintDraft = (
 ): PublishQuestionBlueprintDraftResponse => ({
   ...presentQuestionBlueprintDraft({ draft: result.draft }),
   ...presentQuestionBlueprint({ questionBlueprint: result.questionBlueprint }),
+  questionBlueprintVersion: toQuestionBlueprintVersionDto(
+    result.questionBlueprintVersion,
+  ),
 });
 
 export const presentQuestionSet = (
@@ -164,6 +189,18 @@ export const presentQuestionGenerationRuns = (
         .questionGenerationRun,
   ),
 });
+
+function toQuestionBlueprintVersionDto(
+  version: PublishedQuestionBlueprintDraftResult["questionBlueprintVersion"],
+): QuestionBlueprintVersionDto {
+  return {
+    ...version,
+    createdAt: presentDate(version.createdAt),
+    document: version.document,
+    publishedAt: presentDate(version.publishedAt),
+    sources: [...version.sources],
+  };
+}
 
 function toLearnerQuestionBlueprintDocumentDto(
   document: QuestionBlueprintResult["questionBlueprint"]["document"],

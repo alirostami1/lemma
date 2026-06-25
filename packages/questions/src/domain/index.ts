@@ -80,6 +80,7 @@ export type {
   QuestionBlueprintDraft,
   QuestionBlueprintDraftId,
   QuestionBlueprintDraftSource,
+  QuestionBlueprintDraftSourceIntent,
   QuestionBlueprintDraftStatus,
 } from "./question-blueprint-draft.js";
 export {
@@ -88,7 +89,9 @@ export {
   discardQuestionBlueprintDraft,
   markQuestionBlueprintDraftPublished,
   questionBlueprintDraftId,
+  questionBlueprintDraftPublishIdempotencyKey,
   questionBlueprintDraftRevision,
+  questionBlueprintDraftSourceIntents,
   questionBlueprintDraftSources,
   reconstituteQuestionBlueprintDraft,
   updateQuestionBlueprintDraft,

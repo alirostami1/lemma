@@ -20,6 +20,7 @@ import {
   presentQuestionBlueprintAuthoring,
   presentQuestionBlueprintDraft,
   presentQuestionBlueprintDrafts,
+  presentQuestionBlueprintEditDraft,
   presentQuestionBlueprints,
   presentQuestionGenerationRun,
   presentQuestionGenerationRuns,
@@ -108,6 +109,25 @@ export function createQuestionsHandlers(
           201,
         ),
     ),
+
+    createQuestionBlueprintEditDraft: questionsHandler(
+      "createQuestionBlueprintEditDraft",
+      async (c) => {
+        const body = c.req.valid("json");
+        const result =
+          await deps.questionBlueprintDraftService.createQuestionBlueprintEditDraft(
+            {
+              currentUser: c.var.identity,
+              blueprintId: c.req.valid("param").questionBlueprintId,
+              ...body,
+            },
+          );
+        return c.json(
+          presentQuestionBlueprintEditDraft(result),
+          result.resolution === "created" ? 201 : 200,
+        );
+      },
+    ),
     createQuestionGenerationRun: questionsHandler(
       "createQuestionGenerationRun",
       async (c) => {
@@ -169,9 +189,11 @@ export function createQuestionsHandlers(
     discardQuestionBlueprintDraft: questionsHandler(
       "discardQuestionBlueprintDraft",
       async (c) => {
+        const body = c.req.valid("json");
         await deps.questionBlueprintDraftService.discardQuestionBlueprintDraft({
           currentUser: c.var.identity,
           draftId: c.req.valid("param").draftId,
+          expectedRevision: body.expectedRevision,
         });
         return c.body(null, 204);
       },
@@ -361,19 +383,23 @@ export function createQuestionsHandlers(
     }),
     publishQuestionBlueprintDraft: questionsHandler(
       "publishQuestionBlueprintDraft",
-      async (c) =>
-        c.json(
+      async (c) => {
+        const body = c.req.valid("json");
+        return c.json(
           presentPublishedQuestionBlueprintDraft(
             await deps.questionBlueprintDraftService.publishQuestionBlueprintDraft(
               {
                 currentUser: c.var.identity,
                 draftId: c.req.valid("param").draftId,
+                expectedRevision: body.expectedRevision,
+                idempotencyKey: body.idempotencyKey,
                 lineage: rootOperationLineage(c.get("requestId")),
               },
             ),
           ),
           200,
-        ),
+        );
+      },
     ),
     removeQuestionFromSet: questionsHandler(
       "removeQuestionFromSet",

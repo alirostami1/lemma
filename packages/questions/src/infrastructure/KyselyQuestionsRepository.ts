@@ -1,6 +1,7 @@
 import type { DatabaseExecutor } from "@lemma/db";
 import type {
   DraftSourceFileMetadata,
+  PublishSourceMaterialization,
   QuestionsRepository,
 } from "../application/index.js";
 import type {
@@ -11,6 +12,7 @@ import type {
   QuestionBlueprintDraftStatus,
   QuestionBlueprintId,
   QuestionBlueprintStatus,
+  QuestionBlueprintVersion,
   QuestionBlueprintVersionId,
   QuestionGenerationRun,
   QuestionGenerationRunId,
@@ -87,6 +89,12 @@ export class KyselyQuestionsRepository implements QuestionsRepository {
     return this.blueprints.findQuestionBlueprintById(id);
   }
 
+  findQuestionBlueprintVersionById(
+    id: QuestionBlueprintVersionId,
+  ): Promise<QuestionBlueprintVersion | null> {
+    return this.blueprints.findQuestionBlueprintVersionById(id);
+  }
+
   listQuestionBlueprintsByOwnerUserId(input: {
     ownerUserId: UserId;
     statuses?: readonly QuestionBlueprintStatus[];
@@ -116,6 +124,15 @@ export class KyselyQuestionsRepository implements QuestionsRepository {
     return this.blueprints.updateQuestionBlueprintDefinition(input);
   }
 
+  findActiveQuestionBlueprintDraftByOwnerAndBlueprint(input: {
+    ownerUserId: UserId;
+    blueprintId: QuestionBlueprintId;
+  }): Promise<QuestionBlueprintDraft | null> {
+    return this.blueprintDrafts.findActiveQuestionBlueprintDraftByOwnerAndBlueprint(
+      input,
+    );
+  }
+
   findQuestionBlueprintDraftById(
     id: QuestionBlueprintDraftId,
   ): Promise<QuestionBlueprintDraft | null> {
@@ -137,14 +154,46 @@ export class KyselyQuestionsRepository implements QuestionsRepository {
     return this.blueprintDrafts.createQuestionBlueprintDraft(draft);
   }
 
-  updateQuestionBlueprintDraft(
-    draft: QuestionBlueprintDraft,
-  ): Promise<QuestionBlueprintDraft | null> {
-    return this.blueprintDrafts.updateQuestionBlueprintDraft(draft);
+  createOrResumeQuestionBlueprintEditDraft(input: {
+    draft: QuestionBlueprintDraft;
+    ownerUserId: UserId;
+    blueprintId: QuestionBlueprintId;
+  }): Promise<{
+    draft: QuestionBlueprintDraft;
+    resolution: "created" | "resumed";
+  }> {
+    return this.blueprintDrafts.createOrResumeQuestionBlueprintEditDraft(input);
+  }
+
+  updateQuestionBlueprintDraftWithExpectedRevision(input: {
+    draft: QuestionBlueprintDraft;
+    expectedRevision: number;
+  }): Promise<QuestionBlueprintDraft | null> {
+    return this.blueprintDrafts.updateQuestionBlueprintDraftWithExpectedRevision(
+      input,
+    );
+  }
+
+  publishQuestionBlueprintDraft(input: {
+    blueprintId: QuestionBlueprintId;
+    draftId: QuestionBlueprintDraftId;
+    expectedRevision: number;
+    idempotencyKey: string;
+    ownerUserId: UserId;
+    sourceMaterialization: readonly PublishSourceMaterialization[];
+    publishedAt: Date;
+    versionId: QuestionBlueprintVersionId;
+  }): Promise<{
+    draft: QuestionBlueprintDraft;
+    questionBlueprint: QuestionBlueprint;
+    questionBlueprintVersion: QuestionBlueprintVersion;
+  } | null> {
+    return this.blueprintDrafts.publishQuestionBlueprintDraft(input);
   }
 
   attachQuestionBlueprintDraftSourceFile(input: {
     draft: QuestionBlueprintDraft;
+    expectedRevision: number;
     sourceId: string;
     file: DraftSourceFileMetadata;
   }): Promise<QuestionBlueprintDraft | null> {

@@ -50,6 +50,12 @@ export type QuestionBlueprintDraftSource = {
   checksumSha256: string | null;
 };
 
+export type QuestionBlueprintDraftSourceIntent = {
+  type: "workbook";
+  sourceId: string;
+  name: string;
+};
+
 export type QuestionBlueprintDraft = Timestamped & {
   id: QuestionBlueprintDraftId;
   ownerUserId: UserId;
@@ -57,6 +63,8 @@ export type QuestionBlueprintDraft = Timestamped & {
   revision: number;
   blueprintId: QuestionBlueprintId | null;
   baseVersionId: QuestionBlueprintVersionId | null;
+  publishedVersionId: QuestionBlueprintVersionId | null;
+  publishIdempotencyKey: string | null;
   name: QuestionBlueprintName;
   description: QuestionBlueprintDescription | null;
   document: QuestionBlueprintDocument;
@@ -129,6 +137,43 @@ export function questionBlueprintDraftSources(
   });
 }
 
+export function questionBlueprintDraftSourceIntents(
+  input: unknown,
+): QuestionBlueprintDraftSourceIntent[] {
+  if (!Array.isArray(input)) {
+    throw new InvalidQuestionFieldError(
+      "question blueprint draft source intents must be an array",
+    );
+  }
+  const ids = new Set<string>();
+  return input.map((value) => {
+    if (!value || typeof value !== "object") {
+      throw new InvalidQuestionFieldError(
+        "question blueprint draft source intent must be an object",
+      );
+    }
+    const source = value as Record<string, unknown>;
+    assertSourceIntentFields(source);
+    if (source.type !== "workbook") {
+      throw new InvalidQuestionFieldError(
+        "question blueprint draft source intent type is invalid",
+      );
+    }
+    const sourceId = questionBlueprintSourceId(source.sourceId);
+    if (ids.has(sourceId)) {
+      throw new InvalidQuestionFieldError(
+        "question blueprint draft source intent ids must be unique",
+      );
+    }
+    ids.add(sourceId);
+    return {
+      name: questionBlueprintSourceName(source.name),
+      sourceId,
+      type: "workbook",
+    };
+  });
+}
+
 export function createQuestionBlueprintDraft(
   input: Omit<
     QuestionBlueprintDraft,
@@ -138,6 +183,8 @@ export function createQuestionBlueprintDraft(
     | "publishedAt"
     | "discardedAt"
     | "revision"
+    | "publishedVersionId"
+    | "publishIdempotencyKey"
   >,
   at: Date,
 ): QuestionBlueprintDraft {
@@ -149,6 +196,8 @@ export function createQuestionBlueprintDraft(
     discardedAt: null,
     lastSavedAt: at,
     publishedAt: null,
+    publishedVersionId: null,
+    publishIdempotencyKey: null,
     revision: 1,
     status: "draft",
     updatedAt: at,
@@ -161,6 +210,8 @@ export function reconstituteQuestionBlueprintDraft(input: {
   createdByUserId: string;
   blueprintId: string | null;
   baseVersionId: string | null;
+  publishedVersionId: string | null;
+  publishIdempotencyKey: string | null;
   revision: number;
   name: string;
   description: string | null;
@@ -179,8 +230,20 @@ export function reconstituteQuestionBlueprintDraft(input: {
   const baseVersionId = input.baseVersionId
     ? questionBlueprintVersionId(input.baseVersionId)
     : null;
+  const publishedVersionId = input.publishedVersionId
+    ? questionBlueprintVersionId(input.publishedVersionId)
+    : null;
+  const publishIdempotencyKey = input.publishIdempotencyKey
+    ? questionBlueprintDraftPublishIdempotencyKey(input.publishIdempotencyKey)
+    : null;
   const status = draftStatus(input.status);
-  assertDraftTargetBasePair({ baseVersionId, blueprintId, status });
+  assertDraftTargetBasePair({
+    baseVersionId,
+    blueprintId,
+    publishIdempotencyKey,
+    publishedVersionId,
+    status,
+  });
   const document = questionBlueprintDocument(input.document);
   const sources = questionBlueprintDraftSources(input.sources);
   assertDraftReferences(document, sources);
@@ -197,6 +260,8 @@ export function reconstituteQuestionBlueprintDraft(input: {
     name: questionBlueprintName(input.name),
     ownerUserId: userId(input.ownerUserId),
     publishedAt: input.publishedAt,
+    publishedVersionId,
+    publishIdempotencyKey,
     revision: questionBlueprintDraftRevision(input.revision),
     sources,
     status,
@@ -261,17 +326,25 @@ export function attachDraftSourceFile(
 
 export function markQuestionBlueprintDraftPublished(
   draft: QuestionBlueprintDraft,
-  blueprintId: QuestionBlueprintId,
-  sources: readonly QuestionBlueprintDraftSource[],
+  input: {
+    blueprintId: QuestionBlueprintId;
+    idempotencyKey: string;
+    sources: readonly QuestionBlueprintDraftSource[];
+    versionId: QuestionBlueprintVersionId;
+  },
   at: Date,
 ): QuestionBlueprintDraft {
   assertMutable(draft);
   return {
     ...touch(draft, at),
-    blueprintId,
+    blueprintId: input.blueprintId,
     publishedAt: at,
+    publishedVersionId: input.versionId,
+    publishIdempotencyKey: questionBlueprintDraftPublishIdempotencyKey(
+      input.idempotencyKey,
+    ),
     revision: nextQuestionBlueprintDraftRevision(draft.revision),
-    sources,
+    sources: input.sources,
     status: "published",
   };
 }
@@ -298,13 +371,43 @@ export function questionBlueprintDraftRevision(value: unknown): number {
   return value as number;
 }
 
+export function questionBlueprintDraftPublishIdempotencyKey(
+  value: unknown,
+): string {
+  if (typeof value !== "string") {
+    throw new InvalidQuestionFieldError(
+      "question blueprint draft publish idempotency key must be a string",
+    );
+  }
+  const trimmed = value.trim();
+  if (trimmed.length === 0 || trimmed.length > 128) {
+    throw new InvalidQuestionFieldError(
+      "question blueprint draft publish idempotency key must be between 1 and 128 characters",
+    );
+  }
+  return trimmed;
+}
+
 function nextQuestionBlueprintDraftRevision(value: number): number {
   return questionBlueprintDraftRevision(value + 1);
+}
+
+function assertSourceIntentFields(source: Record<string, unknown>): void {
+  const allowed = new Set(["name", "sourceId", "type"]);
+  for (const key of Object.keys(source)) {
+    if (!allowed.has(key)) {
+      throw new InvalidQuestionFieldError(
+        `question blueprint draft source intent cannot include ${key}`,
+      );
+    }
+  }
 }
 
 function assertDraftTargetBasePair(input: {
   blueprintId: QuestionBlueprintId | null;
   baseVersionId: QuestionBlueprintVersionId | null;
+  publishedVersionId?: QuestionBlueprintVersionId | null;
+  publishIdempotencyKey?: string | null;
   status: QuestionBlueprintDraftStatus;
 }): void {
   if (input.baseVersionId !== null && input.blueprintId === null) {
@@ -324,6 +427,30 @@ function assertDraftTargetBasePair(input: {
   if (input.status === "published" && input.blueprintId === null) {
     throw new InvalidQuestionFieldError(
       "published question blueprint drafts must reference a blueprint",
+    );
+  }
+  if (input.status === "published" && input.publishedVersionId === null) {
+    throw new InvalidQuestionFieldError(
+      "published question blueprint drafts must reference a published version",
+    );
+  }
+  if (
+    input.status === "published" &&
+    (input.publishIdempotencyKey === null ||
+      input.publishIdempotencyKey === undefined)
+  ) {
+    throw new InvalidQuestionFieldError(
+      "published question blueprint drafts must store a publish idempotency key",
+    );
+  }
+  if (input.status !== "published" && input.publishedVersionId != null) {
+    throw new InvalidQuestionFieldError(
+      "unpublished question blueprint drafts cannot reference a published version",
+    );
+  }
+  if (input.status !== "published" && input.publishIdempotencyKey != null) {
+    throw new InvalidQuestionFieldError(
+      "unpublished question blueprint drafts cannot store a publish idempotency key",
     );
   }
 }

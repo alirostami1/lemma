@@ -249,8 +249,14 @@ test("published draft keeps source history and registered workbook id", () => {
   }));
   const published = markQuestionBlueprintDraftPublished(
     draft,
-    questionBlueprintId("0197a555-5555-7555-8555-555555555555"),
-    sourcesWithWorkbook,
+    {
+      blueprintId: questionBlueprintId("0197a555-5555-7555-8555-555555555555"),
+      idempotencyKey: "publish-once",
+      sources: sourcesWithWorkbook,
+      versionId: questionBlueprintVersionId(
+        "0197a666-6666-7666-8666-666666666666",
+      ),
+    },
     at,
   );
 
@@ -266,10 +272,17 @@ test("published new-blueprint draft keeps null base version", () => {
   const blueprintId = questionBlueprintId(
     "0197a555-5555-7555-8555-555555555555",
   );
+  const versionId = questionBlueprintVersionId(
+    "0197a666-6666-7666-8666-666666666666",
+  );
   const published = markQuestionBlueprintDraftPublished(
     draft,
-    blueprintId,
-    draft.sources,
+    {
+      blueprintId,
+      idempotencyKey: "publish-once",
+      sources: draft.sources,
+      versionId,
+    },
     at,
   );
   const reconstituted = reconstituteQuestionBlueprintDraft({
@@ -277,6 +290,8 @@ test("published new-blueprint draft keeps null base version", () => {
     baseVersionId: null,
     blueprintId,
     publishedAt: at,
+    publishedVersionId: versionId,
+    publishIdempotencyKey: "publish-once",
     status: "published",
   });
 
@@ -352,6 +367,8 @@ function draftRow() {
     name: "Draft",
     ownerUserId: "0197a222-2222-7222-8222-222222222222",
     publishedAt: null,
+    publishedVersionId: null,
+    publishIdempotencyKey: null,
     revision: 1,
     sources: sources(),
     status: "draft",
