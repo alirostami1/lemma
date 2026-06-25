@@ -25,5 +25,7 @@ infra:
   - "scripts/production/**"
 workflow:
   - ".yamllint.yml"
+  - ".github/ISSUE_TEMPLATE/**"
   - ".github/path-filters/**"
+  - ".github/pull_request_template.md"
   - ".github/workflows/**"
