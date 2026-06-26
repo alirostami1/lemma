@@ -284,6 +284,7 @@ function toQuestionGenerationRunDto(
     attemptNumber: run.attemptNumber,
     attempts: run.attempts,
     blueprintId: run.blueprintId,
+    blueprintVersionId: run.blueprintVersionId,
     createdAt: presentDate(run.createdAt),
     createdByUserId: run.createdByUserId,
     errorMessage: run.errorMessage,

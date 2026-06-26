@@ -9,6 +9,7 @@ import {
   questionBlueprintDocument,
   questionBlueprintId,
   questionBlueprintName,
+  questionBlueprintVersionId,
   questionGenerationRunId,
   questionSetId,
   reconstituteQuestionGenerationRun,
@@ -18,6 +19,9 @@ import {
 const at = new Date("2026-06-21T00:00:00.000Z");
 const ownerUserId = userId("019e9315-6a87-715f-9861-8654df072001");
 const blueprintId = questionBlueprintId("019e9315-6a87-715f-9861-8654df072002");
+const blueprintVersionId = questionBlueprintVersionId(
+  "019e9315-6a87-715f-9861-8654df072006",
+);
 const targetQuestionSetId = questionSetId(
   "019e9315-6a87-715f-9861-8654df072003",
 );
@@ -73,10 +77,22 @@ describe("QuestionGenerationRun", () => {
     );
   });
 
+  it("rejects persisted run when blueprintVersionId does not match snapshot", () => {
+    assert.throws(
+      () =>
+        reconstituteQuestionGenerationRun({
+          ...storedRun(),
+          blueprintVersionId: "019e9315-6a87-715f-9861-8654df072007",
+        }),
+      /blueprintVersionId must match blueprint snapshot/,
+    );
+  });
+
   it("creates retry replacement with frozen snapshot and lineage", () => {
     const initial = createInitialQuestionGenerationRun(
       {
         blueprintId,
+        blueprintVersionId,
         blueprintSnapshot: snapshot(),
         createdByUserId: ownerUserId,
         id: questionGenerationRunId("019e9315-6a87-715f-9861-8654df072004"),
@@ -99,6 +115,7 @@ describe("QuestionGenerationRun", () => {
     assert.equal(retry.retryOfRunId, failed.id);
     assert.equal(retry.attemptNumber, 2);
     assert.equal(retry.workbookCalculationId, null);
+    assert.equal(retry.blueprintVersionId, failed.blueprintVersionId);
     assert.strictEqual(retry.blueprintSnapshot, failed.blueprintSnapshot);
     assert.equal(failed.status, "failed");
   });
@@ -107,6 +124,7 @@ describe("QuestionGenerationRun", () => {
 function snapshot() {
   return createQuestionBlueprintSnapshot({
     blueprintId,
+    blueprintVersionId,
     capturedAt: at,
     description: questionBlueprintDescription(null),
     document: questionBlueprintDocument({
@@ -125,6 +143,7 @@ function storedRun() {
     attemptNumber: 1,
     attempts: 0,
     blueprintId,
+    blueprintVersionId,
     blueprintSnapshot: snapshot(),
     createdAt: at,
     createdByUserId: ownerUserId,

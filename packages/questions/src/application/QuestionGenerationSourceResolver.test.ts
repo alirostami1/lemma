@@ -37,9 +37,11 @@ describe("QuestionGenerationSourceResolver", () => {
   it("allows generation when all used workbook sources are accessible", async () => {
     const resolver = createResolver({ accessibleWorkbooks: [workbookId] });
 
+    const blueprint = createBlueprint({ workbookId });
     await resolver.assertAccess({
-      blueprint: createBlueprint({ workbookId }),
       currentUser,
+      document: blueprint.document,
+      sources: blueprint.sources,
     });
   });
 
@@ -49,8 +51,9 @@ describe("QuestionGenerationSourceResolver", () => {
     await assert.rejects(
       () =>
         resolver.assertAccess({
-          blueprint: createBlueprint({ workbookId }),
           currentUser,
+          document: createBlueprint({ workbookId }).document,
+          sources: createBlueprint({ workbookId }).sources,
         }),
       ForbiddenQuestionActionError,
     );

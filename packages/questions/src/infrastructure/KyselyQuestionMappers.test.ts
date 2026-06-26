@@ -39,13 +39,14 @@ describe("KyselyQuestionMappers", () => {
 
   it("maps generation run rows with blueprintSnapshot and workbookCalculationId", () => {
     const run = mapQuestionGenerationRunRowToDomain(generationRunRow());
+    const insert = mapQuestionGenerationRunToInsert(run);
 
     assert.equal(run.blueprintSnapshot.blueprintId, id);
+    assert.equal(run.blueprintVersionId, versionId);
+    assert.equal(run.blueprintSnapshot.blueprintVersionId, versionId);
     assert.equal(run.workbookCalculationId, calculationId);
-    assert.equal(
-      mapQuestionGenerationRunToInsert(run).workbookCalculationId,
-      calculationId,
-    );
+    assert.equal(insert.blueprintVersionId, versionId);
+    assert.equal(insert.workbookCalculationId, calculationId);
   });
 
   it("maps question rows with durable source evidence and private source plan", () => {
@@ -124,8 +125,10 @@ function generationRunRow(): Parameters<
     attemptNumber: 1,
     attempts: 0,
     blueprintId: id,
+    blueprintVersionId: versionId,
     blueprintSnapshot: {
       blueprintId: id,
+      blueprintVersionId: versionId,
       capturedAt: createdAt.toISOString(),
       description: null,
       document: document(),

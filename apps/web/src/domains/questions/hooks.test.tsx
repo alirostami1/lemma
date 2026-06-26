@@ -21,6 +21,7 @@ describe("useRetryQuestionGenerationRun", () => {
       attemptNumber: 2,
       attempts: 0,
       blueprintId: "blueprint-1",
+      blueprintVersionId: "blueprint-version-1",
       createdAt: new Date("2026-06-21T00:00:00.000Z"),
       createdByUserId: "user-1",
       errorMessage: null,

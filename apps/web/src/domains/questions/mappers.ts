@@ -209,6 +209,7 @@ export function mapQuestionGenerationRun(
     attemptNumber: dto.attemptNumber,
     attempts: dto.attempts,
     blueprintId: dto.blueprintId,
+    blueprintVersionId: dto.blueprintVersionId,
     createdAt: new Date(dto.createdAt),
     createdByUserId: dto.createdByUserId,
     errorMessage: dto.errorMessage,

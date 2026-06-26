@@ -204,6 +204,7 @@ export function mapQuestionGenerationRunToInsert(
     attemptNumber: run.attemptNumber,
     attempts: run.attempts,
     blueprintId: run.blueprintId,
+    blueprintVersionId: run.blueprintVersionId,
     blueprintSnapshot: toMutableJsonObject(run.blueprintSnapshot),
     createdAt: run.createdAt,
     createdByUserId: run.createdByUserId,
