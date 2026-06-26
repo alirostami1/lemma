@@ -11,7 +11,7 @@ allowBuilds:
   vue-demi: true
 minimumReleaseAge: 10080
 catalog:
-  orval: "^8.10.0"
+  orval: "8.17.0"
   jose: "^6.1.3"
   openapi-types: "^12.1.3"
   class-variance-authority: "^0.7.1"
