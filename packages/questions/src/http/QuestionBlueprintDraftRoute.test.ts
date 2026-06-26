@@ -17,7 +17,7 @@ import {
   questionBlueprintDescription,
   questionBlueprintDocument,
   questionBlueprintDraftId,
-  questionBlueprintDraftSources,
+  questionBlueprintDraftSourcesFromRows,
   questionBlueprintId,
   questionBlueprintName,
   questionBlueprintVersionId,
@@ -60,6 +60,9 @@ describe("question blueprint draft route", () => {
     "checksumSha256",
     "fileId",
     "originalName",
+    "processor",
+    "sourceArtifactId",
+    "sourceRevisionId",
     "status",
     "workbookId",
   ] as const) {
@@ -83,16 +86,86 @@ describe("question blueprint draft route", () => {
     });
   }
 
+  it("rejects source create server-owned materialization fields", async () => {
+    const app = createApp();
+
+    const response = await app.request("/question-blueprint-drafts", {
+      body: JSON.stringify({
+        description: null,
+        document: emptyDocument(),
+        name: "Draft",
+        sources: [
+          {
+            ...sourcePatch(),
+            byteSize: 123,
+            checksumSha256:
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            fileId: "019e9315-6a87-715f-9861-8654df099006",
+            originalName: "evil.xlsx",
+            processor: { anything: true },
+            sourceArtifactId: "evil",
+            sourceRevisionId: "evil",
+            status: "validated",
+            workbookId: "019e9315-6a87-715f-9861-8654df099007",
+          },
+        ],
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    });
+
+    assert.equal(response.status, 400);
+  });
+
+  it("rejects sourceId in attach source file body", async () => {
+    const app = createApp();
+
+    const response = await app.request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/file`,
+      {
+        body: JSON.stringify({
+          expectedRevision: 1,
+          fileId: "019e9315-6a87-715f-9861-8654df099006",
+          sourceId: "sourceA",
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 400);
+  });
+
+  it("does not register direct published blueprint create/update routes", async () => {
+    const app = createApp();
+
+    const createResponse = await app.request("/question-blueprints", {
+      body: JSON.stringify({}),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    });
+    const updateResponse = await app.request(
+      `/question-blueprints/${blueprintId}`,
+      {
+        body: JSON.stringify({}),
+        headers: { "content-type": "application/json" },
+        method: "PATCH",
+      },
+    );
+
+    assert.equal(createResponse.status, 404);
+    assert.equal(updateResponse.status, 404);
+  });
+
   it("maps stale source file attach revision to DRAFT_REVISION_CONFLICT", async () => {
     const app = createApp();
 
     const response = await app.request(
-      `/question-blueprint-drafts/${draftId}/source-files`,
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/file`,
       {
         body: JSON.stringify({
           expectedRevision: 2,
           fileId: "019e9315-6a87-715f-9861-8654df099006",
-          sourceId: "sourceA",
         }),
         headers: { "content-type": "application/json" },
         method: "POST",
@@ -163,6 +236,9 @@ function createApp(
       questionBlueprintDraftService:
         options.questionBlueprintDraftService ??
         ({
+          async createQuestionBlueprintDraft() {
+            return { draft: createDraft() };
+          },
           async attachQuestionBlueprintDraftSourceFile(input: {
             expectedRevision: number;
           }) {
@@ -188,7 +264,7 @@ function createApp(
       questionSetService: {} as unknown as QuestionSetService,
       requireIdentity: async (c, next) => {
         c.set("identity", currentUser());
-        c.set("requestId", "request-1");
+        c.set("requestId", "019e9315-6a87-715f-9861-8654df099099");
         await next();
       },
     }),
@@ -243,6 +319,10 @@ function sourcePatch() {
 function serverOwnedValue(field: string) {
   if (field === "byteSize") return 1234;
   if (field === "status") return "uploaded";
+  if (field === "processor") return { anything: true };
+  if (field === "sourceArtifactId" || field === "sourceRevisionId") {
+    return "evil";
+  }
   if (field === "checksumSha256") {
     return "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
   }
@@ -261,7 +341,7 @@ function createDraft() {
       id: draftId,
       name: questionBlueprintName("Draft"),
       ownerUserId,
-      sources: questionBlueprintDraftSources([
+      sources: questionBlueprintDraftSourcesFromRows([
         {
           byteSize: null,
           checksumSha256: null,

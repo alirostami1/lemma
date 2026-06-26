@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  navigateToNewStudioDraft,
   navigateToStudioBlueprint,
   navigateToStudioDraft,
   toStudioSearch,
@@ -23,6 +24,10 @@ describe("studio controller helpers", () => {
   it("maps blank target to empty object", () => {
     expect(toStudioSearch({ kind: "blank" })).toEqual({});
   });
+
+  it("maps new draft target to new search", () => {
+    expect(toStudioSearch({ kind: "new" })).toEqual({ new: "1" });
+  });
 });
 
 describe("navigation helpers", () => {
@@ -31,6 +36,7 @@ describe("navigation helpers", () => {
 
     void navigateToStudioDraft(navigate, "draft-1", { replace: true });
     void navigateToStudioBlueprint(navigate, "blueprint-1", { replace: true });
+    void navigateToNewStudioDraft(navigate, { replace: false });
 
     expect(navigate).toHaveBeenNthCalledWith(1, {
       replace: true,
@@ -40,6 +46,11 @@ describe("navigation helpers", () => {
     expect(navigate).toHaveBeenNthCalledWith(2, {
       replace: true,
       search: { blueprintId: "blueprint-1" },
+      to: "/studio",
+    });
+    expect(navigate).toHaveBeenNthCalledWith(3, {
+      replace: false,
+      search: { new: "1" },
       to: "/studio",
     });
   });

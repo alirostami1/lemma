@@ -1,33 +1,6 @@
-import type {
-  QuestionAnswer,
-  QuestionBlueprintDocument,
-} from "#/api/generated/model";
+import type { QuestionAnswer } from "#/api/generated/model";
 import type { TableAnswerState, TableAnswerValue } from "./authoring";
-import type {
-  CreateQuestionBlueprintInput,
-  CreateQuestionGenerationRunInput,
-  QuestionBlueprintVisibility,
-  UpdateQuestionBlueprintInput,
-} from "./model";
-
-export interface QuestionBlueprintDraft {
-  description?: string | null;
-  document: QuestionBlueprintDocument;
-  name: string;
-  questionBlueprintId?: string;
-  sources: QuestionBlueprintDraftWorkbookSource[];
-  visibility?: QuestionBlueprintVisibility;
-}
-
-export interface WorkbookQuestionGenerationSourceDraft {
-  workbookId: string;
-}
-
-export interface QuestionBlueprintDraftWorkbookSource {
-  name: string;
-  sourceId: string;
-  workbookId: string;
-}
+import type { CreateQuestionGenerationRunInput } from "./model";
 
 export function createEmptyQuestionAnswer(): QuestionAnswer {
   return {
@@ -64,31 +37,6 @@ export type QuestionGenerationDraft = {
   count: number;
   blueprintId: string;
 };
-
-export function toCreateQuestionBlueprintInput(
-  draft: QuestionBlueprintDraft,
-): CreateQuestionBlueprintInput {
-  return {
-    description: draft.description,
-    document: draft.document,
-    name: draft.name,
-    sources: draft.sources,
-    visibility: draft.visibility,
-  };
-}
-
-export function toUpdateQuestionBlueprintInput(
-  draft: QuestionBlueprintDraft & { questionBlueprintId: string },
-): UpdateQuestionBlueprintInput {
-  return {
-    description: draft.description,
-    document: draft.document,
-    name: draft.name,
-    questionBlueprintId: draft.questionBlueprintId,
-    sources: draft.sources,
-    visibility: draft.visibility,
-  };
-}
 
 export function toCreateQuestionGenerationRunInput(
   draft: QuestionGenerationDraft,

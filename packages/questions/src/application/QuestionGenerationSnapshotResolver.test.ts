@@ -136,9 +136,22 @@ describe("resolveQuestionGenerationSnapshots", () => {
 
 function sources(): QuestionBlueprintSource[] {
   return [
-    { name: "Source 1", sourceId: "source_1", type: "workbook", workbookId },
-    { name: "Source 2", sourceId: "source_2", type: "workbook", workbookId },
+    testSource("Source 1", "source_1"),
+    testSource("Source 2", "source_2"),
   ];
+}
+
+function testSource(name: string, sourceId: string): QuestionBlueprintSource {
+  return {
+    byteSize: null,
+    checksumSha256: null,
+    fileId: null,
+    name,
+    originalName: null,
+    sourceId,
+    type: "workbook",
+    workbookId,
+  };
 }
 
 function snapshots(

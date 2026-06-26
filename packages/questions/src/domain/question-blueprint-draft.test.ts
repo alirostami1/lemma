@@ -8,7 +8,7 @@ import {
   questionBlueprintDescription,
   questionBlueprintDocument,
   questionBlueprintDraftId,
-  questionBlueprintDraftSources,
+  questionBlueprintDraftSourcesFromRows,
   questionBlueprintId,
   questionBlueprintName,
   questionBlueprintVersionId,
@@ -218,8 +218,9 @@ test("blueprint version rejects missing referenced source", () => {
   );
 });
 
-test("attaching draft source file does not create workbook", () => {
+test("attaching draft source file materializes workbook state", () => {
   const draft = createDraft();
+  const attachedWorkbookId = workbookId("0197a444-4444-7444-8444-444444444444");
   const attached = attachDraftSourceFile(
     draft,
     {
@@ -228,6 +229,7 @@ test("attaching draft source file does not create workbook", () => {
       fileId: "0197a333-3333-7333-8333-333333333333",
       originalName: "source.xlsx",
       sourceId: "sourceA",
+      workbookId: attachedWorkbookId,
     },
     at,
   );
@@ -236,8 +238,8 @@ test("attaching draft source file does not create workbook", () => {
     attached.sources[0]?.fileId,
     "0197a333-3333-7333-8333-333333333333",
   );
-  assert.equal(attached.sources[0]?.workbookId, null);
-  assert.equal(attached.sources[0]?.status, "uploaded");
+  assert.equal(attached.sources[0]?.workbookId, attachedWorkbookId);
+  assert.equal(attached.sources[0]?.status, "validated");
 });
 
 test("published draft keeps source history and registered workbook id", () => {
@@ -321,7 +323,7 @@ function createDraft() {
 }
 
 function sources() {
-  return questionBlueprintDraftSources([
+  return questionBlueprintDraftSourcesFromRows([
     {
       byteSize: null,
       checksumSha256: null,
@@ -339,14 +341,24 @@ function sources() {
 function publishedSources() {
   return [
     {
+      byteSize: null,
+      checksumSha256: null,
+      fileId: null,
       name: "Source A",
+      originalName: null,
       sourceId: "sourceA",
+      status: "validated" as const,
       type: "workbook" as const,
       workbookId: workbookId("0197a444-4444-7444-8444-444444444444"),
     },
     {
+      byteSize: null,
+      checksumSha256: null,
+      fileId: null,
       name: "Source B",
+      originalName: null,
       sourceId: "sourceB",
+      status: "validated" as const,
       type: "workbook" as const,
       workbookId: workbookId("0197a444-4444-7444-8444-444444444445"),
     },

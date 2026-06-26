@@ -16,12 +16,13 @@ import {
   LoaderCircle,
   Redo2,
   RotateCcw,
-  Save,
+  Send,
   Sparkles,
   Undo2,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import type { StudioRouteSearch } from "./studio-controller-types";
+import type { DraftSaveConflict } from "./use-studio-draft-save-controller";
 
 export type StudioCommandBarProps = {
   blueprintDescription: string;
@@ -32,12 +33,14 @@ export type StudioCommandBarProps = {
   generateDisabledReason: string | null;
   routeSearch: StudioRouteSearch;
   isSaving: boolean;
+  isPublishing: boolean;
   saveState: "saved" | "unsaved" | "saving" | "autosaved" | "failed";
   saveError: string | null;
+  saveConflict: DraftSaveConflict | null;
   onBlueprintDescriptionChange(description: string): void;
   onBlueprintNameChange(name: string): void;
-  onGenerate(): void;
-  onOpenSaveDialog(): void;
+  onOpenPublishDialog(): void;
+  onReloadLatestDraft(): void;
   onSaveDraft(): void;
   onOpenSavedBlueprints(): void;
   onReset(): void;
@@ -54,12 +57,14 @@ export function StudioCommandBar({
   generateDisabledReason,
   routeSearch,
   isSaving,
+  isPublishing,
   saveState,
   saveError,
+  saveConflict,
   onBlueprintDescriptionChange,
   onBlueprintNameChange,
-  onGenerate,
-  onOpenSaveDialog,
+  onOpenPublishDialog,
+  onReloadLatestDraft,
   onSaveDraft,
   onOpenSavedBlueprints,
   onReset,
@@ -68,6 +73,12 @@ export function StudioCommandBar({
 }: StudioCommandBarProps) {
   const status = getSaveStatusLabel({ routeSearch, saveState });
   const StatusIcon = status.Icon;
+  let publishButtonLabel = "Publish draft";
+  if (isPublishing) {
+    publishButtonLabel = "Publishing...";
+  } else if (isSaving) {
+    publishButtonLabel = "Saving...";
+  }
 
   return (
     <TooltipProvider>
@@ -83,10 +94,10 @@ export function StudioCommandBar({
             </div>
             <div className="grid gap-2 sm:grid-cols-[minmax(12rem,24rem)_minmax(12rem,1fr)]">
               <label className="sr-only" htmlFor="studio-blueprint-name">
-                Blueprint name
+                Draft name
               </label>
               <Input
-                aria-label="Blueprint name"
+                aria-label="Draft name"
                 className="h-9 font-medium"
                 id="studio-blueprint-name"
                 maxLength={160}
@@ -96,10 +107,10 @@ export function StudioCommandBar({
                 value={blueprintName}
               />
               <label className="sr-only" htmlFor="studio-blueprint-description">
-                Blueprint description
+                Draft description
               </label>
               <Input
-                aria-label="Blueprint description"
+                aria-label="Draft description"
                 className="h-9"
                 id="studio-blueprint-description"
                 maxLength={500}
@@ -138,7 +149,7 @@ export function StudioCommandBar({
               onClick={onReset}
             />
             <Button
-              disabled={isSaving}
+              disabled={isSaving || saveConflict !== null}
               onClick={onSaveDraft}
               size="lg"
               type="button"
@@ -149,7 +160,6 @@ export function StudioCommandBar({
             </Button>
             <Button
               disabled={!canGenerate}
-              onClick={onGenerate}
               size="lg"
               title={generateDisabledReason ?? undefined}
               type="button"
@@ -159,17 +169,28 @@ export function StudioCommandBar({
               Generate
             </Button>
             <Button
-              disabled={isSaving}
-              onClick={onOpenSaveDialog}
+              disabled={isSaving || saveConflict !== null}
+              onClick={onOpenPublishDialog}
               size="lg"
               type="button"
             >
-              <Save />
-              {isSaving ? "Publishing..." : "Publish blueprint"}
+              <Send />
+              {publishButtonLabel}
             </Button>
           </div>
         </div>
-        {saveError ? (
+        {saveConflict ? (
+          <div className="grid gap-3 border-t p-3 sm:grid-cols-[1fr_auto] sm:items-center">
+            <InlineError message={saveConflict.message} />
+            <Button
+              onClick={onReloadLatestDraft}
+              type="button"
+              variant="destructive"
+            >
+              Reload latest draft
+            </Button>
+          </div>
+        ) : saveError ? (
           <div className="border-t p-3">
             <InlineError message={saveError} />
           </div>
@@ -249,34 +270,34 @@ function getSaveStatusLabel(input: {
     if (input.saveState === "saving") {
       return {
         Icon: LoaderCircle,
-        label: "Saving blueprint",
+        label: "Saving draft",
         variant: "outline",
       };
     }
     if (input.saveState === "failed") {
       return {
         Icon: AlertCircle,
-        label: "Blueprint save failed",
+        label: "Draft save failed",
         variant: "destructive",
       };
     }
     if (input.saveState === "saved") {
       return {
         Icon: CheckCircle2,
-        label: "Blueprint",
+        label: "Draft",
         variant: "secondary",
       };
     }
     if (input.saveState === "autosaved") {
       return {
         Icon: CheckCircle2,
-        label: "Blueprint",
+        label: "Draft",
         variant: "outline",
       };
     }
     return {
       Icon: CheckCircle2,
-      label: "Blueprint",
+      label: "Draft",
       variant: "outline",
     };
   }

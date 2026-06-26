@@ -88,7 +88,6 @@ export function mapQuestionBlueprintToInsert(
     id: blueprint.id,
     name: blueprint.name,
     ownerUserId: blueprint.ownerUserId,
-    sources: mapJsonArrayToDb(blueprint.sources),
     status: blueprint.status,
     updatedAt: blueprint.updatedAt,
     visibility: blueprint.visibility,
@@ -104,7 +103,6 @@ export function mapQuestionBlueprintToUpdate(
     description: blueprint.description,
     document: toMutableJsonObject(blueprint.document),
     name: blueprint.name,
-    sources: mapJsonArrayToDb(blueprint.sources),
     status: blueprint.status,
     updatedAt: blueprint.updatedAt,
     visibility: blueprint.visibility,
@@ -134,7 +132,6 @@ export function mapQuestionBlueprintVersionToInsert(
     ownerUserId: version.ownerUserId,
     parentVersionId: version.parentVersionId,
     publishedAt: version.publishedAt,
-    sources: mapJsonArrayToDb(version.sources),
     versionNumber: version.versionNumber,
   };
 }

@@ -1,9 +1,6 @@
 import {
   type QuestionBlueprint,
   type QuestionSet,
-  questionBlueprintDocument,
-  questionBlueprintSources,
-  questionBlueprintSourcesReferencedByDocument,
   questionBlueprintId as toQuestionBlueprintId,
   questionId as toQuestionId,
   questionSetId as toQuestionSetId,
@@ -77,7 +74,8 @@ export async function persistQuestionBlueprint(
   questionsRepository: QuestionsRepository,
   blueprint: QuestionBlueprint,
 ) {
-  const updated = await questionsRepository.updateQuestionBlueprint(blueprint);
+  const updated =
+    await questionsRepository.saveQuestionBlueprintLifecycleState(blueprint);
   if (!updated) {
     throw new QuestionBlueprintNotFoundError();
   }
@@ -86,14 +84,4 @@ export async function persistQuestionBlueprint(
 
 export async function hydrateQuestionBlueprint(blueprint: QuestionBlueprint) {
   return blueprint;
-}
-
-export function normalizeCanonicalBlueprintInput(input: {
-  document: unknown;
-  sources: unknown;
-}) {
-  const document = questionBlueprintDocument(input.document);
-  const sources = questionBlueprintSources(input.sources);
-  questionBlueprintSourcesReferencedByDocument(document, sources);
-  return { document, sources };
 }

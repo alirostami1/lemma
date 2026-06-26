@@ -1,7 +1,6 @@
 export { CanonicalQuestionMaterializer } from "./CanonicalQuestionMaterializer.js";
 export type {
   AttachQuestionBlueprintDraftSourceFileCommand,
-  CreateQuestionBlueprintCommand,
   CreateQuestionBlueprintDraftCommand,
   CreateQuestionBlueprintEditDraftCommand,
   CreateQuestionGenerationRunCommand,
@@ -17,7 +16,6 @@ export type {
   QuestionGenerationRunMutationCommand,
   QuestionSetByIdCommand,
   RemoveQuestionFromSetCommand,
-  UpdateQuestionBlueprintCommand,
   UpdateQuestionBlueprintDraftCommand,
   UpdateQuestionSetCommand,
 } from "./commands.js";
@@ -38,7 +36,13 @@ export type {
   QuestionsResult,
 } from "./dto.js";
 export {
+  DraftSourceFileForbiddenError,
+  DraftSourceFileInvalidError,
+  DraftSourceKindUnsupportedError,
+  DraftSourceNotFoundError,
+  DraftSourceNotReadyError,
   ForbiddenQuestionActionError,
+  InvalidDraftSourceReferenceError,
   InvalidQuestionBlueprintError,
   QuestionBlueprintBaseVersionConflictError,
   QuestionBlueprintDraftNotFoundError,

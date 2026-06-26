@@ -92,17 +92,19 @@ export {
   questionBlueprintDraftPublishIdempotencyKey,
   questionBlueprintDraftRevision,
   questionBlueprintDraftSourceIntents,
-  questionBlueprintDraftSources,
+  questionBlueprintDraftSourcesFromRows,
   reconstituteQuestionBlueprintDraft,
   updateQuestionBlueprintDraft,
 } from "./question-blueprint-draft.js";
 export type {
   QuestionBlueprintVersion,
   QuestionBlueprintVersionNumber,
+  QuestionBlueprintVersionSource,
 } from "./question-blueprint-version.js";
 export {
   createQuestionBlueprintVersion,
   questionBlueprintVersionNumber,
+  questionBlueprintVersionSourcesFromRows,
   reconstituteQuestionBlueprintVersion,
 } from "./question-blueprint-version.js";
 export type {

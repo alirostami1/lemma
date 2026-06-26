@@ -3,12 +3,10 @@ import {
   createStudioSourceFingerprints,
   type StudioSource,
 } from "./source/studio-source-model";
-import type { StudioRouteSearch } from "./studio-controller-types";
+import type { StudioRouteSearch } from "./studio-route-intent";
+import { toStudioSearch } from "./studio-route-intent";
 
-export type StudioRouteTarget =
-  | { kind: "blank" }
-  | { kind: "blueprint"; blueprintId: string }
-  | { kind: "draft"; draftId: string };
+export { toStudioSearch } from "./studio-route-intent";
 
 export function createDraftSnapshotKey({
   blueprintId,
@@ -30,20 +28,6 @@ export function createDraftSnapshotKey({
     description,
     sources: createStudioSourceFingerprints(sources),
   });
-}
-
-export function toStudioSearch(target: StudioRouteTarget): StudioRouteSearch {
-  switch (target.kind) {
-    case "blank": {
-      return {};
-    }
-    case "blueprint": {
-      return { blueprintId: target.blueprintId };
-    }
-    case "draft": {
-      return { draftId: target.draftId };
-    }
-  }
 }
 
 type StudioNavigator = (input: {
@@ -72,6 +56,17 @@ export function navigateToStudioBlueprint(
   return navigate({
     replace: options?.replace,
     search: toStudioSearch({ blueprintId, kind: "blueprint" }),
+    to: "/studio",
+  });
+}
+
+export function navigateToNewStudioDraft(
+  navigate: StudioNavigator,
+  options?: { replace?: boolean },
+) {
+  return navigate({
+    replace: options?.replace,
+    search: toStudioSearch({ kind: "new" }),
     to: "/studio",
   });
 }

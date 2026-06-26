@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, renderHook, waitFor } from "@testing-library/react";
+import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import type { StudioWorkbookSource } from "./source/studio-source-model";
@@ -33,11 +33,6 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 vi.mock("#/domains/questions", () => ({
-  useQuestionBlueprintAuthoringQuery: () => ({
-    data: null,
-    isError: false,
-    isLoading: false,
-  }),
   useQuestionBlueprintDraftQuery: (draftId: string) =>
     draftQueryState.get(draftId) ?? {
       data: null,
@@ -74,9 +69,7 @@ describe("useBlueprintDraftController draft asset hydration", () => {
       parsedLocalSource(),
     ]);
 
-    const { result } = renderHook(() =>
-      useBlueprintDraftController({ initialBlueprintId: "" }),
-    );
+    const { result } = renderHook(() => useBlueprintDraftController({}));
 
     await waitFor(() => expect(result.current.sources).toEqual([]));
     await settleMicrotasks();
@@ -92,9 +85,7 @@ describe("useBlueprintDraftController draft asset hydration", () => {
       missingSource("Workbook file missing. Reattach the file to continue."),
     ]);
 
-    const { result } = renderHook(() =>
-      useBlueprintDraftController({ initialBlueprintId: "" }),
-    );
+    const { result } = renderHook(() => useBlueprintDraftController({}));
 
     await waitFor(() => expect(result.current.sources).toEqual([]));
     await settleMicrotasks();
@@ -110,9 +101,7 @@ describe("useBlueprintDraftController draft asset hydration", () => {
       new Error("hydrate exploded"),
     );
 
-    const { result } = renderHook(() =>
-      useBlueprintDraftController({ initialBlueprintId: "" }),
-    );
+    const { result } = renderHook(() => useBlueprintDraftController({}));
 
     await waitFor(() => expect(result.current.sources).toEqual([]));
     await settleMicrotasks();
@@ -124,9 +113,7 @@ describe("useBlueprintDraftController draft asset hydration", () => {
 
   it("does not start IndexedDB hydration for old local snapshots", async () => {
     writeRestoringSnapshot();
-    const { result } = renderHook(() =>
-      useBlueprintDraftController({ initialBlueprintId: "" }),
-    );
+    const { result } = renderHook(() => useBlueprintDraftController({}));
     await waitFor(() => expect(result.current.sources).toEqual([]));
     await settleMicrotasks();
 
@@ -173,7 +160,6 @@ describe("useBlueprintDraftController draft loading", () => {
 
     const { result } = renderHook(() =>
       useBlueprintDraftController({
-        initialBlueprintId: "",
         initialDraftId: "draft_a",
       }),
     );
@@ -209,7 +195,6 @@ describe("useBlueprintDraftController draft loading", () => {
 
     const { result } = renderHook(() =>
       useBlueprintDraftController({
-        initialBlueprintId: "",
         initialDraftId: "draft_with_source",
       }),
     );
@@ -255,7 +240,6 @@ describe("useBlueprintDraftController draft loading", () => {
     const { result, rerender } = renderHook(
       (props: { draftId: string }) =>
         useBlueprintDraftController({
-          initialBlueprintId: "",
           initialDraftId: props.draftId,
         }),
       {
@@ -273,26 +257,6 @@ describe("useBlueprintDraftController draft loading", () => {
     expect(result.current.serverDraftId).toBe("draft_b");
   });
 
-  it("prefers draft route over blueprint route", async () => {
-    draftQueryState.set("draft_a", {
-      data: {
-        draft: draftTemplate("draft_a", "Draft A", "blueprint_a"),
-      },
-      isError: false,
-      isLoading: false,
-    });
-
-    const { result } = renderHook(() =>
-      useBlueprintDraftController({
-        initialBlueprintId: "blueprint_x",
-        initialDraftId: "draft_a",
-      }),
-    );
-
-    await waitFor(() => expect(result.current.blueprintName).toBe("Draft A"));
-    expect(result.current.loadedBlueprintId).toBe("blueprint_a");
-  });
-
   it("shows draft load failure message", async () => {
     draftQueryState.set("draft_missing", {
       data: null,
@@ -302,7 +266,6 @@ describe("useBlueprintDraftController draft loading", () => {
 
     const { result } = renderHook(() =>
       useBlueprintDraftController({
-        initialBlueprintId: "",
         initialDraftId: "draft_missing",
       }),
     );
@@ -310,6 +273,35 @@ describe("useBlueprintDraftController draft loading", () => {
     await waitFor(() =>
       expect(result.current.loadError).toBe("Draft could not be loaded."),
     );
+  });
+
+  it("shows draft load failure for malformed persisted draft documents", async () => {
+    draftQueryState.set("draft_malformed", {
+      data: {
+        draft: {
+          ...draftTemplate("draft_malformed", "Malformed draft"),
+          document: null as unknown as QuestionBlueprintDraftDto["document"],
+        },
+      },
+      isError: false,
+      isLoading: false,
+    });
+
+    const { result } = renderHook(() =>
+      useBlueprintDraftController({
+        initialDraftId: "draft_malformed",
+      }),
+    );
+
+    await waitFor(() =>
+      expect(result.current.loadError).toBe("Draft could not be loaded."),
+    );
+    expect(result.current.draftLoadState).toEqual({
+      message: "Draft could not be loaded.",
+      status: "document_error",
+    });
+    expect(result.current.serverDraftRevision).toBeNull();
+    expect(result.current.hasUnsavedChanges).toBe(true);
   });
 
   it("uses server draft when draftId is present even with local draft snapshot", async () => {
@@ -335,7 +327,6 @@ describe("useBlueprintDraftController draft loading", () => {
 
     const { result } = renderHook(() =>
       useBlueprintDraftController({
-        initialBlueprintId: "blueprint-x",
         initialDraftId: "draft_local",
       }),
     );
@@ -345,6 +336,54 @@ describe("useBlueprintDraftController draft loading", () => {
     );
     expect(result.current.sources).toEqual([]);
     expect(result.current.loadedBlueprintId).toBeNull();
+  });
+
+  it("marks a saved untargeted server draft clean and removes leave protection", async () => {
+    const removeEventListener = vi.spyOn(window, "removeEventListener");
+    draftQueryState.set("draft_local", {
+      data: {
+        draft: draftTemplate("draft_local", "Server draft"),
+      },
+      isError: false,
+      isLoading: false,
+    });
+
+    const { result } = renderHook(() =>
+      useBlueprintDraftController({
+        initialDraftId: "draft_local",
+      }),
+    );
+
+    await waitFor(() =>
+      expect(result.current.blueprintName).toBe("Server draft"),
+    );
+
+    act(() => {
+      result.current.setBlueprintName("Changed draft");
+    });
+    await waitFor(() => expect(result.current.hasUnsavedChanges).toBe(true));
+
+    act(() => {
+      result.current.markServerDraftSaved({
+        authoringModel: result.current.authoringModel,
+        draft: createSavedDomainDraft({
+          blueprintId: null,
+          id: "draft_local",
+          name: "Changed draft",
+          revision: 2,
+        }),
+        sources: [],
+      });
+    });
+
+    await waitFor(() => expect(result.current.hasUnsavedChanges).toBe(false));
+    expect(result.current.localDraftStatus).toBe("autosaved");
+    expect(result.current.serverDraftRevision).toBe(2);
+    expect(
+      removeEventListener.mock.calls.some(
+        ([eventType]) => eventType === "beforeunload",
+      ),
+    ).toBe(true);
   });
 });
 
@@ -532,6 +571,38 @@ function draftTemplate(
     sources: [],
     status: "draft",
     updatedAt: "2026-06-21T00:00:00.000Z",
+  };
+}
+
+function createSavedDomainDraft(input: {
+  blueprintId: string | null;
+  id: string;
+  name: string;
+  revision: number;
+}) {
+  return {
+    baseVersionId: null,
+    blueprintId: input.blueprintId,
+    createdAt: new Date("2026-06-20T00:00:00.000Z"),
+    createdByUserId: "owner-1",
+    description: null,
+    discardedAt: null,
+    document: {
+      blocks: [],
+      references: [],
+      responseFields: [],
+      schemaVersion: 1 as const,
+    },
+    id: input.id,
+    lastSavedAt: new Date("2026-06-21T00:00:00.000Z"),
+    name: input.name,
+    ownerUserId: "owner-1",
+    publishedAt: null,
+    publishedVersionId: null,
+    revision: input.revision,
+    sources: [],
+    status: "draft" as const,
+    updatedAt: new Date("2026-06-21T00:00:00.000Z"),
   };
 }
 

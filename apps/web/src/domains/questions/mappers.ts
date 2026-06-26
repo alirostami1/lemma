@@ -10,7 +10,9 @@ import type {
   QuestionBlueprintDraft as QuestionBlueprintDraftDto,
   QuestionBlueprintDraftResponse,
   QuestionBlueprint as QuestionBlueprintDto,
+  QuestionBlueprintEditDraftResponse,
   QuestionBlueprintResponse,
+  QuestionBlueprintVersion as QuestionBlueprintVersionDto,
   Question as QuestionDto,
   QuestionGenerationRun as QuestionGenerationRunDto,
   QuestionGenerationRunResponse,
@@ -30,8 +32,10 @@ import type {
   QuestionBlueprintDraftSummariesPage,
   QuestionBlueprintDraftSummary,
   QuestionBlueprintDraftsPage,
+  QuestionBlueprintEditDraftResult,
   QuestionBlueprintResult,
   QuestionBlueprintsPage,
+  QuestionBlueprintVersion,
   QuestionGenerationRun,
   QuestionGenerationRunResult,
   QuestionGenerationRunsPage,
@@ -49,7 +53,9 @@ export function mapQuestionBlueprintDraft(
   return {
     ...dto,
     createdAt: new Date(dto.createdAt),
+    discardedAt: dto.discardedAt ? new Date(dto.discardedAt) : null,
     lastSavedAt: new Date(dto.lastSavedAt),
+    publishedAt: dto.publishedAt ? new Date(dto.publishedAt) : null,
     updatedAt: new Date(dto.updatedAt),
   };
 }
@@ -58,6 +64,15 @@ export function mapQuestionBlueprintDraftResponse(
   response: QuestionBlueprintDraftResponse,
 ): QuestionBlueprintDraftResult {
   return { draft: mapQuestionBlueprintDraft(response.draft) };
+}
+
+export function mapQuestionBlueprintEditDraftResponse(
+  response: QuestionBlueprintEditDraftResponse,
+): QuestionBlueprintEditDraftResult {
+  return {
+    draft: mapQuestionBlueprintDraft(response.draft),
+    resolution: response.resolution,
+  };
 }
 
 export function mapQuestionBlueprintDraftSummary(
@@ -99,6 +114,9 @@ export function mapPublishQuestionBlueprintDraftResponse(
   return {
     draft: mapQuestionBlueprintDraft(response.draft),
     questionBlueprint: mapQuestionBlueprint(response.questionBlueprint),
+    questionBlueprintVersion: mapQuestionBlueprintVersion(
+      response.questionBlueprintVersion,
+    ),
   };
 }
 
@@ -117,6 +135,7 @@ export function mapQuestionBlueprint(
     archivedAt: dto.archivedAt ? new Date(dto.archivedAt) : null,
     createdAt: new Date(dto.createdAt),
     createdByUserId: dto.createdByUserId,
+    currentVersionId: dto.currentVersionId,
     description: dto.description,
     document: dto.document,
     id: dto.id,
@@ -136,6 +155,7 @@ export function mapQuestionBlueprintAuthoring(
     archivedAt: dto.archivedAt ? new Date(dto.archivedAt) : null,
     createdAt: new Date(dto.createdAt),
     createdByUserId: dto.createdByUserId,
+    currentVersionId: dto.currentVersionId,
     description: dto.description,
     document: dto.document,
     id: dto.id,
@@ -145,6 +165,25 @@ export function mapQuestionBlueprintAuthoring(
     status: dto.status,
     updatedAt: new Date(dto.updatedAt),
     visibility: dto.visibility,
+  };
+}
+
+export function mapQuestionBlueprintVersion(
+  dto: QuestionBlueprintVersionDto,
+): QuestionBlueprintVersion {
+  return {
+    blueprintId: dto.blueprintId,
+    createdAt: new Date(dto.createdAt),
+    createdByUserId: dto.createdByUserId,
+    description: dto.description,
+    document: dto.document,
+    id: dto.id,
+    name: dto.name,
+    ownerUserId: dto.ownerUserId,
+    parentVersionId: dto.parentVersionId,
+    publishedAt: new Date(dto.publishedAt),
+    sources: dto.sources,
+    versionNumber: dto.versionNumber,
   };
 }
 

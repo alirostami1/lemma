@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getStudioHistoryShortcut } from "./use-studio-undo-redo-hotkeys";
+import {
+  getStudioHistoryShortcut,
+  type StudioHistoryShortcutEvent,
+} from "./use-studio-undo-redo-hotkeys";
 
 describe("studio undo/redo shortcuts", () => {
   it("maps platform shortcuts", () => {
@@ -21,9 +24,7 @@ describe("studio undo/redo shortcuts", () => {
   });
 });
 
-function createShortcut(
-  input: Partial<Parameters<typeof getStudioHistoryShortcut>[0]>,
-) {
+function createShortcut(input: Partial<StudioHistoryShortcutEvent>) {
   return getStudioHistoryShortcut({
     altKey: false,
     ctrlKey: false,

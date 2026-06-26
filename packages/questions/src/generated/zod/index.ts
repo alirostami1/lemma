@@ -2768,8 +2768,11 @@ export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintNameMax = 
 export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintOwnerUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 
-export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintSourcesItemWorkbookIdRegExp =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintSourcesItemChecksumSha256RegExp =
+  /^[a-f0-9]{64}$/;
+
+export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintSourcesItemSourceIdRegExp =
+  /^[A-Za-z][A-Za-z0-9_-]*$/;
 export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionBlueprintIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionCreatedByUserIdRegExp =
@@ -2803,8 +2806,11 @@ export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionOwn
 export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionParentVersionIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 
-export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionSourcesItemWorkbookIdRegExp =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionSourcesItemChecksumSha256RegExp =
+  /^[a-f0-9]{64}$/;
+
+export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionSourcesItemSourceIdRegExp =
+  /^[A-Za-z][A-Za-z0-9_-]*$/;
 
 export const PublishQuestionBlueprintDraft200Response = zod.strictObject({
   draft: zod.strictObject({
@@ -3403,17 +3409,23 @@ export const PublishQuestionBlueprintDraft200Response = zod.strictObject({
     sources: zod
       .array(
         zod.strictObject({
-          name: zod.string().min(1),
-          sourceId: zod
-            .string()
-            .min(1)
-            .describe("Blueprint-local source identifier."),
-          type: zod.enum(["workbook"]),
-          workbookId: zod
+          byteSize: zod.number().min(1).nullable(),
+          checksumSha256: zod
             .string()
             .regex(
-              publishQuestionBlueprintDraft200ResponseQuestionBlueprintSourcesItemWorkbookIdRegExp,
+              publishQuestionBlueprintDraft200ResponseQuestionBlueprintSourcesItemChecksumSha256RegExp,
+            )
+            .nullable(),
+          fileId: zod.uuid().nullable(),
+          name: zod.string().min(1),
+          originalName: zod.string().nullable(),
+          sourceId: zod
+            .string()
+            .regex(
+              publishQuestionBlueprintDraft200ResponseQuestionBlueprintSourcesItemSourceIdRegExp,
             ),
+          type: zod.enum(["workbook"]),
+          workbookId: zod.uuid(),
         }),
       )
       .describe("Blueprint-local source entries attached to this blueprint."),
@@ -3787,17 +3799,23 @@ export const PublishQuestionBlueprintDraft200Response = zod.strictObject({
     sources: zod
       .array(
         zod.strictObject({
-          name: zod.string().min(1),
-          sourceId: zod
-            .string()
-            .min(1)
-            .describe("Blueprint-local source identifier."),
-          type: zod.enum(["workbook"]),
-          workbookId: zod
+          byteSize: zod.number().min(1).nullable(),
+          checksumSha256: zod
             .string()
             .regex(
-              publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionSourcesItemWorkbookIdRegExp,
+              publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionSourcesItemChecksumSha256RegExp,
+            )
+            .nullable(),
+          fileId: zod.uuid().nullable(),
+          name: zod.string().min(1),
+          originalName: zod.string().nullable(),
+          sourceId: zod
+            .string()
+            .regex(
+              publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionSourcesItemSourceIdRegExp,
             ),
+          type: zod.enum(["workbook"]),
+          workbookId: zod.uuid(),
         }),
       )
       .describe(
@@ -3866,26 +3884,26 @@ export const PublishQuestionBlueprintDraft502Response = zod.strictObject({
  */
 export const attachQuestionBlueprintDraftSourceFilePathDraftIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const attachQuestionBlueprintDraftSourceFilePathSourceIdRegExp =
+  /^[A-Za-z][A-Za-z0-9_-]*$/;
 
 export const AttachQuestionBlueprintDraftSourceFileParams = zod.strictObject({
   draftId: zod
     .string()
     .regex(attachQuestionBlueprintDraftSourceFilePathDraftIdRegExp),
+  sourceId: zod
+    .string()
+    .regex(attachQuestionBlueprintDraftSourceFilePathSourceIdRegExp),
 });
 
 export const attachQuestionBlueprintDraftSourceFileBodyFileIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
-export const attachQuestionBlueprintDraftSourceFileBodySourceIdRegExp =
-  /^[A-Za-z][A-Za-z0-9_-]*$/;
 
 export const AttachQuestionBlueprintDraftSourceFileBody = zod.strictObject({
   expectedRevision: zod.number().min(1),
   fileId: zod
     .string()
     .regex(attachQuestionBlueprintDraftSourceFileBodyFileIdRegExp),
-  sourceId: zod
-    .string()
-    .regex(attachQuestionBlueprintDraftSourceFileBodySourceIdRegExp),
 });
 
 export const attachQuestionBlueprintDraftSourceFile200ResponseDraftBaseVersionIdRegExp =
@@ -4407,8 +4425,11 @@ export const listQuestionBlueprints200ResponseQuestionBlueprintsItemNameMax = 16
 export const listQuestionBlueprints200ResponseQuestionBlueprintsItemOwnerUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 
-export const listQuestionBlueprints200ResponseQuestionBlueprintsItemSourcesItemWorkbookIdRegExp =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const listQuestionBlueprints200ResponseQuestionBlueprintsItemSourcesItemChecksumSha256RegExp =
+  /^[a-f0-9]{64}$/;
+
+export const listQuestionBlueprints200ResponseQuestionBlueprintsItemSourcesItemSourceIdRegExp =
+  /^[A-Za-z][A-Za-z0-9_-]*$/;
 
 export const ListQuestionBlueprints200Response = zod.strictObject({
   nextCursor: zod.string().nullable(),
@@ -4623,17 +4644,23 @@ export const ListQuestionBlueprints200Response = zod.strictObject({
       sources: zod
         .array(
           zod.strictObject({
-            name: zod.string().min(1),
-            sourceId: zod
-              .string()
-              .min(1)
-              .describe("Blueprint-local source identifier."),
-            type: zod.enum(["workbook"]),
-            workbookId: zod
+            byteSize: zod.number().min(1).nullable(),
+            checksumSha256: zod
               .string()
               .regex(
-                listQuestionBlueprints200ResponseQuestionBlueprintsItemSourcesItemWorkbookIdRegExp,
+                listQuestionBlueprints200ResponseQuestionBlueprintsItemSourcesItemChecksumSha256RegExp,
+              )
+              .nullable(),
+            fileId: zod.uuid().nullable(),
+            name: zod.string().min(1),
+            originalName: zod.string().nullable(),
+            sourceId: zod
+              .string()
+              .regex(
+                listQuestionBlueprints200ResponseQuestionBlueprintsItemSourcesItemSourceIdRegExp,
               ),
+            type: zod.enum(["workbook"]),
+            workbookId: zod.uuid(),
           }),
         )
         .describe("Blueprint-local source entries attached to this blueprint."),
@@ -4690,680 +4717,6 @@ export const ListQuestionBlueprints409Response = zod.strictObject({
 });
 
 export const ListQuestionBlueprints502Response = zod.strictObject({
-  error: zod.strictObject({
-    code: zod.string(),
-    details: zod.unknown().optional(),
-    message: zod.string(),
-    requestId: zod.string().optional(),
-  }),
-});
-
-/**
- * Authoring-only. Request may include full blueprint document with value expressions and correct values; learner responses return a public blueprint view.
- * @summary Create question blueprint
- */
-export const createQuestionBlueprintBodyDescriptionMax = 1000;
-
-export const createQuestionBlueprintBodyDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
-
-export const createQuestionBlueprintBodyDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin = 0;
-
-export const createQuestionBlueprintBodyDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
-
-export const createQuestionBlueprintBodyDocumentBlocksItemFourGradingTwoToleranceValueMin = 0;
-
-export const createQuestionBlueprintBodyDocumentBlocksItemFourPointsExclusiveMin = 0;
-
-export const createQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
-
-export const createQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin = 0;
-
-export const createQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
-
-export const createQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemTwoPointsExclusiveMin = 0;
-
-export const createQuestionBlueprintBodyNameMax = 160;
-
-export const createQuestionBlueprintBodySourcesItemWorkbookIdRegExp =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
-
-export const CreateQuestionBlueprintBody = zod.strictObject({
-  description: zod
-    .string()
-    .max(createQuestionBlueprintBodyDescriptionMax)
-    .nullish(),
-  document: zod.strictObject({
-    blocks: zod.array(
-      zod.union([
-        zod.strictObject({
-          content: zod.array(
-            zod.union([
-              zod.strictObject({
-                text: zod.string(),
-                type: zod.enum(["text"]),
-              }),
-              zod.strictObject({
-                fallbackText: zod.string().optional(),
-                rangeCell: zod
-                  .strictObject({
-                    columnOffset: zod
-                      .number()
-                      .min(
-                        createQuestionBlueprintBodyDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin,
-                      ),
-                    rowOffset: zod
-                      .number()
-                      .min(
-                        createQuestionBlueprintBodyDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin,
-                      ),
-                  })
-                  .optional(),
-                referenceId: zod.string().min(1),
-                type: zod.enum(["reference"]),
-              }),
-            ]),
-          ),
-          id: zod.string().min(1),
-          type: zod.enum(["text"]),
-        }),
-        zod.strictObject({
-          content: zod.strictObject({
-            content: zod.array(
-              zod.union([
-                zod.strictObject({
-                  content: zod
-                    .array(
-                      zod.strictObject({
-                        text: zod.string(),
-                        type: zod.enum(["text"]),
-                      }),
-                    )
-                    .optional(),
-                  type: zod.enum(["paragraph"]),
-                }),
-                zod.strictObject({
-                  attrs: zod.strictObject({
-                    level: zod
-                      .number()
-                      .min(1)
-                      .max(
-                        createQuestionBlueprintBodyDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax,
-                      ),
-                  }),
-                  content: zod
-                    .array(
-                      zod.strictObject({
-                        text: zod.string(),
-                        type: zod.enum(["text"]),
-                      }),
-                    )
-                    .optional(),
-                  type: zod.enum(["heading"]),
-                }),
-                zod.strictObject({
-                  content: zod.array(
-                    zod.strictObject({
-                      content: zod.array(
-                        zod.union([
-                          zod.strictObject({
-                            content: zod
-                              .array(
-                                zod.strictObject({
-                                  text: zod.string(),
-                                  type: zod.enum(["text"]),
-                                }),
-                              )
-                              .optional(),
-                            type: zod.enum(["paragraph"]),
-                          }),
-                          zod.unknown(),
-                          zod.strictObject({
-                            content: zod.array(zod.unknown()),
-                            type: zod.enum(["ordered_list"]),
-                          }),
-                        ]),
-                      ),
-                      type: zod.enum(["list_item"]),
-                    }),
-                  ),
-                  type: zod.enum(["bullet_list"]),
-                }),
-                zod.strictObject({
-                  content: zod.array(
-                    zod.strictObject({
-                      content: zod.array(
-                        zod.union([
-                          zod.strictObject({
-                            content: zod
-                              .array(
-                                zod.strictObject({
-                                  text: zod.string(),
-                                  type: zod.enum(["text"]),
-                                }),
-                              )
-                              .optional(),
-                            type: zod.enum(["paragraph"]),
-                          }),
-                          zod.strictObject({
-                            content: zod.array(zod.unknown()),
-                            type: zod.enum(["bullet_list"]),
-                          }),
-                          zod.unknown(),
-                        ]),
-                      ),
-                      type: zod.enum(["list_item"]),
-                    }),
-                  ),
-                  type: zod.enum(["ordered_list"]),
-                }),
-              ]),
-            ),
-            type: zod.enum(["doc"]),
-          }),
-          id: zod.string().min(1),
-          type: zod.enum(["rich_text"]),
-        }),
-        zod.strictObject({
-          id: zod.string().min(1),
-          type: zod.enum(["separator"]),
-        }),
-        zod.strictObject({
-          correctValueSource: zod
-            .union([
-              zod.strictObject({
-                schemaVersion: zod.literal(1),
-                type: zod.enum(["literal"]),
-                value: zod.unknown(),
-              }),
-              zod.strictObject({
-                referenceId: zod.string().min(1),
-                schemaVersion: zod.literal(1),
-                type: zod.enum(["reference"]),
-              }),
-            ])
-            .optional(),
-          grading: zod.union([
-            zod.strictObject({
-              mode: zod.enum(["exact"]),
-            }),
-            zod.strictObject({
-              mode: zod.enum(["number"]),
-              tolerance: zod.strictObject({
-                type: zod.enum(["absolute", "relative"]),
-                value: zod
-                  .number()
-                  .min(
-                    createQuestionBlueprintBodyDocumentBlocksItemFourGradingTwoToleranceValueMin,
-                  ),
-              }),
-            }),
-            zod.strictObject({
-              mode: zod.enum(["case_insensitive_text"]),
-            }),
-            zod.strictObject({
-              mode: zod.enum(["manual"]),
-            }),
-          ]),
-          id: zod.string().min(1),
-          label: zod.string().optional(),
-          placeholder: zod.string().optional(),
-          points: zod
-            .number()
-            .gt(
-              createQuestionBlueprintBodyDocumentBlocksItemFourPointsExclusiveMin,
-            ),
-          responseFieldId: zod.string().min(1),
-          type: zod.enum(["response"]),
-        }),
-        zod.strictObject({
-          cells: zod.array(
-            zod.union([
-              zod.strictObject({
-                columnId: zod.string().min(1),
-                content: zod.array(
-                  zod.union([
-                    zod.strictObject({
-                      text: zod.string(),
-                      type: zod.enum(["text"]),
-                    }),
-                    zod.strictObject({
-                      fallbackText: zod.string().optional(),
-                      rangeCell: zod
-                        .strictObject({
-                          columnOffset: zod
-                            .number()
-                            .min(
-                              createQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin,
-                            ),
-                          rowOffset: zod
-                            .number()
-                            .min(
-                              createQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin,
-                            ),
-                        })
-                        .optional(),
-                      referenceId: zod.string().min(1),
-                      type: zod.enum(["reference"]),
-                    }),
-                  ]),
-                ),
-                id: zod.string().min(1),
-                rowId: zod.string().min(1),
-                type: zod.enum(["content"]),
-              }),
-              zod.strictObject({
-                columnId: zod.string().min(1),
-                correctValueSource: zod
-                  .union([
-                    zod.strictObject({
-                      schemaVersion: zod.literal(1),
-                      type: zod.enum(["literal"]),
-                      value: zod.unknown(),
-                    }),
-                    zod.strictObject({
-                      referenceId: zod.string().min(1),
-                      schemaVersion: zod.literal(1),
-                      type: zod.enum(["reference"]),
-                    }),
-                  ])
-                  .optional(),
-                grading: zod.union([
-                  zod.strictObject({
-                    mode: zod.enum(["exact"]),
-                  }),
-                  zod.strictObject({
-                    mode: zod.enum(["number"]),
-                    tolerance: zod.strictObject({
-                      type: zod.enum(["absolute", "relative"]),
-                      value: zod
-                        .number()
-                        .min(
-                          createQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin,
-                        ),
-                    }),
-                  }),
-                  zod.strictObject({
-                    mode: zod.enum(["case_insensitive_text"]),
-                  }),
-                  zod.strictObject({
-                    mode: zod.enum(["manual"]),
-                  }),
-                ]),
-                id: zod.string().min(1),
-                label: zod.string().optional(),
-                placeholder: zod.string().optional(),
-                points: zod
-                  .number()
-                  .gt(
-                    createQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemTwoPointsExclusiveMin,
-                  ),
-                responseFieldId: zod.string().min(1),
-                rowId: zod.string().min(1),
-                type: zod.enum(["response"]),
-              }),
-            ]),
-          ),
-          columns: zod.array(
-            zod.strictObject({
-              id: zod.string().min(1),
-              label: zod.string().min(1),
-            }),
-          ),
-          id: zod.string().min(1),
-          rows: zod.array(
-            zod.strictObject({
-              id: zod.string().min(1),
-              label: zod.string().min(1),
-            }),
-          ),
-          showColumnNames: zod.boolean(),
-          showRowNames: zod.boolean(),
-          type: zod.enum(["table"]),
-        }),
-      ]),
-    ),
-    references: zod.array(
-      zod.strictObject({
-        id: zod.string().min(1),
-        label: zod.string().optional(),
-        source: zod.union([
-          zod.strictObject({
-            schemaVersion: zod.literal(1),
-            type: zod.enum(["literal"]),
-            value: zod.unknown(),
-          }),
-          zod.strictObject({
-            ref: zod.string(),
-            schemaVersion: zod.literal(1),
-            sourceId: zod
-              .string()
-              .min(1)
-              .describe("Blueprint-local workbook source identifier."),
-            type: zod.enum(["workbook_cell", "workbook_range"]),
-          }),
-        ]),
-      }),
-    ),
-    responseFields: zod.array(
-      zod.strictObject({
-        id: zod.string(),
-        label: zod.string().optional(),
-        required: zod.boolean().optional(),
-        type: zod.enum(["text", "number", "boolean"]),
-      }),
-    ),
-    schemaVersion: zod.literal(1),
-  }),
-  name: zod.string().min(1).max(createQuestionBlueprintBodyNameMax),
-  sources: zod.array(
-    zod.strictObject({
-      name: zod.string().min(1),
-      sourceId: zod
-        .string()
-        .min(1)
-        .describe("Blueprint-local source identifier."),
-      type: zod.enum(["workbook"]),
-      workbookId: zod
-        .string()
-        .regex(createQuestionBlueprintBodySourcesItemWorkbookIdRegExp),
-    }),
-  ),
-  visibility: zod.enum(["private", "shared", "system"]).optional(),
-});
-
-export const createQuestionBlueprint201ResponseQuestionBlueprintCreatedByUserIdRegExp =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
-export const createQuestionBlueprint201ResponseQuestionBlueprintCurrentVersionIdRegExp =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
-export const createQuestionBlueprint201ResponseQuestionBlueprintDescriptionMax = 1000;
-
-export const createQuestionBlueprint201ResponseQuestionBlueprintDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
-
-export const createQuestionBlueprint201ResponseQuestionBlueprintIdRegExp =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
-export const createQuestionBlueprint201ResponseQuestionBlueprintNameMax = 160;
-
-export const createQuestionBlueprint201ResponseQuestionBlueprintOwnerUserIdRegExp =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
-
-export const createQuestionBlueprint201ResponseQuestionBlueprintSourcesItemWorkbookIdRegExp =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
-
-export const CreateQuestionBlueprint201Response = zod.strictObject({
-  questionBlueprint: zod.strictObject({
-    archivedAt: zod.iso.datetime({ offset: true }).nullable(),
-    createdAt: zod.iso.datetime({ offset: true }),
-    createdByUserId: zod
-      .string()
-      .regex(
-        createQuestionBlueprint201ResponseQuestionBlueprintCreatedByUserIdRegExp,
-      ),
-    currentVersionId: zod
-      .string()
-      .regex(
-        createQuestionBlueprint201ResponseQuestionBlueprintCurrentVersionIdRegExp,
-      ),
-    description: zod
-      .string()
-      .max(createQuestionBlueprint201ResponseQuestionBlueprintDescriptionMax)
-      .nullable(),
-    document: zod.strictObject({
-      blocks: zod.array(
-        zod.union([
-          zod.strictObject({
-            content: zod.array(
-              zod.strictObject({
-                text: zod.string(),
-                type: zod.enum(["text"]),
-              }),
-            ),
-            id: zod.string().min(1),
-            type: zod.enum(["text"]),
-          }),
-          zod.strictObject({
-            content: zod.strictObject({
-              content: zod.array(
-                zod.union([
-                  zod.strictObject({
-                    content: zod
-                      .array(
-                        zod.strictObject({
-                          text: zod.string(),
-                          type: zod.enum(["text"]),
-                        }),
-                      )
-                      .optional(),
-                    type: zod.enum(["paragraph"]),
-                  }),
-                  zod.strictObject({
-                    attrs: zod.strictObject({
-                      level: zod
-                        .number()
-                        .min(1)
-                        .max(
-                          createQuestionBlueprint201ResponseQuestionBlueprintDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax,
-                        ),
-                    }),
-                    content: zod
-                      .array(
-                        zod.strictObject({
-                          text: zod.string(),
-                          type: zod.enum(["text"]),
-                        }),
-                      )
-                      .optional(),
-                    type: zod.enum(["heading"]),
-                  }),
-                  zod.strictObject({
-                    content: zod.array(
-                      zod.strictObject({
-                        content: zod.array(
-                          zod.union([
-                            zod.strictObject({
-                              content: zod
-                                .array(
-                                  zod.strictObject({
-                                    text: zod.string(),
-                                    type: zod.enum(["text"]),
-                                  }),
-                                )
-                                .optional(),
-                              type: zod.enum(["paragraph"]),
-                            }),
-                            zod.unknown(),
-                            zod.strictObject({
-                              content: zod.array(zod.unknown()),
-                              type: zod.enum(["ordered_list"]),
-                            }),
-                          ]),
-                        ),
-                        type: zod.enum(["list_item"]),
-                      }),
-                    ),
-                    type: zod.enum(["bullet_list"]),
-                  }),
-                  zod.strictObject({
-                    content: zod.array(
-                      zod.strictObject({
-                        content: zod.array(
-                          zod.union([
-                            zod.strictObject({
-                              content: zod
-                                .array(
-                                  zod.strictObject({
-                                    text: zod.string(),
-                                    type: zod.enum(["text"]),
-                                  }),
-                                )
-                                .optional(),
-                              type: zod.enum(["paragraph"]),
-                            }),
-                            zod.strictObject({
-                              content: zod.array(zod.unknown()),
-                              type: zod.enum(["bullet_list"]),
-                            }),
-                            zod.unknown(),
-                          ]),
-                        ),
-                        type: zod.enum(["list_item"]),
-                      }),
-                    ),
-                    type: zod.enum(["ordered_list"]),
-                  }),
-                ]),
-              ),
-              type: zod.enum(["doc"]),
-            }),
-            id: zod.string().min(1),
-            type: zod.enum(["rich_text"]),
-          }),
-          zod.strictObject({
-            id: zod.string().min(1),
-            type: zod.enum(["separator"]),
-          }),
-          zod.strictObject({
-            id: zod.string().min(1),
-            label: zod.string().optional(),
-            placeholder: zod.string().optional(),
-            responseFieldId: zod.string().min(1),
-            type: zod.enum(["response"]),
-          }),
-          zod.strictObject({
-            cells: zod.array(
-              zod.union([
-                zod.strictObject({
-                  columnId: zod.string().min(1),
-                  content: zod.array(
-                    zod.strictObject({
-                      text: zod.string(),
-                      type: zod.enum(["text"]),
-                    }),
-                  ),
-                  id: zod.string().min(1),
-                  rowId: zod.string().min(1),
-                  type: zod.enum(["content"]),
-                }),
-                zod.strictObject({
-                  columnId: zod.string().min(1),
-                  id: zod.string().min(1),
-                  label: zod.string().optional(),
-                  placeholder: zod.string().optional(),
-                  responseFieldId: zod.string().min(1),
-                  rowId: zod.string().min(1),
-                  type: zod.enum(["response"]),
-                }),
-              ]),
-            ),
-            columns: zod.array(
-              zod.strictObject({
-                id: zod.string().min(1),
-                label: zod.string().min(1),
-              }),
-            ),
-            id: zod.string().min(1),
-            rows: zod.array(
-              zod.strictObject({
-                id: zod.string().min(1),
-                label: zod.string().min(1),
-              }),
-            ),
-            showColumnNames: zod.boolean(),
-            showRowNames: zod.boolean(),
-            type: zod.enum(["table"]),
-          }),
-        ]),
-      ),
-      responseFields: zod.array(
-        zod.strictObject({
-          id: zod.string(),
-          label: zod.string().optional(),
-          required: zod.boolean().optional(),
-          type: zod.enum(["text", "number", "boolean"]),
-        }),
-      ),
-      schemaVersion: zod.literal(1),
-    }),
-    id: zod
-      .string()
-      .regex(createQuestionBlueprint201ResponseQuestionBlueprintIdRegExp),
-    name: zod
-      .string()
-      .min(1)
-      .max(createQuestionBlueprint201ResponseQuestionBlueprintNameMax),
-    ownerUserId: zod
-      .string()
-      .regex(
-        createQuestionBlueprint201ResponseQuestionBlueprintOwnerUserIdRegExp,
-      ),
-    sources: zod
-      .array(
-        zod.strictObject({
-          name: zod.string().min(1),
-          sourceId: zod
-            .string()
-            .min(1)
-            .describe("Blueprint-local source identifier."),
-          type: zod.enum(["workbook"]),
-          workbookId: zod
-            .string()
-            .regex(
-              createQuestionBlueprint201ResponseQuestionBlueprintSourcesItemWorkbookIdRegExp,
-            ),
-        }),
-      )
-      .describe("Blueprint-local source entries attached to this blueprint."),
-    status: zod.enum(["active", "archived", "deleted"]),
-    updatedAt: zod.iso.datetime({ offset: true }),
-    visibility: zod.enum(["private", "shared", "system"]),
-  }),
-});
-
-export const CreateQuestionBlueprint400Response = zod.strictObject({
-  error: zod.strictObject({
-    code: zod.string(),
-    details: zod.unknown().optional(),
-    message: zod.string(),
-    requestId: zod.string().optional(),
-  }),
-});
-
-export const CreateQuestionBlueprint401Response = zod.strictObject({
-  error: zod.strictObject({
-    code: zod.string(),
-    details: zod.unknown().optional(),
-    message: zod.string(),
-    requestId: zod.string().optional(),
-  }),
-});
-
-export const CreateQuestionBlueprint403Response = zod.strictObject({
-  error: zod.strictObject({
-    code: zod.string(),
-    details: zod.unknown().optional(),
-    message: zod.string(),
-    requestId: zod.string().optional(),
-  }),
-});
-
-export const CreateQuestionBlueprint404Response = zod.strictObject({
-  error: zod.strictObject({
-    code: zod.string(),
-    details: zod.unknown().optional(),
-    message: zod.string(),
-    requestId: zod.string().optional(),
-  }),
-});
-
-export const CreateQuestionBlueprint409Response = zod.strictObject({
-  error: zod.strictObject({
-    code: zod.string(),
-    details: zod.unknown().optional(),
-    message: zod.string(),
-    requestId: zod.string().optional(),
-  }),
-});
-
-export const CreateQuestionBlueprint502Response = zod.strictObject({
   error: zod.strictObject({
     code: zod.string(),
     details: zod.unknown().optional(),
@@ -5458,8 +4811,11 @@ export const getQuestionBlueprint200ResponseQuestionBlueprintNameMax = 160;
 export const getQuestionBlueprint200ResponseQuestionBlueprintOwnerUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 
-export const getQuestionBlueprint200ResponseQuestionBlueprintSourcesItemWorkbookIdRegExp =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const getQuestionBlueprint200ResponseQuestionBlueprintSourcesItemChecksumSha256RegExp =
+  /^[a-f0-9]{64}$/;
+
+export const getQuestionBlueprint200ResponseQuestionBlueprintSourcesItemSourceIdRegExp =
+  /^[A-Za-z][A-Za-z0-9_-]*$/;
 
 export const GetQuestionBlueprint200Response = zod.strictObject({
   questionBlueprint: zod.strictObject({
@@ -5668,17 +5024,23 @@ export const GetQuestionBlueprint200Response = zod.strictObject({
     sources: zod
       .array(
         zod.strictObject({
-          name: zod.string().min(1),
-          sourceId: zod
-            .string()
-            .min(1)
-            .describe("Blueprint-local source identifier."),
-          type: zod.enum(["workbook"]),
-          workbookId: zod
+          byteSize: zod.number().min(1).nullable(),
+          checksumSha256: zod
             .string()
             .regex(
-              getQuestionBlueprint200ResponseQuestionBlueprintSourcesItemWorkbookIdRegExp,
+              getQuestionBlueprint200ResponseQuestionBlueprintSourcesItemChecksumSha256RegExp,
+            )
+            .nullable(),
+          fileId: zod.uuid().nullable(),
+          name: zod.string().min(1),
+          originalName: zod.string().nullable(),
+          sourceId: zod
+            .string()
+            .regex(
+              getQuestionBlueprint200ResponseQuestionBlueprintSourcesItemSourceIdRegExp,
             ),
+          type: zod.enum(["workbook"]),
+          workbookId: zod.uuid(),
         }),
       )
       .describe("Blueprint-local source entries attached to this blueprint."),
@@ -5734,694 +5096,6 @@ export const GetQuestionBlueprint409Response = zod.strictObject({
 });
 
 export const GetQuestionBlueprint502Response = zod.strictObject({
-  error: zod.strictObject({
-    code: zod.string(),
-    details: zod.unknown().optional(),
-    message: zod.string(),
-    requestId: zod.string().optional(),
-  }),
-});
-
-/**
- * Authoring-only. Request may include full blueprint document with value expressions and correct values; learner responses return a public blueprint view.
- * @summary Update question blueprint
- */
-export const updateQuestionBlueprintPathQuestionBlueprintIdRegExp =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
-
-export const UpdateQuestionBlueprintParams = zod.strictObject({
-  questionBlueprintId: zod
-    .string()
-    .regex(updateQuestionBlueprintPathQuestionBlueprintIdRegExp),
-});
-
-export const updateQuestionBlueprintBodyDescriptionMax = 1000;
-
-export const updateQuestionBlueprintBodyDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
-
-export const updateQuestionBlueprintBodyDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin = 0;
-
-export const updateQuestionBlueprintBodyDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
-
-export const updateQuestionBlueprintBodyDocumentBlocksItemFourGradingTwoToleranceValueMin = 0;
-
-export const updateQuestionBlueprintBodyDocumentBlocksItemFourPointsExclusiveMin = 0;
-
-export const updateQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
-
-export const updateQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin = 0;
-
-export const updateQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
-
-export const updateQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemTwoPointsExclusiveMin = 0;
-
-export const updateQuestionBlueprintBodyNameMax = 160;
-
-export const updateQuestionBlueprintBodySourcesItemWorkbookIdRegExp =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
-
-export const UpdateQuestionBlueprintBody = zod.strictObject({
-  description: zod
-    .string()
-    .max(updateQuestionBlueprintBodyDescriptionMax)
-    .nullish(),
-  document: zod
-    .strictObject({
-      blocks: zod.array(
-        zod.union([
-          zod.strictObject({
-            content: zod.array(
-              zod.union([
-                zod.strictObject({
-                  text: zod.string(),
-                  type: zod.enum(["text"]),
-                }),
-                zod.strictObject({
-                  fallbackText: zod.string().optional(),
-                  rangeCell: zod
-                    .strictObject({
-                      columnOffset: zod
-                        .number()
-                        .min(
-                          updateQuestionBlueprintBodyDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin,
-                        ),
-                      rowOffset: zod
-                        .number()
-                        .min(
-                          updateQuestionBlueprintBodyDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin,
-                        ),
-                    })
-                    .optional(),
-                  referenceId: zod.string().min(1),
-                  type: zod.enum(["reference"]),
-                }),
-              ]),
-            ),
-            id: zod.string().min(1),
-            type: zod.enum(["text"]),
-          }),
-          zod.strictObject({
-            content: zod.strictObject({
-              content: zod.array(
-                zod.union([
-                  zod.strictObject({
-                    content: zod
-                      .array(
-                        zod.strictObject({
-                          text: zod.string(),
-                          type: zod.enum(["text"]),
-                        }),
-                      )
-                      .optional(),
-                    type: zod.enum(["paragraph"]),
-                  }),
-                  zod.strictObject({
-                    attrs: zod.strictObject({
-                      level: zod
-                        .number()
-                        .min(1)
-                        .max(
-                          updateQuestionBlueprintBodyDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax,
-                        ),
-                    }),
-                    content: zod
-                      .array(
-                        zod.strictObject({
-                          text: zod.string(),
-                          type: zod.enum(["text"]),
-                        }),
-                      )
-                      .optional(),
-                    type: zod.enum(["heading"]),
-                  }),
-                  zod.strictObject({
-                    content: zod.array(
-                      zod.strictObject({
-                        content: zod.array(
-                          zod.union([
-                            zod.strictObject({
-                              content: zod
-                                .array(
-                                  zod.strictObject({
-                                    text: zod.string(),
-                                    type: zod.enum(["text"]),
-                                  }),
-                                )
-                                .optional(),
-                              type: zod.enum(["paragraph"]),
-                            }),
-                            zod.unknown(),
-                            zod.strictObject({
-                              content: zod.array(zod.unknown()),
-                              type: zod.enum(["ordered_list"]),
-                            }),
-                          ]),
-                        ),
-                        type: zod.enum(["list_item"]),
-                      }),
-                    ),
-                    type: zod.enum(["bullet_list"]),
-                  }),
-                  zod.strictObject({
-                    content: zod.array(
-                      zod.strictObject({
-                        content: zod.array(
-                          zod.union([
-                            zod.strictObject({
-                              content: zod
-                                .array(
-                                  zod.strictObject({
-                                    text: zod.string(),
-                                    type: zod.enum(["text"]),
-                                  }),
-                                )
-                                .optional(),
-                              type: zod.enum(["paragraph"]),
-                            }),
-                            zod.strictObject({
-                              content: zod.array(zod.unknown()),
-                              type: zod.enum(["bullet_list"]),
-                            }),
-                            zod.unknown(),
-                          ]),
-                        ),
-                        type: zod.enum(["list_item"]),
-                      }),
-                    ),
-                    type: zod.enum(["ordered_list"]),
-                  }),
-                ]),
-              ),
-              type: zod.enum(["doc"]),
-            }),
-            id: zod.string().min(1),
-            type: zod.enum(["rich_text"]),
-          }),
-          zod.strictObject({
-            id: zod.string().min(1),
-            type: zod.enum(["separator"]),
-          }),
-          zod.strictObject({
-            correctValueSource: zod
-              .union([
-                zod.strictObject({
-                  schemaVersion: zod.literal(1),
-                  type: zod.enum(["literal"]),
-                  value: zod.unknown(),
-                }),
-                zod.strictObject({
-                  referenceId: zod.string().min(1),
-                  schemaVersion: zod.literal(1),
-                  type: zod.enum(["reference"]),
-                }),
-              ])
-              .optional(),
-            grading: zod.union([
-              zod.strictObject({
-                mode: zod.enum(["exact"]),
-              }),
-              zod.strictObject({
-                mode: zod.enum(["number"]),
-                tolerance: zod.strictObject({
-                  type: zod.enum(["absolute", "relative"]),
-                  value: zod
-                    .number()
-                    .min(
-                      updateQuestionBlueprintBodyDocumentBlocksItemFourGradingTwoToleranceValueMin,
-                    ),
-                }),
-              }),
-              zod.strictObject({
-                mode: zod.enum(["case_insensitive_text"]),
-              }),
-              zod.strictObject({
-                mode: zod.enum(["manual"]),
-              }),
-            ]),
-            id: zod.string().min(1),
-            label: zod.string().optional(),
-            placeholder: zod.string().optional(),
-            points: zod
-              .number()
-              .gt(
-                updateQuestionBlueprintBodyDocumentBlocksItemFourPointsExclusiveMin,
-              ),
-            responseFieldId: zod.string().min(1),
-            type: zod.enum(["response"]),
-          }),
-          zod.strictObject({
-            cells: zod.array(
-              zod.union([
-                zod.strictObject({
-                  columnId: zod.string().min(1),
-                  content: zod.array(
-                    zod.union([
-                      zod.strictObject({
-                        text: zod.string(),
-                        type: zod.enum(["text"]),
-                      }),
-                      zod.strictObject({
-                        fallbackText: zod.string().optional(),
-                        rangeCell: zod
-                          .strictObject({
-                            columnOffset: zod
-                              .number()
-                              .min(
-                                updateQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin,
-                              ),
-                            rowOffset: zod
-                              .number()
-                              .min(
-                                updateQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin,
-                              ),
-                          })
-                          .optional(),
-                        referenceId: zod.string().min(1),
-                        type: zod.enum(["reference"]),
-                      }),
-                    ]),
-                  ),
-                  id: zod.string().min(1),
-                  rowId: zod.string().min(1),
-                  type: zod.enum(["content"]),
-                }),
-                zod.strictObject({
-                  columnId: zod.string().min(1),
-                  correctValueSource: zod
-                    .union([
-                      zod.strictObject({
-                        schemaVersion: zod.literal(1),
-                        type: zod.enum(["literal"]),
-                        value: zod.unknown(),
-                      }),
-                      zod.strictObject({
-                        referenceId: zod.string().min(1),
-                        schemaVersion: zod.literal(1),
-                        type: zod.enum(["reference"]),
-                      }),
-                    ])
-                    .optional(),
-                  grading: zod.union([
-                    zod.strictObject({
-                      mode: zod.enum(["exact"]),
-                    }),
-                    zod.strictObject({
-                      mode: zod.enum(["number"]),
-                      tolerance: zod.strictObject({
-                        type: zod.enum(["absolute", "relative"]),
-                        value: zod
-                          .number()
-                          .min(
-                            updateQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin,
-                          ),
-                      }),
-                    }),
-                    zod.strictObject({
-                      mode: zod.enum(["case_insensitive_text"]),
-                    }),
-                    zod.strictObject({
-                      mode: zod.enum(["manual"]),
-                    }),
-                  ]),
-                  id: zod.string().min(1),
-                  label: zod.string().optional(),
-                  placeholder: zod.string().optional(),
-                  points: zod
-                    .number()
-                    .gt(
-                      updateQuestionBlueprintBodyDocumentBlocksItemFiveCellsItemTwoPointsExclusiveMin,
-                    ),
-                  responseFieldId: zod.string().min(1),
-                  rowId: zod.string().min(1),
-                  type: zod.enum(["response"]),
-                }),
-              ]),
-            ),
-            columns: zod.array(
-              zod.strictObject({
-                id: zod.string().min(1),
-                label: zod.string().min(1),
-              }),
-            ),
-            id: zod.string().min(1),
-            rows: zod.array(
-              zod.strictObject({
-                id: zod.string().min(1),
-                label: zod.string().min(1),
-              }),
-            ),
-            showColumnNames: zod.boolean(),
-            showRowNames: zod.boolean(),
-            type: zod.enum(["table"]),
-          }),
-        ]),
-      ),
-      references: zod.array(
-        zod.strictObject({
-          id: zod.string().min(1),
-          label: zod.string().optional(),
-          source: zod.union([
-            zod.strictObject({
-              schemaVersion: zod.literal(1),
-              type: zod.enum(["literal"]),
-              value: zod.unknown(),
-            }),
-            zod.strictObject({
-              ref: zod.string(),
-              schemaVersion: zod.literal(1),
-              sourceId: zod
-                .string()
-                .min(1)
-                .describe("Blueprint-local workbook source identifier."),
-              type: zod.enum(["workbook_cell", "workbook_range"]),
-            }),
-          ]),
-        }),
-      ),
-      responseFields: zod.array(
-        zod.strictObject({
-          id: zod.string(),
-          label: zod.string().optional(),
-          required: zod.boolean().optional(),
-          type: zod.enum(["text", "number", "boolean"]),
-        }),
-      ),
-      schemaVersion: zod.literal(1),
-    })
-    .optional(),
-  name: zod.string().min(1).max(updateQuestionBlueprintBodyNameMax).optional(),
-  sources: zod
-    .array(
-      zod.strictObject({
-        name: zod.string().min(1),
-        sourceId: zod
-          .string()
-          .min(1)
-          .describe("Blueprint-local source identifier."),
-        type: zod.enum(["workbook"]),
-        workbookId: zod
-          .string()
-          .regex(updateQuestionBlueprintBodySourcesItemWorkbookIdRegExp),
-      }),
-    )
-    .optional(),
-  status: zod.enum(["active", "archived", "deleted"]).optional(),
-  visibility: zod.enum(["private", "shared", "system"]).optional(),
-});
-
-export const updateQuestionBlueprint200ResponseQuestionBlueprintCreatedByUserIdRegExp =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
-export const updateQuestionBlueprint200ResponseQuestionBlueprintCurrentVersionIdRegExp =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
-export const updateQuestionBlueprint200ResponseQuestionBlueprintDescriptionMax = 1000;
-
-export const updateQuestionBlueprint200ResponseQuestionBlueprintDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
-
-export const updateQuestionBlueprint200ResponseQuestionBlueprintIdRegExp =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
-export const updateQuestionBlueprint200ResponseQuestionBlueprintNameMax = 160;
-
-export const updateQuestionBlueprint200ResponseQuestionBlueprintOwnerUserIdRegExp =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
-
-export const updateQuestionBlueprint200ResponseQuestionBlueprintSourcesItemWorkbookIdRegExp =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
-
-export const UpdateQuestionBlueprint200Response = zod.strictObject({
-  questionBlueprint: zod.strictObject({
-    archivedAt: zod.iso.datetime({ offset: true }).nullable(),
-    createdAt: zod.iso.datetime({ offset: true }),
-    createdByUserId: zod
-      .string()
-      .regex(
-        updateQuestionBlueprint200ResponseQuestionBlueprintCreatedByUserIdRegExp,
-      ),
-    currentVersionId: zod
-      .string()
-      .regex(
-        updateQuestionBlueprint200ResponseQuestionBlueprintCurrentVersionIdRegExp,
-      ),
-    description: zod
-      .string()
-      .max(updateQuestionBlueprint200ResponseQuestionBlueprintDescriptionMax)
-      .nullable(),
-    document: zod.strictObject({
-      blocks: zod.array(
-        zod.union([
-          zod.strictObject({
-            content: zod.array(
-              zod.strictObject({
-                text: zod.string(),
-                type: zod.enum(["text"]),
-              }),
-            ),
-            id: zod.string().min(1),
-            type: zod.enum(["text"]),
-          }),
-          zod.strictObject({
-            content: zod.strictObject({
-              content: zod.array(
-                zod.union([
-                  zod.strictObject({
-                    content: zod
-                      .array(
-                        zod.strictObject({
-                          text: zod.string(),
-                          type: zod.enum(["text"]),
-                        }),
-                      )
-                      .optional(),
-                    type: zod.enum(["paragraph"]),
-                  }),
-                  zod.strictObject({
-                    attrs: zod.strictObject({
-                      level: zod
-                        .number()
-                        .min(1)
-                        .max(
-                          updateQuestionBlueprint200ResponseQuestionBlueprintDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax,
-                        ),
-                    }),
-                    content: zod
-                      .array(
-                        zod.strictObject({
-                          text: zod.string(),
-                          type: zod.enum(["text"]),
-                        }),
-                      )
-                      .optional(),
-                    type: zod.enum(["heading"]),
-                  }),
-                  zod.strictObject({
-                    content: zod.array(
-                      zod.strictObject({
-                        content: zod.array(
-                          zod.union([
-                            zod.strictObject({
-                              content: zod
-                                .array(
-                                  zod.strictObject({
-                                    text: zod.string(),
-                                    type: zod.enum(["text"]),
-                                  }),
-                                )
-                                .optional(),
-                              type: zod.enum(["paragraph"]),
-                            }),
-                            zod.unknown(),
-                            zod.strictObject({
-                              content: zod.array(zod.unknown()),
-                              type: zod.enum(["ordered_list"]),
-                            }),
-                          ]),
-                        ),
-                        type: zod.enum(["list_item"]),
-                      }),
-                    ),
-                    type: zod.enum(["bullet_list"]),
-                  }),
-                  zod.strictObject({
-                    content: zod.array(
-                      zod.strictObject({
-                        content: zod.array(
-                          zod.union([
-                            zod.strictObject({
-                              content: zod
-                                .array(
-                                  zod.strictObject({
-                                    text: zod.string(),
-                                    type: zod.enum(["text"]),
-                                  }),
-                                )
-                                .optional(),
-                              type: zod.enum(["paragraph"]),
-                            }),
-                            zod.strictObject({
-                              content: zod.array(zod.unknown()),
-                              type: zod.enum(["bullet_list"]),
-                            }),
-                            zod.unknown(),
-                          ]),
-                        ),
-                        type: zod.enum(["list_item"]),
-                      }),
-                    ),
-                    type: zod.enum(["ordered_list"]),
-                  }),
-                ]),
-              ),
-              type: zod.enum(["doc"]),
-            }),
-            id: zod.string().min(1),
-            type: zod.enum(["rich_text"]),
-          }),
-          zod.strictObject({
-            id: zod.string().min(1),
-            type: zod.enum(["separator"]),
-          }),
-          zod.strictObject({
-            id: zod.string().min(1),
-            label: zod.string().optional(),
-            placeholder: zod.string().optional(),
-            responseFieldId: zod.string().min(1),
-            type: zod.enum(["response"]),
-          }),
-          zod.strictObject({
-            cells: zod.array(
-              zod.union([
-                zod.strictObject({
-                  columnId: zod.string().min(1),
-                  content: zod.array(
-                    zod.strictObject({
-                      text: zod.string(),
-                      type: zod.enum(["text"]),
-                    }),
-                  ),
-                  id: zod.string().min(1),
-                  rowId: zod.string().min(1),
-                  type: zod.enum(["content"]),
-                }),
-                zod.strictObject({
-                  columnId: zod.string().min(1),
-                  id: zod.string().min(1),
-                  label: zod.string().optional(),
-                  placeholder: zod.string().optional(),
-                  responseFieldId: zod.string().min(1),
-                  rowId: zod.string().min(1),
-                  type: zod.enum(["response"]),
-                }),
-              ]),
-            ),
-            columns: zod.array(
-              zod.strictObject({
-                id: zod.string().min(1),
-                label: zod.string().min(1),
-              }),
-            ),
-            id: zod.string().min(1),
-            rows: zod.array(
-              zod.strictObject({
-                id: zod.string().min(1),
-                label: zod.string().min(1),
-              }),
-            ),
-            showColumnNames: zod.boolean(),
-            showRowNames: zod.boolean(),
-            type: zod.enum(["table"]),
-          }),
-        ]),
-      ),
-      responseFields: zod.array(
-        zod.strictObject({
-          id: zod.string(),
-          label: zod.string().optional(),
-          required: zod.boolean().optional(),
-          type: zod.enum(["text", "number", "boolean"]),
-        }),
-      ),
-      schemaVersion: zod.literal(1),
-    }),
-    id: zod
-      .string()
-      .regex(updateQuestionBlueprint200ResponseQuestionBlueprintIdRegExp),
-    name: zod
-      .string()
-      .min(1)
-      .max(updateQuestionBlueprint200ResponseQuestionBlueprintNameMax),
-    ownerUserId: zod
-      .string()
-      .regex(
-        updateQuestionBlueprint200ResponseQuestionBlueprintOwnerUserIdRegExp,
-      ),
-    sources: zod
-      .array(
-        zod.strictObject({
-          name: zod.string().min(1),
-          sourceId: zod
-            .string()
-            .min(1)
-            .describe("Blueprint-local source identifier."),
-          type: zod.enum(["workbook"]),
-          workbookId: zod
-            .string()
-            .regex(
-              updateQuestionBlueprint200ResponseQuestionBlueprintSourcesItemWorkbookIdRegExp,
-            ),
-        }),
-      )
-      .describe("Blueprint-local source entries attached to this blueprint."),
-    status: zod.enum(["active", "archived", "deleted"]),
-    updatedAt: zod.iso.datetime({ offset: true }),
-    visibility: zod.enum(["private", "shared", "system"]),
-  }),
-});
-
-export const UpdateQuestionBlueprint400Response = zod.strictObject({
-  error: zod.strictObject({
-    code: zod.string(),
-    details: zod.unknown().optional(),
-    message: zod.string(),
-    requestId: zod.string().optional(),
-  }),
-});
-
-export const UpdateQuestionBlueprint401Response = zod.strictObject({
-  error: zod.strictObject({
-    code: zod.string(),
-    details: zod.unknown().optional(),
-    message: zod.string(),
-    requestId: zod.string().optional(),
-  }),
-});
-
-export const UpdateQuestionBlueprint403Response = zod.strictObject({
-  error: zod.strictObject({
-    code: zod.string(),
-    details: zod.unknown().optional(),
-    message: zod.string(),
-    requestId: zod.string().optional(),
-  }),
-});
-
-export const UpdateQuestionBlueprint404Response = zod.strictObject({
-  error: zod.strictObject({
-    code: zod.string(),
-    details: zod.unknown().optional(),
-    message: zod.string(),
-    requestId: zod.string().optional(),
-  }),
-});
-
-export const UpdateQuestionBlueprint409Response = zod.strictObject({
-  error: zod.strictObject({
-    code: zod.string(),
-    details: zod.unknown().optional(),
-    message: zod.string(),
-    requestId: zod.string().optional(),
-  }),
-});
-
-export const UpdateQuestionBlueprint502Response = zod.strictObject({
   error: zod.strictObject({
     code: zod.string(),
     details: zod.unknown().optional(),
@@ -7401,8 +6075,11 @@ export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintNameMax = 
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintOwnerUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 
-export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSourcesItemWorkbookIdRegExp =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSourcesItemChecksumSha256RegExp =
+  /^[a-f0-9]{64}$/;
+
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSourcesItemSourceIdRegExp =
+  /^[A-Za-z][A-Za-z0-9_-]*$/;
 
 export const GetQuestionBlueprintAuthoring200Response = zod.strictObject({
   questionBlueprint: zod.strictObject({
@@ -7761,17 +6438,23 @@ export const GetQuestionBlueprintAuthoring200Response = zod.strictObject({
     sources: zod
       .array(
         zod.strictObject({
-          name: zod.string().min(1),
-          sourceId: zod
-            .string()
-            .min(1)
-            .describe("Blueprint-local source identifier."),
-          type: zod.enum(["workbook"]),
-          workbookId: zod
+          byteSize: zod.number().min(1).nullable(),
+          checksumSha256: zod
             .string()
             .regex(
-              getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSourcesItemWorkbookIdRegExp,
+              getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSourcesItemChecksumSha256RegExp,
+            )
+            .nullable(),
+          fileId: zod.uuid().nullable(),
+          name: zod.string().min(1),
+          originalName: zod.string().nullable(),
+          sourceId: zod
+            .string()
+            .regex(
+              getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSourcesItemSourceIdRegExp,
             ),
+          type: zod.enum(["workbook"]),
+          workbookId: zod.uuid(),
         }),
       )
       .describe("Blueprint-local source entries attached to this blueprint."),

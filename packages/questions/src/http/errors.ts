@@ -6,7 +6,13 @@ import {
 import { jsonHttpError } from "@lemma/http";
 import type { Context } from "hono";
 import {
+  type DraftSourceFileForbiddenError,
+  type DraftSourceFileInvalidError,
+  type DraftSourceKindUnsupportedError,
+  type DraftSourceNotFoundError,
+  type DraftSourceNotReadyError,
   type ForbiddenQuestionActionError,
+  type InvalidDraftSourceReferenceError,
   type InvalidQuestionBlueprintError,
   type QuestionBlueprintBaseVersionConflictError,
   type QuestionBlueprintDraftNotFoundError,
@@ -44,7 +50,13 @@ type QuestionsDomainError =
   | InvalidQuestionBlueprintDocumentError;
 
 type QuestionsApplicationErrorType =
+  | DraftSourceFileForbiddenError
+  | DraftSourceFileInvalidError
+  | DraftSourceKindUnsupportedError
+  | DraftSourceNotFoundError
+  | DraftSourceNotReadyError
   | ForbiddenQuestionActionError
+  | InvalidDraftSourceReferenceError
   | InvalidQuestionBlueprintError
   | QuestionBlueprintBaseVersionConflictError
   | QuestionBlueprintDraftRevisionConflictError
@@ -61,8 +73,23 @@ const applicationErrorMapper = {
     code: "BLUEPRINT_BASE_VERSION_CONFLICT",
     status: 409,
   },
+  DRAFT_SOURCE_FILE_FORBIDDEN: {
+    code: "DRAFT_SOURCE_FILE_FORBIDDEN",
+    status: 403,
+  },
+  DRAFT_SOURCE_FILE_INVALID: { code: "DRAFT_SOURCE_FILE_INVALID", status: 400 },
+  DRAFT_SOURCE_KIND_UNSUPPORTED: {
+    code: "DRAFT_SOURCE_KIND_UNSUPPORTED",
+    status: 400,
+  },
+  DRAFT_SOURCE_NOT_FOUND: { code: "DRAFT_SOURCE_NOT_FOUND", status: 404 },
+  DRAFT_SOURCE_NOT_READY: { code: "DRAFT_SOURCE_NOT_READY", status: 409 },
   DRAFT_REVISION_CONFLICT: { code: "DRAFT_REVISION_CONFLICT", status: 409 },
   FORBIDDEN_QUESTION_ACTION: { code: "FORBIDDEN_QUESTION_ACTION", status: 403 },
+  INVALID_DRAFT_SOURCE_REFERENCE: {
+    code: "INVALID_DRAFT_SOURCE_REFERENCE",
+    status: 400,
+  },
   INVALID_QUESTION_BLUEPRINT: { code: "BAD_REQUEST", status: 400 },
   QUESTION_BLUEPRINT_DRAFT_NOT_FOUND: {
     code: "QUESTION_BLUEPRINT_DRAFT_NOT_FOUND",

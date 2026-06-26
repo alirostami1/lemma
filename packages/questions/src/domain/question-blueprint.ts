@@ -48,6 +48,10 @@ export type QuestionBlueprintSource = {
   sourceId: string;
   name: string;
   workbookId: WorkbookId;
+  fileId: string | null;
+  originalName: string | null;
+  byteSize: number | null;
+  checksumSha256: string | null;
 };
 
 export function createQuestionBlueprint(
@@ -147,12 +151,44 @@ export function questionBlueprintSources(
     }
     sourceIds.add(sourceId);
     return {
+      byteSize: nullablePositiveNumber(record.byteSize),
+      checksumSha256: nullableChecksum(record.checksumSha256),
+      fileId: nullableString(record.fileId, "fileId"),
       name: questionBlueprintSourceName(record.name),
+      originalName: nullableString(record.originalName, "originalName"),
       sourceId,
       type: "workbook" as const,
       workbookId: workbookId(record.workbookId),
     };
   });
+}
+
+function nullableString(value: unknown, field: string): string | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== "string" || value.length === 0) {
+    throw new InvalidQuestionFieldError(`${field} must be a string or null`);
+  }
+  return value;
+}
+
+function nullablePositiveNumber(value: unknown): number | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value <= 0) {
+    throw new InvalidQuestionFieldError(
+      "byteSize must be a positive integer or null",
+    );
+  }
+  return value;
+}
+
+function nullableChecksum(value: unknown): string | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== "string" || !/^[a-f0-9]{64}$/u.test(value)) {
+    throw new InvalidQuestionFieldError(
+      "checksumSha256 must be lowercase SHA-256 or null",
+    );
+  }
+  return value;
 }
 
 export function questionBlueprintSourceId(value: unknown): string {

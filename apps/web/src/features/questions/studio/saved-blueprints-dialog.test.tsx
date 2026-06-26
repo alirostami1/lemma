@@ -33,30 +33,34 @@ describe("saved blueprints dialog", () => {
   });
 
   const openDialog = () => within(screen.getByRole("dialog", { name: "Open" }));
+  const defaultProps = {
+    blueprintAction: {
+      onEditAsDraft: () => {},
+    },
+    draftLoadMoreErrorMessage: null,
+    draftsErrorMessage: null,
+    errorMessage: null,
+    hasMoreBlueprints: false,
+    hasMoreDrafts: false,
+    isDraftsInitialLoading: false,
+    isInitialLoading: false,
+    isLoadingBlueprintsMore: false,
+    isLoadingDraftsMore: false,
+    loadMoreErrorMessage: null,
+    onLoadMoreBlueprints: () => {},
+    onLoadMoreDrafts: () => {},
+    onOpenChange: () => {},
+    onOpenDraft: () => {},
+    onRetry: () => {},
+    open: true,
+  };
 
   it("renders draft and blueprint sections", () => {
     render(
       <SavedBlueprintsDialog
+        {...defaultProps}
         blueprints={blueprintItems}
-        draftLoadMoreErrorMessage={null}
         drafts={draftItems}
-        draftsErrorMessage={null}
-        errorMessage={null}
-        hasMoreBlueprints={false}
-        hasMoreDrafts={false}
-        isDraftsInitialLoading={false}
-        isInitialLoading={false}
-        isLoadingBlueprintsMore={false}
-        isLoadingDraftsMore={false}
-        loadMoreErrorMessage={null}
-        onGenerate={() => {}}
-        onLoadMoreBlueprints={() => {}}
-        onLoadMoreDrafts={() => {}}
-        onOpenBlueprint={() => {}}
-        onOpenChange={() => {}}
-        onOpenDraft={() => {}}
-        onRetry={() => {}}
-        open
       />,
     );
 
@@ -71,30 +75,13 @@ describe("saved blueprints dialog", () => {
   it("calls draft open callback without generate action", async () => {
     const user = userEvent.setup();
     const onOpenDraft = vi.fn();
-    const onGenerate = vi.fn();
 
     render(
       <SavedBlueprintsDialog
+        {...defaultProps}
         blueprints={blueprintItems}
-        draftLoadMoreErrorMessage={null}
         drafts={draftItems}
-        draftsErrorMessage={null}
-        errorMessage={null}
-        hasMoreBlueprints={false}
-        hasMoreDrafts={false}
-        isDraftsInitialLoading={false}
-        isInitialLoading={false}
-        isLoadingBlueprintsMore={false}
-        isLoadingDraftsMore={false}
-        loadMoreErrorMessage={null}
-        onGenerate={onGenerate}
-        onLoadMoreBlueprints={() => {}}
-        onLoadMoreDrafts={() => {}}
-        onOpenBlueprint={() => {}}
-        onOpenChange={() => {}}
         onOpenDraft={onOpenDraft}
-        onRetry={() => {}}
-        open
       />,
     );
 
@@ -104,75 +91,43 @@ describe("saved blueprints dialog", () => {
     );
     expect(onOpenDraft).toHaveBeenCalledWith("draft-1");
     expect(
-      dialog.queryByRole("button", { name: "Generate from Draft one" }),
+      dialog.queryByRole("button", { name: /generate/i }),
     ).not.toBeInTheDocument();
   });
 
-  it("calls blueprint open and generate callbacks", async () => {
+  it("uses edit-as-draft action for Studio blueprint selection", async () => {
     const user = userEvent.setup();
-    const onOpenBlueprint = vi.fn();
-    const onGenerate = vi.fn();
+    const onSelect = vi.fn();
 
     render(
       <SavedBlueprintsDialog
+        {...defaultProps}
+        blueprintAction={{
+          onEditAsDraft: onSelect,
+        }}
         blueprints={blueprintItems}
-        draftLoadMoreErrorMessage={null}
         drafts={draftItems}
-        draftsErrorMessage={null}
-        errorMessage={null}
-        hasMoreBlueprints={false}
-        hasMoreDrafts={false}
-        isDraftsInitialLoading={false}
-        isInitialLoading={false}
-        isLoadingBlueprintsMore={false}
-        isLoadingDraftsMore={false}
-        loadMoreErrorMessage={null}
-        onGenerate={onGenerate}
-        onLoadMoreBlueprints={() => {}}
-        onLoadMoreDrafts={() => {}}
-        onOpenBlueprint={onOpenBlueprint}
-        onOpenChange={() => {}}
-        onOpenDraft={() => {}}
-        onRetry={() => {}}
-        open
       />,
     );
 
     const dialog = openDialog();
     await user.click(
-      dialog.getByRole("button", { name: "Open blueprint Blueprint one" }),
+      dialog.getByRole("button", { name: "Edit as draft Blueprint one" }),
     );
-    expect(onOpenBlueprint).toHaveBeenCalledWith("blueprint-1");
-
-    await user.click(
-      dialog.getByRole("button", { name: "Generate from Blueprint one" }),
-    );
-    expect(onGenerate).toHaveBeenCalledWith("blueprint-1");
+    expect(onSelect).toHaveBeenCalledWith("blueprint-1");
+    expect(
+      dialog.queryByRole("button", { name: /generate/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders loading states for both sections", () => {
     render(
       <SavedBlueprintsDialog
+        {...defaultProps}
         blueprints={[]}
-        draftLoadMoreErrorMessage={null}
         drafts={[]}
-        draftsErrorMessage={null}
-        errorMessage={null}
-        hasMoreBlueprints={false}
-        hasMoreDrafts={false}
         isDraftsInitialLoading={true}
         isInitialLoading={true}
-        isLoadingBlueprintsMore={false}
-        isLoadingDraftsMore={false}
-        loadMoreErrorMessage={null}
-        onGenerate={() => {}}
-        onLoadMoreBlueprints={() => {}}
-        onLoadMoreDrafts={() => {}}
-        onOpenBlueprint={() => {}}
-        onOpenChange={() => {}}
-        onOpenDraft={() => {}}
-        onRetry={() => {}}
-        open
       />,
     );
 
@@ -192,26 +147,13 @@ describe("saved blueprints dialog", () => {
   it("renders retry states for error messages", () => {
     render(
       <SavedBlueprintsDialog
+        {...defaultProps}
         blueprints={[]}
         draftLoadMoreErrorMessage="More recent drafts could not be loaded."
         drafts={[]}
         draftsErrorMessage="Recent drafts could not be loaded."
         errorMessage="Saved blueprints could not be loaded."
-        hasMoreBlueprints={false}
-        hasMoreDrafts={false}
-        isDraftsInitialLoading={false}
-        isInitialLoading={false}
-        isLoadingBlueprintsMore={false}
-        isLoadingDraftsMore={false}
         loadMoreErrorMessage="More saved blueprints could not be loaded."
-        onGenerate={() => {}}
-        onLoadMoreBlueprints={() => {}}
-        onLoadMoreDrafts={() => {}}
-        onOpenBlueprint={() => {}}
-        onOpenChange={() => {}}
-        onOpenDraft={() => {}}
-        onRetry={() => {}}
-        open
       />,
     );
 
@@ -230,28 +172,7 @@ describe("saved blueprints dialog", () => {
 
   it("renders empty states when nothing is available", () => {
     render(
-      <SavedBlueprintsDialog
-        blueprints={[]}
-        draftLoadMoreErrorMessage={null}
-        drafts={[]}
-        draftsErrorMessage={null}
-        errorMessage={null}
-        hasMoreBlueprints={false}
-        hasMoreDrafts={false}
-        isDraftsInitialLoading={false}
-        isInitialLoading={false}
-        isLoadingBlueprintsMore={false}
-        isLoadingDraftsMore={false}
-        loadMoreErrorMessage={null}
-        onGenerate={() => {}}
-        onLoadMoreBlueprints={() => {}}
-        onLoadMoreDrafts={() => {}}
-        onOpenBlueprint={() => {}}
-        onOpenChange={() => {}}
-        onOpenDraft={() => {}}
-        onRetry={() => {}}
-        open
-      />,
+      <SavedBlueprintsDialog {...defaultProps} blueprints={[]} drafts={[]} />,
     );
 
     const dialog = openDialog();
@@ -263,35 +184,16 @@ describe("saved blueprints dialog", () => {
     expect(
       within(
         dialog.getByRole("region", { name: "Saved blueprints" }),
-      ).getByText(
-        "No saved blueprints yet. Save your first blueprint to generate questions from it.",
-      ),
+      ).getByText("No saved blueprints yet."),
     ).toBeTruthy();
   });
 
   it("renders only the draft empty state when blueprints exist", () => {
     render(
       <SavedBlueprintsDialog
+        {...defaultProps}
         blueprints={blueprintItems}
-        draftLoadMoreErrorMessage={null}
         drafts={[]}
-        draftsErrorMessage={null}
-        errorMessage={null}
-        hasMoreBlueprints={false}
-        hasMoreDrafts={false}
-        isDraftsInitialLoading={false}
-        isInitialLoading={false}
-        isLoadingBlueprintsMore={false}
-        isLoadingDraftsMore={false}
-        loadMoreErrorMessage={null}
-        onGenerate={() => {}}
-        onLoadMoreBlueprints={() => {}}
-        onLoadMoreDrafts={() => {}}
-        onOpenBlueprint={() => {}}
-        onOpenChange={() => {}}
-        onOpenDraft={() => {}}
-        onRetry={() => {}}
-        open
       />,
     );
 
@@ -304,35 +206,16 @@ describe("saved blueprints dialog", () => {
     expect(
       within(
         dialog.getByRole("region", { name: "Saved blueprints" }),
-      ).queryByText(
-        "No saved blueprints yet. Save your first blueprint to generate questions from it.",
-      ),
+      ).queryByText("No saved blueprints yet."),
     ).toBeNull();
   });
 
   it("renders only the blueprint empty state when drafts exist", () => {
     render(
       <SavedBlueprintsDialog
+        {...defaultProps}
         blueprints={[]}
-        draftLoadMoreErrorMessage={null}
         drafts={draftItems}
-        draftsErrorMessage={null}
-        errorMessage={null}
-        hasMoreBlueprints={false}
-        hasMoreDrafts={false}
-        isDraftsInitialLoading={false}
-        isInitialLoading={false}
-        isLoadingBlueprintsMore={false}
-        isLoadingDraftsMore={false}
-        loadMoreErrorMessage={null}
-        onGenerate={() => {}}
-        onLoadMoreBlueprints={() => {}}
-        onLoadMoreDrafts={() => {}}
-        onOpenBlueprint={() => {}}
-        onOpenChange={() => {}}
-        onOpenDraft={() => {}}
-        onRetry={() => {}}
-        open
       />,
     );
 
@@ -340,9 +223,7 @@ describe("saved blueprints dialog", () => {
     expect(
       within(
         dialog.getByRole("region", { name: "Saved blueprints" }),
-      ).getByText(
-        "No saved blueprints yet. Save your first blueprint to generate questions from it.",
-      ),
+      ).getByText("No saved blueprints yet."),
     ).toBeTruthy();
     expect(
       within(dialog.getByRole("region", { name: "Recent drafts" })).queryByText(

@@ -20,39 +20,21 @@ const versionId = "019e9315-6a87-715f-9861-8654df074016";
 const createdAt = new Date("2026-06-18T00:00:00.000Z");
 
 describe("KyselyQuestionMappers", () => {
-  it("maps blueprint rows with document and sources on the blueprint", () => {
+  it("maps blueprint rows with normalized source inputs", () => {
     const blueprint = mapQuestionBlueprintRowToDomain(blueprintRow());
-    const insertSources = mapQuestionBlueprintToInsert(blueprint).sources;
-    const updateSources = mapQuestionBlueprintToUpdate(blueprint).sources;
 
     assert.equal(blueprint.document.schemaVersion, 1);
     assert.equal(blueprint.sources[0]?.sourceId, "source_1");
-    assert.equal(typeof insertSources, "object");
-    assert.equal(
-      typeof (insertSources as { toOperationNode?: unknown }).toOperationNode,
-      "function",
-    );
-    assert.equal(typeof updateSources, "object");
-    assert.equal(
-      typeof (updateSources as { toOperationNode?: unknown }).toOperationNode,
-      "function",
-    );
+    assert.equal("sources" in mapQuestionBlueprintToInsert(blueprint), false);
+    assert.equal("sources" in mapQuestionBlueprintToUpdate(blueprint), false);
   });
 
-  it("maps empty blueprint sources as a jsonb expression", () => {
+  it("does not map empty blueprint sources into json columns", () => {
     const blueprint = mapQuestionBlueprintRowToDomain(emptyBlueprintRow());
-    const insertSources = mapQuestionBlueprintToInsert(blueprint).sources;
-    const updateSources = mapQuestionBlueprintToUpdate(blueprint).sources;
 
     assert.deepEqual(blueprint.sources, []);
-    assert.equal(
-      typeof (insertSources as { toOperationNode?: unknown }).toOperationNode,
-      "function",
-    );
-    assert.equal(
-      typeof (updateSources as { toOperationNode?: unknown }).toOperationNode,
-      "function",
-    );
+    assert.equal("sources" in mapQuestionBlueprintToInsert(blueprint), false);
+    assert.equal("sources" in mapQuestionBlueprintToUpdate(blueprint), false);
   });
 
   it("maps generation run rows with blueprintSnapshot and workbookCalculationId", () => {

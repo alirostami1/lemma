@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { QuestionBlueprintVersionSource } from "#/domains/questions/model";
 import {
   buildBlueprintListItems,
   buildCreatePageViewModel,
@@ -9,11 +10,7 @@ function blueprint(
   input?: {
     status?: "active" | "archived" | "deleted";
     visibility?: "private" | "shared" | "system";
-    sources?: Array<{
-      sourceId: string;
-      name: string;
-      workbookId: string;
-    }>;
+    sources?: QuestionBlueprintVersionSource[];
   },
 ) {
   return {
@@ -55,8 +52,13 @@ describe("create page view model", () => {
       blueprint("blueprint-2", {
         sources: [
           {
+            byteSize: null,
+            checksumSha256: null,
+            fileId: null,
             name: "Workbook 1",
+            originalName: null,
             sourceId: "source-1",
+            type: "workbook",
             workbookId: "workbook-1",
           },
         ],

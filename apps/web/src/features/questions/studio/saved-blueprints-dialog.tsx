@@ -14,11 +14,17 @@ import {
   ResourceList,
   ResourceListItem,
 } from "@lemma/ui/components/resource-list";
-import { FolderOpen, Sparkles } from "lucide-react";
+import { FolderOpen, PenLine } from "lucide-react";
+import type { ReactNode } from "react";
 import type {
   SavedBlueprintListItem,
   SavedDraftListItem,
 } from "./saved-blueprints-view-model";
+
+export type SavedBlueprintsDialogBlueprintAction = {
+  label?: string;
+  onEditAsDraft(id: string): void;
+};
 
 export type SavedBlueprintsDialogProps = {
   open: boolean;
@@ -39,8 +45,7 @@ export type SavedBlueprintsDialogProps = {
   onLoadMoreDrafts(): void;
   onLoadMoreBlueprints(): void;
   onOpenDraft(id: string): void;
-  onOpenBlueprint(id: string): void;
-  onGenerate(id: string): void;
+  blueprintAction: SavedBlueprintsDialogBlueprintAction;
 };
 
 export function SavedBlueprintsDialog({
@@ -62,8 +67,7 @@ export function SavedBlueprintsDialog({
   onLoadMoreDrafts,
   onLoadMoreBlueprints,
   onOpenDraft,
-  onOpenBlueprint,
-  onGenerate,
+  blueprintAction,
 }: SavedBlueprintsDialogProps) {
   const draftsDescription =
     drafts.length > 0
@@ -138,9 +142,7 @@ export function SavedBlueprintsDialog({
               {blueprintsDescription}
             </p>
             <AsyncPanel
-              empty={
-                <EmptyState description="No saved blueprints yet. Save your first blueprint to generate questions from it." />
-              }
+              empty={<EmptyState description="No saved blueprints yet." />}
               error={(message) => (
                 <InlineError message={message} onRetry={onRetry} />
               )}
@@ -166,8 +168,10 @@ export function SavedBlueprintsDialog({
                       item={item}
                       key={item.id}
                       kind="blueprint"
-                      onGenerate={() => onGenerate(item.id)}
-                      onOpen={() => onOpenBlueprint(item.id)}
+                      primaryAction={getBlueprintRowAction(
+                        item,
+                        blueprintAction,
+                      )}
                     />
                   ))}
                 </ResourceList>
@@ -183,19 +187,29 @@ export function SavedBlueprintsDialog({
 function SavedBlueprintListRow({
   item,
   onOpen,
-  onGenerate,
   kind,
+  primaryAction,
 }: {
   item: SavedBlueprintListItem | SavedDraftListItem;
-  onOpen(): void;
-  onGenerate?(): void;
+  onOpen?(): void;
   kind: "draft" | "blueprint";
+  primaryAction?: {
+    icon: ReactNode;
+    label: string;
+    onSelect(): void;
+    variant?: "default" | "outline";
+  };
 }) {
-  const openLabel =
-    kind === "draft"
-      ? `Open draft ${item.title}`
-      : `Open blueprint ${item.title}`;
-  const generateLabel = `Generate from ${item.title}`;
+  const openLabel = `Open draft ${item.title}`;
+  const action =
+    kind === "draft" && onOpen
+      ? {
+          icon: <FolderOpen />,
+          label: openLabel,
+          onSelect: onOpen,
+          variant: "outline" as const,
+        }
+      : primaryAction;
 
   return (
     <ResourceListItem
@@ -205,14 +219,15 @@ function SavedBlueprintListRow({
       title={item.title}
       trailingAction={
         <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={onOpen} size="sm" type="button" variant="outline">
-            <FolderOpen />
-            {openLabel}
-          </Button>
-          {onGenerate ? (
-            <Button onClick={onGenerate} size="sm" type="button">
-              <Sparkles />
-              {generateLabel}
+          {action ? (
+            <Button
+              onClick={action.onSelect}
+              size="sm"
+              type="button"
+              variant={action.variant}
+            >
+              {action.icon}
+              {action.label}
             </Button>
           ) : null}
         </div>
@@ -220,4 +235,16 @@ function SavedBlueprintListRow({
       variant="display"
     />
   );
+}
+
+function getBlueprintRowAction(
+  item: SavedBlueprintListItem,
+  action: SavedBlueprintsDialogBlueprintAction,
+) {
+  return {
+    icon: <PenLine />,
+    label: action.label ?? `Edit as draft ${item.title}`,
+    onSelect: () => action.onEditAsDraft(item.id),
+    variant: "outline" as const,
+  };
 }

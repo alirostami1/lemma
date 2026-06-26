@@ -1,7 +1,7 @@
 import {
   attachQuestionBlueprintDraftSourceFile as attachQuestionBlueprintDraftSourceFileGenerated,
   createQuestionBlueprintDraft as createQuestionBlueprintDraftGenerated,
-  createQuestionBlueprint as createQuestionBlueprintGenerated,
+  createQuestionBlueprintEditDraft as createQuestionBlueprintEditDraftGenerated,
   createQuestionGenerationRun as createQuestionGenerationRunGenerated,
   createQuestionSet as createQuestionSetGenerated,
   discardQuestionBlueprintDraft as discardQuestionBlueprintDraftGenerated,
@@ -19,7 +19,6 @@ import {
   publishQuestionBlueprintDraft as publishQuestionBlueprintDraftGenerated,
   retryQuestionGenerationRun as retryQuestionGenerationRunGenerated,
   updateQuestionBlueprintDraft as updateQuestionBlueprintDraftGenerated,
-  updateQuestionBlueprint as updateQuestionBlueprintGenerated,
 } from "#/api/generated/questions/questions";
 import {
   mapPublishQuestionBlueprintDraftResponse,
@@ -27,6 +26,7 @@ import {
   mapQuestionBlueprintDraftResponse,
   mapQuestionBlueprintDraftSummariesResponse,
   mapQuestionBlueprintDraftsResponse,
+  mapQuestionBlueprintEditDraftResponse,
   mapQuestionBlueprintResponse,
   mapQuestionBlueprintsResponse,
   mapQuestionGenerationRunResponse,
@@ -38,7 +38,7 @@ import {
 import type {
   AttachQuestionBlueprintDraftSourceFileInput,
   CreateQuestionBlueprintDraftInput,
-  CreateQuestionBlueprintInput,
+  CreateQuestionBlueprintEditDraftInput,
   CreateQuestionGenerationRunInput,
   CreateQuestionSetInput,
   GetQuestionBlueprintInput,
@@ -49,11 +49,13 @@ import type {
   ListQuestionBlueprintsInput,
   ListQuestionSetItemsInput,
   ListQuestionSetsInput,
+  PublishQuestionBlueprintDraftInput,
   PublishQuestionBlueprintDraftResult,
   QuestionBlueprintAuthoringResult,
   QuestionBlueprintDraftResult,
   QuestionBlueprintDraftSummariesPage,
   QuestionBlueprintDraftsPage,
+  QuestionBlueprintEditDraftResult,
   QuestionBlueprintResult,
   QuestionBlueprintsPage,
   QuestionGenerationRunResult,
@@ -64,7 +66,6 @@ import type {
   QuestionsPage,
   RetryQuestionGenerationRunInput,
   UpdateQuestionBlueprintDraftInput,
-  UpdateQuestionBlueprintInput,
 } from "./model";
 
 export async function listQuestionBlueprintDrafts(input?: {
@@ -107,6 +108,16 @@ export async function createQuestionBlueprintDraft(
   );
 }
 
+export async function createQuestionBlueprintEditDraft({
+  questionBlueprintId,
+}: CreateQuestionBlueprintEditDraftInput): Promise<QuestionBlueprintEditDraftResult> {
+  return mapQuestionBlueprintEditDraftResponse(
+    await createQuestionBlueprintEditDraftGenerated(questionBlueprintId, {
+      mode: "resume_or_create",
+    }),
+  );
+}
+
 export async function updateQuestionBlueprintDraft(
   input: UpdateQuestionBlueprintDraftInput,
 ): Promise<QuestionBlueprintDraftResult> {
@@ -120,32 +131,38 @@ export async function attachQuestionBlueprintDraftSourceFile(
   input: AttachQuestionBlueprintDraftSourceFileInput,
 ): Promise<QuestionBlueprintDraftResult> {
   return mapQuestionBlueprintDraftResponse(
-    await attachQuestionBlueprintDraftSourceFileGenerated(input.draftId, {
-      fileId: input.fileId,
-      sourceId: input.sourceId,
-    }),
+    await attachQuestionBlueprintDraftSourceFileGenerated(
+      input.draftId,
+      input.sourceId,
+      {
+        expectedRevision: input.expectedRevision,
+        fileId: input.fileId,
+      },
+    ),
   );
 }
 
 export async function publishQuestionBlueprintDraft(
-  draftId: string,
+  input: PublishQuestionBlueprintDraftInput,
 ): Promise<PublishQuestionBlueprintDraftResult> {
   return mapPublishQuestionBlueprintDraftResponse(
-    await publishQuestionBlueprintDraftGenerated(draftId),
+    await publishQuestionBlueprintDraftGenerated(input.draftId, {
+      expectedRevision: input.expectedRevision,
+      idempotencyKey: input.idempotencyKey,
+    }),
   );
 }
 
-export async function discardQuestionBlueprintDraft(
-  draftId: string,
-): Promise<void> {
-  await discardQuestionBlueprintDraftGenerated(draftId);
+export async function discardQuestionBlueprintDraft(input: {
+  draftId: string;
+  expectedRevision: number;
+}): Promise<void> {
+  await discardQuestionBlueprintDraftGenerated(input.draftId, {
+    expectedRevision: input.expectedRevision,
+  });
 }
 
-import {
-  toCreateQuestionBlueprintRequest,
-  toCreateQuestionGenerationRunRequest,
-  toUpdateQuestionBlueprintRequest,
-} from "./request-mappers";
+import { toCreateQuestionGenerationRunRequest } from "./request-mappers";
 
 export async function listQuestionSets(
   input?: ListQuestionSetsInput,
@@ -208,27 +225,6 @@ export async function getQuestionBlueprintAuthoring({
 }: GetQuestionBlueprintInput): Promise<QuestionBlueprintAuthoringResult> {
   return mapQuestionBlueprintAuthoringResponse(
     await getQuestionBlueprintAuthoringGenerated(questionBlueprintId),
-  );
-}
-
-export async function createQuestionBlueprint(
-  input: CreateQuestionBlueprintInput,
-): Promise<QuestionBlueprintResult> {
-  return mapQuestionBlueprintResponse(
-    await createQuestionBlueprintGenerated(
-      toCreateQuestionBlueprintRequest(input),
-    ),
-  );
-}
-
-export async function updateQuestionBlueprint(
-  input: UpdateQuestionBlueprintInput,
-): Promise<QuestionBlueprintResult> {
-  return mapQuestionBlueprintResponse(
-    await updateQuestionBlueprintGenerated(
-      input.questionBlueprintId,
-      toUpdateQuestionBlueprintRequest(input),
-    ),
   );
 }
 

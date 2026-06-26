@@ -2,10 +2,10 @@ import { useCallback, useMemo } from "react";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import type { StudioSource } from "./source/studio-source-model";
 import {
+  type StudioHistoryChangeGroup,
   type StudioHistorySnapshot,
   useStudioHistory,
 } from "./use-studio-history";
-import { useStudioUndoRedoHotkeys } from "./use-studio-undo-redo-hotkeys";
 
 type UseBlueprintDraftHistoryInput = {
   authoringModel: ComposedEditorModel;
@@ -73,18 +73,8 @@ export function useBlueprintDraftHistory({
     applyHistorySnapshot(snapshot);
   }, [applyHistorySnapshot, currentHistorySnapshot, redo, setHasUserEdited]);
 
-  useStudioUndoRedoHotkeys({
-    canRedo,
-    canUndo,
-    redo: redoHistory,
-    undo: undoHistory,
-  });
-
   const recordAndApplyHistorySnapshot = useCallback(
-    (
-      snapshot: StudioHistorySnapshot,
-      groupKey?: Parameters<typeof recordChange>[2],
-    ) => {
+    (snapshot: StudioHistorySnapshot, groupKey?: StudioHistoryChangeGroup) => {
       recordChange(currentHistorySnapshot, snapshot, groupKey);
       setHasUserEdited(true);
       applyHistorySnapshot(snapshot);

@@ -1,45 +1,29 @@
 import {
-  createQuestionBlueprint,
   deleteQuestionBlueprint,
-  InvalidQuestionFieldError,
-  questionBlueprintDescription,
-  questionBlueprintName,
-  questionBlueprintVisibility,
-  questionBlueprintId as toQuestionBlueprintId,
   questionBlueprintStatus as toQuestionBlueprintStatus,
   userId as toUserId,
-  updateQuestionBlueprintDefinition,
-  updateQuestionBlueprintMetadata,
 } from "../domain/index.js";
-import type {
-  CreateQuestionBlueprintCommand,
-  ListCommand,
-  QuestionBlueprintByIdCommand,
-  UpdateQuestionBlueprintCommand,
-} from "./commands.js";
+import type { ListCommand, QuestionBlueprintByIdCommand } from "./commands.js";
 import type {
   QuestionBlueprintAuthoringResult,
   QuestionBlueprintResult,
   QuestionBlueprintsResult,
 } from "./dto.js";
-import { QuestionBlueprintNotFoundError } from "./errors.js";
 import {
   decodeListCursor,
   encodeListCursor,
   normalizeListLimit,
 } from "./mappers.js";
 import {
-  canCreateQuestionBlueprint,
   canManageQuestionBlueprint,
   canViewQuestionBlueprint,
   canViewQuestionBlueprintAuthoring,
 } from "./policies.js";
-import type { Clock, IdGenerator, QuestionsRepository } from "./ports.js";
+import type { Clock, QuestionsRepository } from "./ports.js";
 import {
   assertQuestionAuthorized,
   findQuestionBlueprintByIdOrThrow,
   hydrateQuestionBlueprint,
-  normalizeCanonicalBlueprintInput,
   persistQuestionBlueprint,
 } from "./question-application-helpers.js";
 
@@ -47,7 +31,6 @@ export class QuestionBlueprintService {
   constructor(
     private readonly deps: {
       questionsRepository: QuestionsRepository;
-      idGenerator: IdGenerator;
       clock: Clock;
     },
   ) {}
@@ -80,51 +63,6 @@ export class QuestionBlueprintService {
     };
   }
 
-  async createQuestionBlueprint(
-    command: CreateQuestionBlueprintCommand,
-  ): Promise<QuestionBlueprintResult> {
-    assertQuestionAuthorized(
-      canCreateQuestionBlueprint(
-        command.currentUser,
-        command.visibility ?? "private",
-      ),
-      "You cannot create this question blueprint.",
-    );
-    if (command.sources === undefined) {
-      throw new InvalidQuestionFieldError(
-        "sources must be provided when creating question blueprint",
-      );
-    }
-
-    const compiled = normalizeCanonicalBlueprintInput({
-      document: command.document,
-      sources: command.sources,
-    });
-    const at = this.deps.clock.now();
-    const blueprint = createQuestionBlueprint(
-      {
-        createdByUserId: toUserId(command.currentUser.user.id),
-        description: questionBlueprintDescription(command.description ?? null),
-        document: compiled.document,
-        currentVersionId: this.deps.idGenerator.questionBlueprintVersionId(),
-        id: toQuestionBlueprintId(this.deps.idGenerator.questionBlueprintId()),
-        name: questionBlueprintName(command.name),
-        ownerUserId: toUserId(command.currentUser.user.id),
-        sources: compiled.sources,
-        visibility: questionBlueprintVisibility(
-          command.visibility ?? "private",
-        ),
-      },
-      at,
-    );
-
-    return {
-      questionBlueprint: await hydrateQuestionBlueprint(
-        await this.deps.questionsRepository.createQuestionBlueprint(blueprint),
-      ),
-    };
-  }
-
   async getQuestionBlueprint(
     command: QuestionBlueprintByIdCommand,
   ): Promise<QuestionBlueprintResult> {
@@ -151,69 +89,6 @@ export class QuestionBlueprintService {
       "You cannot view this question blueprint authoring data.",
     );
     return { questionBlueprint };
-  }
-
-  async updateQuestionBlueprint(
-    command: UpdateQuestionBlueprintCommand,
-  ): Promise<QuestionBlueprintResult> {
-    const blueprint = await this.findQuestionBlueprintById(
-      command.questionBlueprintId,
-    );
-    assertQuestionAuthorized(
-      canManageQuestionBlueprint(command.currentUser, blueprint),
-      "You cannot update this question blueprint.",
-    );
-
-    const at = this.deps.clock.now();
-    const updatedMetadata = updateQuestionBlueprintMetadata(
-      blueprint,
-      {
-        description: command.patch.description,
-        name: command.patch.name,
-        status:
-          command.patch.status === undefined
-            ? undefined
-            : toQuestionBlueprintStatus(command.patch.status),
-        visibility:
-          command.patch.visibility === undefined
-            ? undefined
-            : questionBlueprintVisibility(command.patch.visibility),
-      },
-      at,
-    );
-
-    const documentChanged = command.patch.document !== undefined;
-    const sourcesChanged = command.patch.sources !== undefined;
-    if (!documentChanged && !sourcesChanged) {
-      return {
-        questionBlueprint: await hydrateQuestionBlueprint(
-          await persistQuestionBlueprint(
-            this.deps.questionsRepository,
-            updatedMetadata,
-          ),
-        ),
-      };
-    }
-
-    const compiled = normalizeCanonicalBlueprintInput({
-      document: command.patch.document ?? blueprint.document,
-      sources: command.patch.sources ?? blueprint.sources,
-    });
-
-    const updated =
-      await this.deps.questionsRepository.updateQuestionBlueprintDefinition({
-        blueprint: updateQuestionBlueprintDefinition(
-          updatedMetadata,
-          {
-            document: compiled.document,
-            sources: compiled.sources,
-          },
-          at,
-        ),
-        versionId: this.deps.idGenerator.questionBlueprintVersionId(),
-      });
-    if (!updated) throw new QuestionBlueprintNotFoundError();
-    return { questionBlueprint: await hydrateQuestionBlueprint(updated) };
   }
 
   async deleteQuestionBlueprint(

@@ -132,8 +132,7 @@ describe("useSavedBlueprintsController", () => {
   it("loads recent drafts and saved blueprints", () => {
     const { result } = renderHook(() =>
       useSavedBlueprintsController({
-        onGenerateBlueprint: vi.fn(),
-        onOpenBlueprint: vi.fn(),
+        onEditBlueprintAsDraft: vi.fn(),
         onOpenDraft: vi.fn(),
       }),
     );
@@ -144,25 +143,21 @@ describe("useSavedBlueprintsController", () => {
     expect(result.current.blueprints[0]?.id).toBe("blueprint-1");
   });
 
-  it("routes open and generate callbacks", () => {
+  it("routes open and explicit blueprint action callbacks", () => {
     const onOpenDraft = vi.fn();
-    const onOpenBlueprint = vi.fn();
-    const onGenerateBlueprint = vi.fn();
+    const onSelectBlueprint = vi.fn();
     const { result } = renderHook(() =>
       useSavedBlueprintsController({
-        onGenerateBlueprint,
-        onOpenBlueprint,
+        onEditBlueprintAsDraft: onSelectBlueprint,
         onOpenDraft,
       }),
     );
 
     result.current.onOpenDraft("draft-1");
-    result.current.onOpenBlueprint("blueprint-1");
-    result.current.onGenerate("blueprint-1");
+    result.current.blueprintAction.onEditAsDraft("blueprint-1");
 
     expect(onOpenDraft).toHaveBeenCalledWith("draft-1");
-    expect(onOpenBlueprint).toHaveBeenCalledWith("blueprint-1");
-    expect(onGenerateBlueprint).toHaveBeenCalledWith(
+    expect(onSelectBlueprint).toHaveBeenCalledWith(
       expect.objectContaining({ id: "blueprint-1" }),
     );
   });
@@ -170,8 +165,7 @@ describe("useSavedBlueprintsController", () => {
   it("forwards pagination and retry callbacks", () => {
     const { result } = renderHook(() =>
       useSavedBlueprintsController({
-        onGenerateBlueprint: vi.fn(),
-        onOpenBlueprint: vi.fn(),
+        onEditBlueprintAsDraft: vi.fn(),
         onOpenDraft: vi.fn(),
       }),
     );
@@ -191,8 +185,7 @@ describe("useSavedBlueprintsController", () => {
     queryState.drafts.isFetchNextPageError = false;
     const { result } = renderHook(() =>
       useSavedBlueprintsController({
-        onGenerateBlueprint: vi.fn(),
-        onOpenBlueprint: vi.fn(),
+        onEditBlueprintAsDraft: vi.fn(),
         onOpenDraft: vi.fn(),
       }),
     );
@@ -209,8 +202,7 @@ describe("useSavedBlueprintsController", () => {
     queryState.drafts.isFetchNextPageError = true;
     const { result } = renderHook(() =>
       useSavedBlueprintsController({
-        onGenerateBlueprint: vi.fn(),
-        onOpenBlueprint: vi.fn(),
+        onEditBlueprintAsDraft: vi.fn(),
         onOpenDraft: vi.fn(),
       }),
     );

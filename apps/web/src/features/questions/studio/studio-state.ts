@@ -1,5 +1,3 @@
-import { isQuestionGenerationRunActive } from "#/domains/questions/generation-status";
-import type { QuestionGenerationRun } from "#/domains/questions/model";
 import { createDraftSnapshotKey } from "./studio-controller-helpers";
 import type { StudioDraftSnapshot } from "./studio-draft-store";
 
@@ -15,11 +13,10 @@ export type StudioSaveState =
 export type StudioPhase =
   | "idle"
   | "loading_blueprint"
-  | "editing_saved_blueprint"
+  | "editing_draft"
   | "editing_local_draft"
   | "dirty"
   | "saving"
-  | "generating"
   | "reset_pending";
 
 export type StudioState = {
@@ -61,12 +58,8 @@ export function shouldWarnBeforeOpeningBlueprint(input: {
 export function hasUnsavedChangesFromKeys(input: {
   currentDraftKey: string;
   lastSavedDraftKey: string | null;
-  loadedBlueprintId: string | null;
 }) {
-  return (
-    input.loadedBlueprintId === null ||
-    input.lastSavedDraftKey !== input.currentDraftKey
-  );
+  return input.lastSavedDraftKey !== input.currentDraftKey;
 }
 
 export function getStudioSaveState(input: {
@@ -100,28 +93,18 @@ export function getStudioSaveError(input: {
   return input.loadError ?? input.remoteSaveError ?? input.localDraftError;
 }
 
-export function getStudioGenerateState(input: {
-  hasLoadedBlueprintId: boolean;
-  hasUnsavedChanges: boolean;
-  isGenerationSubmitting: boolean;
-  readinessIssue: string | null;
-}): Pick<StudioState, "canGenerate" | "generateDisabledReason"> {
-  const generateDisabledReason =
-    input.hasLoadedBlueprintId === false || input.hasUnsavedChanges
-      ? "Save this blueprint before generating questions."
-      : (input.readinessIssue ??
-        (input.isGenerationSubmitting ? "Questions are generating." : null));
-
+export function getStudioGenerateState(): Pick<
+  StudioState,
+  "canGenerate" | "generateDisabledReason"
+> {
   return {
-    canGenerate: generateDisabledReason === null,
-    generateDisabledReason,
+    canGenerate: false,
+    generateDisabledReason: "Publish this draft before generating questions.",
   };
 }
 
 export function getStudioPhase(input: {
-  activeGenerationRun: QuestionGenerationRun | null;
   hasUnsavedChanges: boolean;
-  isGenerationSubmitting: boolean;
   isLoadingBlueprint: boolean;
   isResetPending: boolean;
   localDraftStatus: StudioLocalDraftStatus;
@@ -138,45 +121,30 @@ export function getStudioPhase(input: {
   if (input.remoteSaveIsSaving || input.localDraftStatus === "saving") {
     return "saving";
   }
-  if (
-    input.isGenerationSubmitting ||
-    (input.activeGenerationRun &&
-      isQuestionGenerationRunActive(input.activeGenerationRun))
-  ) {
-    return "generating";
-  }
   if (input.hasUnsavedChanges) {
     return input.restoredInitialLocalDraft ? "editing_local_draft" : "dirty";
   }
   if (input.loadedBlueprintId) {
-    return "editing_saved_blueprint";
+    return "editing_draft";
   }
   return "idle";
 }
 
 export function getStudioState(input: {
-  activeGenerationRun: QuestionGenerationRun | null;
   hasUnsavedChanges: boolean;
-  isGenerationSubmitting: boolean;
   isLoadingBlueprint: boolean;
   isResetPending: boolean;
   loadError: string | null;
   localDraftError: string | null;
   localDraftStatus: StudioLocalDraftStatus;
   loadedBlueprintId: string | null;
-  readinessIssue: string | null;
   remoteSaveError: string | null;
   remoteSaveIsSaving: boolean;
   restoredInitialLocalDraft: boolean;
 }): StudioState {
   const saveError = getStudioSaveError(input);
   const saveState = getStudioSaveState(input);
-  const generateState = getStudioGenerateState({
-    hasLoadedBlueprintId: input.loadedBlueprintId !== null,
-    hasUnsavedChanges: input.hasUnsavedChanges,
-    isGenerationSubmitting: input.isGenerationSubmitting,
-    readinessIssue: input.readinessIssue,
-  });
+  const generateState = getStudioGenerateState();
   return {
     ...generateState,
     phase: getStudioPhase(input),

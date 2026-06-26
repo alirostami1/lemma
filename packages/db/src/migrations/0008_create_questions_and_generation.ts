@@ -209,7 +209,7 @@ export async function up(db: MigrationDb): Promise<void> {
     )
     .addCheckConstraint(
       "questions_source_evidence_sources_check",
-      sql`source_evidence ? 'sources' and jsonb_typeof(source_evidence->'sources') = 'array'`,
+      sql`jsonb_typeof(source_evidence->'sources') = 'array' and source_evidence ? 'sources'`,
     )
     .addCheckConstraint(
       "questions_producer_object_check",

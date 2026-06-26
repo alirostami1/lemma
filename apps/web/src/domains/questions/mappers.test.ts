@@ -4,10 +4,12 @@ import { mapQuestionBlueprintDraftSummary } from "./mappers";
 describe("mapQuestionBlueprintDraftSummary", () => {
   it("maps status and required/nullable fields", () => {
     const summary = mapQuestionBlueprintDraftSummary({
+      baseVersionId: null,
       blueprintId: null,
       createdAt: "2026-06-20T00:00:00.000Z",
       createdByUserId: "owner-1",
       description: null,
+      discardedAt: null,
       document: {
         blocks: [],
         references: [],
@@ -18,6 +20,9 @@ describe("mapQuestionBlueprintDraftSummary", () => {
       lastSavedAt: "2026-06-22T00:00:00.000Z",
       name: "Draft",
       ownerUserId: "owner-1",
+      publishedAt: null,
+      publishedVersionId: null,
+      revision: 1,
       sources: [
         {
           byteSize: null,

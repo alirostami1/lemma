@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { QuestionGenerationRun } from "#/domains/questions/model";
 import type { StudioDraftSnapshot } from "./studio-draft-store";
 import {
   createDraftKeyFromSnapshot,
   getInitialStudioDraftSnapshot,
   getStudioState,
+  hasUnsavedChangesFromKeys,
   shouldWarnBeforeOpeningBlueprint,
 } from "./studio-state";
 
@@ -63,6 +63,15 @@ describe("studio state", () => {
     ).toBe(true);
   });
 
+  it("treats an untargeted draft as clean when its saved key matches", () => {
+    expect(
+      hasUnsavedChangesFromKeys({
+        currentDraftKey: "saved-key",
+        lastSavedDraftKey: "saved-key",
+      }),
+    ).toBe(false);
+  });
+
   it("derives save, generate, and phase state from one model", () => {
     expect(
       getStudioState({
@@ -84,21 +93,9 @@ describe("studio state", () => {
       }),
     ).toMatchObject({
       canGenerate: false,
-      generateDisabledReason:
-        "Save this blueprint before generating questions.",
+      generateDisabledReason: "Publish this draft before generating questions.",
       phase: "dirty",
       saveState: "autosaved",
-    });
-
-    expect(
-      getStudioState({
-        ...baseStudioStateInput(),
-        activeGenerationRun: createGenerationRun("materializing"),
-      }),
-    ).toMatchObject({
-      canGenerate: true,
-      phase: "generating",
-      saveState: "saved",
     });
 
     expect(
@@ -107,7 +104,7 @@ describe("studio state", () => {
         loadError: "Blueprint could not be loaded.",
       }),
     ).toMatchObject({
-      phase: "editing_saved_blueprint",
+      phase: "editing_draft",
       saveError: "Blueprint could not be loaded.",
       saveState: "failed",
     });
@@ -123,18 +120,15 @@ describe("studio state", () => {
   });
 });
 
-function baseStudioStateInput(): Parameters<typeof getStudioState>[0] {
+function baseStudioStateInput() {
   return {
-    activeGenerationRun: null,
     hasUnsavedChanges: false,
-    isGenerationSubmitting: false,
     isLoadingBlueprint: false,
     isResetPending: false,
     loadError: null,
     loadedBlueprintId: "blueprint-1",
     localDraftError: null,
-    localDraftStatus: "autosaved",
-    readinessIssue: null,
+    localDraftStatus: "autosaved" as const,
     remoteSaveError: null,
     remoteSaveIsSaving: false,
     restoredInitialLocalDraft: false,
@@ -160,30 +154,5 @@ function createSnapshot(
     schemaVersion: 2,
     sources: [],
     ...input,
-  };
-}
-
-function createGenerationRun(
-  status: QuestionGenerationRun["status"],
-): QuestionGenerationRun {
-  const at = new Date("2026-06-15T00:00:00.000Z");
-  return {
-    attemptNumber: 1,
-    attempts: 1,
-    blueprintId: "blueprint-1",
-    createdAt: at,
-    createdByUserId: "user-1",
-    errorMessage: null,
-    finishedAt: null,
-    id: "run-1",
-    ownerUserId: "user-1",
-    requestedCount: 3,
-    result: null,
-    retryOfRunId: null,
-    startedAt: at,
-    status,
-    targetQuestionSetId: "question-set-1",
-    updatedAt: at,
-    workbookCalculationId: null,
   };
 }

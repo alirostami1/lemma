@@ -96,7 +96,11 @@ function createBlueprint(input: { workbookId: WorkbookId }) {
       ownerUserId,
       sources: [
         {
+          byteSize: null,
+          checksumSha256: null,
+          fileId: null,
           name: "Source 1",
+          originalName: null,
           sourceId: "source_1",
           type: "workbook",
           workbookId: input.workbookId,

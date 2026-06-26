@@ -1,14 +1,12 @@
 import { rootOperationLineage } from "@lemma/domain";
 import { withHttpErrorHandler } from "@lemma/http";
 import type {
-  CreateQuestionBlueprintCommand,
   CreateQuestionGenerationRunCommand,
   QuestionBlueprintDraftService,
   QuestionBlueprintService,
   QuestionGenerationService,
   QuestionLibraryService,
   QuestionSetService,
-  UpdateQuestionBlueprintCommand,
 } from "../application/index.js";
 import type { QuestionsHandlerMap } from "../generated/hono/index.js";
 import { handleQuestionsError } from "./errors.js";
@@ -57,6 +55,8 @@ export function createQuestionsHandlers(
               {
                 currentUser: c.var.identity,
                 draftId: c.req.valid("param").draftId,
+                lineage: rootOperationLineage(c.var.requestId),
+                sourceId: c.req.valid("param").sourceId,
                 ...c.req.valid("json"),
               },
             ),
@@ -74,24 +74,6 @@ export function createQuestionsHandlers(
           questionGenerationRunId,
         });
         return c.body(null, 204);
-      },
-    ),
-    createQuestionBlueprint: questionsHandler(
-      "createQuestionBlueprint",
-      async (c) => {
-        const body = c.req.valid("json") as Omit<
-          CreateQuestionBlueprintCommand,
-          "currentUser"
-        >;
-        return c.json(
-          presentQuestionBlueprint(
-            await deps.questionBlueprintService.createQuestionBlueprint({
-              ...body,
-              currentUser: c.var.identity,
-            }),
-          ),
-          201,
-        );
       },
     ),
     createQuestionBlueprintDraft: questionsHandler(
@@ -426,25 +408,6 @@ export function createQuestionsHandlers(
             }),
           ),
           201,
-        );
-      },
-    ),
-    updateQuestionBlueprint: questionsHandler(
-      "updateQuestionBlueprint",
-      async (c) => {
-        const { questionBlueprintId } = c.req.valid("param");
-        const patch = c.req.valid(
-          "json",
-        ) as UpdateQuestionBlueprintCommand["patch"];
-        return c.json(
-          presentQuestionBlueprint(
-            await deps.questionBlueprintService.updateQuestionBlueprint({
-              currentUser: c.var.identity,
-              patch,
-              questionBlueprintId,
-            }),
-          ),
-          200,
         );
       },
     ),

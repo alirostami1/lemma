@@ -5,7 +5,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { QuestionBlueprintDocument } from "./questionBlueprintDocument.js";
-import type { QuestionBlueprintSource } from "./questionBlueprintSource.js";
+import type { QuestionBlueprintVersionSource } from "./questionBlueprintVersionSource.js";
 
 export interface QuestionBlueprintVersion {
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
@@ -35,7 +35,7 @@ export interface QuestionBlueprintVersion {
   parentVersionId: string | null;
   publishedAt: string;
   /** Immutable blueprint-local source entries pinned by this version. */
-  sources: QuestionBlueprintSource[];
+  sources: QuestionBlueprintVersionSource[];
   /** @minimum 1 */
   versionNumber: number;
 }

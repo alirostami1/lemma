@@ -17,6 +17,7 @@ function blueprint(
     archivedAt: null,
     createdAt: new Date("2026-01-01T00:00:00Z"),
     createdByUserId: "creator",
+    currentVersionId: `version-${id}`,
     description: null,
     document: { blocks: [], responseFields: [], schemaVersion: 1 },
     id,

@@ -112,24 +112,6 @@ const questionReferenceSourceSchema: Schema = {
     ],
   },
 };
-const questionBlueprintSourceSchema: Schema = {
-  name: "QuestionBlueprintSource",
-  schema: {
-    additionalProperties: false,
-    properties: {
-      name: { minLength: 1, type: "string" },
-      sourceId: {
-        description: "Blueprint-local source identifier.",
-        minLength: 1,
-        type: "string",
-      },
-      type: { enum: ["workbook"], type: "string" },
-      workbookId: uuid,
-    },
-    required: ["type", "sourceId", "name", "workbookId"],
-    type: "object",
-  },
-};
 const questionBlueprintDraftSourceSchema: Schema = {
   name: "QuestionBlueprintDraftSource",
   schema: {
@@ -175,6 +157,36 @@ const questionBlueprintDraftSourceIntentSchema: Schema = {
       type: { enum: ["workbook"], type: "string" },
     },
     required: ["type", "sourceId", "name"],
+    type: "object",
+  },
+};
+const questionBlueprintVersionSourceSchema: Schema = {
+  name: "QuestionBlueprintVersionSource",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      byteSize: { minimum: 1, type: ["integer", "null"] },
+      checksumSha256: {
+        pattern: "^[a-f0-9]{64}$",
+        type: ["string", "null"],
+      },
+      fileId: { format: "uuid", type: ["string", "null"] },
+      name: { minLength: 1, type: "string" },
+      originalName: { type: ["string", "null"] },
+      sourceId: { pattern: "^[A-Za-z][A-Za-z0-9_-]*$", type: "string" },
+      type: { enum: ["workbook"], type: "string" },
+      workbookId: { format: "uuid", type: "string" },
+    },
+    required: [
+      "type",
+      "sourceId",
+      "name",
+      "fileId",
+      "workbookId",
+      "originalName",
+      "byteSize",
+      "checksumSha256",
+    ],
     type: "object",
   },
 };
@@ -997,7 +1009,7 @@ const questionBlueprintSchema: Schema = {
       sources: {
         description:
           "Blueprint-local source entries attached to this blueprint.",
-        items: schemaRef(questionBlueprintSourceSchema),
+        items: schemaRef(questionBlueprintVersionSourceSchema),
         type: "array",
       },
       status: {
@@ -1052,7 +1064,7 @@ const questionBlueprintAuthoringSchema: Schema = {
       sources: {
         description:
           "Blueprint-local source entries attached to this blueprint.",
-        items: schemaRef(questionBlueprintSourceSchema),
+        items: schemaRef(questionBlueprintVersionSourceSchema),
         type: "array",
       },
       status: {
@@ -1167,7 +1179,7 @@ const questionBlueprintVersionSchema: Schema = {
       sources: {
         description:
           "Immutable blueprint-local source entries pinned by this version.",
-        items: schemaRef(questionBlueprintSourceSchema),
+        items: schemaRef(questionBlueprintVersionSourceSchema),
         type: "array",
       },
       versionNumber: { minimum: 1, type: "integer" },
@@ -1491,66 +1503,6 @@ const updateQuestionSetRequestSchema: Schema = {
     type: "object",
   },
 };
-const createQuestionBlueprintRequestSchema: Schema = {
-  name: "CreateQuestionBlueprintRequest",
-  schema: {
-    additionalProperties: false,
-    properties: {
-      description: {
-        maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
-        type: ["string", "null"],
-      },
-      document: schemaRef(questionBlueprintDocumentSchema),
-      name: {
-        maxLength: MAX_QUESTION_NAME_LENGTH,
-        minLength: 1,
-        type: "string",
-      },
-      sources: {
-        items: schemaRef(questionBlueprintSourceSchema),
-        type: "array",
-      },
-      visibility: {
-        enum: [...QUESTION_BLUEPRINT_VISIBILITY_ACCEPTED_VALUES],
-        type: "string",
-      },
-    },
-    required: ["name", "document", "sources"],
-    type: "object",
-  },
-};
-const updateQuestionBlueprintRequestSchema: Schema = {
-  name: "UpdateQuestionBlueprintRequest",
-  schema: {
-    additionalProperties: false,
-    minProperties: 1,
-    properties: {
-      description: {
-        maxLength: MAX_QUESTION_DESCRIPTION_LENGTH,
-        type: ["string", "null"],
-      },
-      document: schemaRef(questionBlueprintDocumentSchema),
-      name: {
-        maxLength: MAX_QUESTION_NAME_LENGTH,
-        minLength: 1,
-        type: "string",
-      },
-      sources: {
-        items: schemaRef(questionBlueprintSourceSchema),
-        type: "array",
-      },
-      status: {
-        enum: [...QUESTION_BLUEPRINT_STATUS_ACCEPTED_VALUES],
-        type: "string",
-      },
-      visibility: {
-        enum: [...QUESTION_BLUEPRINT_VISIBILITY_ACCEPTED_VALUES],
-        type: "string",
-      },
-    },
-    type: "object",
-  },
-};
 const createQuestionBlueprintDraftRequestSchema: Schema = {
   name: "CreateQuestionBlueprintDraftRequest",
   schema: {
@@ -1647,9 +1599,8 @@ const attachQuestionBlueprintDraftSourceFileRequestSchema: Schema = {
     properties: {
       expectedRevision: { minimum: 1, type: "integer" },
       fileId: uuid,
-      sourceId: { pattern: "^[A-Za-z][A-Za-z0-9_-]*$", type: "string" },
     },
-    required: ["sourceId", "fileId", "expectedRevision"],
+    required: ["fileId", "expectedRevision"],
     type: "object",
   },
 };
@@ -1717,6 +1668,15 @@ const questionBlueprintDraftParam: Param = {
     schema: uuid,
   },
 };
+const questionBlueprintDraftSourceParam: Param = {
+  name: "QuestionBlueprintDraftSourceIdParam",
+  schema: {
+    in: "path",
+    name: "sourceId",
+    required: true,
+    schema: { pattern: "^[A-Za-z][A-Za-z0-9_-]*$", type: "string" },
+  },
+};
 const questionParam: Param = {
   name: "QuestionIdParam",
   schema: {
@@ -1741,8 +1701,6 @@ export const tags: readonly Tag[] = Object.freeze([questionTag]);
 export const schemas = Object.freeze([
   questionValueExpressionSchema,
   questionReferenceSourceSchema,
-  questionBlueprintSourceSchema,
-  questionBlueprintDraftSourceSchema,
   blueprintInlineTextSchema,
   blueprintInlineReferenceSchema,
   blueprintInlineContentSchema,
@@ -1788,9 +1746,11 @@ export const schemas = Object.freeze([
   questionAnswerSchema,
   gradeResultSchema,
   questionSetSchema,
+  questionBlueprintDraftSourceSchema,
+  questionBlueprintDraftSourceIntentSchema,
+  questionBlueprintVersionSourceSchema,
   questionBlueprintSchema,
   questionBlueprintAuthoringSchema,
-  questionBlueprintDraftSourceIntentSchema,
   questionBlueprintDraftSchema,
   questionBlueprintVersionSchema,
   questionSchema,
@@ -1811,8 +1771,6 @@ export const schemas = Object.freeze([
   questionGenerationRunResponseSchema,
   createQuestionSetRequestSchema,
   updateQuestionSetRequestSchema,
-  createQuestionBlueprintRequestSchema,
-  updateQuestionBlueprintRequestSchema,
   createQuestionBlueprintDraftRequestSchema,
   createQuestionBlueprintEditDraftRequestSchema,
   updateQuestionBlueprintDraftRequestSchema,
@@ -1833,6 +1791,7 @@ export const params = Object.freeze([
   questionSetParam,
   questionBlueprintParam,
   questionBlueprintDraftParam,
+  questionBlueprintDraftSourceParam,
   questionParam,
   questionGenerationRunParam,
 ]);
@@ -2010,8 +1969,11 @@ export const paths: Paths = {
       tags: [tagRef(questionTag)],
     },
   },
-  "/question-blueprint-drafts/{draftId}/source-files": {
-    parameters: [paramRef(questionBlueprintDraftParam)],
+  "/question-blueprint-drafts/{draftId}/sources/{sourceId}/file": {
+    parameters: [
+      paramRef(questionBlueprintDraftParam),
+      paramRef(questionBlueprintDraftSourceParam),
+    ],
     post: {
       operationId: "attachQuestionBlueprintDraftSourceFile",
       requestBody: {
@@ -2090,38 +2052,6 @@ export const paths: Paths = {
       summary: "List question blueprints",
       tags: [tagRef(questionTag)],
     },
-    post: {
-      description:
-        "Authoring-only. Request may include full blueprint document with value expressions and correct values; learner responses return a public blueprint view.",
-      operationId: "createQuestionBlueprint",
-      requestBody: {
-        content: {
-          "application/json": {
-            schema: schemaRef(createQuestionBlueprintRequestSchema),
-          },
-        },
-        required: true,
-      },
-      responses: {
-        "201": {
-          content: {
-            "application/json": {
-              schema: schemaRef(questionBlueprintResponseSchema),
-            },
-          },
-          description: "Question blueprint created.",
-        },
-        "400": responseRef(badRequestResponse),
-        "401": responseRef(unauthorizedResponse),
-        "403": responseRef(forbiddenResponse),
-        "404": responseRef(notFoundResponse),
-        "409": responseRef(conflictResponse),
-        "502": responseRef(upstreamWorkbookResponse),
-      },
-      security: [keycloakSecurityRequirement],
-      summary: "Create question blueprint",
-      tags: [tagRef(questionTag)],
-    },
   },
   "/question-blueprints/{questionBlueprintId}": {
     delete: {
@@ -2161,38 +2091,6 @@ export const paths: Paths = {
       tags: [tagRef(questionTag)],
     },
     parameters: [paramRef(questionBlueprintParam)],
-    patch: {
-      description:
-        "Authoring-only. Request may include full blueprint document with value expressions and correct values; learner responses return a public blueprint view.",
-      operationId: "updateQuestionBlueprint",
-      requestBody: {
-        content: {
-          "application/json": {
-            schema: schemaRef(updateQuestionBlueprintRequestSchema),
-          },
-        },
-        required: true,
-      },
-      responses: {
-        "200": {
-          content: {
-            "application/json": {
-              schema: schemaRef(questionBlueprintResponseSchema),
-            },
-          },
-          description: "Question blueprint updated.",
-        },
-        "400": responseRef(badRequestResponse),
-        "401": responseRef(unauthorizedResponse),
-        "403": responseRef(forbiddenResponse),
-        "404": responseRef(notFoundResponse),
-        "409": responseRef(conflictResponse),
-        "502": responseRef(upstreamWorkbookResponse),
-      },
-      security: [keycloakSecurityRequirement],
-      summary: "Update question blueprint",
-      tags: [tagRef(questionTag)],
-    },
   },
   "/question-blueprints/{questionBlueprintId}/edit-draft": {
     parameters: [paramRef(questionBlueprintParam)],

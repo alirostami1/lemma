@@ -2,11 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { LocalWorkbookParseResult } from "#/domains/workbooks/local-xlsx";
 import {
   deserializeStudioSources,
+  fromDraftSourceToStudioSource,
   hydrateStudioSourcesFromDraftAssets,
   MISSING_LOCAL_FILE_MESSAGE,
   type StudioWorkbookSource,
   serializeStudioSources,
-  toQuestionBlueprintWorkbookSources,
 } from "./studio-source-model";
 
 const draftAssetMocks = vi.hoisted(() => ({
@@ -108,51 +108,6 @@ describe("studio-source-model", () => {
     ]);
     expect(JSON.stringify(serialized)).not.toContain("xlsx-bytes");
     expect(JSON.stringify(serialized)).not.toContain("1200");
-  });
-
-  it("does not emit local workbook placeholders to blueprint save sources", () => {
-    const savedSources = toQuestionBlueprintWorkbookSources([
-      {
-        backing: {
-          byteSize: 10,
-          file: new File(["xlsx-bytes"], "budget.xlsx"),
-          kind: "local_file",
-          lastModified: 123,
-          originalName: "budget.xlsx",
-          parsedWorkbook: null,
-          parseError: null,
-          parseStatus: "parsed",
-          uploadError: null,
-          uploadStatus: "not_uploaded",
-          workbookId: null,
-        },
-        createdAt: new Date("2026-06-21T00:00:00.000Z"),
-        name: "Budget",
-        sourceId: "source_1",
-        type: "workbook",
-      },
-      {
-        backing: {
-          byteSize: null,
-          kind: "persisted_workbook",
-          originalName: "saved.xlsx",
-          parsedWorkbook: null,
-          workbookId: "workbook_2",
-        },
-        createdAt: new Date("2026-06-21T00:00:00.000Z"),
-        name: "Saved",
-        sourceId: "source_2",
-        type: "workbook",
-      },
-    ]);
-
-    expect(savedSources).toEqual([
-      {
-        name: "Saved",
-        sourceId: "source_2",
-        workbookId: "workbook_2",
-      },
-    ]);
   });
 
   it("serializes persisted, restoring, and missing source metadata", () => {
@@ -313,6 +268,54 @@ describe("studio-source-model", () => {
         ? restoring.backing.workbookId
         : null,
     ).toBeNull();
+  });
+
+  it("maps server-attached draft source to persisted workbook backing", () => {
+    const source = fromDraftSourceToStudioSource(
+      {
+        byteSize: 1024,
+        checksumSha256:
+          "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        fileId: "019e9315-6a87-715f-9861-8654df099006",
+        name: "Budget",
+        originalName: "server-budget.xlsx",
+        sourceId: "source_1",
+        status: "validated",
+        type: "workbook",
+        workbookId: "019e9315-6a87-715f-9861-8654df099005",
+      },
+      {
+        backing: {
+          byteSize: 10,
+          file: restoredFile(),
+          kind: "local_file",
+          lastModified: 123,
+          originalName: "budget.xlsx",
+          parsedWorkbook: parsedWorkbook(),
+          parseError: null,
+          parseStatus: "parsed",
+          uploadError: null,
+          uploadStatus: "uploaded",
+          workbookId: null,
+        },
+        createdAt: new Date("2026-06-21T00:00:00.000Z"),
+        name: "Budget",
+        sourceId: "source_1",
+        type: "workbook",
+      },
+    );
+
+    expect(source.backing).toMatchObject({
+      byteSize: 1024,
+      kind: "persisted_workbook",
+      originalName: "server-budget.xlsx",
+      workbookId: "019e9315-6a87-715f-9861-8654df099005",
+    });
+    expect(
+      source.backing.kind === "persisted_workbook"
+        ? source.backing.parsedWorkbook?.fileName
+        : null,
+    ).toBe("budget.xlsx");
   });
 
   it("hydrates restoring source to parsed local file when asset exists", async () => {

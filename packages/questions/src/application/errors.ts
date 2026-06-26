@@ -44,6 +44,48 @@ export class QuestionBlueprintBaseVersionConflictError extends QuestionsApplicat
   }
 }
 
+export class DraftSourceNotFoundError extends QuestionsApplicationError {
+  readonly applicationCode = "DRAFT_SOURCE_NOT_FOUND";
+  constructor(message = "draft source not found") {
+    super(message);
+  }
+}
+
+export class DraftSourceKindUnsupportedError extends QuestionsApplicationError {
+  readonly applicationCode = "DRAFT_SOURCE_KIND_UNSUPPORTED";
+  constructor(message = "draft source kind is unsupported") {
+    super(message);
+  }
+}
+
+export class DraftSourceFileForbiddenError extends QuestionsApplicationError {
+  readonly applicationCode = "DRAFT_SOURCE_FILE_FORBIDDEN";
+  constructor(message = "draft source file is forbidden") {
+    super(message);
+  }
+}
+
+export class DraftSourceFileInvalidError extends QuestionsApplicationError {
+  readonly applicationCode = "DRAFT_SOURCE_FILE_INVALID";
+  constructor(message = "draft source file is invalid") {
+    super(message);
+  }
+}
+
+export class DraftSourceNotReadyError extends QuestionsApplicationError {
+  readonly applicationCode = "DRAFT_SOURCE_NOT_READY";
+  constructor(message = "draft source is not ready") {
+    super(message);
+  }
+}
+
+export class InvalidDraftSourceReferenceError extends QuestionsApplicationError {
+  readonly applicationCode = "INVALID_DRAFT_SOURCE_REFERENCE";
+  constructor(message = "invalid draft source reference") {
+    super(message);
+  }
+}
+
 export class QuestionNotFoundError extends QuestionsApplicationError {
   readonly applicationCode = "QUESTION_NOT_FOUND";
   constructor(message = "question not found") {

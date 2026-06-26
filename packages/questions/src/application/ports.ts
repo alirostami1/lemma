@@ -32,11 +32,20 @@ import type {
 } from "../domain/index.js";
 
 export interface QuestionsRepository {
-  attachQuestionBlueprintDraftSourceFile(input: {
-    draft: QuestionBlueprintDraft;
+  attachQuestionBlueprintDraftSourceFileWithExpectedRevision(input: {
+    currentUser: CurrentUser;
+    draftId: QuestionBlueprintDraftId;
     expectedRevision: number;
-    sourceId: string;
     file: DraftSourceFileMetadata;
+    lineage: OperationLineage;
+    registeredAt: Date;
+    sourceId: string;
+    registerWorkbookFromFile(input: {
+      currentUser: CurrentUser;
+      fileId: string;
+      lineage: OperationLineage;
+      name: string;
+    }): Promise<{ workbookId: WorkbookId }>;
   }): Promise<QuestionBlueprintDraft | null>;
   completeQuestionGenerationRun(input: {
     run: QuestionGenerationRun;
@@ -51,9 +60,6 @@ export interface QuestionsRepository {
     draft: QuestionBlueprintDraft;
     resolution: "created" | "resumed";
   }>;
-  createQuestionBlueprint(
-    blueprint: QuestionBlueprint,
-  ): Promise<QuestionBlueprint>;
   createQuestionBlueprintDraft(
     draft: QuestionBlueprintDraft,
   ): Promise<QuestionBlueprintDraft>;
@@ -142,13 +148,9 @@ export interface QuestionsRepository {
     questionSetId: QuestionSetId;
     questionId: QuestionId;
   }): Promise<void>;
-  updateQuestionBlueprint(
+  saveQuestionBlueprintLifecycleState(
     blueprint: QuestionBlueprint,
   ): Promise<QuestionBlueprint | null>;
-  updateQuestionBlueprintDefinition(input: {
-    blueprint: QuestionBlueprint;
-    versionId: QuestionBlueprintVersionId;
-  }): Promise<QuestionBlueprint | null>;
   updateQuestionBlueprintDraftWithExpectedRevision(input: {
     draft: QuestionBlueprintDraft;
     expectedRevision: number;

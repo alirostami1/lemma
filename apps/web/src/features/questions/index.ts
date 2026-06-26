@@ -1,3 +1,4 @@
+export { QuestionBlueprintDetailPage } from "./question-blueprints/question-blueprint-detail-page";
 export { QuestionDetailPage } from "./question-sets/question-detail-page";
 export { QuestionSetDetailPage } from "./question-sets/question-set-detail-page";
 export { QuestionSetListPage } from "./question-sets/question-set-list-page";
