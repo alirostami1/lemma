@@ -1,0 +1,13 @@
+# GitHub Linguist: collapse generated files in PR diffs and exclude them from language stats.
+# Generated files remain tracked and must still be regenerated from their source.
+
+apps/web/src/api/generated/** linguist-generated=true
+apps/web/src/routeTree.gen.ts linguist-generated=true
+
+packages/files/src/generated/** linguist-generated=true
+packages/identity/src/generated/** linguist-generated=true
+packages/ops/src/generated/** linguist-generated=true
+packages/questions/src/generated/** linguist-generated=true
+packages/workbook/src/generated/** linguist-generated=true
+
+packages/db/src/types.d.ts linguist-generated=true
