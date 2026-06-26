@@ -196,7 +196,7 @@ export function useBlueprintDraftController({
       return;
     }
     if (loadedServerDraftQuery.isError) {
-      const message = "Draft could not be loaded.";
+      const message = "Blueprint could not be loaded.";
       setLoadError(message);
       setDraftLoadState({ message, status: "query_error" });
       return;
@@ -210,7 +210,7 @@ export function useBlueprintDraftController({
           questionBlueprintDocumentToComposedEditorModel(serverDraft.document),
         );
     } catch {
-      const message = "Draft could not be loaded.";
+      const message = "Blueprint could not be loaded.";
       setLoadError(message);
       setDraftLoadState({ message, status: "document_error" });
       return;

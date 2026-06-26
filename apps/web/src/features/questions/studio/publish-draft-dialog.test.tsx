@@ -8,7 +8,7 @@ import {
 } from "./publish-draft-dialog";
 
 describe("PublishDraftDialog", () => {
-  it("uses draft publish semantics without old save modes", () => {
+  it("uses publish semantics without old save modes", () => {
     render(
       <PublishDraftDialog
         isPublishing={false}
@@ -24,11 +24,9 @@ describe("PublishDraftDialog", () => {
     );
 
     expect(
-      screen.getByRole("heading", { name: "Publish draft" }),
+      screen.getByRole("heading", { name: "Publish" }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /publish draft/i }),
-    ).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Publish" })).toBeEnabled();
     expect(screen.queryByText(/save as new/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/update existing/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/name/i)).not.toBeInTheDocument();
@@ -50,14 +48,14 @@ describe("PublishDraftDialog", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /publish draft/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Publish" }));
 
     expect(onPublish).toHaveBeenCalledWith();
   });
 });
 
 describe("createPublishDraftDialogViewModel", () => {
-  it("blocks publish when the draft has a validation issue", () => {
+  it("blocks publish when the blueprint has a validation issue", () => {
     const viewModel = createPublishDraftDialogViewModel(
       {
         currentName: "Draft",

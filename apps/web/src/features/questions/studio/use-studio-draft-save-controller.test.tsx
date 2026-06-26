@@ -87,7 +87,7 @@ describe("useStudioDraftSaveController", () => {
 
     await waitFor(() => {
       expect(result.current.commandBarSave.saveError).toBe(
-        "Draft revision is missing.",
+        "Loaded blueprint revision is missing.",
       );
     });
 
@@ -95,7 +95,7 @@ describe("useStudioDraftSaveController", () => {
     expect(onDraftSaved).not.toHaveBeenCalled();
   });
 
-  it("blocks Save draft when name is missing", async () => {
+  it("blocks save when name is missing", async () => {
     const { result } = renderHook(() =>
       useStudioDraftSaveController({
         authoringModel: createModel(),
@@ -133,7 +133,7 @@ describe("useStudioDraftSaveController", () => {
     expect(fileUploadMocks.createFileUpload).not.toHaveBeenCalled();
   });
 
-  it("blocks Save draft when workbook-backed references are missing sources", async () => {
+  it("blocks save when workbook-backed references are missing sources", async () => {
     const { result } = renderHook(() =>
       useStudioDraftSaveController({
         authoringModel: createModel(),
@@ -799,7 +799,7 @@ describe("useStudioDraftSaveController", () => {
       expect(result.current.conflict?.type).toBe("revision_conflict");
     });
     expect(result.current.commandBarSave.saveError).toContain(
-      "Reload the latest draft",
+      "Reload the latest version",
     );
   });
 

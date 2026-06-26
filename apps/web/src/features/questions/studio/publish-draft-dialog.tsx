@@ -49,7 +49,7 @@ export function PublishDraftDialog({
       ),
     [isPublishing, isSavingBeforePublish, state],
   );
-  let publishButtonLabel = "Publish draft";
+  let publishButtonLabel = "Publish";
   if (isPublishing) {
     publishButtonLabel = "Publishing...";
   } else if (isSavingBeforePublish) {
@@ -72,7 +72,7 @@ export function PublishDraftDialog({
           }}
         >
           <DialogHeader>
-            <DialogTitle>Publish draft</DialogTitle>
+            <DialogTitle>Publish</DialogTitle>
             <DialogDescription>{viewModel.description}</DialogDescription>
           </DialogHeader>
 
@@ -110,10 +110,10 @@ export function createPublishDraftDialogViewModel(
 ): PublishDraftDialogViewModel {
   return {
     description:
-      "This will create a new immutable published blueprint version from the current draft.",
+      "This will create a new immutable published blueprint version.",
     disabledIssue: state.validationIssue,
     isPublishDisabled:
       isPublishing || isSavingBeforePublish || state.validationIssue !== null,
-    summary: `Draft "${state.currentName.trim() || "Untitled draft"}" will be saved, published, and locked as a versioned blueprint.`,
+    summary: `"${state.currentName.trim() || "Untitled blueprint"}" will be saved, published, and locked as a versioned blueprint.`,
   };
 }

@@ -73,7 +73,7 @@ export function StudioCommandBar({
 }: StudioCommandBarProps) {
   const status = getSaveStatusLabel({ routeSearch, saveState });
   const StatusIcon = status.Icon;
-  let publishButtonLabel = "Publish draft";
+  let publishButtonLabel = "Publish";
   if (isPublishing) {
     publishButtonLabel = "Publishing...";
   } else if (isSaving) {
@@ -94,10 +94,10 @@ export function StudioCommandBar({
             </div>
             <div className="grid gap-2 sm:grid-cols-[minmax(12rem,24rem)_minmax(12rem,1fr)]">
               <label className="sr-only" htmlFor="studio-blueprint-name">
-                Draft name
+                Blueprint name
               </label>
               <Input
-                aria-label="Draft name"
+                aria-label="Blueprint name"
                 className="h-9 font-medium"
                 id="studio-blueprint-name"
                 maxLength={160}
@@ -107,10 +107,10 @@ export function StudioCommandBar({
                 value={blueprintName}
               />
               <label className="sr-only" htmlFor="studio-blueprint-description">
-                Draft description
+                Blueprint description
               </label>
               <Input
-                aria-label="Draft description"
+                aria-label="Blueprint description"
                 className="h-9"
                 id="studio-blueprint-description"
                 maxLength={500}
@@ -156,7 +156,7 @@ export function StudioCommandBar({
               variant="outline"
             >
               <Cloud />
-              Save draft
+              Save
             </Button>
             <Button
               disabled={!canGenerate}
@@ -187,7 +187,7 @@ export function StudioCommandBar({
               type="button"
               variant="destructive"
             >
-              Reload latest draft
+              Reload latest version
             </Button>
           </div>
         ) : saveError ? (
@@ -242,26 +242,26 @@ function getSaveStatusLabel(input: {
     if (input.saveState === "saving") {
       return {
         Icon: LoaderCircle,
-        label: "Saving draft",
+        label: "Saving",
         variant: "outline",
       };
     }
     if (input.saveState === "failed") {
       return {
         Icon: AlertCircle,
-        label: "Draft save failed",
+        label: "Save failed",
         variant: "destructive",
       };
     }
     if (input.saveState === "saved") {
-      return { Icon: CheckCircle2, label: "Draft saved", variant: "secondary" };
+      return { Icon: CheckCircle2, label: "Saved", variant: "secondary" };
     }
     if (input.saveState === "autosaved") {
-      return { Icon: Cloud, label: "Draft", variant: "outline" };
+      return { Icon: Cloud, label: "Autosaved locally", variant: "outline" };
     }
     return {
       Icon: AlertCircle,
-      label: "Draft",
+      label: "Unsaved changes",
       variant: "outline",
     };
   }
@@ -270,41 +270,41 @@ function getSaveStatusLabel(input: {
     if (input.saveState === "saving") {
       return {
         Icon: LoaderCircle,
-        label: "Saving draft",
+        label: "Saving",
         variant: "outline",
       };
     }
     if (input.saveState === "failed") {
       return {
         Icon: AlertCircle,
-        label: "Draft save failed",
+        label: "Save failed",
         variant: "destructive",
       };
     }
     if (input.saveState === "saved") {
       return {
         Icon: CheckCircle2,
-        label: "Draft",
+        label: "Saved",
         variant: "secondary",
       };
     }
     if (input.saveState === "autosaved") {
       return {
         Icon: CheckCircle2,
-        label: "Draft",
+        label: "Autosaved locally",
         variant: "outline",
       };
     }
     return {
       Icon: CheckCircle2,
-      label: "Draft",
+      label: "Unsaved changes",
       variant: "outline",
     };
   }
 
   switch (input.saveState) {
     case "saved":
-      return { Icon: CheckCircle2, label: "Unsaved draft", variant: "outline" };
+      return { Icon: CheckCircle2, label: "Saved", variant: "outline" };
     case "autosaved":
       return { Icon: Cloud, label: "Autosaved locally", variant: "outline" };
     case "saving":
@@ -318,7 +318,7 @@ function getSaveStatusLabel(input: {
     case "unsaved":
       return {
         Icon: AlertCircle,
-        label: "Unsaved draft",
+        label: "Unsaved changes",
         variant: "outline",
       };
   }

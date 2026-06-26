@@ -44,28 +44,28 @@ export function StudioLandingPage() {
             Choose how to start.
           </h1>
           <p className="max-w-2xl text-muted-foreground">
-            Create a new draft, continue saved draft work, or open a published
-            blueprint as an edit draft.
+            Start a new blueprint, continue where you left off, or open a
+            published blueprint.
           </p>
         </div>
 
         <div className="grid gap-3 md:grid-cols-3">
           <StudioLandingAction
-            description="Start an untargeted draft and move into the editor."
+            description="Start from a blank blueprint."
             icon={<FilePlus2 />}
             onClick={() =>
               void navigateToNewStudioDraft(navigate, { replace: false })
             }
-            title="Create new blueprint"
+            title="Start a new blueprint"
           />
           <StudioLandingAction
-            description="Pick from recent server drafts."
+            description="Pick up recent work."
             icon={<FolderOpen />}
             onClick={() => setIsOpenDialogOpen(true)}
-            title="Continue draft"
+            title="Continue where you left off"
           />
           <StudioLandingAction
-            description="Pick a published blueprint and resume or create an edit draft."
+            description="Open a published blueprint for changes."
             icon={<PenLine />}
             onClick={() => setIsOpenDialogOpen(true)}
             title="Edit published blueprint"

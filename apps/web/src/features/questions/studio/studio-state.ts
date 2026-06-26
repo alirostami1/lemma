@@ -99,7 +99,7 @@ export function getStudioGenerateState(): Pick<
 > {
   return {
     canGenerate: false,
-    generateDisabledReason: "Publish this draft before generating questions.",
+    generateDisabledReason: "Publish before generating questions.",
   };
 }
 

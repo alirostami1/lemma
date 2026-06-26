@@ -93,7 +93,7 @@ describe("studio state", () => {
       }),
     ).toMatchObject({
       canGenerate: false,
-      generateDisabledReason: "Publish this draft before generating questions.",
+      generateDisabledReason: "Publish before generating questions.",
       phase: "dirty",
       saveState: "autosaved",
     });

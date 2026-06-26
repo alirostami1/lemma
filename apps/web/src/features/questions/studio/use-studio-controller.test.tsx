@@ -396,7 +396,7 @@ describe("useStudioController", () => {
 
     expect(result.current.commandBar.canGenerate).toBe(false);
     expect(result.current.commandBar.generateDisabledReason).toBe(
-      "Publish this draft before generating questions.",
+      "Publish before generating questions.",
     );
   });
 
