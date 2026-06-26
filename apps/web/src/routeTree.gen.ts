@@ -16,6 +16,7 @@ import { Route as LayoutQuestionSetsRouteImport } from './routes/_layout.questio
 import { Route as LayoutCreateRouteImport } from './routes/_layout.create'
 import { Route as LayoutQuestionSetsIndexRouteImport } from './routes/_layout.question-sets.index'
 import { Route as LayoutQuestionSetsQuestionSetIdRouteImport } from './routes/_layout.question-sets.$questionSetId'
+import { Route as LayoutQuestionBlueprintsQuestionBlueprintIdRouteImport } from './routes/_layout.question-blueprints.$questionBlueprintId'
 import { Route as LayoutQuestionSetsQuestionSetIdQuestionsQuestionIdRouteImport } from './routes/_layout.question-sets.$questionSetId_.questions.$questionId'
 
 const LayoutRoute = LayoutRouteImport.update({
@@ -53,6 +54,12 @@ const LayoutQuestionSetsQuestionSetIdRoute =
     path: '/$questionSetId',
     getParentRoute: () => LayoutQuestionSetsRoute,
   } as any)
+const LayoutQuestionBlueprintsQuestionBlueprintIdRoute =
+  LayoutQuestionBlueprintsQuestionBlueprintIdRouteImport.update({
+    id: '/question-blueprints/$questionBlueprintId',
+    path: '/question-blueprints/$questionBlueprintId',
+    getParentRoute: () => LayoutRoute,
+  } as any)
 const LayoutQuestionSetsQuestionSetIdQuestionsQuestionIdRoute =
   LayoutQuestionSetsQuestionSetIdQuestionsQuestionIdRouteImport.update({
     id: '/$questionSetId_/questions/$questionId',
@@ -65,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/create': typeof LayoutCreateRoute
   '/question-sets': typeof LayoutQuestionSetsRouteWithChildren
   '/studio': typeof LayoutStudioRoute
+  '/question-blueprints/$questionBlueprintId': typeof LayoutQuestionBlueprintsQuestionBlueprintIdRoute
   '/question-sets/$questionSetId': typeof LayoutQuestionSetsQuestionSetIdRoute
   '/question-sets/': typeof LayoutQuestionSetsIndexRoute
   '/question-sets/$questionSetId/questions/$questionId': typeof LayoutQuestionSetsQuestionSetIdQuestionsQuestionIdRoute
@@ -73,6 +81,7 @@ export interface FileRoutesByTo {
   '/create': typeof LayoutCreateRoute
   '/studio': typeof LayoutStudioRoute
   '/': typeof LayoutIndexRoute
+  '/question-blueprints/$questionBlueprintId': typeof LayoutQuestionBlueprintsQuestionBlueprintIdRoute
   '/question-sets/$questionSetId': typeof LayoutQuestionSetsQuestionSetIdRoute
   '/question-sets': typeof LayoutQuestionSetsIndexRoute
   '/question-sets/$questionSetId/questions/$questionId': typeof LayoutQuestionSetsQuestionSetIdQuestionsQuestionIdRoute
@@ -84,6 +93,7 @@ export interface FileRoutesById {
   '/_layout/question-sets': typeof LayoutQuestionSetsRouteWithChildren
   '/_layout/studio': typeof LayoutStudioRoute
   '/_layout/': typeof LayoutIndexRoute
+  '/_layout/question-blueprints/$questionBlueprintId': typeof LayoutQuestionBlueprintsQuestionBlueprintIdRoute
   '/_layout/question-sets/$questionSetId': typeof LayoutQuestionSetsQuestionSetIdRoute
   '/_layout/question-sets/': typeof LayoutQuestionSetsIndexRoute
   '/_layout/question-sets/$questionSetId_/questions/$questionId': typeof LayoutQuestionSetsQuestionSetIdQuestionsQuestionIdRoute
@@ -95,6 +105,7 @@ export interface FileRouteTypes {
     | '/create'
     | '/question-sets'
     | '/studio'
+    | '/question-blueprints/$questionBlueprintId'
     | '/question-sets/$questionSetId'
     | '/question-sets/'
     | '/question-sets/$questionSetId/questions/$questionId'
@@ -103,6 +114,7 @@ export interface FileRouteTypes {
     | '/create'
     | '/studio'
     | '/'
+    | '/question-blueprints/$questionBlueprintId'
     | '/question-sets/$questionSetId'
     | '/question-sets'
     | '/question-sets/$questionSetId/questions/$questionId'
@@ -113,6 +125,7 @@ export interface FileRouteTypes {
     | '/_layout/question-sets'
     | '/_layout/studio'
     | '/_layout/'
+    | '/_layout/question-blueprints/$questionBlueprintId'
     | '/_layout/question-sets/$questionSetId'
     | '/_layout/question-sets/'
     | '/_layout/question-sets/$questionSetId_/questions/$questionId'
@@ -173,6 +186,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutQuestionSetsQuestionSetIdRouteImport
       parentRoute: typeof LayoutQuestionSetsRoute
     }
+    '/_layout/question-blueprints/$questionBlueprintId': {
+      id: '/_layout/question-blueprints/$questionBlueprintId'
+      path: '/question-blueprints/$questionBlueprintId'
+      fullPath: '/question-blueprints/$questionBlueprintId'
+      preLoaderRoute: typeof LayoutQuestionBlueprintsQuestionBlueprintIdRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/question-sets/$questionSetId_/questions/$questionId': {
       id: '/_layout/question-sets/$questionSetId_/questions/$questionId'
       path: '/$questionSetId/questions/$questionId'
@@ -204,6 +224,7 @@ interface LayoutRouteChildren {
   LayoutQuestionSetsRoute: typeof LayoutQuestionSetsRouteWithChildren
   LayoutStudioRoute: typeof LayoutStudioRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
+  LayoutQuestionBlueprintsQuestionBlueprintIdRoute: typeof LayoutQuestionBlueprintsQuestionBlueprintIdRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
@@ -211,6 +232,8 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutQuestionSetsRoute: LayoutQuestionSetsRouteWithChildren,
   LayoutStudioRoute: LayoutStudioRoute,
   LayoutIndexRoute: LayoutIndexRoute,
+  LayoutQuestionBlueprintsQuestionBlueprintIdRoute:
+    LayoutQuestionBlueprintsQuestionBlueprintIdRoute,
 }
 
 const LayoutRouteWithChildren =

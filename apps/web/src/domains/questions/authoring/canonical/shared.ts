@@ -341,11 +341,7 @@ export function fromCanonicalTableAnswerFieldId(
   return fieldId.startsWith(prefix) ? fieldId.slice(prefix.length) : fieldId;
 }
 
-export function toCanonicalTableCellId(
-  tableBlockId: string,
-  cellId: string,
-): string {
-  void tableBlockId;
+export function toCanonicalTableCellId(cellId: string): string {
   return cellId;
 }
 

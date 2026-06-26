@@ -9,7 +9,6 @@ import {
   AlertDialogTitle,
 } from "@lemma/ui/components/alert-dialog";
 import type {
-  StudioBlueprintOpenWarningState,
   StudioDraftRecoveryState,
   StudioResetConfirmationState,
 } from "./use-blueprint-draft-controller";
@@ -43,39 +42,6 @@ export function StudioDraftRecoveryDialog({
           </AlertDialogCancel>
           <AlertDialogAction onClick={onRestore}>
             Restore draft
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-}
-
-export function StudioBlueprintOpenWarningDialog({
-  open,
-  snapshot,
-  onCancel,
-  onContinue,
-}: StudioBlueprintOpenWarningState) {
-  const savedAt = snapshot
-    ? new Date(snapshot.lastLocalSaveTimestamp).toLocaleString()
-    : "";
-
-  return (
-    <AlertDialog open={open}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Open saved blueprint?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Opening this blueprint replaces the current Studio draft. Local
-            changes from {savedAt} will be discarded.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>
-            Keep current draft
-          </AlertDialogCancel>
-          <AlertDialogAction onClick={onContinue}>
-            Open blueprint
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

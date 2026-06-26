@@ -1,8 +1,5 @@
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
-import type {
-  QuestionBlueprintWorkbookSource,
-  QuestionGenerationRun,
-} from "#/domains/questions/model";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import type { LocalWorkbookParseResult } from "#/domains/workbooks/local-xlsx";
 import type {
@@ -11,30 +8,31 @@ import type {
   WorkbookRangeSelection,
 } from "#/features/questions/table-block-editor";
 import type { WorkbookPickerSheet } from "#/features/questions/use-workbook-picker-cells";
-import type { GenerateQuestionsDialogProps } from "./generation/generation-controller-types";
-import type {
-  SaveBlueprintDialogInput,
-  SaveDialogState,
-} from "./save-blueprint-dialog";
+import type { PublishDraftDialogState } from "./publish-draft-dialog";
+import type { SavedBlueprintsDialogBlueprintAction } from "./saved-blueprints-dialog";
 import type {
   SavedBlueprintListItem,
   SavedDraftListItem,
 } from "./saved-blueprints-view-model";
 import type { SourceController } from "./source/use-source-controller";
 import type { StudioReadiness } from "./studio-readiness";
+import type {
+  StudioRouteIntent,
+  StudioRouteSearch,
+} from "./studio-route-intent";
 import type { StudioState } from "./studio-state";
 import type {
-  StudioBlueprintOpenWarningState,
+  StudioDraftLoadState,
   StudioDraftRecoveryState,
   StudioResetConfirmationState,
 } from "./use-blueprint-draft-controller";
+import type { DraftSaveConflict } from "./use-studio-draft-save-controller";
 
-export type StudioRouteSearch = {
-  blueprintId?: string;
-  draftId?: string;
-};
+export type { StudioRouteIntent, StudioRouteSearch };
 
 export type StudioController = {
+  routeIntent: StudioRouteIntent;
+  draftLoadState: StudioDraftLoadState;
   state: StudioState;
   commandBar: {
     blueprintDescription: string;
@@ -45,19 +43,20 @@ export type StudioController = {
     canUndo: boolean;
     generateDisabledReason: string | null;
     isSaving: boolean;
+    isPublishing: boolean;
     saveState: "saved" | "unsaved" | "saving" | "autosaved" | "failed";
     saveError: string | null;
+    saveConflict: DraftSaveConflict | null;
     onBlueprintDescriptionChange(description: string): void;
     onBlueprintNameChange(name: string): void;
-    onGenerate(): void;
-    onOpenSaveDialog(): void;
+    onOpenPublishDialog(): void;
+    onReloadLatestDraft(): void;
     onSaveDraft(): void;
     onOpenSavedBlueprints(): void;
     onReset(): void;
     onRedo(): void;
     onUndo(): void;
   };
-  blueprintOpenWarning: StudioBlueprintOpenWarningState;
   draftRecovery: StudioDraftRecoveryState;
   resetConfirmation: StudioResetConfirmationState;
   source: SourceController;
@@ -87,24 +86,17 @@ export type StudioController = {
     onRetry(): void;
     onLoadMoreDrafts(): void;
     onLoadMoreBlueprints(): void;
-    onOpenBlueprint(id: string): void;
     onOpenDraft(id: string): void;
-    onGenerate(id: string): void;
+    blueprintAction: SavedBlueprintsDialogBlueprintAction;
   };
-  generationStatus: {
-    run: QuestionGenerationRun | null;
-    errorMessage: string | null;
-    isRetrying: boolean;
-    onRetry(): void;
-  };
-  saveDialog: {
+  publishDialog: {
     open: boolean;
-    state: SaveDialogState;
-    isSaving: boolean;
+    state: PublishDraftDialogState;
+    isSavingBeforePublish: boolean;
+    isPublishing: boolean;
     onOpenChange(open: boolean): void;
-    onSave(input: SaveBlueprintDialogInput): void;
+    onPublish(): void;
   };
-  generateDialog: GenerateQuestionsDialogProps;
   workbookPicker: {
     localWorkbook: LocalWorkbookParseResult | null;
     workbookSnapshotId: string | null;

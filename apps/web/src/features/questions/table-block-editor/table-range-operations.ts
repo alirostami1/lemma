@@ -29,9 +29,7 @@ export function createTableFromWorkbookRangeReference(input: {
   currentModel: TableEditorModel;
   rangeReference: WorkbookRangeReferenceDraft;
   values: WorkbookRangeMatrix;
-  existingReferenceIds: string[];
 }): TableFromWorkbookRangeResult {
-  void input.existingReferenceIds;
   const shape = validateWorkbookRangeMatrix(input.values);
   const rangeRef = parseWorkbookRef(input.rangeReference.source.ref);
   if (!rangeRef) {
@@ -155,7 +153,6 @@ export function applyWorkbookRangeReferenceToTableBlock(input: {
   try {
     result = createTableFromWorkbookRangeReference({
       currentModel: tableBlock.table,
-      existingReferenceIds: input.editorModel.references.map((item) => item.id),
       rangeReference: reference,
       values: preview.rawValue,
     });

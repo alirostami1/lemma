@@ -9,6 +9,7 @@ import {
 } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import { WorkbookPickerProvider } from "#/features/questions/table-block-editor";
 import { ReferenceEditor } from "./reference-editor";
 
@@ -178,16 +179,18 @@ function createWorkbookModel(): ComposedEditorModel {
   };
 }
 
-function workbookSources() {
+function workbookSources(): QuestionBlueprintWorkbookSource[] {
   return [
     {
       name: "Source Two",
       sourceId: "source_2",
+      type: "workbook",
       workbookId: "workbook_2",
     },
     {
       name: "Source Three",
       sourceId: "source_3",
+      type: "workbook",
       workbookId: "workbook_3",
     },
   ];

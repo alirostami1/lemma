@@ -10,8 +10,8 @@ import {
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   attachQuestionBlueprintDraftSourceFile,
-  createQuestionBlueprint,
   createQuestionBlueprintDraft,
+  createQuestionBlueprintEditDraft,
   createQuestionGenerationRun,
   createQuestionSet,
   getQuestion,
@@ -27,14 +27,13 @@ import {
   listQuestionSets,
   publishQuestionBlueprintDraft,
   retryQuestionGenerationRun,
-  updateQuestionBlueprint,
   updateQuestionBlueprintDraft,
 } from "./api";
 import { questionKeys } from "./keys";
 import type {
   AttachQuestionBlueprintDraftSourceFileInput,
   CreateQuestionBlueprintDraftInput,
-  CreateQuestionBlueprintInput,
+  CreateQuestionBlueprintEditDraftInput,
   CreateQuestionGenerationRunInput,
   CreateQuestionSetInput,
   GetQuestionBlueprintInput,
@@ -45,10 +44,12 @@ import type {
   ListQuestionBlueprintsInput,
   ListQuestionSetItemsInput,
   ListQuestionSetsInput,
+  PublishQuestionBlueprintDraftInput,
   PublishQuestionBlueprintDraftResult,
   QuestionBlueprintAuthoringResult,
   QuestionBlueprintDraftResult,
   QuestionBlueprintDraftSummariesPage,
+  QuestionBlueprintEditDraftResult,
   QuestionBlueprintResult,
   QuestionBlueprintsPage,
   QuestionGenerationRunResult,
@@ -59,7 +60,6 @@ import type {
   QuestionsPage,
   RetryQuestionGenerationRunInput,
   UpdateQuestionBlueprintDraftInput,
-  UpdateQuestionBlueprintInput,
 } from "./model";
 
 export function useQuestionBlueprintDraftQuery(
@@ -85,6 +85,19 @@ export function useCreateQuestionBlueprintDraft(
   >,
 ) {
   return useMutation({ mutationFn: createQuestionBlueprintDraft, ...options });
+}
+
+export function useCreateQuestionBlueprintEditDraft(
+  options?: UseMutationOptions<
+    QuestionBlueprintEditDraftResult,
+    Error,
+    CreateQuestionBlueprintEditDraftInput
+  >,
+) {
+  return useMutation({
+    mutationFn: createQuestionBlueprintEditDraft,
+    ...options,
+  });
 }
 
 export function useUpdateQuestionBlueprintDraft(
@@ -114,7 +127,7 @@ export function usePublishQuestionBlueprintDraft(
   options?: UseMutationOptions<
     PublishQuestionBlueprintDraftResult,
     Error,
-    string
+    PublishQuestionBlueprintDraftInput
   >,
 ) {
   return useMutation({
@@ -387,66 +400,6 @@ export function useCreateQuestionSet(
       );
       await queryClient.invalidateQueries({
         queryKey: questionKeys.questionSets(),
-      });
-      await options?.onSuccess?.(result, variables, onMutateResult, context);
-    },
-  });
-}
-
-export function useCreateQuestionBlueprint(
-  options?: UseMutationOptions<
-    QuestionBlueprintResult,
-    Error,
-    CreateQuestionBlueprintInput
-  >,
-) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: createQuestionBlueprint,
-    ...options,
-    onSuccess: async (result, variables, onMutateResult, context) => {
-      queryClient.setQueryData(
-        questionKeys.questionBlueprintDetail(result.questionBlueprint.id),
-        result,
-      );
-      await queryClient.invalidateQueries({
-        queryKey: questionKeys.questionBlueprintAuthoring(
-          result.questionBlueprint.id,
-        ),
-      });
-      await queryClient.invalidateQueries({
-        queryKey: questionKeys.questionBlueprints(),
-      });
-      await options?.onSuccess?.(result, variables, onMutateResult, context);
-    },
-  });
-}
-
-export function useUpdateQuestionBlueprint(
-  options?: UseMutationOptions<
-    QuestionBlueprintResult,
-    Error,
-    UpdateQuestionBlueprintInput
-  >,
-) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: updateQuestionBlueprint,
-    ...options,
-    onSuccess: async (result, variables, onMutateResult, context) => {
-      queryClient.setQueryData(
-        questionKeys.questionBlueprintDetail(result.questionBlueprint.id),
-        result,
-      );
-      await queryClient.invalidateQueries({
-        queryKey: questionKeys.questionBlueprintAuthoring(
-          result.questionBlueprint.id,
-        ),
-      });
-      await queryClient.invalidateQueries({
-        queryKey: questionKeys.questionBlueprints(),
       });
       await options?.onSuccess?.(result, variables, onMutateResult, context);
     },

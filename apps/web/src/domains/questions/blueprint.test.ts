@@ -169,7 +169,6 @@ describe("composed blueprint conversions", () => {
 
     const result = createTableFromWorkbookRangeReference({
       currentModel,
-      existingReferenceIds: ["range"],
       rangeReference: {
         id: "range",
         source: {

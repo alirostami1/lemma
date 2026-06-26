@@ -4,6 +4,7 @@ import {
   useQuestionBlueprintsInfiniteQuery,
 } from "#/domains/questions";
 import type { QuestionBlueprint } from "#/domains/questions/model";
+import type { SavedBlueprintsDialogBlueprintAction } from "./saved-blueprints-dialog";
 import {
   buildSavedBlueprintsViewModel,
   buildSavedDraftsViewModel,
@@ -15,13 +16,11 @@ const BLUEPRINT_PAGE_SIZE = 12;
 const DRAFT_PAGE_SIZE = 10;
 
 export function useSavedBlueprintsController({
-  onOpenBlueprint,
   onOpenDraft,
-  onGenerateBlueprint,
+  onEditBlueprintAsDraft,
 }: {
-  onOpenBlueprint(blueprintId: string): void;
   onOpenDraft(draftId: string): void;
-  onGenerateBlueprint(blueprint: QuestionBlueprint): void;
+  onEditBlueprintAsDraft(blueprint: QuestionBlueprint): void;
 }) {
   const draftsQuery = useQuestionBlueprintDraftsInfiniteQuery({
     limit: DRAFT_PAGE_SIZE,
@@ -73,11 +72,13 @@ export function useSavedBlueprintsController({
     loadMoreErrorMessage: blueprintsQuery.isFetchNextPageError
       ? "More saved blueprints could not be loaded."
       : null,
-    onGenerate: (id: string) => {
-      const blueprint = blueprintById.get(id);
-      if (blueprint) {
-        onGenerateBlueprint(blueprint);
-      }
+    blueprintAction: {
+      onEditAsDraft: (id: string) => {
+        const blueprint = blueprintById.get(id);
+        if (blueprint) {
+          onEditBlueprintAsDraft(blueprint);
+        }
+      },
     },
     onLoadMoreBlueprints: () => {
       void blueprintsQuery.fetchNextPage();
@@ -85,7 +86,6 @@ export function useSavedBlueprintsController({
     onLoadMoreDrafts: () => {
       void draftsQuery.fetchNextPage();
     },
-    onOpenBlueprint,
     onOpenDraft,
     onRetry: () => {
       void draftsQuery.refetch();
@@ -108,7 +108,6 @@ export function useSavedBlueprintsController({
     onLoadMoreDrafts(): void;
     onLoadMoreBlueprints(): void;
     onOpenDraft(id: string): void;
-    onOpenBlueprint(id: string): void;
-    onGenerate(id: string): void;
+    blueprintAction: SavedBlueprintsDialogBlueprintAction;
   };
 }

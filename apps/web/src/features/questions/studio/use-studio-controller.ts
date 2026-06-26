@@ -1,5 +1,7 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { questionKeys } from "#/domains/questions/keys";
 import { createWorkbookSelectionCacheKey } from "#/domains/questions/reference-preview";
 import { normalizeWorkbookRef } from "#/domains/questions/workbook-reference";
 import type {
@@ -17,16 +19,14 @@ import type {
   StudioController,
   StudioRouteSearch,
 } from "./studio-controller-types";
-import {
-  getFirstReadinessIssueMessage,
-  getStudioReadiness,
-} from "./studio-readiness";
+import { getStudioReadiness } from "./studio-readiness";
+import { parseStudioRouteIntent } from "./studio-route-intent";
 import { getStudioState } from "./studio-state";
 import { useBlueprintDraftController } from "./use-blueprint-draft-controller";
-import { useGenerateQuestionsController } from "./use-generate-questions-controller";
 import { useReferencePreviewController } from "./use-reference-preview-controller";
-import { useSaveBlueprintController } from "./use-save-blueprint-controller";
 import { useSavedBlueprintsController } from "./use-saved-blueprints-controller";
+import { useStudioDraftSaveController } from "./use-studio-draft-save-controller";
+import { useStudioUndoRedoHotkeys } from "./use-studio-undo-redo-hotkeys";
 
 export type { StudioRouteSearch } from "./studio-controller-types";
 
@@ -34,13 +34,10 @@ export function useStudioController(
   input: StudioRouteSearch = {},
 ): StudioController {
   const navigate = useNavigate();
-  const initialBlueprintId = input.blueprintId ?? "";
-  const initialDraftId = input.draftId ?? "";
-  const routeHasDraftId = initialDraftId.length > 0;
-  const routeHasBlueprintId = initialBlueprintId.length > 0;
-  const routeHasBlueprintOnly = routeHasBlueprintId && !routeHasDraftId;
-  const routeHasBothParams = routeHasDraftId && routeHasBlueprintId;
-  const draftInitialBlueprintId = routeHasDraftId ? "" : initialBlueprintId;
+  const queryClient = useQueryClient();
+  const routeIntent = parseStudioRouteIntent(input);
+  const initialDraftId =
+    routeIntent.type === "edit_draft" ? routeIntent.draftId : "";
   const [workbookPickerRequest, setWorkbookPickerRequest] =
     useState<WorkbookPickerRequest | null>(null);
   const [
@@ -50,22 +47,8 @@ export function useStudioController(
   const [isSavedBlueprintsOpen, setIsSavedBlueprintsOpen] = useState(false);
 
   const draft = useBlueprintDraftController({
-    initialBlueprintId: draftInitialBlueprintId,
     initialDraftId,
   });
-
-  useEffect(() => {
-    if (routeHasBothParams) {
-      void navigateToStudioDraft(navigate, initialDraftId, { replace: true });
-    }
-  }, [
-    initialBlueprintId,
-    initialDraftId,
-    navigate,
-    routeHasBothParams,
-    routeHasDraftId,
-    routeHasBlueprintId,
-  ]);
 
   const draftStorage = useSourceController({
     loadWorkbookPickerPreview: workbookPickerRequest !== null,
@@ -108,41 +91,80 @@ export function useStudioController(
       }),
     [attachedSources, draft.authoringModel, draft.blueprintName],
   );
-  const save = useSaveBlueprintController({
+  const save = useStudioDraftSaveController({
     authoringModel: draft.authoringModel,
     blueprintDescription: draft.blueprintDescription,
     blueprintName: draft.blueprintName,
-    hasUnsavedChanges: draft.hasUnsavedChanges,
     initialDraftId: draft.serverDraftId,
-    loadedBlueprintId: draft.loadedBlueprintId,
-    onBlueprintPublished: ({ draftId }) => {
-      if (draftId) {
-        draft.clearServerDraftId();
-      }
-    },
-    onDraftSaved: ({ draftId }) => {
-      void navigateToStudioDraft(navigate, draftId, { replace: true });
-    },
-    onSaved: (saved) => {
-      draft.markSaved(saved);
-      draft.clearServerDraftId();
-      void navigateToStudioBlueprint(navigate, saved.blueprintId, {
-        replace: true,
+    initialDraftRevision: draft.serverDraftRevision,
+    onDraftPublished: (published) => {
+      const publishedBlueprintId = published.questionBlueprint.id;
+      const publishedVersionBlueprintId =
+        published.questionBlueprintVersion.blueprintId;
+
+      void queryClient.invalidateQueries({
+        queryKey: questionKeys.questionBlueprintDrafts(),
       });
+      void queryClient.invalidateQueries({
+        queryKey: questionKeys.questionBlueprintDraftDetail(published.draft.id),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: questionKeys.questionBlueprints(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: questionKeys.questionBlueprintDetail(publishedBlueprintId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: questionKeys.questionBlueprintAuthoring(
+          publishedVersionBlueprintId,
+        ),
+      });
+      void navigate({
+        params: { questionBlueprintId: publishedBlueprintId },
+        to: "/question-blueprints/$questionBlueprintId",
+      });
+    },
+    onDraftSaved: (saved) => {
+      draft.markServerDraftSaved(saved);
+      queryClient.setQueryData(
+        questionKeys.questionBlueprintDraftDetail(saved.draft.id),
+        { draft: saved.draft },
+      );
+      void queryClient.invalidateQueries({
+        queryKey: questionKeys.questionBlueprintDrafts(),
+      });
+      void navigateToStudioDraft(navigate, saved.draft.id, { replace: true });
     },
     onSourcesChange: draft.setSources,
     readiness,
     sources: draftStorage.sources,
   });
-  const generation = useGenerateQuestionsController();
   const savedBlueprints = useSavedBlueprintsController({
-    onGenerateBlueprint: generation.onGenerateBlueprint,
-    onOpenBlueprint: (blueprintId) => {
-      void navigateToStudioBlueprint(navigate, blueprintId, { replace: false });
+    onEditBlueprintAsDraft: (blueprint) => {
+      void navigateToStudioBlueprint(navigate, blueprint.id, {
+        replace: false,
+      });
     },
     onOpenDraft: (draftId) => {
       void navigateToStudioDraft(navigate, draftId, { replace: false });
     },
+  });
+
+  function handleUndo() {
+    save.markDraftChanged();
+    draft.undo();
+  }
+
+  function handleRedo() {
+    save.markDraftChanged();
+    draft.redo();
+  }
+
+  useStudioUndoRedoHotkeys({
+    canRedo: draft.canRedo,
+    canUndo: draft.canUndo,
+    redo: handleRedo,
+    undo: handleUndo,
   });
 
   useEffect(() => {
@@ -168,35 +190,21 @@ export function useStudioController(
     });
   }, [attachedSources]);
 
-  const generateReadinessIssue = getFirstReadinessIssueMessage(
-    readiness,
-    "generate_saved_blueprint",
-  );
-  const currentGenerationSource = draft.loadedBlueprintId
-    ? {
-        id: draft.loadedBlueprintId,
-        name: draft.blueprintName,
-        sources: attachedSources,
-      }
-    : null;
   const studioState = getStudioState({
-    activeGenerationRun: generation.generationStatus.run,
     hasUnsavedChanges: draft.hasUnsavedChanges,
-    isGenerationSubmitting: generation.generateDialog.isSubmitting,
     isLoadingBlueprint: draft.isLoadingBlueprint,
     isResetPending: draft.resetConfirmation.open,
     loadError: draft.loadError,
     loadedBlueprintId: draft.loadedBlueprintId,
     localDraftError: draft.localDraftError,
     localDraftStatus: draft.localDraftStatus,
-    readinessIssue: generateReadinessIssue,
     remoteSaveError: save.commandBarSave.saveError,
     remoteSaveIsSaving: save.commandBarSave.isSaving,
     restoredInitialLocalDraft: draft.restoredInitialLocalDraft,
   });
 
   return {
-    blueprintOpenWarning: draft.blueprintOpenWarning,
+    draftLoadState: draft.draftLoadState,
     commandBar: {
       blueprintDescription: draft.blueprintDescription,
       blueprintName: draft.blueprintName,
@@ -205,33 +213,29 @@ export function useStudioController(
       canUndo: draft.canUndo,
       generateDisabledReason: studioState.generateDisabledReason,
       isSaving: save.commandBarSave.isSaving,
+      isPublishing: save.commandBarSave.isPublishing,
       onBlueprintDescriptionChange: (description) => {
+        save.markDraftChanged();
         draft.setBlueprintDescription(description);
-        save.clearMessages();
       },
       onBlueprintNameChange: (name) => {
+        save.markDraftChanged();
         draft.setBlueprintName(name);
-        save.clearMessages();
       },
-      onGenerate: () => {
-        if (currentGenerationSource && studioState.canGenerate) {
-          generation.onGenerateBlueprint(currentGenerationSource);
-        }
-      },
-      onOpenSaveDialog: save.commandBarSave.onOpenSaveDialog,
+      onOpenPublishDialog: save.commandBarSave.onOpenPublishDialog,
+      onReloadLatestDraft: save.onReloadLatestDraft,
       onOpenSavedBlueprints: () => setIsSavedBlueprintsOpen(true),
-      onRedo: draft.redo,
+      onRedo: handleRedo,
       onReset: draft.requestReset,
       onSaveDraft: save.commandBarSave.onSaveDraft,
-      onUndo: draft.undo,
+      onUndo: handleUndo,
       routeSearch: toStudioSearch(
-        routeHasDraftId
+        routeIntent.type === "edit_draft"
           ? { draftId: initialDraftId, kind: "draft" }
-          : routeHasBlueprintOnly
-            ? { blueprintId: initialBlueprintId, kind: "blueprint" }
-            : { kind: "blank" },
+          : { kind: "blank" },
       ),
       saveError: studioState.saveError,
+      saveConflict: save.conflict,
       saveState: studioState.saveState,
     },
     draftRecovery: draft.draftRecovery,
@@ -239,24 +243,32 @@ export function useStudioController(
       authoringModel: draft.authoringModel,
       canUseWorkbookTools,
       onAuthoringModelChange: (model) => {
+        save.markDraftChanged();
         draft.setAuthoringModel(model);
-        save.clearMessages();
       },
       referencePreviewCache: referencePreview.referencePreviewCache,
       sources: editorSources,
       workbookSheetNamesBySourceId,
     },
-    generateDialog: generation.generateDialog,
-    generationStatus: generation.generationStatus,
     readiness,
-    resetConfirmation: draft.resetConfirmation,
-    saveDialog: save.saveDialog,
+    routeIntent,
+    resetConfirmation: {
+      ...draft.resetConfirmation,
+      onConfirm: () => {
+        save.markDraftChanged();
+        draft.resetConfirmation.onConfirm();
+      },
+    },
+    publishDialog: save.publishDialog,
     savedBlueprints: {
       open: isSavedBlueprintsOpen,
       ...savedBlueprints,
-      onOpenBlueprint: (id) => {
-        savedBlueprints.onOpenBlueprint(id);
-        setIsSavedBlueprintsOpen(false);
+      blueprintAction: {
+        ...savedBlueprints.blueprintAction,
+        onEditAsDraft: (id) => {
+          savedBlueprints.blueprintAction.onEditAsDraft(id);
+          setIsSavedBlueprintsOpen(false);
+        },
       },
       onOpenChange: setIsSavedBlueprintsOpen,
       onOpenDraft: (id) => {
@@ -268,6 +280,31 @@ export function useStudioController(
       ...draftStorage,
       actions: {
         ...draftStorage.actions,
+        createSource: (source) => {
+          save.markDraftChanged();
+          draftStorage.actions.createSource(source);
+        },
+        reattachSource: async (sourceId, file) => {
+          const result = await draftStorage.actions.reattachSource(
+            sourceId,
+            file,
+          );
+          if (result.status === "changed") {
+            save.markDraftChanged();
+          }
+          return result;
+        },
+        removeSource: (sourceId) => {
+          const result = draftStorage.actions.removeSource(sourceId);
+          if (result.status === "changed") {
+            save.markDraftChanged();
+          }
+          return result;
+        },
+        replaceSources: (sources) => {
+          save.markDraftChanged();
+          draftStorage.actions.replaceSources(sources);
+        },
       },
     },
     sourcePicker: {

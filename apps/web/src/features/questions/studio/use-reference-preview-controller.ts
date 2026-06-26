@@ -10,6 +10,7 @@ import { normalizeWorkbookRef } from "#/domains/questions/workbook-reference";
 import {
   getLocalWorkbookCell,
   getLocalWorkbookRange,
+  type LocalWorkbookCellValue,
   type LocalWorkbookParseResult,
 } from "#/domains/workbooks/local-xlsx";
 import type { StudioSource } from "./source/studio-source-model";
@@ -131,7 +132,7 @@ function assignWorkbookSelectionValues(
 }
 
 function mapLocalRangeToRows(
-  values: readonly ReturnType<typeof getLocalWorkbookRange>[number][],
+  values: readonly LocalWorkbookCellValue[],
 ): string[][] {
   const rowsBySheetAndRow = new Map<string, string[]>();
 

@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import type { ReactElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
+import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import { WorkbookPickerProvider } from "#/features/questions/table-block-editor";
 import { ReferencePickerPopover } from "./reference-picker-popover";
@@ -332,16 +333,18 @@ function createReferencePreviewCache(): ReferencePreviewCache {
   };
 }
 
-function createSources() {
+function createSources(): QuestionBlueprintWorkbookSource[] {
   return [
     {
       name: "Source 1",
       sourceId: "source_1",
+      type: "workbook",
       workbookId: "workbook-1",
     },
     {
       name: "Source 2",
       sourceId: "source_2",
+      type: "workbook",
       workbookId: "workbook-2",
     },
   ];

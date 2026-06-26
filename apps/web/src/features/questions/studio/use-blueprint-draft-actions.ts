@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
+import type { QuestionBlueprintDraft } from "#/domains/questions/model";
 import {
   createResetStudioDraftSnapshotState,
   createSavedBlueprintDraftSnapshotState,
@@ -21,18 +22,16 @@ type NavigateToStudio = (input: {
   to: "/studio";
   search: StudioRouteSearch;
   replace?: boolean;
-}) => unknown;
+}) => void;
 
 export function useBlueprintDraftResetAction(input: {
   checkedRecoveryDraftKeyRef: WritableRef<string | null>;
   draftStorageKey: string;
-  loadedBlueprintKeyRef: WritableRef<string | null>;
   navigate: NavigateToStudio;
   replaceCurrentSnapshot(): void;
   setAuthoringModel(model: ComposedEditorModel): void;
   setBlueprintDescription(description: string): void;
   setBlueprintName(name: string): void;
-  setBlueprintOpenWarningSnapshot(snapshot: null): void;
   setDraftStorageKey(key: string): void;
   setHasUserEdited(value: boolean): void;
   setIsRecoveryResolved(value: boolean): void;
@@ -65,12 +64,10 @@ export function useBlueprintDraftResetAction(input: {
     input.setSources([]);
     input.setLoadedBlueprintId(null);
     input.setDraftStorageKey(nextDraftStorageKey);
-    input.loadedBlueprintKeyRef.current = null;
     input.checkedRecoveryDraftKeyRef.current = nextDraftStorageKey;
     input.setLastSavedDraftKey(null);
     input.setLastRemoteSaveSnapshotKey(null);
     input.setRecoverySnapshot(null);
-    input.setBlueprintOpenWarningSnapshot(null);
     input.setIsRecoveryResolved(true);
     input.setHasUserEdited(true);
     input.setLoadError(null);
@@ -87,15 +84,14 @@ export function useBlueprintDraftResetAction(input: {
     }
 
     input.replaceCurrentSnapshot();
-    void input.navigate({ search: {}, to: "/studio" });
+    input.navigate({ search: {}, to: "/studio" });
   }, [input]);
 }
 
-export function useBlueprintDraftMarkSavedAction(input: {
-  authoringModel: ComposedEditorModel;
+export function useStudioDraftMarkServerSavedAction(input: {
   draftStorageKey: string;
-  loadedBlueprintKeyRef: WritableRef<string | null>;
   replaceCurrentSnapshot(): void;
+  setAuthoringModel(model: ComposedEditorModel): void;
   setBlueprintDescription(description: string): void;
   setBlueprintName(name: string): void;
   setDraftStorageKey(key: string): void;
@@ -106,40 +102,41 @@ export function useBlueprintDraftMarkSavedAction(input: {
   setLoadedBlueprintId(id: string | null): void;
   setLocalDraftError(error: string | null): void;
   setLocalDraftStatus: DraftStatusSetter;
+  setServerDraftId(id: string | null): void;
+  setServerDraftRevision(revision: number | null): void;
   setSources(sources: StudioSource[]): void;
 }) {
   return useCallback(
     ({
-      authoringModel: nextAuthoringModel,
-      blueprintDescription: nextBlueprintDescription,
-      blueprintId,
-      blueprintName: nextBlueprintName,
+      authoringModel,
+      draft,
       sources,
     }: {
-      authoringModel?: ComposedEditorModel;
-      blueprintDescription: string;
-      blueprintId: string;
-      blueprintName: string;
+      authoringModel: ComposedEditorModel;
+      draft: QuestionBlueprintDraft;
       sources: StudioSource[];
     }) => {
-      const savedAuthoringModel = nextAuthoringModel ?? input.authoringModel;
+      const blueprintDescription = draft.description ?? "";
       const {
         draftKey: nextDraftKey,
         remoteSnapshotKey,
         syncedSnapshot,
       } = createSavedBlueprintDraftSnapshotState({
-        authoringModel: savedAuthoringModel,
-        blueprintDescription: nextBlueprintDescription,
-        blueprintId,
-        blueprintName: nextBlueprintName,
+        authoringModel,
+        blueprintDescription,
+        blueprintId: draft.blueprintId,
+        blueprintName: draft.name,
         sources,
       });
-      input.setBlueprintName(nextBlueprintName);
-      input.setBlueprintDescription(nextBlueprintDescription);
+
+      input.setAuthoringModel(authoringModel);
+      input.setBlueprintName(draft.name);
+      input.setBlueprintDescription(blueprintDescription);
       input.setSources(sources);
-      input.setLoadedBlueprintId(blueprintId);
+      input.setLoadedBlueprintId(draft.blueprintId);
+      input.setServerDraftId(draft.id);
+      input.setServerDraftRevision(draft.revision);
       input.setDraftStorageKey(nextDraftKey);
-      input.loadedBlueprintKeyRef.current = blueprintId;
       input.setHasUserEdited(false);
       input.setLastSavedDraftKey(remoteSnapshotKey);
       input.setLastRemoteSaveSnapshotKey(remoteSnapshotKey);

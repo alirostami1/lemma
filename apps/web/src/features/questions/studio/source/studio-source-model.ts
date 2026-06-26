@@ -1,5 +1,6 @@
 import type {
   QuestionBlueprintDraftSource,
+  QuestionBlueprintDraftSourceIntent,
   QuestionBlueprintWorkbookSource,
 } from "#/domains/questions/model";
 import type {
@@ -194,34 +195,29 @@ export type StudioSourceFingerprint =
       };
     };
 
-export function toStudioSourcesFromSavedBlueprint(
-  sources: readonly QuestionBlueprintWorkbookSource[],
-): StudioSource[] {
-  return sources.map((source) => ({
-    backing: {
-      byteSize: null,
-      kind: "persisted_workbook",
-      originalName: source.name,
-      parsedWorkbook: null,
-      workbookId: source.workbookId,
-    },
-    createdAt: new Date(),
-    name: source.name,
-    sourceId: source.sourceId,
-    type: "workbook",
-  }));
-}
-
 export function fromDraftToStudioSources(
   sources: readonly QuestionBlueprintDraftSource[],
 ): StudioSource[] {
-  return sources.map((source) => ({
+  return sources.map((source) => fromDraftSourceToStudioSource(source));
+}
+
+export function fromDraftSourceToStudioSource(
+  source: QuestionBlueprintDraftSource,
+  previous?: StudioSource,
+): StudioSource {
+  const parsedWorkbook =
+    previous?.backing.kind === "local_file" ||
+    previous?.backing.kind === "draft_file" ||
+    previous?.backing.kind === "persisted_workbook"
+      ? previous.backing.parsedWorkbook
+      : null;
+  return {
     backing: source.workbookId
       ? {
           byteSize: source.byteSize,
           kind: "persisted_workbook",
           originalName: source.originalName ?? source.name,
-          parsedWorkbook: null,
+          parsedWorkbook,
           workbookId: source.workbookId,
         }
       : source.fileId
@@ -231,7 +227,7 @@ export function fromDraftToStudioSources(
             fileId: source.fileId,
             kind: "draft_file",
             originalName: source.originalName ?? source.name,
-            parsedWorkbook: null,
+            parsedWorkbook,
             previewError: null,
             previewStatus: "idle",
             workbookId: null,
@@ -244,56 +240,21 @@ export function fromDraftToStudioSources(
             parseError: "Attach workbook file before publishing.",
             workbookId: null,
           },
-    createdAt: new Date(),
+    createdAt: previous?.createdAt ?? new Date(),
     name: source.name,
     sourceId: source.sourceId,
     type: "workbook",
-  }));
+  };
 }
 
 export function fromStudioSourcesToDraftSources(
   sources: readonly StudioSource[],
-): QuestionBlueprintDraftSource[] {
+): QuestionBlueprintDraftSourceIntent[] {
   return sources.map((source) => ({
-    byteSize: source.backing.byteSize,
-    checksumSha256:
-      source.backing.kind === "draft_file"
-        ? source.backing.checksumSha256
-        : null,
-    fileId: source.backing.kind === "draft_file" ? source.backing.fileId : null,
     name: source.name,
-    originalName: source.backing.originalName,
     sourceId: source.sourceId,
-    status:
-      source.backing.kind === "persisted_workbook"
-        ? "validated"
-        : source.backing.kind === "draft_file"
-          ? "uploaded"
-          : source.backing.kind === "missing_local_file"
-            ? "invalid"
-            : "local",
     type: "workbook",
-    workbookId:
-      source.backing.kind === "persisted_workbook"
-        ? source.backing.workbookId
-        : null,
   }));
-}
-
-export function toQuestionBlueprintWorkbookSources(
-  sources: readonly StudioSource[],
-): QuestionBlueprintWorkbookSource[] {
-  return sources.flatMap((source) =>
-    source.backing.kind !== "persisted_workbook"
-      ? []
-      : [
-          {
-            name: source.name,
-            sourceId: source.sourceId,
-            workbookId: source.backing.workbookId,
-          },
-        ],
-  );
 }
 
 // Editor dialogs need source options before local files have server workbook IDs.
@@ -304,6 +265,7 @@ export function toEditorAttachedWorkbookSources(
   return sources.map((source) => ({
     name: source.name,
     sourceId: source.sourceId,
+    type: "workbook",
     workbookId: getAttachedWorkbookId(source),
   }));
 }

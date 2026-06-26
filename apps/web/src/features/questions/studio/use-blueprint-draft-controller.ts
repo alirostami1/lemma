@@ -1,17 +1,13 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  useQuestionBlueprintAuthoringQuery,
-  useQuestionBlueprintDraftQuery,
-} from "#/domains/questions";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuestionBlueprintDraftQuery } from "#/domains/questions";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import {
   createDefaultComposedEditorModel,
   normalizeWorkbookReferenceIdsInComposedEditorModel,
 } from "#/domains/questions/authoring";
 import { questionBlueprintDocumentToComposedEditorModel } from "#/domains/questions/canonical-authoring";
-import type { QuestionBlueprintAuthoring } from "#/domains/questions/model";
-import { createLoadedBlueprintDraftSnapshotState } from "./blueprint-draft-snapshots";
+import type { QuestionBlueprintDraft } from "#/domains/questions/model";
 import {
   createMissingLocalFileSource,
   createStudioSourceFingerprints,
@@ -19,7 +15,6 @@ import {
   fromDraftToStudioSources,
   hydrateStudioSourcesFromDraftAssets,
   type StudioSource,
-  toStudioSourcesFromSavedBlueprint,
 } from "./source/studio-source-model";
 import { createDraftSnapshotKey } from "./studio-controller-helpers";
 import {
@@ -27,7 +22,6 @@ import {
   deleteStudioDraftSnapshot,
   readLatestStudioDraftSnapshot,
   type StudioDraftSnapshot,
-  writeStudioDraftSnapshot,
 } from "./studio-draft-store";
 import {
   createDraftKeyFromSnapshot,
@@ -36,11 +30,10 @@ import {
   type StudioLocalDraftStatus,
 } from "./studio-state";
 import {
-  useBlueprintDraftMarkSavedAction,
   useBlueprintDraftResetAction,
+  useStudioDraftMarkServerSavedAction,
 } from "./use-blueprint-draft-actions";
 import { useBlueprintDraftHistory } from "./use-blueprint-draft-history";
-import { useStudioBlueprintOpenWarning } from "./use-studio-blueprint-open-warning";
 import { useStudioLocalDraftEffects } from "./use-studio-local-draft-effects";
 
 export type BlueprintDraftController = {
@@ -49,26 +42,23 @@ export type BlueprintDraftController = {
   blueprintName: string;
   currentDraftKey: string;
   draftStorageKey: string;
-  blueprintOpenWarning: StudioBlueprintOpenWarningState;
+  draftLoadState: StudioDraftLoadState;
   draftRecovery: StudioDraftRecoveryState;
   hasUnsavedChanges: boolean;
   isLoadingBlueprint: boolean;
   loadError: string | null;
   localDraftError: string | null;
   localDraftStatus: StudioLocalDraftStatus;
-  loadedBlueprint: QuestionBlueprintAuthoring | null;
   loadedBlueprintId: string | null;
   serverDraftId: string | null;
-  clearServerDraftId(): void;
+  serverDraftRevision: number | null;
   resetConfirmation: StudioResetConfirmationState;
   restoredInitialLocalDraft: boolean;
   canRedo: boolean;
   canUndo: boolean;
-  markSaved(input: {
-    authoringModel?: ComposedEditorModel;
-    blueprintDescription: string;
-    blueprintId: string;
-    blueprintName: string;
+  markServerDraftSaved(input: {
+    authoringModel: ComposedEditorModel;
+    draft: QuestionBlueprintDraft;
     sources: StudioSource[];
   }): void;
   sources: StudioSource[];
@@ -81,19 +71,18 @@ export type BlueprintDraftController = {
   undo(): void;
 };
 
+export type StudioDraftLoadState =
+  | { status: "loading" }
+  | { status: "ready" }
+  | { status: "query_error"; message: string }
+  | { status: "document_error"; message: string };
+
 export type StudioDraftRecoveryState = {
   open: boolean;
   snapshot: StudioDraftSnapshot | null;
   onDiscard(): void;
   onKeepCurrent(): void;
   onRestore(): void;
-};
-
-export type StudioBlueprintOpenWarningState = {
-  open: boolean;
-  snapshot: StudioDraftSnapshot | null;
-  onCancel(): void;
-  onContinue(): void;
 };
 
 export type StudioResetConfirmationState = {
@@ -103,36 +92,33 @@ export type StudioResetConfirmationState = {
 };
 
 type UseBlueprintDraftControllerInput = {
-  initialBlueprintId: string;
   initialDraftId?: string;
 };
 
 export function useBlueprintDraftController({
-  initialBlueprintId,
   initialDraftId = "",
 }: UseBlueprintDraftControllerInput): BlueprintDraftController {
   const navigate = useNavigate();
   const isDraftRouteActive = initialDraftId.length > 0;
-  const activeBlueprintId = isDraftRouteActive ? "" : initialBlueprintId;
-  const shouldLoadBlueprint = initialDraftId.length === 0;
-  const hasIncomingEntity =
-    initialBlueprintId.length > 0 || initialDraftId.length > 0;
   const [initialLocalDraft] = useState(() =>
     normalizeStudioDraftSnapshot(
       getInitialStudioDraftSnapshot({
         latestDraft: readInitialLocalDraft(),
-        routeBlueprintId: hasIncomingEntity ? "__studio-route__" : "",
+        routeBlueprintId: initialDraftId.length > 0 ? "__studio-route__" : "",
       }),
     ),
   );
   const [serverDraftId, setServerDraftId] = useState<string | null>(
     initialDraftId || null,
   );
+  const [serverDraftRevision, setServerDraftRevision] = useState<number | null>(
+    null,
+  );
   const initialLocalDraftKey = initialLocalDraft
     ? createDraftKeyFromSnapshot(initialLocalDraft)
     : null;
   const [loadedBlueprintId, setLoadedBlueprintId] = useState<string | null>(
-    initialLocalDraft?.loadedBlueprintId ?? (activeBlueprintId || null),
+    initialLocalDraft?.loadedBlueprintId ?? null,
   );
   const [blueprintName, setBlueprintName] = useState(
     initialLocalDraft?.blueprintName ?? "Question blueprint",
@@ -155,7 +141,7 @@ export function useBlueprintDraftController({
     () =>
       initialLocalDraft?.draftKey ??
       createStudioDraftKey({
-        loadedBlueprintId: activeBlueprintId || null,
+        loadedBlueprintId: null,
       }),
   );
   const [lastSavedDraftKey, setLastSavedDraftKey] = useState<string | null>(
@@ -174,24 +160,16 @@ export function useBlueprintDraftController({
   const [recoverySnapshot, setRecoverySnapshot] =
     useState<StudioDraftSnapshot | null>(null);
   const [isResetConfirmationOpen, setIsResetConfirmationOpen] = useState(false);
-  const [isRecoveryResolved, setIsRecoveryResolved] = useState(
-    activeBlueprintId.length === 0,
-  );
+  const [isRecoveryResolved, setIsRecoveryResolved] = useState(true);
   const [hasUserEdited, setHasUserEdited] = useState(
     initialLocalDraft !== null,
   );
   const [loadError, setLoadError] = useState<string | null>(null);
-  const initialBlueprintOpenKey = createBlueprintOpenKey(activeBlueprintId);
-  const loadedBlueprintKeyRef = useRef<string | null>(null);
-  const confirmedBlueprintOpenIdsRef = useRef(new Set<string>());
-  const cancelledBlueprintOpenIdRef = useRef<string | null>(null);
-  const sourcesRef = useRef<StudioSource[]>([]);
-  const loadedBlueprintQuery = useQuestionBlueprintAuthoringQuery(
-    { questionBlueprintId: activeBlueprintId },
-    {
-      enabled: shouldLoadBlueprint && activeBlueprintId.length > 0,
-    },
+  const [draftLoadState, setDraftLoadState] = useState<StudioDraftLoadState>(
+    () =>
+      initialDraftId.length > 0 ? { status: "loading" } : { status: "ready" },
   );
+  const sourcesRef = useRef<StudioSource[]>([]);
   const loadedServerDraftQuery = useQuestionBlueprintDraftQuery(
     initialDraftId,
     {
@@ -202,8 +180,12 @@ export function useBlueprintDraftController({
 
   useEffect(() => {
     setServerDraftId(initialDraftId.length > 0 ? initialDraftId : null);
+    setServerDraftRevision(null);
     loadedServerDraftIdRef.current = null;
     setLoadError(null);
+    setDraftLoadState(
+      initialDraftId.length > 0 ? { status: "loading" } : { status: "ready" },
+    );
   }, [initialDraftId]);
 
   useEffect(() => {
@@ -214,16 +196,27 @@ export function useBlueprintDraftController({
       return;
     }
     if (loadedServerDraftQuery.isError) {
-      setLoadError("Draft could not be loaded.");
+      const message = "Draft could not be loaded.";
+      setLoadError(message);
+      setDraftLoadState({ message, status: "query_error" });
       return;
     }
     const serverDraft = loadedServerDraftQuery.data?.draft;
     if (!serverDraft || serverDraft.id !== initialDraftId) return;
+    let serverDraftAuthoringModel: ComposedEditorModel;
+    try {
+      serverDraftAuthoringModel =
+        normalizeWorkbookReferenceIdsInComposedEditorModel(
+          questionBlueprintDocumentToComposedEditorModel(serverDraft.document),
+        );
+    } catch {
+      const message = "Draft could not be loaded.";
+      setLoadError(message);
+      setDraftLoadState({ message, status: "document_error" });
+      return;
+    }
+
     loadedServerDraftIdRef.current = initialDraftId;
-    const serverDraftAuthoringModel =
-      normalizeWorkbookReferenceIdsInComposedEditorModel(
-        questionBlueprintDocumentToComposedEditorModel(serverDraft.document),
-      );
     const serverDraftSources = fromDraftToStudioSources(serverDraft.sources);
     const serverDraftSnapshotKey = createDraftSnapshotKey({
       authoringModel: serverDraftAuthoringModel,
@@ -233,7 +226,9 @@ export function useBlueprintDraftController({
       sources: serverDraftSources,
     });
     setLoadError(null);
+    setDraftLoadState({ status: "ready" });
     setServerDraftId(initialDraftId);
+    setServerDraftRevision(serverDraft.revision);
     setBlueprintName(serverDraft.name);
     setBlueprintDescription(serverDraft.description ?? "");
     setAuthoringModel(serverDraftAuthoringModel);
@@ -266,32 +261,6 @@ export function useBlueprintDraftController({
       sources,
     ],
   );
-  const handleLocalDraftLoadFailed = useCallback(() => {
-    setLocalDraftStatus("failed");
-    setLocalDraftError("Local draft could not be loaded.");
-  }, []);
-  const {
-    warningSnapshot: blueprintOpenWarningSnapshot,
-    setWarningSnapshot: setBlueprintOpenWarningSnapshot,
-  } = useStudioBlueprintOpenWarning({
-    authoringModel,
-    blueprintDescription,
-    blueprintName,
-    cancelledBlueprintOpenIdRef,
-    confirmedBlueprintOpenIdsRef,
-    currentDraftKey,
-    draftStorageKey,
-    hasUserEdited,
-    initialBlueprintId: activeBlueprintId,
-    initialBlueprintOpenKey,
-    lastRemoteSaveSnapshotKey,
-    lastSavedDraftKey,
-    loadedBlueprintId,
-    loadedBlueprintKeyRef,
-    onLocalDraftLoadFailed: handleLocalDraftLoadFailed,
-    sources,
-  });
-
   const {
     applyHistorySnapshot,
     canRedo,
@@ -375,87 +344,6 @@ export function useBlueprintDraftController({
     };
   }, [draftStorageKey, restoringSourceFingerprintKey, setSources]);
 
-  useEffect(() => {
-    if (
-      activeBlueprintId.length === 0 ||
-      loadedBlueprintKeyRef.current === initialBlueprintOpenKey ||
-      !confirmedBlueprintOpenIdsRef.current.has(initialBlueprintOpenKey) ||
-      cancelledBlueprintOpenIdRef.current === initialBlueprintOpenKey
-    ) {
-      return;
-    }
-
-    if (loadedBlueprintQuery.isError) {
-      setLoadError("Blueprint could not be loaded.");
-      return;
-    }
-
-    const loadedBlueprint = loadedBlueprintQuery.data?.questionBlueprint;
-    if (!loadedBlueprint) {
-      return;
-    }
-
-    const nextDraftState = createLoadedBlueprintDraftSnapshotState({
-      blueprint: loadedBlueprint,
-      blueprintId: activeBlueprintId,
-    });
-    if (!nextDraftState.ok) {
-      setLoadError("Blueprint could not be loaded.");
-      return;
-    }
-    const {
-      authoringModel: nextAuthoringModel,
-      draftStorageKey: nextDraftStorageKey,
-      remoteSnapshotKey,
-      syncedSnapshot,
-    } = nextDraftState.value;
-
-    const normalizedSyncedSnapshot =
-      normalizeStudioDraftSnapshot(syncedSnapshot);
-    const normalizedRemoteSnapshotKey = normalizedSyncedSnapshot
-      ? createDraftKeyFromSnapshot(normalizedSyncedSnapshot)
-      : remoteSnapshotKey;
-
-    loadedBlueprintKeyRef.current = initialBlueprintOpenKey;
-    setLoadError(null);
-    setBlueprintName(loadedBlueprint.name);
-    setBlueprintDescription(loadedBlueprint.description ?? "");
-    setAuthoringModel(
-      normalizeWorkbookReferenceIdsInComposedEditorModel(nextAuthoringModel),
-    );
-    setSources(toStudioSourcesFromSavedBlueprint(loadedBlueprint.sources));
-    setDraftStorageKey(nextDraftStorageKey);
-    setLoadedBlueprintId(activeBlueprintId);
-    setHasUserEdited(false);
-    setLastSavedDraftKey(normalizedRemoteSnapshotKey);
-    setLastRemoteSaveSnapshotKey(normalizedRemoteSnapshotKey);
-    if (
-      normalizedSyncedSnapshot &&
-      writeStudioDraftSnapshot(normalizedSyncedSnapshot).ok
-    ) {
-      setLastLocalSavedDraftKey(normalizedRemoteSnapshotKey);
-      setLocalDraftStatus("autosaved");
-      setLocalDraftError(null);
-    } else {
-      setLocalDraftStatus("failed");
-      setLocalDraftError("Local draft could not be marked as synced.");
-    }
-    setIsRecoveryResolved(true);
-    replaceCurrentSnapshot();
-  }, [
-    blueprintOpenWarningSnapshot,
-    activeBlueprintId,
-    loadedBlueprintQuery.data,
-    loadedBlueprintQuery.isError,
-    replaceCurrentSnapshot,
-    initialBlueprintOpenKey,
-  ]);
-
-  const isRemoteLoadPending =
-    activeBlueprintId.length > 0 &&
-    (loadedBlueprintKeyRef.current !== initialBlueprintOpenKey ||
-      lastRemoteSaveSnapshotKey === null) &&
-    loadError === null;
   const { checkedRecoveryDraftKeyRef } = useStudioLocalDraftEffects({
     authoringModel,
     blueprintDescription,
@@ -465,11 +353,10 @@ export function useBlueprintDraftController({
     hasUserEdited,
     isDraftRouteActive,
     isRecoveryResolved,
-    isRemoteLoadPending,
+    isRemoteLoadPending: false,
     lastLocalSavedDraftKey,
     lastRemoteSaveSnapshotKey,
     lastSavedDraftKey,
-    loadedBlueprint: loadedBlueprintQuery.data?.questionBlueprint ?? null,
     loadedBlueprintId,
     setIsRecoveryResolved,
     setLastLocalSavedDraftKey,
@@ -512,41 +399,14 @@ export function useBlueprintDraftController({
     setLocalDraftError(null);
   }
 
-  function cancelBlueprintOpen() {
-    if (!blueprintOpenWarningSnapshot) {
-      return;
-    }
-
-    cancelledBlueprintOpenIdRef.current = initialBlueprintOpenKey;
-    restoreSnapshot(blueprintOpenWarningSnapshot);
-    setBlueprintOpenWarningSnapshot(null);
-    void navigate({ search: {}, to: "/studio" });
-  }
-
-  function continueBlueprintOpen() {
-    if (!blueprintOpenWarningSnapshot) {
-      return;
-    }
-
-    deleteStudioDraftSnapshot(blueprintOpenWarningSnapshot.draftKey);
-    confirmedBlueprintOpenIdsRef.current.add(initialBlueprintOpenKey);
-    setBlueprintOpenWarningSnapshot(null);
-    setRecoverySnapshot(null);
-    setIsRecoveryResolved(false);
-    setLocalDraftStatus("idle");
-    setLocalDraftError(null);
-  }
-
   const resetStudioDraft = useBlueprintDraftResetAction({
     checkedRecoveryDraftKeyRef,
     draftStorageKey,
-    loadedBlueprintKeyRef,
     navigate,
     replaceCurrentSnapshot,
     setAuthoringModel,
     setBlueprintDescription,
     setBlueprintName,
-    setBlueprintOpenWarningSnapshot,
     setDraftStorageKey,
     setHasUserEdited,
     setIsRecoveryResolved,
@@ -561,11 +421,10 @@ export function useBlueprintDraftController({
     setRecoverySnapshot,
     setSources,
   });
-  const markSaved = useBlueprintDraftMarkSavedAction({
-    authoringModel,
+  const markServerDraftSaved = useStudioDraftMarkServerSavedAction({
     draftStorageKey,
-    loadedBlueprintKeyRef,
     replaceCurrentSnapshot,
+    setAuthoringModel,
     setBlueprintDescription,
     setBlueprintName,
     setDraftStorageKey,
@@ -576,30 +435,22 @@ export function useBlueprintDraftController({
     setLoadedBlueprintId,
     setLocalDraftError,
     setLocalDraftStatus,
+    setServerDraftId,
+    setServerDraftRevision,
     setSources,
   });
 
   const hasUnsavedChanges = hasUnsavedChangesFromKeys({
     currentDraftKey,
     lastSavedDraftKey,
-    loadedBlueprintId,
   });
 
   return {
     authoringModel,
     blueprintDescription,
     blueprintName,
-    blueprintOpenWarning: {
-      onCancel: cancelBlueprintOpen,
-      onContinue: continueBlueprintOpen,
-      open: blueprintOpenWarningSnapshot !== null,
-      snapshot: blueprintOpenWarningSnapshot,
-    },
     canRedo,
     canUndo,
-    clearServerDraftId() {
-      setServerDraftId(null);
-    },
     currentDraftKey,
     draftRecovery: {
       onDiscard: keepCurrentDraft,
@@ -613,15 +464,14 @@ export function useBlueprintDraftController({
       snapshot: recoverySnapshot,
     },
     draftStorageKey,
+    draftLoadState,
     hasUnsavedChanges,
-    isLoadingBlueprint:
-      loadedBlueprintQuery.isLoading || loadedServerDraftQuery.isLoading,
+    isLoadingBlueprint: loadedServerDraftQuery.isLoading,
     loadError,
-    loadedBlueprint: loadedBlueprintQuery.data?.questionBlueprint ?? null,
     loadedBlueprintId,
     localDraftError,
     localDraftStatus,
-    markSaved,
+    markServerDraftSaved,
     redo: redoHistory,
     requestReset: () => setIsResetConfirmationOpen(true),
     resetConfirmation: {
@@ -631,6 +481,7 @@ export function useBlueprintDraftController({
     },
     restoredInitialLocalDraft: initialLocalDraft !== null,
     serverDraftId,
+    serverDraftRevision,
     setAuthoringModel: setEditableAuthoringModel,
     setBlueprintDescription: setEditableBlueprintDescription,
     setBlueprintName: setEditableBlueprintName,
@@ -663,10 +514,6 @@ function normalizeStudioDraftSnapshot(
 function readInitialLocalDraft() {
   const result = readLatestStudioDraftSnapshot();
   return result.ok ? result.value : null;
-}
-
-function createBlueprintOpenKey(blueprintId: string) {
-  return blueprintId;
 }
 
 export function mergeHydratedStudioSourcesBySourceId(input: {

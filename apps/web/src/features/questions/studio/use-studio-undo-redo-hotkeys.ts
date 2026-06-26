@@ -2,18 +2,20 @@ import { useEffect } from "react";
 
 export type StudioHistoryShortcut = "undo" | "redo";
 
+export type StudioHistoryShortcutEvent = Pick<
+  KeyboardEvent,
+  | "altKey"
+  | "ctrlKey"
+  | "defaultPrevented"
+  | "isComposing"
+  | "key"
+  | "metaKey"
+  | "shiftKey"
+  | "target"
+>;
+
 export function getStudioHistoryShortcut(
-  event: Pick<
-    KeyboardEvent,
-    | "altKey"
-    | "ctrlKey"
-    | "defaultPrevented"
-    | "isComposing"
-    | "key"
-    | "metaKey"
-    | "shiftKey"
-    | "target"
-  >,
+  event: StudioHistoryShortcutEvent,
 ): StudioHistoryShortcut | null {
   if (event.defaultPrevented || event.isComposing) {
     return null;

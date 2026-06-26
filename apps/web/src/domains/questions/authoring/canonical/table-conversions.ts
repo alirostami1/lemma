@@ -80,7 +80,7 @@ export function tableEditorModelToQuestionBlueprintTableBlock(
         return {
           columnId: cell.columnId,
           content: cell.content,
-          id: toCanonicalTableCellId(blockId, cell.id),
+          id: toCanonicalTableCellId(cell.id),
           rowId: cell.rowId,
           type: "content" as const,
         };
@@ -90,7 +90,7 @@ export function tableEditorModelToQuestionBlueprintTableBlock(
         columnId: cell.columnId,
         correctValueSource: toQuestionValueExpression(cell.correctValueSource),
         grading: cell.grading,
-        id: toCanonicalTableCellId(blockId, cell.id),
+        id: toCanonicalTableCellId(cell.id),
         points: cell.points,
         responseFieldId: options?.responseFieldIdPrefix
           ? toCanonicalTableAnswerFieldId(blockId, cell.responseFieldId)

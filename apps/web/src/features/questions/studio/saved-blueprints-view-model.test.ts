@@ -14,8 +14,13 @@ describe("saved blueprints view model", () => {
       createBlueprint({
         sources: [
           {
+            byteSize: null,
+            checksumSha256: null,
+            fileId: null,
             name: "Source 1",
+            originalName: null,
             sourceId: "source_1",
+            type: "workbook",
             workbookId: "workbook_1",
           },
         ],
@@ -69,6 +74,7 @@ function createBlueprint(
     archivedAt: null,
     createdAt: new Date("2026-06-09T00:00:00.000Z"),
     createdByUserId: "user_1",
+    currentVersionId: "version_1",
     description: null,
     document: {
       blocks: [],

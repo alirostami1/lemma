@@ -85,7 +85,7 @@ function mapBlueprintReadinessIssue(
     case "missing_name":
       return {
         id: "missing_blueprint_name",
-        message: "Add a blueprint name.",
+        message: "Add a draft name.",
         severity: "error",
       };
     case "missing_block":
@@ -171,7 +171,7 @@ function mapBlueprintReadinessIssue(
       return {
         actionLabel: "Attach source",
         id: "source_not_ready",
-        message: "Attach a source before saving this blueprint.",
+        message: "Attach a source before saving this draft.",
         severity: "error",
       };
   }

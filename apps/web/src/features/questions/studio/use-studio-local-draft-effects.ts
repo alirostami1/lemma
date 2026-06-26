@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
-import type { QuestionBlueprintAuthoring } from "#/domains/questions/model";
 import type { StudioSource } from "./source/studio-source-model";
 import {
   createStudioDraftSnapshot,
@@ -28,7 +27,6 @@ export function useStudioLocalDraftEffects({
   lastLocalSavedDraftKey,
   lastRemoteSaveSnapshotKey,
   lastSavedDraftKey,
-  loadedBlueprint,
   loadedBlueprintId,
   serverDraftId,
   sources,
@@ -50,7 +48,6 @@ export function useStudioLocalDraftEffects({
   lastLocalSavedDraftKey: string | null;
   lastRemoteSaveSnapshotKey: string | null;
   lastSavedDraftKey: string | null;
-  loadedBlueprint: QuestionBlueprintAuthoring | null;
   loadedBlueprintId: string | null;
   serverDraftId: string | null;
   sources: StudioSource[];
@@ -94,11 +91,8 @@ export function useStudioLocalDraftEffects({
     const snapshotKey = createDraftKeyFromSnapshot(snapshot);
     const isSynced = snapshot.lastRemoteSaveSnapshotKey === snapshotKey;
     const isDifferent = snapshotKey !== currentDraftKey;
-    const isNewerThanRemote =
-      !loadedBlueprint ||
-      snapshot.lastLocalSaveTimestamp > loadedBlueprint.updatedAt.getTime();
 
-    if (!isSynced && isDifferent && isNewerThanRemote) {
+    if (!isSynced && isDifferent) {
       setRecoverySnapshot(snapshot);
       return;
     }
@@ -110,9 +104,6 @@ export function useStudioLocalDraftEffects({
     currentDraftKey,
     draftStorageKey,
     isRemoteLoadPending,
-    lastRemoteSaveSnapshotKey,
-    loadedBlueprint,
-    loadedBlueprintId,
     isDraftRouteActive,
     setIsRecoveryResolved,
     setLastLocalSavedDraftKey,
@@ -128,7 +119,6 @@ export function useStudioLocalDraftEffects({
       hasUnsavedChangesFromKeys({
         currentDraftKey,
         lastSavedDraftKey,
-        loadedBlueprintId,
       }) &&
       (loadedBlueprintId !== null || hasUserEdited);
     if (!shouldAutosave) {

@@ -1,6 +1,6 @@
 export {
-  notifyBlueprintSaved,
-  notifyBlueprintSaveFailed,
+  notifyDraftPublished,
+  notifyDraftPublishFailed,
   notifyGeneratedQuestionsLoadMoreFailed,
   notifyQuestionGenerationFailed,
   notifyQuestionGenerationRetryFailed,
