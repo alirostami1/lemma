@@ -10,6 +10,7 @@ import {
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { StudioPage } from "./studio-page";
+import type { StudioContinueCardViewModel } from "./unfinished-work-view-model";
 
 const navigateMock = vi.hoisted(() => vi.fn());
 const studioControllerMock = vi.hoisted(() => vi.fn());
@@ -70,6 +71,7 @@ vi.mock("./use-saved-blueprints-controller", () => ({
       isInitialLoading: false,
       isLoadingBlueprintsMore: false,
       isLoadingDraftsMore: false,
+      latestDraft: null as StudioContinueCardViewModel | null,
       loadMoreErrorMessage: null,
       onLoadMoreBlueprints: vi.fn(),
       onLoadMoreDrafts: vi.fn(),
@@ -105,11 +107,12 @@ describe("StudioPage", () => {
     render(<StudioPage />);
 
     expect(
-      screen.getByRole("heading", { name: "Choose how to start." }),
+      screen.getByRole("heading", { name: "Pick up your blueprint work." }),
     ).toBeInTheDocument();
     expect(studioControllerMock).not.toHaveBeenCalled();
     expect(entryRouteMock).not.toHaveBeenCalled();
     expect(draftQueryMock).not.toHaveBeenCalled();
+    expect(navigateMock).not.toHaveBeenCalled();
   });
 
   it("navigates to new draft entry route from landing action", () => {
@@ -126,14 +129,12 @@ describe("StudioPage", () => {
     });
   });
 
-  it("uses edit-as-draft action for published blueprints on landing", () => {
+  it("uses blueprint action for published blueprints on landing", () => {
     render(<StudioPage />);
 
+    fireEvent.click(screen.getByRole("button", { name: "Browse older work" }));
     fireEvent.click(
-      screen.getByRole("button", { name: "Edit published blueprint" }),
-    );
-    fireEvent.click(
-      screen.getByRole("button", { name: "Edit as draft Blueprint one" }),
+      screen.getByRole("button", { name: "Edit blueprint Blueprint one" }),
     );
 
     expect(navigateMock).toHaveBeenCalledWith({

@@ -1,6 +1,9 @@
 import type { OperationLineage } from "@lemma/domain";
 import type { CurrentUser } from "@lemma/identity/application";
-import type { QuestionAnswer } from "../domain/index.js";
+import type {
+  QuestionAnswer,
+  QuestionBlueprintDraftStatus,
+} from "../domain/index.js";
 
 export type ListCommand = {
   currentUser: CurrentUser;
@@ -28,6 +31,9 @@ export type CreateQuestionBlueprintDraftCommand = ListCommand & {
   description?: string | null;
   document: unknown;
   sources: unknown;
+};
+export type ListQuestionBlueprintDraftsCommand = ListCommand & {
+  status?: QuestionBlueprintDraftStatus;
 };
 export type CreateQuestionBlueprintEditDraftCommand = ListCommand & {
   blueprintId: string;

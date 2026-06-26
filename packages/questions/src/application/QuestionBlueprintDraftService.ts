@@ -6,6 +6,7 @@ import {
   type QuestionBlueprintDraft,
   type QuestionBlueprintDraftSource,
   type QuestionBlueprintDraftSourceIntent,
+  type QuestionBlueprintDraftStatus,
   type QuestionBlueprintSource,
   questionBlueprintDescription,
   questionBlueprintDocument,
@@ -25,6 +26,7 @@ import type {
   CreateQuestionBlueprintEditDraftCommand,
   DiscardQuestionBlueprintDraftCommand,
   ListCommand,
+  ListQuestionBlueprintDraftsCommand,
   PublishQuestionBlueprintDraftCommand,
   QuestionBlueprintDraftByIdCommand,
   UpdateQuestionBlueprintDraftCommand,
@@ -149,16 +151,19 @@ export class QuestionBlueprintDraftService {
   }
 
   async listQuestionBlueprintDrafts(
-    command: ListCommand,
+    command: ListQuestionBlueprintDraftsCommand,
   ): Promise<QuestionBlueprintDraftsResult> {
     const limit = normalizeListLimit(command.limit);
+    const statuses: readonly QuestionBlueprintDraftStatus[] = command.status
+      ? [command.status]
+      : ["draft"];
     const drafts =
       await this.deps.questionsRepository.listQuestionBlueprintDraftsByOwnerUserId(
         {
           cursor: decodeListCursor(command.cursor),
           limit: limit + 1,
           ownerUserId: userId(command.currentUser.user.id),
-          statuses: ["draft"],
+          statuses,
         },
       );
     return {

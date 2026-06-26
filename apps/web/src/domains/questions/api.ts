@@ -71,6 +71,7 @@ import type {
 export async function listQuestionBlueprintDrafts(input?: {
   limit?: number;
   cursor?: string;
+  status?: ListQuestionBlueprintDraftsInput["status"];
 }): Promise<QuestionBlueprintDraftsPage> {
   return mapQuestionBlueprintDraftsResponse(
     await listQuestionBlueprintDraftsGenerated(input),
@@ -80,16 +81,8 @@ export async function listQuestionBlueprintDrafts(input?: {
 export async function listQuestionBlueprintDraftSummaries(
   input?: ListQuestionBlueprintDraftsInput,
 ): Promise<QuestionBlueprintDraftSummariesPage> {
-  const { status, ...query } = input ?? {};
-  const response = await listQuestionBlueprintDraftsGenerated(query);
-  const filteredDrafts = status
-    ? response.drafts.filter((draft) => draft.status === status)
-    : response.drafts;
-
-  return mapQuestionBlueprintDraftSummariesResponse({
-    ...response,
-    drafts: filteredDrafts,
-  });
+  const response = await listQuestionBlueprintDraftsGenerated(input);
+  return mapQuestionBlueprintDraftSummariesResponse(response);
 }
 
 export async function getQuestionBlueprintDraft(

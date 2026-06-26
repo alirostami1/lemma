@@ -38,6 +38,25 @@ const draftId = questionBlueprintDraftId(
 const at = new Date("2026-06-24T00:00:00.000Z");
 
 describe("question blueprint draft route", () => {
+  it("accepts status query for listing question blueprint drafts", async () => {
+    let receivedStatus: string | undefined;
+    const app = createApp({
+      questionBlueprintDraftService: {
+        async listQuestionBlueprintDrafts(input: { status?: string }) {
+          receivedStatus = input.status;
+          return { drafts: [], nextCursor: null };
+        },
+      } as unknown as QuestionBlueprintDraftService,
+    });
+
+    const response = await app.request(
+      "/question-blueprint-drafts?status=published",
+    );
+
+    assert.equal(response.status, 200);
+    assert.equal(receivedStatus, "published");
+  });
+
   it("accepts source update intent without server-owned materialization", async () => {
     const app = createApp({
       questionBlueprintDraftService: createRealQuestionBlueprintDraftService(),
@@ -238,6 +257,9 @@ function createApp(
         ({
           async createQuestionBlueprintDraft() {
             return { draft: createDraft() };
+          },
+          async listQuestionBlueprintDrafts() {
+            return { drafts: [], nextCursor: null };
           },
           async attachQuestionBlueprintDraftSourceFile(input: {
             expectedRevision: number;

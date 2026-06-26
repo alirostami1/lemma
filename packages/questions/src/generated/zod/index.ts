@@ -18,6 +18,9 @@ export const ListQuestionBlueprintDraftsQueryParams = zod.object({
     .max(listQuestionBlueprintDraftsQueryLimitMax)
     .optional(),
   cursor: zod.string().optional(),
+  status: zod
+    .enum(["draft", "publishing", "published", "discarded"])
+    .optional(),
 });
 
 export const listQuestionBlueprintDrafts200ResponseDraftsItemBaseVersionIdRegExp =

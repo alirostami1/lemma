@@ -4,6 +4,7 @@
  * Lemma Questions API
  * OpenAPI spec version: 0.1.0
  */
+import type { ListQuestionBlueprintDraftsStatus } from "./listQuestionBlueprintDraftsStatus.js";
 
 export type ListQuestionBlueprintDraftsParams = {
   /**
@@ -12,4 +13,5 @@ export type ListQuestionBlueprintDraftsParams = {
    */
   limit?: number;
   cursor?: string;
+  status?: ListQuestionBlueprintDraftsStatus;
 };
