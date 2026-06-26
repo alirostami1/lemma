@@ -13,10 +13,9 @@ import type {
   CreateQuestionBlueprintEditDraftInput,
 } from "#/domains/questions/model";
 import { navigateToStudioDraft } from "./studio-controller-helpers";
-import {
-  isStudioRouteNormalized,
-  type StudioRouteIntent,
-  type StudioRouteSearch,
+import type {
+  StudioRouteIntent,
+  StudioRouteSearch,
 } from "./studio-route-intent";
 
 export type StudioEntryRouteState = {
@@ -49,11 +48,9 @@ const pendingEntryDraftIdsByKey = new Map<string, Promise<string>>();
 export function useStudioEntryRoute({
   intent,
   navigate,
-  routeSearch,
 }: {
-  intent: StudioRouteIntent;
+  intent: Exclude<StudioRouteIntent, { type: "landing" | "edit_draft" }>;
   navigate: StudioNavigator;
-  routeSearch: StudioRouteSearch;
 }): StudioEntryRouteState {
   const createDraft = useCreateQuestionBlueprintDraft();
   const createEditDraft = useCreateQuestionBlueprintEditDraft();
@@ -61,23 +58,6 @@ export function useStudioEntryRoute({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (intent.type === "landing") {
-      setPendingIntentKey(null);
-      setErrorMessage(null);
-      return;
-    }
-
-    if (intent.type === "edit_draft") {
-      setPendingIntentKey(null);
-      setErrorMessage(null);
-      if (!isStudioRouteNormalized(routeSearch)) {
-        void navigateToStudioDraft(navigate, intent.draftId, {
-          replace: true,
-        });
-      }
-      return;
-    }
-
     const intentKey = getEntryIntentKey(intent);
     let cancelled = false;
     setPendingIntentKey(intentKey);
@@ -104,14 +84,14 @@ export function useStudioEntryRoute({
         setErrorMessage(
           error instanceof Error && error.message
             ? error.message
-            : "Studio draft could not be opened.",
+            : "Studio could not be opened.",
         );
       });
 
     return () => {
       cancelled = true;
     };
-  }, [createDraft, createEditDraft, intent, navigate, routeSearch]);
+  }, [createDraft, createEditDraft, intent, navigate]);
 
   return {
     errorMessage,

@@ -233,7 +233,7 @@ function SourceDetails({
           <p>{source.backing.parseError}</p>
         ) : null}
         {source.backing.kind === "restoring_local_file" ? (
-          <p>Loading draft file...</p>
+          <p>Loading source file...</p>
         ) : null}
       </div>
 

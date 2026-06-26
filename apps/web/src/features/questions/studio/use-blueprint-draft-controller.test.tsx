@@ -271,7 +271,7 @@ describe("useBlueprintDraftController draft loading", () => {
     );
 
     await waitFor(() =>
-      expect(result.current.loadError).toBe("Draft could not be loaded."),
+      expect(result.current.loadError).toBe("Blueprint could not be loaded."),
     );
   });
 
@@ -294,10 +294,10 @@ describe("useBlueprintDraftController draft loading", () => {
     );
 
     await waitFor(() =>
-      expect(result.current.loadError).toBe("Draft could not be loaded."),
+      expect(result.current.loadError).toBe("Blueprint could not be loaded."),
     );
     expect(result.current.draftLoadState).toEqual({
-      message: "Draft could not be loaded.",
+      message: "Blueprint could not be loaded.",
       status: "document_error",
     });
     expect(result.current.serverDraftRevision).toBeNull();
