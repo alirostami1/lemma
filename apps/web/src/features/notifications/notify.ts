@@ -3,11 +3,11 @@ import { toast } from "@lemma/ui/components/sonner";
 type ToastId = string | number;
 
 export function notifyDraftPublished(): void {
-  toast.success("Draft published.");
+  toast.success("Blueprint published.");
 }
 
 export function notifyDraftPublishFailed(message?: string | null): void {
-  toast.error("Draft could not be published.", {
+  toast.error("Blueprint could not be published.", {
     description: message ?? undefined,
   });
 }
@@ -95,8 +95,8 @@ export function notifySourceUploaded(input: {
       input.context === "create"
         ? "Opening Studio with this source."
         : input.sourceName
-          ? `${input.sourceName} selected for this draft.`
-          : "Source selected for this draft.",
+          ? `${input.sourceName} selected for this blueprint.`
+          : "Source selected for this blueprint.",
   });
 }
 

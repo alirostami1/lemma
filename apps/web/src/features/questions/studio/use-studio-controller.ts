@@ -99,8 +99,6 @@ export function useStudioController(
     initialDraftRevision: draft.serverDraftRevision,
     onDraftPublished: (published) => {
       const publishedBlueprintId = published.questionBlueprint.id;
-      const publishedVersionBlueprintId =
-        published.questionBlueprintVersion.blueprintId;
 
       void queryClient.invalidateQueries({
         queryKey: questionKeys.questionBlueprintDrafts(),
@@ -115,9 +113,7 @@ export function useStudioController(
         queryKey: questionKeys.questionBlueprintDetail(publishedBlueprintId),
       });
       void queryClient.invalidateQueries({
-        queryKey: questionKeys.questionBlueprintAuthoring(
-          publishedVersionBlueprintId,
-        ),
+        queryKey: questionKeys.questionBlueprintAuthoring(publishedBlueprintId),
       });
       void navigate({
         params: { questionBlueprintId: publishedBlueprintId },

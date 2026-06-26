@@ -30,12 +30,15 @@ function renderEntryRoute(
   const navigate = vi.fn();
   const wrapper = ({ children }: { children: ReactNode }) =>
     options?.strict ? <StrictMode>{children}</StrictMode> : children;
+  const intent = parseStudioRouteIntent(routeSearch);
+  if (intent.type === "landing" || intent.type === "edit_draft") {
+    throw new Error("Expected Studio entry route intent.");
+  }
   const result = renderHook(
     () =>
       useStudioEntryRoute({
-        intent: parseStudioRouteIntent(routeSearch),
+        intent,
         navigate,
-        routeSearch,
       }),
     { wrapper },
   );
@@ -82,23 +85,6 @@ describe("useStudioEntryRoute", () => {
     expect(draftMutations.createEditDraft).toHaveBeenCalledWith({
       questionBlueprintId: "blueprint-1",
     });
-  });
-
-  it("normalizes draftId route and does not create drafts", async () => {
-    const { navigate } = renderEntryRoute({
-      blueprintId: "blueprint-1",
-      draftId: "draft-1",
-    });
-
-    await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith({
-        replace: true,
-        search: { draftId: "draft-1" },
-        to: "/studio",
-      }),
-    );
-    expect(draftMutations.createDraft).not.toHaveBeenCalled();
-    expect(draftMutations.createEditDraft).not.toHaveBeenCalled();
   });
 
   it("does not duplicate new draft creation under Strict Mode", async () => {

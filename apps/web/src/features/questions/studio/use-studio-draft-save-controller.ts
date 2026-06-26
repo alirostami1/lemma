@@ -91,9 +91,6 @@ export function useStudioDraftSaveController({
   const [isPublishDialogOpen, setIsPublishDialogOpen] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [conflict, setConflict] = useState<DraftSaveConflict | null>(null);
-  const [serverDraftId, setServerDraftId] = useState<string | null>(
-    initialDraftId,
-  );
   const [serverDraftRevision, setServerDraftRevision] = useState<number | null>(
     initialDraftRevision,
   );
@@ -117,7 +114,6 @@ export function useStudioDraftSaveController({
   const saveDocumentIssue = getFirstReadinessIssueMessage(readiness, "save");
 
   useEffect(() => {
-    setServerDraftId(initialDraftId);
     setServerDraftRevision(initialDraftRevision);
     clearPublishAttempt();
   }, [initialDraftId, initialDraftRevision]);
@@ -156,14 +152,14 @@ export function useStudioDraftSaveController({
     if (code === "DRAFT_REVISION_CONFLICT") {
       return {
         message:
-          "This draft changed somewhere else. Reload the latest draft before saving again.",
+          "This changed in another tab. Reload the latest version before saving again.",
         type: "revision_conflict",
       };
     }
     if (code === "BLUEPRINT_BASE_VERSION_CONFLICT") {
       return {
         message:
-          "This blueprint has a newer published version. Reload before publishing this draft.",
+          "This blueprint has a newer published version. Reload before publishing.",
         type: "base_version_conflict",
       };
     }
@@ -182,11 +178,11 @@ export function useStudioDraftSaveController({
       const savedAuthoringModel = stripUnusedComposedReferences(authoringModel);
       const document =
         composedEditorModelToQuestionBlueprintDocument(savedAuthoringModel);
-      const draftId = serverDraftId;
+      const draftId = initialDraftId;
       let expectedRevision = serverDraftRevision;
 
       if (!draftId || expectedRevision === null) {
-        throw new Error("Draft revision is missing.");
+        throw new Error("Loaded blueprint revision is missing.");
       }
 
       let nextSources = [...sources];
@@ -242,7 +238,6 @@ export function useStudioDraftSaveController({
             : candidate,
         );
       }
-      setServerDraftId(result.draft.id);
       setServerDraftRevision(result.draft.revision);
       onSourcesChange(nextSources);
       onDraftSaved({
@@ -261,7 +256,7 @@ export function useStudioDraftSaveController({
       setSaveError(
         error instanceof Error && error.message
           ? error.message
-          : "Draft could not be saved.",
+          : "Blueprint could not be saved.",
       );
       return null;
     }
@@ -302,7 +297,7 @@ export function useStudioDraftSaveController({
       const message =
         error instanceof Error && error.message
           ? error.message
-          : "Draft could not be published.";
+          : "Blueprint could not be published.";
       setSaveError(message);
       notifyDraftPublishFailed(message);
       return false;

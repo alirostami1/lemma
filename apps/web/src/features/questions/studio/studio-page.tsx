@@ -2,7 +2,7 @@ import { Button } from "@lemma/ui/components/button";
 import { InlineError } from "@lemma/ui/components/inline-error";
 import { Link, useNavigate } from "@tanstack/react-router";
 import type { RefObject } from "react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { PageContainer } from "#/components/patterns";
 import { useQuestionBlueprintDraftQuery } from "#/domains/questions";
 import { ComposedQuestionEditor } from "#/features/questions/composed-editor";
@@ -42,11 +42,42 @@ export function StudioPage(input: StudioRouteSearch = {}) {
     return <StudioLandingPage />;
   }
 
-  if (routeIntent.type !== "edit_draft" || !isStudioRouteNormalized(input)) {
-    return <StudioEntryRouteView intent={routeIntent} routeSearch={input} />;
+  if (routeIntent.type === "edit_draft") {
+    if (!isStudioRouteNormalized(input)) {
+      return <StudioDraftRouteNormalize draftId={routeIntent.draftId} />;
+    }
+    return <StudioDraftRouteGate draftId={routeIntent.draftId} input={input} />;
   }
 
-  return <StudioDraftRouteGate draftId={routeIntent.draftId} input={input} />;
+  if (
+    routeIntent.type === "new_draft" ||
+    routeIntent.type === "edit_blueprint"
+  ) {
+    return <StudioEntryRouteView intent={routeIntent} />;
+  }
+
+  return null;
+}
+
+function StudioDraftRouteNormalize({ draftId }: { draftId: string }) {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    void navigate({
+      replace: true,
+      search: { draftId },
+      to: "/studio",
+    });
+  }, [draftId, navigate]);
+
+  return (
+    <PageContainer className="pb-8" variant="workbench">
+      <section className="grid gap-3 rounded-lg border bg-background p-6 shadow-sm">
+        <h1 className="text-lg font-semibold">Studio</h1>
+        <p className="text-sm text-muted-foreground">Opening blueprint...</p>
+      </section>
+    </PageContainer>
+  );
 }
 
 function StudioDraftRouteGate({
@@ -64,7 +95,7 @@ function StudioDraftRouteGate({
       <PageContainer className="pb-8" variant="workbench">
         <section className="grid gap-3 rounded-lg border bg-background p-6 shadow-sm">
           <h1 className="text-lg font-semibold">Studio</h1>
-          <p className="text-sm text-muted-foreground">Loading draft...</p>
+          <p className="text-sm text-muted-foreground">Loading blueprint...</p>
         </section>
       </PageContainer>
     );
@@ -74,8 +105,8 @@ function StudioDraftRouteGate({
     return (
       <PageContainer className="pb-8" variant="workbench">
         <section className="grid gap-3 rounded-lg border bg-background p-6 shadow-sm">
-          <h1 className="text-lg font-semibold">Draft unavailable</h1>
-          <InlineError message="Draft could not be loaded." />
+          <h1 className="text-lg font-semibold">Blueprint unavailable</h1>
+          <InlineError message="This blueprint could not be loaded." />
           <Button
             onClick={() => {
               void draftQuery.refetch();
@@ -85,16 +116,22 @@ function StudioDraftRouteGate({
           >
             Retry
           </Button>
+          <Button asChild variant="outline">
+            <Link to="/studio">Continue where you left off</Link>
+          </Button>
         </section>
       </PageContainer>
     );
   }
 
-  if (draft?.status === "published" || draft?.status === "discarded") {
+  if (draft && draft.status !== "draft") {
     return (
       <StudioTerminalDraftView
         blueprintId={draft.blueprintId}
         draftName={draft.name}
+        onReload={() => {
+          void draftQuery.refetch();
+        }}
         status={draft.status}
       />
     );
@@ -106,28 +143,24 @@ function StudioDraftRouteGate({
 function StudioTerminalDraftView({
   blueprintId,
   draftName,
+  onReload,
   status,
 }: {
   blueprintId: string | null;
   draftName: string;
-  status: "published" | "discarded";
+  onReload?: () => void;
+  status: "publishing" | "published" | "discarded";
 }) {
-  const title = status === "published" ? "Draft published" : "Draft discarded";
-  const description =
-    status === "published"
-      ? "This draft has already been published and cannot be edited here."
-      : "This draft has been discarded and cannot be edited here.";
+  const view = getTerminalDraftView(status);
 
   return (
     <PageContainer className="pb-8" variant="workbench">
       <section className="grid gap-4 rounded-lg border bg-background p-6 shadow-sm">
         <div className="grid gap-1">
-          <p className="text-sm font-medium text-muted-foreground">
-            Terminal draft
-          </p>
-          <h1 className="text-xl font-semibold">{title}</h1>
+          <p className="text-sm font-medium text-muted-foreground">Studio</p>
+          <h1 className="text-xl font-semibold">{view.title}</h1>
           <p className="text-sm text-muted-foreground">
-            {draftName}: {description}
+            {draftName}: {view.description}
           </p>
         </div>
 
@@ -145,24 +178,33 @@ function StudioTerminalDraftView({
           {status === "published" && blueprintId ? (
             <Button asChild variant="outline">
               <Link search={{ blueprintId }} to="/studio">
-                Create new edit draft
+                Edit this blueprint
               </Link>
             </Button>
+          ) : status === "publishing" ? (
+            <>
+              <Button onClick={onReload} type="button" variant="outline">
+                Check again
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/studio">Back to Studio</Link>
+              </Button>
+            </>
           ) : status === "discarded" ? (
             <>
               <Button asChild variant="outline">
                 <Link search={{ new: "1" }} to="/studio">
-                  Create new draft
+                  Start a new blueprint
                 </Link>
               </Button>
               <Button asChild variant="outline">
-                <Link to="/studio">Open drafts</Link>
+                <Link to="/studio">Continue where you left off</Link>
               </Button>
             </>
           ) : (
             <Button asChild variant="outline">
               <Link search={{ new: "1" }} to="/studio">
-                Create new draft
+                Start a new blueprint
               </Link>
             </Button>
           )}
@@ -170,6 +212,29 @@ function StudioTerminalDraftView({
       </section>
     </PageContainer>
   );
+}
+
+function getTerminalDraftView(
+  status: "publishing" | "published" | "discarded",
+) {
+  switch (status) {
+    case "publishing":
+      return {
+        description: "This work is temporarily unavailable while publishing.",
+        title: "Blueprint is being published",
+      };
+    case "published":
+      return {
+        description:
+          "This version has already been published and cannot be edited here.",
+        title: "Blueprint published",
+      };
+    case "discarded":
+      return {
+        description: "This work is no longer available for editing.",
+        title: "Blueprint unavailable",
+      };
+  }
 }
 
 function StudioEditorEntry({ input }: { input: StudioRouteSearch }) {
@@ -199,7 +264,7 @@ function StudioDraftLoadingScreen() {
     <PageContainer className="pb-8" variant="workbench">
       <section className="grid gap-3 rounded-lg border bg-background p-6 shadow-sm">
         <h1 className="text-lg font-semibold">Studio</h1>
-        <p className="text-sm text-muted-foreground">Loading draft...</p>
+        <p className="text-sm text-muted-foreground">Loading blueprint...</p>
       </section>
     </PageContainer>
   );
@@ -221,13 +286,13 @@ function StudioDraftLoadErrorScreen({
           <h1 className="text-xl font-semibold">{message}</h1>
           <p className="text-sm text-muted-foreground">
             {variant === "document_error"
-              ? "This draft contains an unsupported or invalid document structure."
-              : "This draft is unavailable right now."}
+              ? "This blueprint contains an unsupported or invalid document structure."
+              : "This blueprint is unavailable right now."}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button onClick={onReloadLatestDraft} type="button" variant="outline">
-            Reload latest draft
+            Reload latest version
           </Button>
           <Button asChild variant="outline">
             <Link to="/studio">Back to Studio</Link>
@@ -240,23 +305,20 @@ function StudioDraftLoadErrorScreen({
 
 function StudioEntryRouteView({
   intent,
-  routeSearch,
 }: {
-  intent: Exclude<StudioRouteIntent, { type: "landing" }>;
-  routeSearch: StudioRouteSearch;
+  intent: Exclude<StudioRouteIntent, { type: "landing" | "edit_draft" }>;
 }) {
   const navigate = useNavigate();
   const entryRoute = useStudioEntryRoute({
     intent,
     navigate,
-    routeSearch,
   });
   const message =
     intent.type === "edit_blueprint"
-      ? "Opening blueprint edit draft..."
+      ? "Opening blueprint..."
       : intent.type === "new_draft"
-        ? "Creating draft..."
-        : "Opening draft...";
+        ? "Starting blueprint..."
+        : "Opening blueprint...";
 
   return (
     <PageContainer className="pb-8" variant="workbench">
