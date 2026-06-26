@@ -26,7 +26,17 @@ describe("PublishDraftDialog", () => {
     expect(
       screen.getByRole("heading", { name: "Publish" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText("This saves your changes and publishes the blueprint."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('"Cell structure quiz" will be saved and published.'),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Publish" })).toBeEnabled();
+    expect(screen.queryByText(/publish draft/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/immutable/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/locked/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/version/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/save as new/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/update existing/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/name/i)).not.toBeInTheDocument();

@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import type { StudioWorkbookSource } from "./studio-source-model";
 import { useSourceController } from "./use-source-controller";
 
 const sourceControllerMocks = vi.hoisted(() => ({
   createWorkbookCalculationAsync: vi.fn(),
+  createFileDownloadUrl: vi.fn(),
   parseLocalWorkbookFile: vi.fn(),
   saveStudioDraftWorkbookFile: vi.fn(),
 }));
@@ -63,7 +64,9 @@ vi.mock("#/domains/workbooks/local-xlsx", () => ({
 }));
 
 vi.mock("#/domains/files/hooks", () => ({
-  useCreateFileDownloadUrl: () => ({ mutateAsync: vi.fn() }),
+  useCreateFileDownloadUrl: () => ({
+    mutateAsync: sourceControllerMocks.createFileDownloadUrl,
+  }),
 }));
 
 vi.mock("../studio-draft-assets-store", () => ({
@@ -77,6 +80,10 @@ describe("useSourceController", () => {
     sourceControllerMocks.createWorkbookCalculationAsync.mockResolvedValue({
       id: "calculation-1",
     });
+    sourceControllerMocks.createFileDownloadUrl.mockReset();
+    sourceControllerMocks.createFileDownloadUrl.mockResolvedValue({
+      url: "https://example.test/source.xlsx",
+    });
     mockOnSourcesChange.mockReset();
     sourceControllerMocks.parseLocalWorkbookFile.mockReset();
     sourceControllerMocks.parseLocalWorkbookFile.mockResolvedValue({
@@ -88,6 +95,10 @@ describe("useSourceController", () => {
       ok: true,
       value: undefined,
     });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("requests lookup calculation for persisted picker source", async () => {
@@ -327,6 +338,39 @@ describe("useSourceController", () => {
     });
     expect(mockOnSourcesChange).not.toHaveBeenCalled();
   });
+
+  it("uses product copy when saved source preview cannot be loaded", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+      }),
+    );
+
+    renderHook(() =>
+      useSourceController({
+        draftKey: "new:default",
+        loadWorkbookPickerPreview: true,
+        lookupSourceId: "source_1",
+        model: createModel(),
+        onSourcesChange: mockOnSourcesChange,
+        sources: [savedDraftFileSource("source_1")],
+      }),
+    );
+
+    await waitFor(() => {
+      expect(mockOnSourcesChange).toHaveBeenLastCalledWith([
+        expect.objectContaining({
+          backing: expect.objectContaining({
+            kind: "draft_file",
+            previewError: "Saved source file could not be loaded.",
+            previewStatus: "failed",
+          }),
+          sourceId: "source_1",
+        }),
+      ]);
+    });
+  });
 });
 
 function actResult<T>(fn: () => T): T {
@@ -389,6 +433,26 @@ function missingSource(sourceId: string): StudioWorkbookSource {
       lastModified: 1,
       originalName: `${sourceId}.xlsx`,
       parseError: "Workbook file missing. Reattach the file to continue.",
+      workbookId: null,
+    },
+    createdAt: new Date("2026-06-21T00:00:00.000Z"),
+    name: sourceId,
+    sourceId,
+    type: "workbook",
+  };
+}
+
+function savedDraftFileSource(sourceId: string): StudioWorkbookSource {
+  return {
+    backing: {
+      byteSize: 4,
+      checksumSha256: "checksum-1",
+      fileId: "file-1",
+      kind: "draft_file",
+      originalName: `${sourceId}.xlsx`,
+      parsedWorkbook: null,
+      previewError: null,
+      previewStatus: "idle",
       workbookId: null,
     },
     createdAt: new Date("2026-06-21T00:00:00.000Z"),

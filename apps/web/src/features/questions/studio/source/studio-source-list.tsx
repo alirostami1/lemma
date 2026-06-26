@@ -317,7 +317,7 @@ function getSourceSecondaryText(
   } else if (source.backing.kind === "restoring_local_file") {
     parts.push("restoring");
   } else if (source.backing.kind === "draft_file") {
-    parts.push("saved in draft");
+    parts.push("saved in current work");
   } else {
     parts.push("saved");
   }
@@ -348,7 +348,7 @@ function getSourceRowStatus(
   if (source.backing.kind === "draft_file") {
     return source.backing.previewStatus === "failed"
       ? { icon: AlertTriangle, label: "preview error" }
-      : { icon: CheckCircle2, label: "saved in draft" };
+      : { icon: CheckCircle2, label: "saved in current work" };
   }
 
   if (usage.isUsed) {
@@ -379,7 +379,9 @@ function getDetailsStatusText(source: StudioSource, isUsed: boolean): string {
     return isUsed ? "Restoring local file · used" : "Restoring local file";
   }
   if (source.backing.kind === "draft_file") {
-    return isUsed ? "Saved in draft · used" : "Saved in draft · unused";
+    return isUsed
+      ? "Saved in current work · used"
+      : "Saved in current work · unused";
   }
 
   return isUsed ? "Saved · used" : "Saved · unused";

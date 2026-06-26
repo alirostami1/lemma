@@ -429,7 +429,8 @@ describe("studio-source-model", () => {
 
     expect(source?.backing).toMatchObject({
       kind: "missing_local_file",
-      parseError: "Could not read browser draft storage.",
+      parseError:
+        "Saved source file could not be loaded. Reattach the file to continue.",
     });
   });
 
@@ -447,7 +448,8 @@ describe("studio-source-model", () => {
       expect.objectContaining({
         backing: expect.objectContaining({
           kind: "missing_local_file",
-          parseError: "Could not restore browser draft storage.",
+          parseError:
+            "Saved source file could not be restored. Reattach the file to continue.",
         }),
       }),
     ]);

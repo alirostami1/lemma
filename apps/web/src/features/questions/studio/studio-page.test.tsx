@@ -158,7 +158,7 @@ describe("StudioPage", () => {
   it("loads draft route directly without entry creation", () => {
     render(<StudioPage draftId="draft-1" />);
 
-    expect(screen.getByText("Loading blueprint...")).toBeInTheDocument();
+    expect(screen.getByText("Loading work...")).toBeInTheDocument();
     expect(draftQueryMock).toHaveBeenCalledWith("draft-1");
     expect(entryRouteMock).not.toHaveBeenCalled();
     expect(studioControllerMock).not.toHaveBeenCalled();
@@ -167,7 +167,7 @@ describe("StudioPage", () => {
   it("normalizes mixed blueprint and draft route before loading editor state", async () => {
     render(<StudioPage blueprintId="blueprint-1" draftId="draft-1" />);
 
-    expect(screen.getByText("Opening blueprint...")).toBeInTheDocument();
+    expect(screen.getByText("Opening work...")).toBeInTheDocument();
     await waitFor(() =>
       expect(navigateMock).toHaveBeenCalledWith({
         replace: true,
@@ -197,7 +197,9 @@ describe("StudioPage", () => {
     render(<StudioPage draftId="draft-1" />);
 
     expect(
-      screen.getByRole("heading", { name: "Blueprint published" }),
+      screen.getByRole("heading", {
+        name: "This work was already published.",
+      }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Open published blueprint" }),
@@ -269,7 +271,9 @@ describe("StudioPage", () => {
     render(<StudioPage draftId="draft-1" />);
 
     expect(
-      screen.getByRole("heading", { name: "Blueprint unavailable" }),
+      screen.getByRole("heading", {
+        name: "This work is no longer available.",
+      }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Start a new blueprint" }),
@@ -294,10 +298,12 @@ describe("StudioPage", () => {
     render(<StudioPage draftId="missing-draft" />);
 
     expect(
-      screen.getByRole("heading", { name: "Blueprint unavailable" }),
+      screen.getByRole("heading", {
+        name: "This work is no longer available.",
+      }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("This blueprint could not be loaded."),
+      screen.getByText("This work could not be loaded."),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Continue where you left off" }),
@@ -349,9 +355,13 @@ describe("StudioPage", () => {
       screen.queryByRole("textbox", { name: "Blueprint name" }),
     ).not.toBeInTheDocument();
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Reload latest version" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Reload latest work" }));
+    expect(
+      screen.queryByRole("button", { name: "Save draft" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Publish draft" }),
+    ).not.toBeInTheDocument();
     expect(onReloadLatestDraft).toHaveBeenCalledOnce();
     expect(
       screen.getByRole("link", { name: "Back to Studio" }),

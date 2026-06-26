@@ -43,11 +43,11 @@ describe("studio readiness", () => {
     });
 
     expect(getFirstReadinessIssueMessage(readiness, "save")).toBe(
-      "Add a draft name.",
+      "Add a blueprint name.",
     );
     expect(
       getFirstReadinessIssueMessage(readiness, "generate_saved_blueprint"),
-    ).toBe("Add a draft name.");
+    ).toBe("Add a blueprint name.");
   });
 
   it("requires at least one answer before generating", () => {
@@ -105,11 +105,11 @@ describe("studio readiness", () => {
     });
 
     expect(getFirstReadinessIssueMessage(readiness, "save")).toBe(
-      "Attach a source before saving this draft.",
+      "Attach a source before saving.",
     );
     expect(
       getFirstReadinessIssueMessage(readiness, "generate_saved_blueprint"),
-    ).toBe("Attach a source before saving this draft.");
+    ).toBe("Attach a source before saving.");
   });
 
   it("blocks malformed workbook references", () => {

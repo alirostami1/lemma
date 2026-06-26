@@ -151,15 +151,13 @@ export function useStudioDraftSaveController({
     const code = getApiErrorCode(error);
     if (code === "DRAFT_REVISION_CONFLICT") {
       return {
-        message:
-          "This changed in another tab. Reload the latest version before saving again.",
+        message: "This changed in another tab.",
         type: "revision_conflict",
       };
     }
     if (code === "BLUEPRINT_BASE_VERSION_CONFLICT") {
       return {
-        message:
-          "This blueprint has a newer published version. Reload before publishing.",
+        message: "This changed in another tab. Reload before publishing.",
         type: "base_version_conflict",
       };
     }
@@ -182,7 +180,7 @@ export function useStudioDraftSaveController({
       let expectedRevision = serverDraftRevision;
 
       if (!draftId || expectedRevision === null) {
-        throw new Error("Loaded blueprint revision is missing.");
+        throw new Error("This work could not be saved.");
       }
 
       let nextSources = [...sources];

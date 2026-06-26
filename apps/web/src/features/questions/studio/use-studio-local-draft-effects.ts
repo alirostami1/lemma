@@ -82,7 +82,7 @@ export function useStudioLocalDraftEffects({
       setIsRecoveryResolved(true);
       if (!result.ok && result.error === "storage_unavailable") {
         setLocalDraftStatus("failed");
-        setLocalDraftError("Local draft could not be loaded.");
+        setLocalDraftError("Saved changes could not be loaded.");
       }
       return;
     }
@@ -147,7 +147,7 @@ export function useStudioLocalDraftEffects({
         const result = writeStudioDraftSnapshot(snapshot);
         if (!result.ok) {
           setLocalDraftStatus("failed");
-          setLocalDraftError("Local draft could not be autosaved.");
+          setLocalDraftError("Changes could not be autosaved.");
           return;
         }
 

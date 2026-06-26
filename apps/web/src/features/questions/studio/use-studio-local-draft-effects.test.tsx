@@ -7,39 +7,31 @@ import type { StudioSource } from "./source/studio-source-model";
 import { useStudioLocalDraftEffects } from "./use-studio-local-draft-effects";
 
 const draftStoreMocks = vi.hoisted(() => ({
-  writeStudioDraftSnapshotWithAssets: vi.fn(),
-}));
-
-const draftAssetMocks = vi.hoisted(() => ({
-  deleteStudioDraftWorkbookFile: vi.fn(),
-  pruneStudioDraftWorkbookFiles: vi.fn(),
+  readStudioDraftSnapshot: vi.fn(),
+  writeStudioDraftSnapshot: vi.fn(),
 }));
 
 vi.mock("./studio-draft-store", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./studio-draft-store")>();
   return {
     ...actual,
-    writeStudioDraftSnapshotWithAssets:
-      draftStoreMocks.writeStudioDraftSnapshotWithAssets,
+    readStudioDraftSnapshot: draftStoreMocks.readStudioDraftSnapshot,
+    writeStudioDraftSnapshot: draftStoreMocks.writeStudioDraftSnapshot,
   };
 });
-
-vi.mock("./studio-draft-assets-store", () => ({
-  deleteStudioDraftWorkbookFile: draftAssetMocks.deleteStudioDraftWorkbookFile,
-  pruneStudioDraftWorkbookFiles: draftAssetMocks.pruneStudioDraftWorkbookFiles,
-}));
 
 describe("useStudioLocalDraftEffects", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    draftStoreMocks.writeStudioDraftSnapshotWithAssets.mockReset();
-    draftAssetMocks.deleteStudioDraftWorkbookFile.mockResolvedValue({
+    draftStoreMocks.readStudioDraftSnapshot.mockReset();
+    draftStoreMocks.writeStudioDraftSnapshot.mockReset();
+    draftStoreMocks.readStudioDraftSnapshot.mockReturnValue({
       ok: true,
-      value: undefined,
+      value: null,
     });
-    draftAssetMocks.pruneStudioDraftWorkbookFiles.mockResolvedValue({
+    draftStoreMocks.writeStudioDraftSnapshot.mockReturnValue({
       ok: true,
-      value: undefined,
+      value: {},
     });
   });
 
@@ -48,26 +40,60 @@ describe("useStudioLocalDraftEffects", () => {
     vi.restoreAllMocks();
   });
 
-  it("keeps leave protection without global error when asset backup is unsafe", async () => {
-    const addEventListener = vi.spyOn(window, "addEventListener");
-    const setLocalDraftStatus = vi.fn();
+  it("surfaces product copy when saved changes cannot be loaded", () => {
     const setLocalDraftError = vi.fn();
-    const setLastLocalSavedDraftKey = vi.fn();
-    draftStoreMocks.writeStudioDraftSnapshotWithAssets.mockResolvedValue({
-      assets: {
-        error: "asset_write_failed",
-        status: "unsafe",
-        unsafeSourceIds: ["source_1"],
-      },
-      ok: true,
-      value: {},
+    const setLocalDraftStatus = vi.fn();
+
+    draftStoreMocks.readStudioDraftSnapshot.mockReturnValue({
+      error: "storage_unavailable",
+      ok: false,
     });
 
     renderHook(() =>
       useStudioLocalDraftEffects({
         authoringModel: createModel(),
         blueprintDescription: "",
-        blueprintName: "Draft",
+        blueprintName: "Blueprint",
+        currentDraftKey: "current",
+        draftStorageKey: "new:default",
+        hasUserEdited: false,
+        isDraftRouteActive: false,
+        isRecoveryResolved: false,
+        isRemoteLoadPending: false,
+        lastLocalSavedDraftKey: null,
+        lastRemoteSaveSnapshotKey: null,
+        lastSavedDraftKey: null,
+        loadedBlueprintId: null,
+        serverDraftId: null,
+        setIsRecoveryResolved: vi.fn(),
+        setLastLocalSavedDraftKey: vi.fn(),
+        setLocalDraftError,
+        setLocalDraftStatus,
+        setRecoverySnapshot: vi.fn(),
+        sources: [],
+      }),
+    );
+
+    expect(setLocalDraftStatus).toHaveBeenCalledWith("failed");
+    expect(setLocalDraftError).toHaveBeenCalledWith(
+      "Saved changes could not be loaded.",
+    );
+  });
+
+  it("surfaces product copy when changes cannot be autosaved", async () => {
+    const setLocalDraftError = vi.fn();
+    const setLocalDraftStatus = vi.fn();
+
+    draftStoreMocks.writeStudioDraftSnapshot.mockReturnValue({
+      error: "storage_unavailable",
+      ok: false,
+    });
+
+    renderHook(() =>
+      useStudioLocalDraftEffects({
+        authoringModel: createModel(),
+        blueprintDescription: "",
+        blueprintName: "Blueprint",
         currentDraftKey: "current",
         draftStorageKey: "new:default",
         hasUserEdited: true,
@@ -77,14 +103,14 @@ describe("useStudioLocalDraftEffects", () => {
         lastLocalSavedDraftKey: null,
         lastRemoteSaveSnapshotKey: null,
         lastSavedDraftKey: null,
-        serverDraftId: null,
         loadedBlueprintId: null,
+        serverDraftId: null,
         setIsRecoveryResolved: vi.fn(),
-        setLastLocalSavedDraftKey,
+        setLastLocalSavedDraftKey: vi.fn(),
         setLocalDraftError,
         setLocalDraftStatus,
         setRecoverySnapshot: vi.fn(),
-        sources: [localSource()],
+        sources: [],
       }),
     );
 
@@ -93,13 +119,47 @@ describe("useStudioLocalDraftEffects", () => {
       await Promise.resolve();
     });
 
-    const beforeUnloadCall = addEventListener.mock.calls.find(
-      ([eventType]) => eventType === "beforeunload",
+    expect(setLocalDraftStatus).toHaveBeenCalledWith("failed");
+    expect(setLocalDraftError).toHaveBeenCalledWith(
+      "Changes could not be autosaved.",
     );
-    expect(typeof beforeUnloadCall?.[1]).toBe("function");
-    expect(setLastLocalSavedDraftKey).toHaveBeenCalledWith("current");
-    expect(setLocalDraftStatus).toHaveBeenCalledWith("autosaved");
-    expect(setLocalDraftError).toHaveBeenCalledWith(null);
+  });
+
+  it("keeps leave protection without global error when restoring local files are still unsafe", () => {
+    const addEventListener = vi.spyOn(window, "addEventListener");
+    const setLocalDraftError = vi.fn();
+
+    renderHook(() =>
+      useStudioLocalDraftEffects({
+        authoringModel: createModel(),
+        blueprintDescription: "",
+        blueprintName: "Saved work",
+        currentDraftKey: "current",
+        draftStorageKey: "new:default",
+        hasUserEdited: false,
+        isDraftRouteActive: false,
+        isRecoveryResolved: true,
+        isRemoteLoadPending: false,
+        lastLocalSavedDraftKey: "current",
+        lastRemoteSaveSnapshotKey: "current",
+        lastSavedDraftKey: "current",
+        loadedBlueprintId: null,
+        serverDraftId: null,
+        setIsRecoveryResolved: vi.fn(),
+        setLastLocalSavedDraftKey: vi.fn(),
+        setLocalDraftError,
+        setLocalDraftStatus: vi.fn(),
+        setRecoverySnapshot: vi.fn(),
+        sources: [restoringSource()],
+      }),
+    );
+
+    expect(
+      addEventListener.mock.calls.some(
+        ([eventType]) => eventType === "beforeunload",
+      ),
+    ).toBe(true);
+    expect(setLocalDraftError).not.toHaveBeenCalled();
   });
 
   it("does not attach leave protection for a clean loaded server draft", () => {
@@ -109,7 +169,7 @@ describe("useStudioLocalDraftEffects", () => {
       useStudioLocalDraftEffects({
         authoringModel: createModel(),
         blueprintDescription: "",
-        blueprintName: "Draft",
+        blueprintName: "Blueprint",
         currentDraftKey: "current",
         draftStorageKey: "new:default",
         hasUserEdited: false,
@@ -144,7 +204,7 @@ describe("useStudioLocalDraftEffects", () => {
       useStudioLocalDraftEffects({
         authoringModel: createModel(),
         blueprintDescription: "",
-        blueprintName: "Draft",
+        blueprintName: "Blueprint",
         currentDraftKey: "current",
         draftStorageKey: "new:default",
         hasUserEdited: false,
@@ -179,7 +239,7 @@ describe("useStudioLocalDraftEffects", () => {
       useStudioLocalDraftEffects({
         authoringModel: createModel(),
         blueprintDescription: "",
-        blueprintName: "Draft",
+        blueprintName: "Saved work",
         currentDraftKey: "current",
         draftStorageKey: "new:default",
         hasUserEdited: false,
@@ -214,7 +274,7 @@ describe("useStudioLocalDraftEffects", () => {
     const props = {
       authoringModel: createModel(),
       blueprintDescription: "",
-      blueprintName: "Draft",
+      blueprintName: "Saved work",
       currentDraftKey: "current",
       draftStorageKey: "new:default",
       hasUserEdited: false,
@@ -237,6 +297,7 @@ describe("useStudioLocalDraftEffects", () => {
     const hook = renderHook((input) => useStudioLocalDraftEffects(input), {
       initialProps: props,
     });
+
     expect(
       addEventListener.mock.calls.some(
         ([eventType]) => eventType === "beforeunload",
@@ -247,6 +308,7 @@ describe("useStudioLocalDraftEffects", () => {
       ...props,
       lastLocalSavedDraftKey: "current",
     });
+
     expect(
       removeEventListener.mock.calls.some(
         ([eventType]) => eventType === "beforeunload",
@@ -281,6 +343,22 @@ function localSource(): StudioSource {
       parseStatus: "parsed",
       uploadError: null,
       uploadStatus: "not_uploaded",
+      workbookId: null,
+    },
+    createdAt: new Date("2026-06-21T00:00:00.000Z"),
+    name: "Budget",
+    sourceId: "source_1",
+    type: "workbook",
+  };
+}
+
+function restoringSource(): StudioSource {
+  return {
+    backing: {
+      byteSize: 4,
+      kind: "restoring_local_file",
+      lastModified: 123,
+      originalName: "budget.xlsx",
       workbookId: null,
     },
     createdAt: new Date("2026-06-21T00:00:00.000Z"),

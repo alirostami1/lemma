@@ -158,8 +158,29 @@ describe("StudioSourceList", () => {
 
     expect(screen.getByRole("button", { name: "Reattach file" })).toBeTruthy();
     expect(
-      screen.getByText("Workbook file missing. Reattach the file to continue."),
+      screen.getByText(
+        "Saved source file could not be restored. Reattach the file to continue.",
+      ),
     ).toBeTruthy();
+    expect(screen.queryByText(/draft/i)).toBeNull();
+  });
+
+  it("shows saved work wording for persisted sources", () => {
+    render(
+      <StudioSourceList
+        isExpanded={true}
+        onAddSource={() => {}}
+        onExpandedChange={() => {}}
+        onReattachSource={async () => ({ reason: "", status: "blocked" })}
+        onRemoveSource={() => {}}
+        sources={[savedWorkSource("budget-q1")]}
+        usageBySourceId={new Map()}
+      />,
+    );
+
+    expect(screen.getByText("Workbook · 1 sheets · not used")).toBeTruthy();
+    expect(screen.getByText("saved in current work")).toBeTruthy();
+    expect(screen.queryByText(/saved in draft/i)).toBeNull();
   });
 });
 
@@ -235,7 +256,42 @@ function missingSource(name: string): StudioWorkbookSource {
       kind: "missing_local_file",
       lastModified: 1,
       originalName: `${name}.xlsx`,
-      parseError: "Workbook file missing. Reattach the file to continue.",
+      parseError:
+        "Saved source file could not be restored. Reattach the file to continue.",
+      workbookId: null,
+    },
+    createdAt: new Date("2026-06-21T00:00:00.000Z"),
+    name,
+    sourceId: name,
+    type: "workbook",
+  };
+}
+
+function savedWorkSource(name: string): StudioWorkbookSource {
+  return {
+    backing: {
+      byteSize: 4,
+      checksumSha256: "checksum-1",
+      fileId: "file-1",
+      kind: "draft_file",
+      originalName: `${name}.xlsx`,
+      parsedWorkbook: {
+        byteSize: 4,
+        cellsByKey: new Map(),
+        fileName: `${name}.xlsx`,
+        parsedAt: new Date("2026-06-21T00:00:00.000Z"),
+        sheetCount: 1,
+        sheets: [
+          {
+            columnCount: 1,
+            name: "Sheet1",
+            rowCount: 1,
+            usedRange: "Sheet1!A1",
+          },
+        ],
+      },
+      previewError: null,
+      previewStatus: "loaded",
       workbookId: null,
     },
     createdAt: new Date("2026-06-21T00:00:00.000Z"),

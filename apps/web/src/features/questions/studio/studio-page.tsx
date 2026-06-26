@@ -74,7 +74,7 @@ function StudioDraftRouteNormalize({ draftId }: { draftId: string }) {
     <PageContainer className="pb-8" variant="workbench">
       <section className="grid gap-3 rounded-lg border bg-background p-6 shadow-sm">
         <h1 className="text-lg font-semibold">Studio</h1>
-        <p className="text-sm text-muted-foreground">Opening blueprint...</p>
+        <p className="text-sm text-muted-foreground">Opening work...</p>
       </section>
     </PageContainer>
   );
@@ -95,7 +95,7 @@ function StudioDraftRouteGate({
       <PageContainer className="pb-8" variant="workbench">
         <section className="grid gap-3 rounded-lg border bg-background p-6 shadow-sm">
           <h1 className="text-lg font-semibold">Studio</h1>
-          <p className="text-sm text-muted-foreground">Loading blueprint...</p>
+          <p className="text-sm text-muted-foreground">Loading work...</p>
         </section>
       </PageContainer>
     );
@@ -105,8 +105,10 @@ function StudioDraftRouteGate({
     return (
       <PageContainer className="pb-8" variant="workbench">
         <section className="grid gap-3 rounded-lg border bg-background p-6 shadow-sm">
-          <h1 className="text-lg font-semibold">Blueprint unavailable</h1>
-          <InlineError message="This blueprint could not be loaded." />
+          <h1 className="text-lg font-semibold">
+            This work is no longer available.
+          </h1>
+          <InlineError message="This work could not be loaded." />
           <Button
             onClick={() => {
               void draftQuery.refetch();
@@ -226,13 +228,13 @@ function getTerminalDraftView(
     case "published":
       return {
         description:
-          "This version has already been published and cannot be edited here.",
-        title: "Blueprint published",
+          "It is now a published blueprint and can no longer be edited here.",
+        title: "This work was already published.",
       };
     case "discarded":
       return {
-        description: "This work is no longer available for editing.",
-        title: "Blueprint unavailable",
+        description: "It can no longer be edited here.",
+        title: "This work is no longer available.",
       };
   }
 }
@@ -264,7 +266,7 @@ function StudioDraftLoadingScreen() {
     <PageContainer className="pb-8" variant="workbench">
       <section className="grid gap-3 rounded-lg border bg-background p-6 shadow-sm">
         <h1 className="text-lg font-semibold">Studio</h1>
-        <p className="text-sm text-muted-foreground">Loading blueprint...</p>
+        <p className="text-sm text-muted-foreground">Loading work...</p>
       </section>
     </PageContainer>
   );
@@ -287,12 +289,12 @@ function StudioDraftLoadErrorScreen({
           <p className="text-sm text-muted-foreground">
             {variant === "document_error"
               ? "This blueprint contains an unsupported or invalid document structure."
-              : "This blueprint is unavailable right now."}
+              : "This work is unavailable right now."}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button onClick={onReloadLatestDraft} type="button" variant="outline">
-            Reload latest version
+            Reload latest work
           </Button>
           <Button asChild variant="outline">
             <Link to="/studio">Back to Studio</Link>
@@ -315,10 +317,10 @@ function StudioEntryRouteView({
   });
   const message =
     intent.type === "edit_blueprint"
-      ? "Opening blueprint..."
+      ? "Opening work..."
       : intent.type === "new_draft"
         ? "Starting blueprint..."
-        : "Opening blueprint...";
+        : "Opening work...";
 
   return (
     <PageContainer className="pb-8" variant="workbench">
