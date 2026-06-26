@@ -222,6 +222,7 @@ export interface QuestionGenerationRun {
   attemptNumber: number;
   attempts: number;
   blueprintId: string;
+  blueprintVersionId: string;
   createdAt: Date;
   createdByUserId: string;
   errorMessage: string | null;

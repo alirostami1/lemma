@@ -12,9 +12,11 @@ import {
 } from "./errors.js";
 import {
   type QuestionBlueprintId,
+  type QuestionBlueprintVersionId,
   type QuestionGenerationRunId,
   type QuestionSetId,
   questionBlueprintId,
+  questionBlueprintVersionId,
   questionGenerationRunId,
   questionSetId,
   type UserId,
@@ -47,6 +49,7 @@ export type QuestionGenerationRunResult = {
 export type QuestionBlueprintSnapshot = {
   schemaVersion: 1;
   blueprintId: QuestionBlueprintId;
+  blueprintVersionId: QuestionBlueprintVersionId;
   name: QuestionBlueprintName;
   description: QuestionBlueprintDescription | null;
   document: QuestionBlueprintDocument;
@@ -60,6 +63,7 @@ export type QuestionGenerationRun = Timestamped & {
   ownerUserId: UserId;
   createdByUserId: UserId;
   blueprintId: QuestionBlueprintId;
+  blueprintVersionId: QuestionBlueprintVersionId;
   blueprintSnapshot: QuestionBlueprintSnapshot;
   targetQuestionSetId: QuestionSetId;
   requestedCount: number;
@@ -79,6 +83,7 @@ export type CreateInitialQuestionGenerationRunInput = {
   ownerUserId: UserId;
   createdByUserId: UserId;
   blueprintId: QuestionBlueprintId;
+  blueprintVersionId: QuestionBlueprintVersionId;
   blueprintSnapshot: QuestionBlueprintSnapshot;
   targetQuestionSetId: QuestionSetId;
   requestedCount: number;
@@ -86,6 +91,7 @@ export type CreateInitialQuestionGenerationRunInput = {
 
 export function createQuestionBlueprintSnapshot(input: {
   blueprintId: QuestionBlueprintId;
+  blueprintVersionId: QuestionBlueprintVersionId;
   name: QuestionBlueprintName;
   description: QuestionBlueprintDescription | null;
   document: QuestionBlueprintDocument;
@@ -94,6 +100,7 @@ export function createQuestionBlueprintSnapshot(input: {
 }): QuestionBlueprintSnapshot {
   return {
     blueprintId: input.blueprintId,
+    blueprintVersionId: input.blueprintVersionId,
     capturedAt: input.capturedAt.toISOString(),
     description: input.description,
     document: input.document,
@@ -110,6 +117,7 @@ function createQuestionGenerationRun(
     ownerUserId: UserId;
     createdByUserId: UserId;
     blueprintId: QuestionBlueprintId;
+    blueprintVersionId: QuestionBlueprintVersionId;
     blueprintSnapshot: QuestionBlueprintSnapshot;
     targetQuestionSetId: QuestionSetId;
     requestedCount: number;
@@ -119,10 +127,16 @@ function createQuestionGenerationRun(
   },
   at: Date,
 ): QuestionGenerationRun {
+  assertRunBlueprintVersionMatchesSnapshot({
+    blueprintId: input.blueprintId,
+    blueprintVersionId: input.blueprintVersionId,
+    snapshot: input.blueprintSnapshot,
+  });
   return {
     attemptNumber: positiveInteger(input.attemptNumber, "attemptNumber"),
     attempts: 0,
     blueprintId: input.blueprintId,
+    blueprintVersionId: input.blueprintVersionId,
     blueprintSnapshot: input.blueprintSnapshot,
     createdAt: at,
     createdByUserId: input.createdByUserId,
@@ -169,6 +183,7 @@ export function createRetryQuestionGenerationRun(
     {
       attemptNumber: input.original.attemptNumber + 1,
       blueprintId: input.original.blueprintId,
+      blueprintVersionId: input.original.blueprintVersionId,
       blueprintSnapshot: input.original.blueprintSnapshot,
       createdByUserId: input.createdByUserId,
       id: input.id,
@@ -187,6 +202,7 @@ export function reconstituteQuestionGenerationRun(input: {
   ownerUserId: string;
   createdByUserId: string;
   blueprintId: string;
+  blueprintVersionId: string;
   blueprintSnapshot: unknown;
   targetQuestionSetId: string;
   requestedCount: number;
@@ -202,11 +218,21 @@ export function reconstituteQuestionGenerationRun(input: {
   createdAt: Date;
   updatedAt: Date;
 }): QuestionGenerationRun {
+  const blueprintVersionId = questionBlueprintVersionId(
+    input.blueprintVersionId,
+  );
+  const blueprintSnapshot = questionBlueprintSnapshot(input.blueprintSnapshot);
+  assertRunBlueprintVersionMatchesSnapshot({
+    blueprintId: questionBlueprintId(input.blueprintId),
+    blueprintVersionId,
+    snapshot: blueprintSnapshot,
+  });
   return {
     attemptNumber: positiveInteger(input.attemptNumber, "attemptNumber"),
     attempts: nonNegativeInteger(input.attempts, "attempts"),
     blueprintId: questionBlueprintId(input.blueprintId),
-    blueprintSnapshot: questionBlueprintSnapshot(input.blueprintSnapshot),
+    blueprintVersionId,
+    blueprintSnapshot,
     createdAt: input.createdAt,
     createdByUserId: userId(input.createdByUserId),
     errorMessage: input.errorMessage,
@@ -360,9 +386,13 @@ export function questionBlueprintSnapshot(
   if (typeof input.blueprintId !== "string") {
     fail("question blueprint snapshot blueprintId must be a uuid");
   }
+  if (typeof input.blueprintVersionId !== "string") {
+    fail("question blueprint snapshot blueprintVersionId must be a uuid");
+  }
   assertNonEmptyString(input.documentHash, "documentHash", fail);
   return {
     blueprintId: questionBlueprintId(input.blueprintId),
+    blueprintVersionId: questionBlueprintVersionId(input.blueprintVersionId),
     capturedAt: parsedSnapshotDateString(input.capturedAt),
     description: questionBlueprintDescription(
       (input.description as string | null | undefined) ?? null,
@@ -386,6 +416,23 @@ function questionGenerationRunResult(
     questionIds.push(questionId);
   }
   return { questionIds };
+}
+
+function assertRunBlueprintVersionMatchesSnapshot(input: {
+  blueprintId: QuestionBlueprintId;
+  blueprintVersionId: QuestionBlueprintVersionId;
+  snapshot: QuestionBlueprintSnapshot;
+}): void {
+  if (input.blueprintId !== input.snapshot.blueprintId) {
+    throw new InvalidQuestionFieldError(
+      "generation run blueprintId must match blueprint snapshot",
+    );
+  }
+  if (input.blueprintVersionId !== input.snapshot.blueprintVersionId) {
+    throw new InvalidQuestionFieldError(
+      "generation run blueprintVersionId must match blueprint snapshot",
+    );
+  }
 }
 
 function nonNegativeInteger(value: unknown, fieldName: string): number {

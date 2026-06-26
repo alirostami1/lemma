@@ -52,6 +52,7 @@ function createRun(
     attemptNumber: 1,
     attempts: 1,
     blueprintId: "blueprint_1",
+    blueprintVersionId: "blueprint_version_1",
     createdAt: new Date("2026-06-10T00:00:00.000Z"),
     createdByUserId: "user_1",
     errorMessage: null,

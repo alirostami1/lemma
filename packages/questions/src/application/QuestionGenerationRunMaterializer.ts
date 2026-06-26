@@ -92,7 +92,11 @@ export class QuestionGenerationRunMaterializer {
             generationRunId: run.id,
             id: toQuestionId(this.deps.idGenerator.questionId()),
             ownerUserId: run.ownerUserId,
-            producer: createGenerationProducer({ questionIndex: index, run }),
+            producer: createGenerationProducer({
+              blueprintSnapshot,
+              questionIndex: index,
+              run,
+            }),
             solution: materialized.solution,
             sourceEvidence: materialized.sourceEvidence,
             sourcePlan: materialized.sourcePlan,
@@ -150,14 +154,16 @@ function buildSourceLineageBySourceId(input: {
 
 function createGenerationProducer(input: {
   run: QuestionGenerationRun;
+  blueprintSnapshot: QuestionBlueprintSnapshot;
   questionIndex: number;
 }): QuestionProducer {
   return questionProducer({
     compiler: "canonical-question-materializer@1",
     schemaVersion: 1,
     source: {
-      blueprintDocumentHash: input.run.blueprintSnapshot.documentHash,
+      blueprintDocumentHash: input.blueprintSnapshot.documentHash,
       blueprintId: input.run.blueprintId,
+      blueprintVersionId: input.run.blueprintVersionId,
       generationRunId: input.run.id,
       questionIndex: input.questionIndex,
     },

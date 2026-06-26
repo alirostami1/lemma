@@ -212,6 +212,7 @@ export interface QuestionGenerationRuns {
   attempts: Generated<number>;
   blueprintId: string;
   blueprintSnapshot: Json;
+  blueprintVersionId: string;
   createdAt: Generated<Timestamp>;
   createdByUserId: string;
   errorMessage: string | null;

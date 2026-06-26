@@ -31,6 +31,7 @@ function toMutableJsonObject(value: unknown): JsonObject {
 export type QuestionGenerationRunRequestedPayload = JsonObject & {
   questionGenerationRunId: string;
   blueprintId: string;
+  blueprintVersionId: string;
   blueprintSnapshot: JsonObject;
   targetQuestionSetId: string;
   requestedCount: number;
@@ -48,6 +49,7 @@ export function questionGenerationRunRequestedEvent(input: {
   const payload = {
     attemptNumber: input.run.attemptNumber,
     blueprintId: input.run.blueprintId,
+    blueprintVersionId: input.run.blueprintVersionId,
     blueprintSnapshot: toMutableJsonObject(input.run.blueprintSnapshot),
     questionGenerationRunId: input.run.id,
     requestedCount: input.run.requestedCount,

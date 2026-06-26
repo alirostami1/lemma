@@ -8,6 +8,7 @@ export async function up(db: MigrationDb): Promise<void> {
     .addColumn("owner_user_id", "uuid", (c) => c.notNull())
     .addColumn("created_by_user_id", "uuid", (c) => c.notNull())
     .addColumn("blueprint_id", "uuid", (c) => c.notNull())
+    .addColumn("blueprint_version_id", "uuid", (c) => c.notNull())
     .addColumn("target_question_set_id", "uuid", (c) => c.notNull())
     .addColumn("requested_count", "integer", (c) => c.notNull())
     .addColumn("blueprint_snapshot", "jsonb", (c) => c.notNull())
@@ -60,6 +61,7 @@ export async function up(db: MigrationDb): Promise<void> {
     .addCheckConstraint(
       "question_generation_runs_blueprint_snapshot_required_check",
       sql`blueprint_snapshot ? 'blueprintId'
+        and blueprint_snapshot ? 'blueprintVersionId'
         and blueprint_snapshot ? 'name'
         and blueprint_snapshot ? 'document'
         and blueprint_snapshot ? 'sources'
@@ -73,6 +75,11 @@ export async function up(db: MigrationDb): Promise<void> {
     .addCheckConstraint(
       "question_generation_runs_blueprint_snapshot_sources_check",
       sql`jsonb_typeof(blueprint_snapshot->'sources') = 'array'`,
+    )
+    .addCheckConstraint(
+      "question_generation_runs_blueprint_snapshot_ids_check",
+      sql`blueprint_snapshot->>'blueprintId' = blueprint_id::text
+        and blueprint_snapshot->>'blueprintVersionId' = blueprint_version_id::text`,
     )
     .addCheckConstraint(
       "question_generation_runs_result_object_check",
@@ -97,6 +104,13 @@ export async function up(db: MigrationDb): Promise<void> {
       ["blueprint_id"],
       "question_blueprints",
       ["id"],
+      (cb) => cb.onDelete("restrict"),
+    )
+    .addForeignKeyConstraint(
+      "question_generation_runs_blueprint_version_foreign",
+      ["blueprint_version_id", "blueprint_id"],
+      "question_blueprint_versions",
+      ["id", "blueprint_id"],
       (cb) => cb.onDelete("restrict"),
     )
     .addForeignKeyConstraint(
@@ -136,6 +150,13 @@ export async function up(db: MigrationDb): Promise<void> {
     .createIndex("question_generation_runs_blueprint_id_created_at_index")
     .on("question_generation_runs")
     .columns(["blueprint_id", "created_at"])
+    .execute();
+  await db.schema
+    .createIndex(
+      "question_generation_runs_blueprint_version_id_created_at_index",
+    )
+    .on("question_generation_runs")
+    .columns(["blueprint_version_id", "created_at"])
     .execute();
   await db.schema
     .createIndex("question_generation_runs_target_question_set_id_index")

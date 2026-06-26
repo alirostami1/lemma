@@ -6546,6 +6546,8 @@ export const listQuestionGenerationRuns200ResponseQuestionGenerationRunsItemAtte
 
 export const listQuestionGenerationRuns200ResponseQuestionGenerationRunsItemBlueprintIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const listQuestionGenerationRuns200ResponseQuestionGenerationRunsItemBlueprintVersionIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const listQuestionGenerationRuns200ResponseQuestionGenerationRunsItemCreatedByUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const listQuestionGenerationRuns200ResponseQuestionGenerationRunsItemIdRegExp =
@@ -6577,6 +6579,11 @@ export const ListQuestionGenerationRuns200Response = zod.strictObject({
         .string()
         .regex(
           listQuestionGenerationRuns200ResponseQuestionGenerationRunsItemBlueprintIdRegExp,
+        ),
+      blueprintVersionId: zod
+        .string()
+        .regex(
+          listQuestionGenerationRuns200ResponseQuestionGenerationRunsItemBlueprintVersionIdRegExp,
         ),
       createdAt: zod.iso.datetime({ offset: true }),
       createdByUserId: zod
@@ -6724,6 +6731,8 @@ export const createQuestionGenerationRun201ResponseQuestionGenerationRunAttempts
 
 export const createQuestionGenerationRun201ResponseQuestionGenerationRunBlueprintIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const createQuestionGenerationRun201ResponseQuestionGenerationRunBlueprintVersionIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const createQuestionGenerationRun201ResponseQuestionGenerationRunCreatedByUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const createQuestionGenerationRun201ResponseQuestionGenerationRunIdRegExp =
@@ -6753,6 +6762,11 @@ export const CreateQuestionGenerationRun201Response = zod.strictObject({
       .string()
       .regex(
         createQuestionGenerationRun201ResponseQuestionGenerationRunBlueprintIdRegExp,
+      ),
+    blueprintVersionId: zod
+      .string()
+      .regex(
+        createQuestionGenerationRun201ResponseQuestionGenerationRunBlueprintVersionIdRegExp,
       ),
     createdAt: zod.iso.datetime({ offset: true }),
     createdByUserId: zod
@@ -6890,6 +6904,8 @@ export const getQuestionGenerationRun200ResponseQuestionGenerationRunAttemptsMin
 
 export const getQuestionGenerationRun200ResponseQuestionGenerationRunBlueprintIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const getQuestionGenerationRun200ResponseQuestionGenerationRunBlueprintVersionIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const getQuestionGenerationRun200ResponseQuestionGenerationRunCreatedByUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const getQuestionGenerationRun200ResponseQuestionGenerationRunIdRegExp =
@@ -6917,6 +6933,11 @@ export const GetQuestionGenerationRun200Response = zod.strictObject({
       .string()
       .regex(
         getQuestionGenerationRun200ResponseQuestionGenerationRunBlueprintIdRegExp,
+      ),
+    blueprintVersionId: zod
+      .string()
+      .regex(
+        getQuestionGenerationRun200ResponseQuestionGenerationRunBlueprintVersionIdRegExp,
       ),
     createdAt: zod.iso.datetime({ offset: true }),
     createdByUserId: zod
@@ -7111,6 +7132,8 @@ export const retryQuestionGenerationRun201ResponseQuestionGenerationRunAttemptsM
 
 export const retryQuestionGenerationRun201ResponseQuestionGenerationRunBlueprintIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const retryQuestionGenerationRun201ResponseQuestionGenerationRunBlueprintVersionIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const retryQuestionGenerationRun201ResponseQuestionGenerationRunCreatedByUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const retryQuestionGenerationRun201ResponseQuestionGenerationRunIdRegExp =
@@ -7140,6 +7163,11 @@ export const RetryQuestionGenerationRun201Response = zod.strictObject({
       .string()
       .regex(
         retryQuestionGenerationRun201ResponseQuestionGenerationRunBlueprintIdRegExp,
+      ),
+    blueprintVersionId: zod
+      .string()
+      .regex(
+        retryQuestionGenerationRun201ResponseQuestionGenerationRunBlueprintVersionIdRegExp,
       ),
     createdAt: zod.iso.datetime({ offset: true }),
     createdByUserId: zod

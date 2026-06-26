@@ -6,6 +6,7 @@ import {
   createQuestionBlueprintSnapshot,
   createRetryQuestionGenerationRun,
   type QuestionBlueprint,
+  type QuestionBlueprintVersion,
   type QuestionGenerationRun,
   questionBlueprintId as toQuestionBlueprintId,
   questionGenerationRunId as toQuestionGenerationRunId,
@@ -25,6 +26,7 @@ import type {
 } from "./dto.js";
 import {
   ForbiddenQuestionActionError,
+  InvalidQuestionBlueprintError,
   QuestionBlueprintNotFoundError,
   QuestionGenerationRunNotFoundError,
   QuestionSetNotFoundError,
@@ -97,7 +99,8 @@ export class QuestionGenerationService {
       "create_question_generation_run",
       command.lineage,
       async () => {
-        const blueprint = await this.loadGenerationBlueprint(command);
+        const { blueprint, version } =
+          await this.loadGenerationBlueprintVersion(command);
         const targetQuestionSetId = toQuestionSetId(
           command.targetQuestionSetId,
         );
@@ -118,13 +121,15 @@ export class QuestionGenerationService {
         const run = createInitialQuestionGenerationRun(
           {
             blueprintId: blueprint.id,
+            blueprintVersionId: version.id,
             blueprintSnapshot: createQuestionBlueprintSnapshot({
               blueprintId: blueprint.id,
+              blueprintVersionId: version.id,
               capturedAt: at,
-              description: blueprint.description,
-              document: blueprint.document,
-              name: blueprint.name,
-              sources: blueprint.sources,
+              description: version.description,
+              document: version.document,
+              name: version.name,
+              sources: version.sources,
             }),
             createdByUserId: toUserId(command.currentUser.user.id),
             id: toQuestionGenerationRunId(
@@ -248,9 +253,12 @@ export class QuestionGenerationService {
     );
   }
 
-  private async loadGenerationBlueprint(
+  private async loadGenerationBlueprintVersion(
     command: CreateQuestionGenerationRunCommand,
-  ): Promise<QuestionBlueprint> {
+  ): Promise<{
+    blueprint: QuestionBlueprint;
+    version: QuestionBlueprintVersion;
+  }> {
     const blueprint = await this.findQuestionBlueprintByIdOrThrow(
       command.blueprintId,
     );
@@ -258,13 +266,26 @@ export class QuestionGenerationService {
       canViewQuestionBlueprint(command.currentUser, blueprint),
       "You cannot use this question blueprint.",
     );
+    const version =
+      await this.deps.questionsRepository.findQuestionBlueprintVersionById(
+        blueprint.currentVersionId,
+      );
+    if (!version) {
+      throw new QuestionBlueprintNotFoundError();
+    }
+    if (version.blueprintId !== blueprint.id) {
+      throw new InvalidQuestionBlueprintError(
+        "Current blueprint version does not belong to the requested blueprint.",
+      );
+    }
     await new QuestionGenerationSourceResolver({
       workbookAccessPort: this.deps.workbookAccessPort,
     }).assertAccess({
-      blueprint,
+      document: version.document,
+      sources: version.sources,
       currentUser: command.currentUser,
     });
-    return blueprint;
+    return { blueprint, version };
   }
 
   private async findRunByIdOrThrow(id: string) {

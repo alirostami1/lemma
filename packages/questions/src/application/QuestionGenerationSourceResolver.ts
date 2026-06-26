@@ -1,5 +1,8 @@
 import type { CurrentUser } from "@lemma/identity/application";
-import type { QuestionBlueprint } from "../domain/index.js";
+import type {
+  QuestionBlueprintDocument,
+  QuestionBlueprintSource,
+} from "../domain/index.js";
 import {
   questionBlueprintSourcesReferencedByDocument,
   workbookId as toWorkbookId,
@@ -16,11 +19,12 @@ export class QuestionGenerationSourceResolver {
 
   async assertAccess(input: {
     currentUser: CurrentUser;
-    blueprint: QuestionBlueprint;
+    document: QuestionBlueprintDocument;
+    sources: readonly QuestionBlueprintSource[];
   }): Promise<void> {
     const usedSources = questionBlueprintSourcesReferencedByDocument(
-      input.blueprint.document,
-      input.blueprint.sources,
+      input.document,
+      input.sources,
     );
 
     for (const source of usedSources) {

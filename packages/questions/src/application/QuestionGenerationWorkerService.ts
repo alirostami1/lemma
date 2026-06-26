@@ -2,11 +2,13 @@ import type { OperationLineage } from "@lemma/domain";
 import type { DomainEventEnvelope } from "@lemma/events/domain";
 import { instrumentService } from "@lemma/observability";
 import {
+  createQuestionBlueprintSnapshot,
   InvalidQuestionStateTransitionError,
   isTerminalRun,
   markQuestionGenerationRunFailed,
   markQuestionGenerationRunMaterializing,
   markQuestionGenerationRunSucceeded,
+  type QuestionBlueprintSnapshot,
   type QuestionGenerationRun,
   type QuestionGenerationRunId,
   questionGenerationRunId as toQuestionGenerationRunId,
@@ -14,6 +16,7 @@ import {
 import type { QuestionGenerationRunResultDto } from "./dto.js";
 import {
   InvalidQuestionBlueprintError,
+  QuestionBlueprintNotFoundError,
   QuestionGenerationRunNotFoundError,
   UnsupportedQuestionValueExpressionError,
   WorkbookQuestionReferenceError,
@@ -189,6 +192,7 @@ export class QuestionGenerationWorkerService {
       );
     }
 
+    const blueprintSnapshot = await this.loadPinnedBlueprintSnapshot(run);
     const resolved = await new QuestionGenerationMaterializationInputResolver({
       clock: this.deps.clock,
       idGenerator: this.deps.idGenerator,
@@ -196,7 +200,7 @@ export class QuestionGenerationWorkerService {
       workbookCalculationPort: this.deps.workbookCalculationPort,
       workbookSnapshotReadPort: this.deps.workbookSnapshotReadPort,
     }).resolve({
-      blueprintSnapshot: run.blueprintSnapshot,
+      blueprintSnapshot,
       eventWorkbookSnapshotIds: input.eventWorkbookSnapshotIds,
       lineage: input.lineage,
       run,
@@ -224,6 +228,7 @@ export class QuestionGenerationWorkerService {
     eventWorkbookSnapshotIds: readonly string[],
     lineage: OperationLineage,
   ): Promise<QuestionGenerationWorkerResult> {
+    const blueprintSnapshot = await this.loadPinnedBlueprintSnapshot(run);
     const resolved = await new QuestionGenerationMaterializationInputResolver({
       clock: this.deps.clock,
       idGenerator: this.deps.idGenerator,
@@ -231,7 +236,7 @@ export class QuestionGenerationWorkerService {
       workbookCalculationPort: this.deps.workbookCalculationPort,
       workbookSnapshotReadPort: this.deps.workbookSnapshotReadPort,
     }).resolve({
-      blueprintSnapshot: run.blueprintSnapshot,
+      blueprintSnapshot,
       eventWorkbookSnapshotIds,
       lineage,
       run,
@@ -260,7 +265,7 @@ export class QuestionGenerationWorkerService {
       idGenerator: this.deps.idGenerator,
       questionValueResolverPort: this.deps.questionValueResolverPort,
     }).materialize({
-      blueprintSnapshot: materializing.blueprintSnapshot,
+      blueprintSnapshot,
       run: materializing,
       snapshotsBySourceIdAndQuestionIndex:
         resolved.snapshotsBySourceIdAndQuestionIndex,
@@ -338,6 +343,32 @@ export class QuestionGenerationWorkerService {
       ],
     );
     return { questionGenerationRun: failed, status: "failed" };
+  }
+
+  private async loadPinnedBlueprintSnapshot(
+    run: QuestionGenerationRun,
+  ): Promise<QuestionBlueprintSnapshot> {
+    const version =
+      await this.deps.questionsRepository.findQuestionBlueprintVersionById(
+        run.blueprintVersionId,
+      );
+    if (!version) {
+      throw new QuestionBlueprintNotFoundError();
+    }
+    if (version.blueprintId !== run.blueprintId) {
+      throw new InvalidQuestionBlueprintError(
+        "Pinned blueprint version does not belong to the generation run blueprint.",
+      );
+    }
+    return createQuestionBlueprintSnapshot({
+      blueprintId: run.blueprintId,
+      blueprintVersionId: version.id,
+      capturedAt: new Date(run.blueprintSnapshot.capturedAt),
+      description: version.description,
+      document: version.document,
+      name: version.name,
+      sources: version.sources,
+    });
   }
 
   private async persistRunWithEvents(
@@ -440,6 +471,7 @@ function classifyQuestionGenerationError(
 ): "permanent" | "transient" {
   if (
     error instanceof InvalidQuestionBlueprintError ||
+    error instanceof QuestionBlueprintNotFoundError ||
     error instanceof UnsupportedQuestionValueExpressionError ||
     error instanceof WorkbookQuestionReferenceError ||
     error instanceof InvalidQuestionStateTransitionError ||
