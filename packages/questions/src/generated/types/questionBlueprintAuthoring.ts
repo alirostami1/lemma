@@ -7,7 +7,7 @@
 import type { QuestionBlueprintAuthoringStatus } from "./questionBlueprintAuthoringStatus.js";
 import type { QuestionBlueprintAuthoringVisibility } from "./questionBlueprintAuthoringVisibility.js";
 import type { QuestionBlueprintDocument } from "./questionBlueprintDocument.js";
-import type { QuestionBlueprintSource } from "./questionBlueprintSource.js";
+import type { QuestionBlueprintVersionSource } from "./questionBlueprintVersionSource.js";
 
 export interface QuestionBlueprintAuthoring {
   /** @nullable */
@@ -33,7 +33,7 @@ export interface QuestionBlueprintAuthoring {
   /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
   ownerUserId: string;
   /** Blueprint-local source entries attached to this blueprint. */
-  sources: QuestionBlueprintSource[];
+  sources: QuestionBlueprintVersionSource[];
   status: QuestionBlueprintAuthoringStatus;
   updatedAt: string;
   visibility: QuestionBlueprintAuthoringVisibility;

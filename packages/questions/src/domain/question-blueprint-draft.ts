@@ -86,7 +86,7 @@ export function questionBlueprintDraftId(
   return value as QuestionBlueprintDraftId;
 }
 
-export function questionBlueprintDraftSources(
+export function questionBlueprintDraftSourcesFromRows(
   input: unknown,
 ): QuestionBlueprintDraftSource[] {
   if (!Array.isArray(input)) {
@@ -245,7 +245,7 @@ export function reconstituteQuestionBlueprintDraft(input: {
     status,
   });
   const document = questionBlueprintDocument(input.document);
-  const sources = questionBlueprintDraftSources(input.sources);
+  const sources = questionBlueprintDraftSourcesFromRows(input.sources);
   assertDraftReferences(document, sources);
   return {
     blueprintId,
@@ -292,6 +292,7 @@ export function attachDraftSourceFile(
   input: {
     sourceId: string;
     fileId: string;
+    workbookId: WorkbookId;
     originalName: string;
     byteSize: number;
     checksumSha256: string;
@@ -317,7 +318,8 @@ export function attachDraftSourceFile(
             checksumSha256: input.checksumSha256,
             fileId: input.fileId,
             originalName: input.originalName,
-            status: "uploaded",
+            status: "validated",
+            workbookId: input.workbookId,
           }
         : source,
     ),

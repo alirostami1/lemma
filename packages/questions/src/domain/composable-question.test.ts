@@ -231,7 +231,11 @@ function documentWithWorkbookReference(sourceId: string) {
 
 function workbookSource(sourceId: string) {
   return {
+    byteSize: null,
+    checksumSha256: null,
+    fileId: null,
     name: "Source 1",
+    originalName: null,
     sourceId,
     type: "workbook" as const,
     workbookId: evidenceWorkbookId,

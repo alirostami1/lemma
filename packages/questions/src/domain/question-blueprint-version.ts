@@ -6,10 +6,13 @@ import {
   questionBlueprintVersionId,
   type UserId,
   userId,
+  type WorkbookId,
+  workbookId,
 } from "./ids.js";
 import {
   type QuestionBlueprintSource,
-  questionBlueprintSources,
+  questionBlueprintSourceId,
+  questionBlueprintSourceName,
   questionBlueprintSourcesReferencedByDocument,
 } from "./question-blueprint.js";
 import {
@@ -37,9 +40,20 @@ export type QuestionBlueprintVersion = {
   name: QuestionBlueprintName;
   description: QuestionBlueprintDescription | null;
   document: QuestionBlueprintDocument;
-  sources: readonly QuestionBlueprintSource[];
+  sources: readonly QuestionBlueprintVersionSource[];
   publishedAt: Date;
   createdAt: Date;
+};
+
+export type QuestionBlueprintVersionSource = {
+  type: "workbook";
+  sourceId: string;
+  name: string;
+  fileId: string | null;
+  workbookId: WorkbookId;
+  originalName: string | null;
+  byteSize: number | null;
+  checksumSha256: string | null;
 };
 
 export function questionBlueprintVersionNumber(
@@ -64,13 +78,16 @@ export function createQuestionBlueprintVersion(
     name: QuestionBlueprintName;
     description: QuestionBlueprintDescription | null;
     document: QuestionBlueprintDocument;
-    sources: readonly QuestionBlueprintSource[];
+    sources: readonly (
+      | QuestionBlueprintSource
+      | QuestionBlueprintVersionSource
+    )[];
   },
   at: Date,
 ): QuestionBlueprintVersion {
-  const sources = questionBlueprintSourcesReferencedByDocument(
+  const sources = questionBlueprintVersionSourcesReferencedByDocument(
     input.document,
-    input.sources,
+    toVersionSources(input.sources),
   );
   return {
     ...input,
@@ -95,8 +112,8 @@ export function reconstituteQuestionBlueprintVersion(input: {
   createdAt: Date;
 }): QuestionBlueprintVersion {
   const document = questionBlueprintDocument(input.document);
-  const parsedSources = questionBlueprintSources(input.sources);
-  const sources = questionBlueprintSourcesReferencedByDocument(
+  const parsedSources = questionBlueprintVersionSourcesFromRows(input.sources);
+  const sources = questionBlueprintVersionSourcesReferencedByDocument(
     document,
     parsedSources,
   );
@@ -116,4 +133,122 @@ export function reconstituteQuestionBlueprintVersion(input: {
     sources,
     versionNumber: questionBlueprintVersionNumber(input.versionNumber),
   };
+}
+
+export function questionBlueprintVersionSourcesFromRows(
+  input: unknown,
+): QuestionBlueprintVersionSource[] {
+  if (!Array.isArray(input)) {
+    throw new InvalidQuestionFieldError(
+      "question blueprint version sources must be an array",
+    );
+  }
+  const ids = new Set<string>();
+  return input.map((source) => {
+    if (typeof source !== "object" || source === null) {
+      throw new InvalidQuestionFieldError(
+        "question blueprint version source must be an object",
+      );
+    }
+    const record = source as Record<string, unknown>;
+    if (record.type !== "workbook") {
+      throw new InvalidQuestionFieldError(
+        "question blueprint version source type is invalid",
+      );
+    }
+    const sourceId = questionBlueprintSourceId(record.sourceId);
+    if (ids.has(sourceId)) {
+      throw new InvalidQuestionFieldError(
+        "question blueprint version source ids must be unique",
+      );
+    }
+    ids.add(sourceId);
+    return {
+      byteSize: nullablePositiveNumber(record.byteSize),
+      checksumSha256: nullableChecksum(record.checksumSha256),
+      fileId: nullableString(record.fileId, "fileId"),
+      name: questionBlueprintSourceName(record.name),
+      originalName: nullableString(record.originalName, "originalName"),
+      sourceId,
+      type: "workbook",
+      workbookId: workbookId(record.workbookId),
+    };
+  });
+}
+
+function toVersionSources(
+  sources: readonly (
+    | QuestionBlueprintSource
+    | QuestionBlueprintVersionSource
+  )[],
+): QuestionBlueprintVersionSource[] {
+  return sources.map((source) => ({
+    byteSize: "byteSize" in source ? source.byteSize : null,
+    checksumSha256: "checksumSha256" in source ? source.checksumSha256 : null,
+    fileId: "fileId" in source ? source.fileId : null,
+    name: source.name,
+    originalName: "originalName" in source ? source.originalName : null,
+    sourceId: source.sourceId,
+    type: "workbook",
+    workbookId: source.workbookId,
+  }));
+}
+
+export function questionBlueprintVersionSourcesReferencedByDocument(
+  document: QuestionBlueprintDocument,
+  sources: readonly QuestionBlueprintVersionSource[],
+): QuestionBlueprintVersionSource[] {
+  const minimal = questionBlueprintSourcesReferencedByDocument(
+    document,
+    sources.map((source) => ({
+      byteSize: source.byteSize,
+      checksumSha256: source.checksumSha256,
+      fileId: source.fileId,
+      name: source.name,
+      originalName: source.originalName,
+      sourceId: source.sourceId,
+      type: source.type,
+      workbookId: source.workbookId,
+    })),
+  );
+  const sourceById = new Map(
+    sources.map((source) => [source.sourceId, source]),
+  );
+  return minimal.map((source) => {
+    const full = sourceById.get(source.sourceId);
+    if (!full) {
+      throw new InvalidQuestionFieldError(
+        "question blueprint version source is invalid",
+      );
+    }
+    return full;
+  });
+}
+
+function nullableString(value: unknown, field: string): string | null {
+  if (value === null) return null;
+  if (typeof value !== "string" || value.length === 0) {
+    throw new InvalidQuestionFieldError(`${field} must be a string or null`);
+  }
+  return value;
+}
+
+function nullablePositiveNumber(value: unknown): number | null {
+  if (value === null) return null;
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value <= 0) {
+    throw new InvalidQuestionFieldError(
+      "byteSize must be a positive integer or null",
+    );
+  }
+  return value;
+}
+
+function nullableChecksum(value: unknown): string | null {
+  if (value === null) return null;
+  if (typeof value !== "string" || !/^[a-f0-9]{64}$/u.test(value)) {
+    throw new InvalidQuestionFieldError(
+      "checksumSha256 must be lowercase SHA-256 or null",
+    );
+  }
+  return value;
 }

@@ -137,20 +137,23 @@ export interface QuestionBlueprintDrafts {
   publishedVersionId: string | null;
   publishIdempotencyKey: string | null;
   revision: Generated<number>;
-  sources: Generated<Json>;
   status: Generated<string>;
   updatedAt: Generated<Timestamp>;
 }
 
-export interface QuestionBlueprintDraftSourceFiles {
-  byteSize: Int8;
-  checksumSha256: string;
-  contentType: string;
+export interface QuestionBlueprintDraftSources {
+  byteSize: Int8 | null;
+  checksumSha256: string | null;
   createdAt: Generated<Timestamp>;
   draftId: string;
-  fileId: string;
-  originalName: string;
+  fileId: string | null;
+  name: string;
+  originalName: string | null;
   sourceId: string;
+  status: Generated<string>;
+  type: string;
+  updatedAt: Generated<Timestamp>;
+  workbookId: string | null;
 }
 
 export interface QuestionBlueprintMembers {
@@ -172,7 +175,6 @@ export interface QuestionBlueprints {
   id: Generated<string>;
   name: string;
   ownerUserId: string;
-  sources: Generated<Json>;
   status: Generated<string>;
   updatedAt: Generated<Timestamp>;
   visibility: Generated<string>;
@@ -189,8 +191,20 @@ export interface QuestionBlueprintVersions {
   ownerUserId: string;
   parentVersionId: string | null;
   publishedAt: Generated<Timestamp>;
-  sources: Generated<Json>;
   versionNumber: number;
+}
+
+export interface QuestionBlueprintVersionSources {
+  blueprintVersionId: string;
+  byteSize: Int8 | null;
+  checksumSha256: string | null;
+  createdAt: Generated<Timestamp>;
+  fileId: string | null;
+  name: string;
+  originalName: string | null;
+  sourceId: string;
+  type: string;
+  workbookId: string;
 }
 
 export interface QuestionGenerationRuns {
@@ -347,10 +361,11 @@ export interface DB {
   opsQueueJobReconciliations: OpsQueueJobReconciliations;
   outboxEvents: OutboxEvents;
   processedEvents: ProcessedEvents;
-  questionBlueprintDraftSourceFiles: QuestionBlueprintDraftSourceFiles;
+  questionBlueprintDraftSources: QuestionBlueprintDraftSources;
   questionBlueprintDrafts: QuestionBlueprintDrafts;
   questionBlueprintMembers: QuestionBlueprintMembers;
   questionBlueprints: QuestionBlueprints;
+  questionBlueprintVersionSources: QuestionBlueprintVersionSources;
   questionBlueprintVersions: QuestionBlueprintVersions;
   questionGenerationRuns: QuestionGenerationRuns;
   questionSetMembers: QuestionSetMembers;

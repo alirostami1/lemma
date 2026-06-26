@@ -1,4 +1,6 @@
 import type { DatabaseExecutor } from "@lemma/db";
+import type { OperationLineage } from "@lemma/domain";
+import type { CurrentUser } from "@lemma/identity/application";
 import type {
   DraftSourceFileMetadata,
   PublishSourceMaterialization,
@@ -25,6 +27,7 @@ import type {
   QuestionStatus,
   UserId,
   WorkbookCalculationId,
+  WorkbookId,
 } from "../domain/index.js";
 import { KyselyQuestionBlueprintDraftRepository } from "./KyselyQuestionBlueprintDraftRepository.js";
 import { KyselyQuestionBlueprintRepository } from "./KyselyQuestionBlueprintRepository.js";
@@ -105,23 +108,10 @@ export class KyselyQuestionsRepository implements QuestionsRepository {
     return this.blueprints.listQuestionBlueprintsByOwnerUserId(input);
   }
 
-  createQuestionBlueprint(
-    blueprint: QuestionBlueprint,
-  ): Promise<QuestionBlueprint> {
-    return this.blueprints.createQuestionBlueprint(blueprint);
-  }
-
-  updateQuestionBlueprint(
+  saveQuestionBlueprintLifecycleState(
     blueprint: QuestionBlueprint,
   ): Promise<QuestionBlueprint | null> {
-    return this.blueprints.updateQuestionBlueprint(blueprint);
-  }
-
-  updateQuestionBlueprintDefinition(input: {
-    blueprint: QuestionBlueprint;
-    versionId: QuestionBlueprintVersionId;
-  }): Promise<QuestionBlueprint | null> {
-    return this.blueprints.updateQuestionBlueprintDefinition(input);
+    return this.blueprints.saveQuestionBlueprintLifecycleState(blueprint);
   }
 
   findActiveQuestionBlueprintDraftByOwnerAndBlueprint(input: {
@@ -152,6 +142,26 @@ export class KyselyQuestionsRepository implements QuestionsRepository {
     draft: QuestionBlueprintDraft,
   ): Promise<QuestionBlueprintDraft> {
     return this.blueprintDrafts.createQuestionBlueprintDraft(draft);
+  }
+
+  attachQuestionBlueprintDraftSourceFileWithExpectedRevision(input: {
+    currentUser: CurrentUser;
+    draftId: QuestionBlueprintDraftId;
+    expectedRevision: number;
+    file: DraftSourceFileMetadata;
+    lineage: OperationLineage;
+    registeredAt: Date;
+    sourceId: string;
+    registerWorkbookFromFile(input: {
+      currentUser: CurrentUser;
+      fileId: string;
+      lineage: OperationLineage;
+      name: string;
+    }): Promise<{ workbookId: WorkbookId }>;
+  }): Promise<QuestionBlueprintDraft | null> {
+    return this.blueprintDrafts.attachQuestionBlueprintDraftSourceFileWithExpectedRevision(
+      input,
+    );
   }
 
   createOrResumeQuestionBlueprintEditDraft(input: {
@@ -189,15 +199,6 @@ export class KyselyQuestionsRepository implements QuestionsRepository {
     questionBlueprintVersion: QuestionBlueprintVersion;
   } | null> {
     return this.blueprintDrafts.publishQuestionBlueprintDraft(input);
-  }
-
-  attachQuestionBlueprintDraftSourceFile(input: {
-    draft: QuestionBlueprintDraft;
-    expectedRevision: number;
-    sourceId: string;
-    file: DraftSourceFileMetadata;
-  }): Promise<QuestionBlueprintDraft | null> {
-    return this.blueprintDrafts.attachQuestionBlueprintDraftSourceFile(input);
   }
 
   findQuestionById(id: QuestionId): Promise<Question | null> {

@@ -30,7 +30,6 @@ import {
   AttachQuestionBlueprintDraftSourceFileBody,
   AttachQuestionBlueprintDraftSourceFileParams,
   CancelQuestionGenerationRunParams,
-  CreateQuestionBlueprintBody,
   CreateQuestionBlueprintDraftBody,
   CreateQuestionBlueprintEditDraftBody,
   CreateQuestionBlueprintEditDraftParams,
@@ -60,10 +59,8 @@ import {
   PublishQuestionBlueprintDraftParams,
   RemoveQuestionFromSetParams,
   RetryQuestionGenerationRunParams,
-  UpdateQuestionBlueprintBody,
   UpdateQuestionBlueprintDraftBody,
   UpdateQuestionBlueprintDraftParams,
-  UpdateQuestionBlueprintParams,
   UpdateQuestionSetBody,
   UpdateQuestionSetParams,
 } from "../zod/index.js";
@@ -142,15 +139,6 @@ type ListQuestionBlueprintsResponses = {
   "409": ErrorResponse;
   "502": ErrorResponse;
 };
-type CreateQuestionBlueprintResponses = {
-  "201": QuestionBlueprintResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-  "502": ErrorResponse;
-};
 type DeleteQuestionBlueprintResponses = {
   "204": unknown;
   "400": ErrorResponse;
@@ -160,15 +148,6 @@ type DeleteQuestionBlueprintResponses = {
   "409": ErrorResponse;
 };
 type GetQuestionBlueprintResponses = {
-  "200": QuestionBlueprintResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-  "502": ErrorResponse;
-};
-type UpdateQuestionBlueprintResponses = {
   "200": QuestionBlueprintResponse;
   "400": ErrorResponse;
   "401": ErrorResponse;
@@ -389,7 +368,7 @@ export type QuestionsHandlerMap = {
   >;
   attachQuestionBlueprintDraftSourceFile: Handler<
     QuestionsAppEnv,
-    "/question-blueprint-drafts/:draftId/source-files",
+    "/question-blueprint-drafts/:draftId/sources/:sourceId/file",
     {
       out: {
         param: z.infer<typeof AttachQuestionBlueprintDraftSourceFileParams>;
@@ -404,12 +383,6 @@ export type QuestionsHandlerMap = {
     { out: { query: z.infer<typeof ListQuestionBlueprintsQueryParams> } },
     TypedHandlerResponse<ListQuestionBlueprintsResponses>
   >;
-  createQuestionBlueprint: Handler<
-    QuestionsAppEnv,
-    "/question-blueprints",
-    { out: { json: z.infer<typeof CreateQuestionBlueprintBody> } },
-    TypedHandlerResponse<CreateQuestionBlueprintResponses>
-  >;
   deleteQuestionBlueprint: Handler<
     QuestionsAppEnv,
     "/question-blueprints/:questionBlueprintId",
@@ -421,17 +394,6 @@ export type QuestionsHandlerMap = {
     "/question-blueprints/:questionBlueprintId",
     { out: { param: z.infer<typeof GetQuestionBlueprintParams> } },
     TypedHandlerResponse<GetQuestionBlueprintResponses>
-  >;
-  updateQuestionBlueprint: Handler<
-    QuestionsAppEnv,
-    "/question-blueprints/:questionBlueprintId",
-    {
-      out: {
-        param: z.infer<typeof UpdateQuestionBlueprintParams>;
-        json: z.infer<typeof UpdateQuestionBlueprintBody>;
-      };
-    },
-    TypedHandlerResponse<UpdateQuestionBlueprintResponses>
   >;
   createQuestionBlueprintEditDraft: Handler<
     QuestionsAppEnv,
@@ -613,7 +575,7 @@ export function createQuestionsRoutes(deps: {
   );
 
   app.post(
-    "/question-blueprint-drafts/:draftId/source-files",
+    "/question-blueprint-drafts/:draftId/sources/:sourceId/file",
     deps.requireIdentity,
     zValidator(
       "param",
@@ -635,13 +597,6 @@ export function createQuestionsRoutes(deps: {
     deps.handlers.listQuestionBlueprints,
   );
 
-  app.post(
-    "/question-blueprints",
-    deps.requireIdentity,
-    zValidator("json", CreateQuestionBlueprintBody, validationHook),
-    deps.handlers.createQuestionBlueprint,
-  );
-
   app.delete(
     "/question-blueprints/:questionBlueprintId",
     deps.requireIdentity,
@@ -654,14 +609,6 @@ export function createQuestionsRoutes(deps: {
     deps.requireIdentity,
     zValidator("param", GetQuestionBlueprintParams, validationHook),
     deps.handlers.getQuestionBlueprint,
-  );
-
-  app.patch(
-    "/question-blueprints/:questionBlueprintId",
-    deps.requireIdentity,
-    zValidator("param", UpdateQuestionBlueprintParams, validationHook),
-    zValidator("json", UpdateQuestionBlueprintBody, validationHook),
-    deps.handlers.updateQuestionBlueprint,
   );
 
   app.post(

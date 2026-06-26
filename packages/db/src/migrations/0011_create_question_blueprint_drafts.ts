@@ -23,9 +23,6 @@ export async function up(db: MigrationDb): Promise<void> {
     .addColumn("name", "text", (c) => c.notNull())
     .addColumn("description", "text")
     .addColumn("document", "jsonb", (c) => c.notNull())
-    .addColumn("sources", "jsonb", (c) =>
-      c.notNull().defaultTo(sql`'[]'::jsonb`),
-    )
     .addColumn("status", "text", (c) => c.notNull().defaultTo("draft"))
     .addColumn("last_saved_at", "timestamptz", (c) => c.notNull())
     .addColumn("published_at", "timestamptz")
@@ -61,10 +58,6 @@ export async function up(db: MigrationDb): Promise<void> {
     .addCheckConstraint(
       "question_blueprint_drafts_document_object_check",
       sql`jsonb_typeof(document) = 'object'`,
-    )
-    .addCheckConstraint(
-      "question_blueprint_drafts_sources_array_check",
-      sql`jsonb_typeof(sources) = 'array'`,
     )
     .addForeignKeyConstraint(
       "question_blueprint_drafts_owner_user_id_foreign",
@@ -137,52 +130,80 @@ export async function up(db: MigrationDb): Promise<void> {
   `.execute(db);
 
   await db.schema
-    .createTable("question_blueprint_draft_source_files")
+    .createTable("question_blueprint_draft_sources")
     .addColumn("draft_id", "uuid", (c) => c.notNull())
     .addColumn("source_id", "text", (c) => c.notNull())
-    .addColumn("file_id", "uuid", (c) => c.notNull())
-    .addColumn("original_name", "text", (c) => c.notNull())
-    .addColumn("byte_size", "bigint", (c) => c.notNull())
-    .addColumn("checksum_sha256", "char(64)", (c) => c.notNull())
-    .addColumn("content_type", "text", (c) => c.notNull())
+    .addColumn("type", "text", (c) => c.notNull())
+    .addColumn("name", "text", (c) => c.notNull())
+    .addColumn("file_id", "uuid")
+    .addColumn("workbook_id", "uuid")
+    .addColumn("original_name", "text")
+    .addColumn("byte_size", "bigint")
+    .addColumn("checksum_sha256", "char(64)")
+    .addColumn("status", "text", (c) => c.notNull().defaultTo("local"))
     .addColumn("created_at", "timestamptz", (c) =>
       c.notNull().defaultTo(sql`now()`),
     )
-    .addPrimaryKeyConstraint("question_blueprint_draft_source_files_primary", [
+    .addColumn("updated_at", "timestamptz", (c) =>
+      c.notNull().defaultTo(sql`now()`),
+    )
+    .addPrimaryKeyConstraint("question_blueprint_draft_sources_primary", [
       "draft_id",
       "source_id",
     ])
     .addCheckConstraint(
-      "question_blueprint_draft_source_files_source_id_check",
+      "question_blueprint_draft_sources_source_id_check",
       sql`source_id ~ '^[A-Za-z][A-Za-z0-9_-]*$'`,
     )
     .addCheckConstraint(
-      "question_blueprint_draft_source_files_byte_size_check",
-      sql`byte_size > 0`,
+      "question_blueprint_draft_sources_type_check",
+      sql`type in ('workbook')`,
     )
     .addCheckConstraint(
-      "question_blueprint_draft_source_files_checksum_check",
-      sql`checksum_sha256 ~ '^[a-f0-9]{64}$'`,
+      "question_blueprint_draft_sources_name_nonempty_check",
+      sql`length(trim(name)) > 0`,
     )
     .addCheckConstraint(
-      "question_blueprint_draft_source_files_content_type_check",
-      sql`content_type in ('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')`,
+      "question_blueprint_draft_sources_status_check",
+      sql`status in ('local', 'uploaded', 'validated', 'invalid')`,
+    )
+    .addCheckConstraint(
+      "question_blueprint_draft_sources_byte_size_check",
+      sql`byte_size is null or byte_size > 0`,
+    )
+    .addCheckConstraint(
+      "question_blueprint_draft_sources_checksum_check",
+      sql`checksum_sha256 is null or checksum_sha256 ~ '^[a-f0-9]{64}$'`,
     )
     .addForeignKeyConstraint(
-      "question_blueprint_draft_source_files_draft_id_foreign",
+      "question_blueprint_draft_sources_draft_id_foreign",
       ["draft_id"],
       "question_blueprint_drafts",
       ["id"],
       (cb) => cb.onDelete("cascade"),
     )
     .addForeignKeyConstraint(
-      "question_blueprint_draft_source_files_file_id_foreign",
+      "question_blueprint_draft_sources_file_id_foreign",
       ["file_id"],
       "files",
       ["id"],
       (cb) => cb.onDelete("restrict"),
     )
+    .addForeignKeyConstraint(
+      "question_blueprint_draft_sources_workbook_id_foreign",
+      ["workbook_id"],
+      "workbooks",
+      ["id"],
+      (cb) => cb.onDelete("restrict"),
+    )
     .execute();
+
+  await sql`
+    create trigger question_blueprint_draft_sources_set_updated_at
+    before update on question_blueprint_draft_sources
+    for each row
+    execute function set_updated_at()
+  `.execute(db);
 
   await sql`
     create trigger question_blueprint_drafts_set_updated_at
@@ -193,7 +214,10 @@ export async function up(db: MigrationDb): Promise<void> {
 }
 
 export async function down(db: MigrationDb): Promise<void> {
-  await db.schema.dropTable("question_blueprint_draft_source_files").execute();
+  await sql`drop trigger if exists question_blueprint_draft_sources_set_updated_at on question_blueprint_draft_sources`.execute(
+    db,
+  );
+  await db.schema.dropTable("question_blueprint_draft_sources").execute();
   await sql`
     drop index if exists question_blueprint_drafts_owner_user_id_blueprint_id_active_unique
   `.execute(db);

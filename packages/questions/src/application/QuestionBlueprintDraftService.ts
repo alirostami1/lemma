@@ -1,5 +1,4 @@
 import {
-  attachDraftSourceFile,
   createQuestionBlueprintDraft,
   discardQuestionBlueprintDraft,
   InvalidQuestionStateTransitionError,
@@ -19,7 +18,6 @@ import {
   questionBlueprintSourceIdsUsedByDocument,
   updateQuestionBlueprintDraft,
   userId,
-  workbookId,
 } from "../domain/index.js";
 import type {
   AttachQuestionBlueprintDraftSourceFileCommand,
@@ -38,8 +36,13 @@ import type {
   QuestionBlueprintEditDraftResult,
 } from "./dto.js";
 import {
+  DraftSourceFileForbiddenError,
+  DraftSourceFileInvalidError,
+  DraftSourceKindUnsupportedError,
+  DraftSourceNotFoundError,
+  DraftSourceNotReadyError,
   ForbiddenQuestionActionError,
-  InvalidQuestionBlueprintError,
+  InvalidDraftSourceReferenceError,
   QuestionBlueprintDraftNotFoundError,
   QuestionBlueprintDraftRevisionConflictError,
   QuestionBlueprintNotFoundError,
@@ -200,6 +203,16 @@ export class QuestionBlueprintDraftService {
     command: AttachQuestionBlueprintDraftSourceFileCommand,
   ): Promise<QuestionBlueprintDraftResult> {
     const draft = await this.findOwned(command);
+    // Fast pre-checks give callers deterministic errors before file/workbook work;
+    // repository checks after locking remain authoritative.
+    assertExpectedDraftRevision(draft, command.expectedRevision);
+    const source = draft.sources.find(
+      (candidate) => candidate.sourceId === command.sourceId,
+    );
+    if (!source) throw new DraftSourceNotFoundError();
+    if (source.type !== "workbook") {
+      throw new DraftSourceKindUnsupportedError();
+    }
     let file: DraftSourceFileMetadata;
     try {
       file = await this.deps.draftSourceFilePort.getFileMetadata({
@@ -207,13 +220,13 @@ export class QuestionBlueprintDraftService {
         fileId: command.fileId,
       });
     } catch {
-      throw new InvalidQuestionBlueprintError(
+      throw new DraftSourceFileInvalidError(
         "Draft source file is unavailable.",
       );
     }
     if (file.ownerUserId !== draft.ownerUserId) {
-      throw new ForbiddenQuestionActionError(
-        "Draft file must belong to draft owner.",
+      throw new DraftSourceFileForbiddenError(
+        "Draft source file must belong to draft owner.",
       );
     }
     if (
@@ -221,26 +234,28 @@ export class QuestionBlueprintDraftService {
       file.contentType !==
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     ) {
-      throw new InvalidQuestionBlueprintError(
+      throw new DraftSourceFileInvalidError(
         "Draft source file must be an xlsx workbook.",
       );
     }
-    const updated = attachDraftSourceFile(
-      draft,
-      { sourceId: command.sourceId, ...file },
-      this.deps.clock.now(),
-    );
     const persisted =
-      await this.deps.questionsRepository.attachQuestionBlueprintDraftSourceFile(
+      await this.deps.questionsRepository.attachQuestionBlueprintDraftSourceFileWithExpectedRevision(
         {
-          draft: updated,
+          currentUser: command.currentUser,
+          draftId: draft.id,
           expectedRevision: command.expectedRevision,
           file,
+          lineage: command.lineage,
+          registeredAt: this.deps.clock.now(),
+          registerWorkbookFromFile: (input) =>
+            this.deps.workbookRegistrationPort.registerWorkbookFromFile(input),
           sourceId: command.sourceId,
         },
       );
-    if (!persisted) throw new QuestionBlueprintDraftRevisionConflictError();
-    return { draft: persisted };
+    if (!persisted) throw new QuestionBlueprintDraftNotFoundError();
+    return {
+      draft: persisted,
+    };
   }
 
   async discardQuestionBlueprintDraft(
@@ -286,41 +301,16 @@ export class QuestionBlueprintDraftService {
     for (const sourceId of usedIds) {
       const source = sourcesById.get(sourceId);
       if (!source) {
-        throw new InvalidQuestionBlueprintError(
+        throw new InvalidDraftSourceReferenceError(
           `Source ${sourceId} is not attached.`,
         );
       }
-      if (source.workbookId) {
-        if (source.status !== "validated") {
-          throw new InvalidQuestionBlueprintError(
-            "Workbook source is not validated.",
-          );
-        }
-        sourceMaterialization.push({
-          sourceId,
-          workbookId: source.workbookId,
-        });
-        continue;
+      if (source.status !== "validated" || !source.workbookId) {
+        throw new DraftSourceNotReadyError("Workbook source is not validated.");
       }
-
-      if (source.status !== "uploaded" || !source.fileId) {
-        throw new InvalidQuestionBlueprintError(
-          "Attach a valid workbook file before publishing.",
-        );
-      }
-
-      // Pre-#101/#102 bridge: workbook registration prepares reusable source state
-      // before publish. Draft/blueprint state still commits only in the repository transaction.
-      const registered =
-        await this.deps.workbookRegistrationPort.registerWorkbookFromFile({
-          currentUser: command.currentUser,
-          fileId: source.fileId,
-          lineage: command.lineage,
-          name: source.name,
-        });
       sourceMaterialization.push({
         sourceId,
-        workbookId: workbookId(registered.workbookId),
+        workbookId: source.workbookId,
       });
     }
 
@@ -423,11 +413,11 @@ function toEditDraftSource(
   source: QuestionBlueprintSource,
 ): QuestionBlueprintDraftSource {
   return {
-    byteSize: null,
-    checksumSha256: null,
-    fileId: null,
+    byteSize: source.byteSize,
+    checksumSha256: source.checksumSha256,
+    fileId: source.fileId,
     name: source.name,
-    originalName: null,
+    originalName: source.originalName,
     sourceId: source.sourceId,
     status: "validated",
     type: "workbook",

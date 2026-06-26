@@ -117,14 +117,7 @@ describe("CanonicalQuestionMaterializer", () => {
       generationRunId,
       questionIndex: 0,
       sourceLineageBySourceId,
-      sources: [
-        {
-          name: "Source 1",
-          sourceId: "source_1",
-          type: "workbook",
-          workbookId,
-        },
-      ],
+      sources: [publishedWorkbookSource("source_1", "Source 1", workbookId)],
       workbookCalculationId,
     });
 
@@ -245,14 +238,7 @@ describe("CanonicalQuestionMaterializer", () => {
       generationRunId,
       questionIndex: 0,
       sourceLineageBySourceId,
-      sources: [
-        {
-          name: "Source 1",
-          sourceId: "source_1",
-          type: "workbook",
-          workbookId,
-        },
-      ],
+      sources: [publishedWorkbookSource("source_1", "Source 1", workbookId)],
       workbookCalculationId,
     });
 
@@ -331,18 +317,8 @@ describe("CanonicalQuestionMaterializer", () => {
       questionIndex: 0,
       sourceLineageBySourceId,
       sources: [
-        {
-          name: "Source 1",
-          sourceId: "source_1",
-          type: "workbook",
-          workbookId,
-        },
-        {
-          name: "Source 2",
-          sourceId: "source_2",
-          type: "workbook",
-          workbookId: secondWorkbookId,
-        },
+        publishedWorkbookSource("source_1", "Source 1", workbookId),
+        publishedWorkbookSource("source_2", "Source 2", secondWorkbookId),
       ],
       workbookCalculationId,
     });
@@ -370,3 +346,20 @@ describe("CanonicalQuestionMaterializer", () => {
     });
   });
 });
+
+function publishedWorkbookSource(
+  sourceId: string,
+  name: string,
+  sourceWorkbookId: WorkbookId,
+) {
+  return {
+    byteSize: null,
+    checksumSha256: null,
+    fileId: null,
+    name,
+    originalName: null,
+    sourceId,
+    type: "workbook" as const,
+    workbookId: sourceWorkbookId,
+  };
+}

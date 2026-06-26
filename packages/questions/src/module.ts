@@ -43,7 +43,6 @@ export function createQuestionsModule(deps: {
   });
   const questionBlueprintService = new QuestionBlueprintService({
     clock: deps.clock,
-    idGenerator: deps.idGenerator,
     questionsRepository,
   });
   const questionBlueprintDraftService = new QuestionBlueprintDraftService({

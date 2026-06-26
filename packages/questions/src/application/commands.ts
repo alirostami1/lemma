@@ -18,24 +18,6 @@ export type UpdateQuestionSetCommand = ListCommand & {
 };
 export type QuestionSetByIdCommand = ListCommand & { questionSetId: string };
 
-export type CreateQuestionBlueprintCommand = ListCommand & {
-  name: string;
-  description?: string | null;
-  visibility?: string;
-  document: unknown;
-  sources: unknown;
-};
-export type UpdateQuestionBlueprintCommand = ListCommand & {
-  questionBlueprintId: string;
-  patch: {
-    name?: string;
-    description?: string | null;
-    visibility?: string;
-    document?: unknown;
-    sources?: unknown;
-    status?: string;
-  };
-};
 export type QuestionBlueprintByIdCommand = ListCommand & {
   questionBlueprintId: string;
 };
@@ -73,6 +55,7 @@ export type AttachQuestionBlueprintDraftSourceFileCommand =
     expectedRevision: number;
     sourceId: string;
     fileId: string;
+    lineage: OperationLineage;
   };
 export type PublishQuestionBlueprintDraftCommand =
   QuestionBlueprintDraftByIdCommand & {
