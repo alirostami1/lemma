@@ -55,6 +55,7 @@ export type SourceController = {
 
 const SOURCE_LOOKUP_REFETCH_INTERVAL_MS = 1_000;
 const SOURCE_PREVIEW_REQUESTED_COUNT = 1;
+const SAVED_SOURCE_FILE_LOAD_ERROR = "Saved source file could not be loaded.";
 
 export function useSourceController(input: {
   draftKey?: string;
@@ -149,7 +150,7 @@ export function useSourceController(input: {
     void createFileDownloadUrl({ fileId: lookupSource.backing.fileId })
       .then(async (download) => {
         const response = await fetch(download.url);
-        if (!response.ok) throw new Error("Could not load draft file.");
+        if (!response.ok) throw new Error(SAVED_SOURCE_FILE_LOAD_ERROR);
         const blob = await response.blob();
         const file = new File([blob], lookupSource.backing.originalName, {
           type:
@@ -185,7 +186,7 @@ export function useSourceController(input: {
                     previewError:
                       error instanceof Error
                         ? error.message
-                        : "Could not load draft file.",
+                        : SAVED_SOURCE_FILE_LOAD_ERROR,
                     previewStatus: "failed" as const,
                   },
                 }

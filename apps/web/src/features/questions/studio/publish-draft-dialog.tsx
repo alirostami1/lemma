@@ -109,11 +109,10 @@ export function createPublishDraftDialogViewModel(
   isSavingBeforePublish = false,
 ): PublishDraftDialogViewModel {
   return {
-    description:
-      "This will create a new immutable published blueprint version.",
+    description: "This saves your changes and publishes the blueprint.",
     disabledIssue: state.validationIssue,
     isPublishDisabled:
       isPublishing || isSavingBeforePublish || state.validationIssue !== null,
-    summary: `"${state.currentName.trim() || "Untitled blueprint"}" will be saved, published, and locked as a versioned blueprint.`,
+    summary: `"${state.currentName.trim() || "Untitled blueprint"}" will be saved and published.`,
   };
 }

@@ -187,7 +187,7 @@ export function StudioCommandBar({
               type="button"
               variant="destructive"
             >
-              Reload latest version
+              Reload latest work
             </Button>
           </div>
         ) : saveError ? (
@@ -242,7 +242,7 @@ function getSaveStatusLabel(input: {
     if (input.saveState === "saving") {
       return {
         Icon: LoaderCircle,
-        label: "Saving",
+        label: "Saving changes",
         variant: "outline",
       };
     }
@@ -254,7 +254,11 @@ function getSaveStatusLabel(input: {
       };
     }
     if (input.saveState === "saved") {
-      return { Icon: CheckCircle2, label: "Saved", variant: "secondary" };
+      return {
+        Icon: CheckCircle2,
+        label: "Changes saved",
+        variant: "secondary",
+      };
     }
     if (input.saveState === "autosaved") {
       return { Icon: Cloud, label: "Autosaved locally", variant: "outline" };
@@ -270,7 +274,7 @@ function getSaveStatusLabel(input: {
     if (input.saveState === "saving") {
       return {
         Icon: LoaderCircle,
-        label: "Saving",
+        label: "Saving changes",
         variant: "outline",
       };
     }
@@ -284,7 +288,7 @@ function getSaveStatusLabel(input: {
     if (input.saveState === "saved") {
       return {
         Icon: CheckCircle2,
-        label: "Saved",
+        label: "Changes saved",
         variant: "secondary",
       };
     }
@@ -304,11 +308,19 @@ function getSaveStatusLabel(input: {
 
   switch (input.saveState) {
     case "saved":
-      return { Icon: CheckCircle2, label: "Saved", variant: "outline" };
+      return {
+        Icon: CheckCircle2,
+        label: "Changes saved",
+        variant: "outline",
+      };
     case "autosaved":
       return { Icon: Cloud, label: "Autosaved locally", variant: "outline" };
     case "saving":
-      return { Icon: LoaderCircle, label: "Saving...", variant: "outline" };
+      return {
+        Icon: LoaderCircle,
+        label: "Saving changes",
+        variant: "outline",
+      };
     case "failed":
       return {
         Icon: AlertCircle,

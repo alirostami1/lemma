@@ -80,7 +80,7 @@ export function useBlueprintDraftResetAction(input: {
     } else {
       input.setLastLocalSavedDraftKey(null);
       input.setLocalDraftStatus("failed");
-      input.setLocalDraftError("Local draft could not be reset.");
+      input.setLocalDraftError("Saved changes could not be reset.");
     }
 
     input.replaceCurrentSnapshot();
@@ -149,7 +149,7 @@ export function useStudioDraftMarkServerSavedAction(input: {
         input.setLocalDraftError(null);
       } else {
         input.setLocalDraftStatus("failed");
-        input.setLocalDraftError("Local draft could not be marked as synced.");
+        input.setLocalDraftError("Saved changes could not be synced.");
       }
       input.replaceCurrentSnapshot();
     },

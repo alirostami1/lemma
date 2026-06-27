@@ -87,7 +87,7 @@ describe("useStudioDraftSaveController", () => {
 
     await waitFor(() => {
       expect(result.current.commandBarSave.saveError).toBe(
-        "Loaded blueprint revision is missing.",
+        "This work could not be saved.",
       );
     });
 
@@ -112,7 +112,7 @@ describe("useStudioDraftSaveController", () => {
           issues: [
             {
               id: "missing_blueprint_name",
-              message: "Add a draft name.",
+              message: "Add a blueprint name.",
               severity: "error",
             },
           ],
@@ -126,7 +126,9 @@ describe("useStudioDraftSaveController", () => {
     });
 
     await waitFor(() => {
-      expect(result.current.commandBarSave.saveError).toBe("Add a draft name.");
+      expect(result.current.commandBarSave.saveError).toBe(
+        "Add a blueprint name.",
+      );
     });
     expect(questionDraftMocks.updateServerDraft).not.toHaveBeenCalled();
     expect(questionDraftMocks.attachDraftFile).not.toHaveBeenCalled();
@@ -150,7 +152,7 @@ describe("useStudioDraftSaveController", () => {
           issues: [
             {
               id: "source_not_ready",
-              message: "Attach a source before saving this draft.",
+              message: "Attach a source before saving.",
               severity: "error",
             },
           ],
@@ -165,7 +167,7 @@ describe("useStudioDraftSaveController", () => {
 
     await waitFor(() => {
       expect(result.current.commandBarSave.saveError).toBe(
-        "Attach a source before saving this draft.",
+        "Attach a source before saving.",
       );
     });
     expect(questionDraftMocks.updateServerDraft).not.toHaveBeenCalled();
@@ -798,8 +800,8 @@ describe("useStudioDraftSaveController", () => {
     await waitFor(() => {
       expect(result.current.conflict?.type).toBe("revision_conflict");
     });
-    expect(result.current.commandBarSave.saveError).toContain(
-      "Reload the latest version",
+    expect(result.current.commandBarSave.saveError).toBe(
+      "This changed in another tab.",
     );
   });
 
@@ -851,8 +853,8 @@ describe("useStudioDraftSaveController", () => {
     await waitFor(() => {
       expect(result.current.conflict?.type).toBe("base_version_conflict");
     });
-    expect(result.current.commandBarSave.saveError).toContain(
-      "newer published version",
+    expect(result.current.commandBarSave.saveError).toBe(
+      "This changed in another tab. Reload before publishing.",
     );
   });
 

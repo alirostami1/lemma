@@ -28,20 +28,20 @@ export function StudioDraftRecoveryDialog({
     <AlertDialog open={open}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Local draft found</AlertDialogTitle>
+          <AlertDialogTitle>Saved changes found</AlertDialogTitle>
           <AlertDialogDescription>
-            A local draft from {savedAt} is newer than the current blueprint.
+            Saved changes from {savedAt} are newer than the current blueprint.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onDiscard}>
-            Discard draft
+            Discard changes
           </AlertDialogCancel>
           <AlertDialogCancel onClick={onKeepCurrent}>
             Keep current
           </AlertDialogCancel>
           <AlertDialogAction onClick={onRestore}>
-            Restore draft
+            Restore changes
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -60,8 +60,8 @@ export function StudioResetConfirmationDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Reset Studio?</AlertDialogTitle>
           <AlertDialogDescription>
-            This clears the current Studio draft and starts a fresh blueprint.
-            Saved blueprints are not deleted.
+            This clears the current work and starts a fresh blueprint. Saved
+            blueprints are not deleted.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

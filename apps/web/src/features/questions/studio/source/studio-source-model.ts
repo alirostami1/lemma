@@ -13,9 +13,9 @@ import { readStudioDraftWorkbookFile } from "../studio-draft-assets-store";
 export const MISSING_LOCAL_FILE_MESSAGE =
   "Workbook file missing. Reattach the file to continue.";
 export const DRAFT_STORAGE_READ_ERROR_MESSAGE =
-  "Could not read browser draft storage.";
+  "Saved source file could not be loaded. Reattach the file to continue.";
 export const DRAFT_STORAGE_RESTORE_ERROR_MESSAGE =
-  "Could not restore browser draft storage.";
+  "Saved source file could not be restored. Reattach the file to continue.";
 
 export type StudioSource = StudioWorkbookSource;
 export type StudioSourceType = StudioSource["type"];
