@@ -37,6 +37,14 @@ describe("buildHonoRoutesSource", () => {
     expect(source).toContain(
       'zValidator("query", GetFileQueryParams, validationHook)',
     );
+    expect(source).toContain(
+      "type EmptyHandlerInput = Record<PropertyKey, never>;",
+    );
+    expect(source).toContain(
+      'health: Handler<AuthenticatedAppEnv, "/health", EmptyHandlerInput, TypedHandlerResponse<HealthResponses>>;',
+    );
+    expect(source).not.toContain("Record<keyof any, never>");
+    expect(source).not.toContain(", {},");
     expect(source).not.toContain("basePath");
     expect(source).toMatchSnapshot();
   });

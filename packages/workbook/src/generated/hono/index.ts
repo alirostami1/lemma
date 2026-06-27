@@ -69,76 +69,7 @@ type TypedHandlerResponse<T extends Record<string, unknown>> =
   | HandlerResponse<T>
   | Promise<Response | HandlerResponse<T>>
   | Promise<void>;
-type ListWorkbooksResponses = {
-  "200": WorkbooksResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-  "502": ErrorResponse;
-};
-type CreateWorkbookResponses = {
-  "201": WorkbookResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-  "502": ErrorResponse;
-};
-type GetWorkbookResponses = {
-  "200": WorkbookResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-  "502": ErrorResponse;
-};
-type UpdateWorkbookResponses = {
-  "200": WorkbookResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-  "502": ErrorResponse;
-};
-type DeleteWorkbookResponses = {
-  "204": unknown;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-};
-type ValidateWorkbookResponses = {
-  "200": WorkbookResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-  "502": ErrorResponse;
-};
-type ListWorkbookCalculationsResponses = {
-  "200": WorkbookCalculationsResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-  "502": ErrorResponse;
-};
-type CreateWorkbookCalculationResponses = {
-  "201": WorkbookCalculationResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-  "502": ErrorResponse;
-};
+type EmptyHandlerInput = Record<PropertyKey, never>;
 type GetWorkbookCalculationResponses = {
   "200": WorkbookCalculationResponse;
   "400": ErrorResponse;
@@ -173,6 +104,15 @@ type ListWorkbookSnapshotsResponses = {
   "409": ErrorResponse;
   "502": ErrorResponse;
 };
+type GetWorkbookEngineHealthResponses = {
+  "200": WorkbookEngineHealthResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
 type GetWorkbookSnapshotResponses = {
   "200": WorkbookSnapshotResponse;
   "400": ErrorResponse;
@@ -184,24 +124,6 @@ type GetWorkbookSnapshotResponses = {
 };
 type GetWorkbookSnapshotMetadataResponses = {
   "200": WorkbookSnapshotMetadataResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-  "502": ErrorResponse;
-};
-type ListWorkbookSnapshotSheetsResponses = {
-  "200": WorkbookSnapshotSheetsResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-  "502": ErrorResponse;
-};
-type GetWorkbookSnapshotCellsResponses = {
-  "200": WorkbookSnapshotCellsResponse;
   "400": ErrorResponse;
   "401": ErrorResponse;
   "403": ErrorResponse;
@@ -227,6 +149,24 @@ type GetWorkbookSnapshotRangeBatchResponses = {
   "409": ErrorResponse;
   "502": ErrorResponse;
 };
+type ListWorkbookSnapshotSheetsResponses = {
+  "200": WorkbookSnapshotSheetsResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
+type GetWorkbookSnapshotCellsResponses = {
+  "200": WorkbookSnapshotCellsResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
 type ResolveWorkbookSnapshotValueResponses = {
   "200": WorkbookSnapshotValueResponse;
   "400": ErrorResponse;
@@ -236,8 +176,69 @@ type ResolveWorkbookSnapshotValueResponses = {
   "409": ErrorResponse;
   "502": ErrorResponse;
 };
-type GetWorkbookEngineHealthResponses = {
-  "200": WorkbookEngineHealthResponse;
+type ListWorkbooksResponses = {
+  "200": WorkbooksResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
+type CreateWorkbookResponses = {
+  "201": WorkbookResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
+type DeleteWorkbookResponses = {
+  "204": unknown;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+};
+type GetWorkbookResponses = {
+  "200": WorkbookResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
+type UpdateWorkbookResponses = {
+  "200": WorkbookResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
+type ListWorkbookCalculationsResponses = {
+  "200": WorkbookCalculationsResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
+type CreateWorkbookCalculationResponses = {
+  "201": WorkbookCalculationResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
+type ValidateWorkbookResponses = {
+  "200": WorkbookResponse;
   "400": ErrorResponse;
   "401": ErrorResponse;
   "403": ErrorResponse;
@@ -246,69 +247,6 @@ type GetWorkbookEngineHealthResponses = {
   "502": ErrorResponse;
 };
 export type WorkbookHandlerMap = {
-  listWorkbooks: Handler<
-    WorkbookAppEnv,
-    "/workbooks",
-    { out: { query: z.infer<typeof ListWorkbooksQueryParams> } },
-    TypedHandlerResponse<ListWorkbooksResponses>
-  >;
-  createWorkbook: Handler<
-    WorkbookAppEnv,
-    "/workbooks",
-    { out: { json: z.infer<typeof CreateWorkbookBody> } },
-    TypedHandlerResponse<CreateWorkbookResponses>
-  >;
-  getWorkbook: Handler<
-    WorkbookAppEnv,
-    "/workbooks/:workbookId",
-    { out: { param: z.infer<typeof GetWorkbookParams> } },
-    TypedHandlerResponse<GetWorkbookResponses>
-  >;
-  updateWorkbook: Handler<
-    WorkbookAppEnv,
-    "/workbooks/:workbookId",
-    {
-      out: {
-        param: z.infer<typeof UpdateWorkbookParams>;
-        json: z.infer<typeof UpdateWorkbookBody>;
-      };
-    },
-    TypedHandlerResponse<UpdateWorkbookResponses>
-  >;
-  deleteWorkbook: Handler<
-    WorkbookAppEnv,
-    "/workbooks/:workbookId",
-    { out: { param: z.infer<typeof DeleteWorkbookParams> } },
-    TypedHandlerResponse<DeleteWorkbookResponses>
-  >;
-  validateWorkbook: Handler<
-    WorkbookAppEnv,
-    "/workbooks/:workbookId/validations",
-    { out: { param: z.infer<typeof ValidateWorkbookParams> } },
-    TypedHandlerResponse<ValidateWorkbookResponses>
-  >;
-  listWorkbookCalculations: Handler<
-    WorkbookAppEnv,
-    "/workbooks/:workbookId/calculations",
-    {
-      out: {
-        param: z.infer<typeof ListWorkbookCalculationsParams>;
-        query: z.infer<typeof ListWorkbookCalculationsQueryParams>;
-      };
-    },
-    TypedHandlerResponse<ListWorkbookCalculationsResponses>
-  >;
-  createWorkbookCalculation: Handler<
-    WorkbookAppEnv,
-    "/workbooks/:workbookId/calculations",
-    {
-      out: {
-        param: z.infer<typeof CreateWorkbookCalculationParams>;
-        json: z.infer<typeof CreateWorkbookCalculationBody>;
-      };
-    },
-    TypedHandlerResponse<CreateWorkbookCalculationResponses>
-  >;
   getWorkbookCalculation: Handler<
     WorkbookAppEnv,
     "/workbook-calculations/:workbookCalculationId",
@@ -338,6 +276,12 @@ export type WorkbookHandlerMap = {
     },
     TypedHandlerResponse<ListWorkbookSnapshotsResponses>
   >;
+  getWorkbookEngineHealth: Handler<
+    WorkbookAppEnv,
+    "/workbook-engine/health",
+    EmptyHandlerInput,
+    TypedHandlerResponse<GetWorkbookEngineHealthResponses>
+  >;
   getWorkbookSnapshot: Handler<
     WorkbookAppEnv,
     "/workbook-snapshots/:workbookSnapshotId",
@@ -349,28 +293,6 @@ export type WorkbookHandlerMap = {
     "/workbook-snapshots/:workbookSnapshotId/metadata",
     { out: { param: z.infer<typeof GetWorkbookSnapshotMetadataParams> } },
     TypedHandlerResponse<GetWorkbookSnapshotMetadataResponses>
-  >;
-  listWorkbookSnapshotSheets: Handler<
-    WorkbookAppEnv,
-    "/workbook-snapshots/:workbookSnapshotId/sheets",
-    {
-      out: {
-        param: z.infer<typeof ListWorkbookSnapshotSheetsParams>;
-        query: z.infer<typeof ListWorkbookSnapshotSheetsQueryParams>;
-      };
-    },
-    TypedHandlerResponse<ListWorkbookSnapshotSheetsResponses>
-  >;
-  getWorkbookSnapshotCells: Handler<
-    WorkbookAppEnv,
-    "/workbook-snapshots/:workbookSnapshotId/sheets/:sheetIndex/cells",
-    {
-      out: {
-        param: z.infer<typeof GetWorkbookSnapshotCellsParams>;
-        query: z.infer<typeof GetWorkbookSnapshotCellsQueryParams>;
-      };
-    },
-    TypedHandlerResponse<GetWorkbookSnapshotCellsResponses>
   >;
   getWorkbookSnapshotRange: Handler<
     WorkbookAppEnv,
@@ -394,6 +316,28 @@ export type WorkbookHandlerMap = {
     },
     TypedHandlerResponse<GetWorkbookSnapshotRangeBatchResponses>
   >;
+  listWorkbookSnapshotSheets: Handler<
+    WorkbookAppEnv,
+    "/workbook-snapshots/:workbookSnapshotId/sheets",
+    {
+      out: {
+        param: z.infer<typeof ListWorkbookSnapshotSheetsParams>;
+        query: z.infer<typeof ListWorkbookSnapshotSheetsQueryParams>;
+      };
+    },
+    TypedHandlerResponse<ListWorkbookSnapshotSheetsResponses>
+  >;
+  getWorkbookSnapshotCells: Handler<
+    WorkbookAppEnv,
+    "/workbook-snapshots/:workbookSnapshotId/sheets/:sheetIndex/cells",
+    {
+      out: {
+        param: z.infer<typeof GetWorkbookSnapshotCellsParams>;
+        query: z.infer<typeof GetWorkbookSnapshotCellsQueryParams>;
+      };
+    },
+    TypedHandlerResponse<GetWorkbookSnapshotCellsResponses>
+  >;
   resolveWorkbookSnapshotValue: Handler<
     WorkbookAppEnv,
     "/workbook-snapshots/:workbookSnapshotId/values",
@@ -405,11 +349,68 @@ export type WorkbookHandlerMap = {
     },
     TypedHandlerResponse<ResolveWorkbookSnapshotValueResponses>
   >;
-  getWorkbookEngineHealth: Handler<
+  listWorkbooks: Handler<
     WorkbookAppEnv,
-    "/workbook-engine/health",
-    Record<string, never>,
-    TypedHandlerResponse<GetWorkbookEngineHealthResponses>
+    "/workbooks",
+    { out: { query: z.infer<typeof ListWorkbooksQueryParams> } },
+    TypedHandlerResponse<ListWorkbooksResponses>
+  >;
+  createWorkbook: Handler<
+    WorkbookAppEnv,
+    "/workbooks",
+    { out: { json: z.infer<typeof CreateWorkbookBody> } },
+    TypedHandlerResponse<CreateWorkbookResponses>
+  >;
+  deleteWorkbook: Handler<
+    WorkbookAppEnv,
+    "/workbooks/:workbookId",
+    { out: { param: z.infer<typeof DeleteWorkbookParams> } },
+    TypedHandlerResponse<DeleteWorkbookResponses>
+  >;
+  getWorkbook: Handler<
+    WorkbookAppEnv,
+    "/workbooks/:workbookId",
+    { out: { param: z.infer<typeof GetWorkbookParams> } },
+    TypedHandlerResponse<GetWorkbookResponses>
+  >;
+  updateWorkbook: Handler<
+    WorkbookAppEnv,
+    "/workbooks/:workbookId",
+    {
+      out: {
+        param: z.infer<typeof UpdateWorkbookParams>;
+        json: z.infer<typeof UpdateWorkbookBody>;
+      };
+    },
+    TypedHandlerResponse<UpdateWorkbookResponses>
+  >;
+  listWorkbookCalculations: Handler<
+    WorkbookAppEnv,
+    "/workbooks/:workbookId/calculations",
+    {
+      out: {
+        param: z.infer<typeof ListWorkbookCalculationsParams>;
+        query: z.infer<typeof ListWorkbookCalculationsQueryParams>;
+      };
+    },
+    TypedHandlerResponse<ListWorkbookCalculationsResponses>
+  >;
+  createWorkbookCalculation: Handler<
+    WorkbookAppEnv,
+    "/workbooks/:workbookId/calculations",
+    {
+      out: {
+        param: z.infer<typeof CreateWorkbookCalculationParams>;
+        json: z.infer<typeof CreateWorkbookCalculationBody>;
+      };
+    },
+    TypedHandlerResponse<CreateWorkbookCalculationResponses>
+  >;
+  validateWorkbook: Handler<
+    WorkbookAppEnv,
+    "/workbooks/:workbookId/validations",
+    { out: { param: z.infer<typeof ValidateWorkbookParams> } },
+    TypedHandlerResponse<ValidateWorkbookResponses>
   >;
 };
 export function createWorkbookRoutes(deps: {
@@ -417,65 +418,6 @@ export function createWorkbookRoutes(deps: {
   handlers: WorkbookHandlerMap;
 }) {
   const app = new Hono<WorkbookAppEnv>();
-  app.get(
-    "/workbooks",
-    deps.requireIdentity,
-    zValidator("query", ListWorkbooksQueryParams, validationHook),
-    deps.handlers.listWorkbooks,
-  );
-
-  app.post(
-    "/workbooks",
-    deps.requireIdentity,
-    zValidator("json", CreateWorkbookBody, validationHook),
-    deps.handlers.createWorkbook,
-  );
-
-  app.get(
-    "/workbooks/:workbookId",
-    deps.requireIdentity,
-    zValidator("param", GetWorkbookParams, validationHook),
-    deps.handlers.getWorkbook,
-  );
-
-  app.patch(
-    "/workbooks/:workbookId",
-    deps.requireIdentity,
-    zValidator("param", UpdateWorkbookParams, validationHook),
-    zValidator("json", UpdateWorkbookBody, validationHook),
-    deps.handlers.updateWorkbook,
-  );
-
-  app.delete(
-    "/workbooks/:workbookId",
-    deps.requireIdentity,
-    zValidator("param", DeleteWorkbookParams, validationHook),
-    deps.handlers.deleteWorkbook,
-  );
-
-  app.post(
-    "/workbooks/:workbookId/validations",
-    deps.requireIdentity,
-    zValidator("param", ValidateWorkbookParams, validationHook),
-    deps.handlers.validateWorkbook,
-  );
-
-  app.get(
-    "/workbooks/:workbookId/calculations",
-    deps.requireIdentity,
-    zValidator("param", ListWorkbookCalculationsParams, validationHook),
-    zValidator("query", ListWorkbookCalculationsQueryParams, validationHook),
-    deps.handlers.listWorkbookCalculations,
-  );
-
-  app.post(
-    "/workbooks/:workbookId/calculations",
-    deps.requireIdentity,
-    zValidator("param", CreateWorkbookCalculationParams, validationHook),
-    zValidator("json", CreateWorkbookCalculationBody, validationHook),
-    deps.handlers.createWorkbookCalculation,
-  );
-
   app.get(
     "/workbook-calculations/:workbookCalculationId",
     deps.requireIdentity,
@@ -506,6 +448,12 @@ export function createWorkbookRoutes(deps: {
   );
 
   app.get(
+    "/workbook-engine/health",
+    deps.requireIdentity,
+    deps.handlers.getWorkbookEngineHealth,
+  );
+
+  app.get(
     "/workbook-snapshots/:workbookSnapshotId",
     deps.requireIdentity,
     zValidator("param", GetWorkbookSnapshotParams, validationHook),
@@ -517,22 +465,6 @@ export function createWorkbookRoutes(deps: {
     deps.requireIdentity,
     zValidator("param", GetWorkbookSnapshotMetadataParams, validationHook),
     deps.handlers.getWorkbookSnapshotMetadata,
-  );
-
-  app.get(
-    "/workbook-snapshots/:workbookSnapshotId/sheets",
-    deps.requireIdentity,
-    zValidator("param", ListWorkbookSnapshotSheetsParams, validationHook),
-    zValidator("query", ListWorkbookSnapshotSheetsQueryParams, validationHook),
-    deps.handlers.listWorkbookSnapshotSheets,
-  );
-
-  app.get(
-    "/workbook-snapshots/:workbookSnapshotId/sheets/:sheetIndex/cells",
-    deps.requireIdentity,
-    zValidator("param", GetWorkbookSnapshotCellsParams, validationHook),
-    zValidator("query", GetWorkbookSnapshotCellsQueryParams, validationHook),
-    deps.handlers.getWorkbookSnapshotCells,
   );
 
   app.get(
@@ -552,6 +484,22 @@ export function createWorkbookRoutes(deps: {
   );
 
   app.get(
+    "/workbook-snapshots/:workbookSnapshotId/sheets",
+    deps.requireIdentity,
+    zValidator("param", ListWorkbookSnapshotSheetsParams, validationHook),
+    zValidator("query", ListWorkbookSnapshotSheetsQueryParams, validationHook),
+    deps.handlers.listWorkbookSnapshotSheets,
+  );
+
+  app.get(
+    "/workbook-snapshots/:workbookSnapshotId/sheets/:sheetIndex/cells",
+    deps.requireIdentity,
+    zValidator("param", GetWorkbookSnapshotCellsParams, validationHook),
+    zValidator("query", GetWorkbookSnapshotCellsQueryParams, validationHook),
+    deps.handlers.getWorkbookSnapshotCells,
+  );
+
+  app.get(
     "/workbook-snapshots/:workbookSnapshotId/values",
     deps.requireIdentity,
     zValidator("param", ResolveWorkbookSnapshotValueParams, validationHook),
@@ -564,9 +512,62 @@ export function createWorkbookRoutes(deps: {
   );
 
   app.get(
-    "/workbook-engine/health",
+    "/workbooks",
     deps.requireIdentity,
-    deps.handlers.getWorkbookEngineHealth,
+    zValidator("query", ListWorkbooksQueryParams, validationHook),
+    deps.handlers.listWorkbooks,
+  );
+
+  app.post(
+    "/workbooks",
+    deps.requireIdentity,
+    zValidator("json", CreateWorkbookBody, validationHook),
+    deps.handlers.createWorkbook,
+  );
+
+  app.delete(
+    "/workbooks/:workbookId",
+    deps.requireIdentity,
+    zValidator("param", DeleteWorkbookParams, validationHook),
+    deps.handlers.deleteWorkbook,
+  );
+
+  app.get(
+    "/workbooks/:workbookId",
+    deps.requireIdentity,
+    zValidator("param", GetWorkbookParams, validationHook),
+    deps.handlers.getWorkbook,
+  );
+
+  app.patch(
+    "/workbooks/:workbookId",
+    deps.requireIdentity,
+    zValidator("param", UpdateWorkbookParams, validationHook),
+    zValidator("json", UpdateWorkbookBody, validationHook),
+    deps.handlers.updateWorkbook,
+  );
+
+  app.get(
+    "/workbooks/:workbookId/calculations",
+    deps.requireIdentity,
+    zValidator("param", ListWorkbookCalculationsParams, validationHook),
+    zValidator("query", ListWorkbookCalculationsQueryParams, validationHook),
+    deps.handlers.listWorkbookCalculations,
+  );
+
+  app.post(
+    "/workbooks/:workbookId/calculations",
+    deps.requireIdentity,
+    zValidator("param", CreateWorkbookCalculationParams, validationHook),
+    zValidator("json", CreateWorkbookCalculationBody, validationHook),
+    deps.handlers.createWorkbookCalculation,
+  );
+
+  app.post(
+    "/workbooks/:workbookId/validations",
+    deps.requireIdentity,
+    zValidator("param", ValidateWorkbookParams, validationHook),
+    deps.handlers.validateWorkbook,
   );
   return app;
 }
