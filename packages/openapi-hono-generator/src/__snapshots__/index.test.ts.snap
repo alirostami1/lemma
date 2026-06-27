@@ -32,6 +32,7 @@ type HandlerResponse<T extends Record<string, unknown>> = {
   [Status in keyof T & string]: TypedResponse<T[Status], ResponseStatus<Status>>;
 }[keyof T & string];
 type TypedHandlerResponse<T extends Record<string, unknown>> = Response | HandlerResponse<T> | Promise<Response | HandlerResponse<T>> | Promise<void>;
+type EmptyHandlerInput = Record<PropertyKey, never>;
 type CreateFileResponses = {
   "202": FileResponse;
 };
@@ -48,7 +49,7 @@ export type FixtureHandlerMap = {
   createFile: Handler<AuthenticatedAppEnv, "/files", { out: { json: z.infer<typeof CreateFileBody> } }, TypedHandlerResponse<CreateFileResponses>>;
   deleteFile: Handler<AuthenticatedAppEnv, "/files/:fileId", { out: { param: z.infer<typeof DeleteFileParams> } }, TypedHandlerResponse<DeleteFileResponses>>;
   getFile: Handler<AuthenticatedAppEnv, "/files/:fileId", { out: { param: z.infer<typeof GetFileParams>; query: z.infer<typeof GetFileQueryParams> } }, TypedHandlerResponse<GetFileResponses>>;
-  health: Handler<AuthenticatedAppEnv, "/health", {}, TypedHandlerResponse<HealthResponses>>;
+  health: Handler<AuthenticatedAppEnv, "/health", EmptyHandlerInput, TypedHandlerResponse<HealthResponses>>;
 };
 export function createFixtureRoutes(deps: {
   requireIdentity: RequireIdentity;

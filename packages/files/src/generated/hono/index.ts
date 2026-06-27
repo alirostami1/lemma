@@ -39,17 +39,33 @@ type TypedHandlerResponse<T extends Record<string, unknown>> =
   | HandlerResponse<T>
   | Promise<Response | HandlerResponse<T>>
   | Promise<void>;
+type CreateFileUploadResponses = {
+  "201": CreateFileUploadResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "502": ErrorResponse;
+};
+type CompleteFileUploadResponses = {
+  "201": FileResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
 type ListFilesResponses = {
   "200": ListFilesResponse;
   "401": ErrorResponse;
   "403": ErrorResponse;
   "502": ErrorResponse;
 };
-type CreateFileUploadResponses = {
-  "201": CreateFileUploadResponse;
-  "400": ErrorResponse;
+type DeleteFileResponses = {
+  "204": unknown;
   "401": ErrorResponse;
   "403": ErrorResponse;
+  "404": ErrorResponse;
   "502": ErrorResponse;
 };
 type GetFileResponses = {
@@ -67,13 +83,6 @@ type UpdateFileResponses = {
   "404": ErrorResponse;
   "502": ErrorResponse;
 };
-type DeleteFileResponses = {
-  "204": unknown;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "502": ErrorResponse;
-};
 type CreateFileDownloadUrlResponses = {
   "200": CreateFileDownloadUrlResponse;
   "400": ErrorResponse;
@@ -83,27 +92,30 @@ type CreateFileDownloadUrlResponses = {
   "409": ErrorResponse;
   "502": ErrorResponse;
 };
-type CompleteFileUploadResponses = {
-  "201": FileResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "409": ErrorResponse;
-  "502": ErrorResponse;
-};
 export type FilesHandlerMap = {
+  createFileUpload: Handler<
+    FilesAppEnv,
+    "/file-uploads",
+    { out: { json: z.infer<typeof CreateFileUploadBody> } },
+    TypedHandlerResponse<CreateFileUploadResponses>
+  >;
+  completeFileUpload: Handler<
+    FilesAppEnv,
+    "/file-uploads/:uploadId/completions",
+    { out: { param: z.infer<typeof CompleteFileUploadParams> } },
+    TypedHandlerResponse<CompleteFileUploadResponses>
+  >;
   listFiles: Handler<
     FilesAppEnv,
     "/files",
     { out: { query: z.infer<typeof ListFilesQueryParams> } },
     TypedHandlerResponse<ListFilesResponses>
   >;
-  createFileUpload: Handler<
+  deleteFile: Handler<
     FilesAppEnv,
-    "/file-uploads",
-    { out: { json: z.infer<typeof CreateFileUploadBody> } },
-    TypedHandlerResponse<CreateFileUploadResponses>
+    "/files/:fileId",
+    { out: { param: z.infer<typeof DeleteFileParams> } },
+    TypedHandlerResponse<DeleteFileResponses>
   >;
   getFile: Handler<
     FilesAppEnv,
@@ -122,23 +134,11 @@ export type FilesHandlerMap = {
     },
     TypedHandlerResponse<UpdateFileResponses>
   >;
-  deleteFile: Handler<
-    FilesAppEnv,
-    "/files/:fileId",
-    { out: { param: z.infer<typeof DeleteFileParams> } },
-    TypedHandlerResponse<DeleteFileResponses>
-  >;
   createFileDownloadUrl: Handler<
     FilesAppEnv,
     "/files/:fileId/download-urls",
     { out: { param: z.infer<typeof CreateFileDownloadUrlParams> } },
     TypedHandlerResponse<CreateFileDownloadUrlResponses>
-  >;
-  completeFileUpload: Handler<
-    FilesAppEnv,
-    "/file-uploads/:uploadId/completions",
-    { out: { param: z.infer<typeof CompleteFileUploadParams> } },
-    TypedHandlerResponse<CompleteFileUploadResponses>
   >;
 };
 export function createFilesRoutes(deps: {
@@ -146,6 +146,20 @@ export function createFilesRoutes(deps: {
   handlers: FilesHandlerMap;
 }) {
   const app = new Hono<FilesAppEnv>();
+  app.post(
+    "/file-uploads",
+    deps.requireIdentity,
+    zValidator("json", CreateFileUploadBody, validationHook),
+    deps.handlers.createFileUpload,
+  );
+
+  app.post(
+    "/file-uploads/:uploadId/completions",
+    deps.requireIdentity,
+    zValidator("param", CompleteFileUploadParams, validationHook),
+    deps.handlers.completeFileUpload,
+  );
+
   app.get(
     "/files",
     deps.requireIdentity,
@@ -153,11 +167,11 @@ export function createFilesRoutes(deps: {
     deps.handlers.listFiles,
   );
 
-  app.post(
-    "/file-uploads",
+  app.delete(
+    "/files/:fileId",
     deps.requireIdentity,
-    zValidator("json", CreateFileUploadBody, validationHook),
-    deps.handlers.createFileUpload,
+    zValidator("param", DeleteFileParams, validationHook),
+    deps.handlers.deleteFile,
   );
 
   app.get(
@@ -175,25 +189,11 @@ export function createFilesRoutes(deps: {
     deps.handlers.updateFile,
   );
 
-  app.delete(
-    "/files/:fileId",
-    deps.requireIdentity,
-    zValidator("param", DeleteFileParams, validationHook),
-    deps.handlers.deleteFile,
-  );
-
   app.post(
     "/files/:fileId/download-urls",
     deps.requireIdentity,
     zValidator("param", CreateFileDownloadUrlParams, validationHook),
     deps.handlers.createFileDownloadUrl,
-  );
-
-  app.post(
-    "/file-uploads/:uploadId/completions",
-    deps.requireIdentity,
-    zValidator("param", CompleteFileUploadParams, validationHook),
-    deps.handlers.completeFileUpload,
   );
   return app;
 }
