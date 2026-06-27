@@ -106,19 +106,13 @@ export function buildHonoRoutesSource(options: BuildHonoRoutesOptions) {
   const responseTypeImports = getResponseTypeImports(options.operations);
   const responseMaps = options.operations.map(responseMapType).join("\n");
 
-  const needsZodImport = options.operations.some(
-    (operation) =>
-      operation.hasJsonBody ||
-      operation.pathParams.length > 0 ||
-      operation.queryParams.length > 0,
+  const needsRequestValidation = options.operations.some(hasHandlerInput);
+  const needsEmptyHandlerInput = options.operations.some(
+    (operation) => !hasHandlerInput(operation),
   );
 
-  const needsZValidator = options.operations.some(
-    (operation) =>
-      operation.hasJsonBody ||
-      operation.pathParams.length > 0 ||
-      operation.queryParams.length > 0,
-  );
+  const needsZodImport = needsRequestValidation;
+  const needsZValidator = needsRequestValidation;
 
   const generatedImports = buildImports([
     {
@@ -186,6 +180,9 @@ export function buildHonoRoutesSource(options: BuildHonoRoutesOptions) {
     "  [Status in keyof T & string]: TypedResponse<T[Status], ResponseStatus<Status>>;",
     "}[keyof T & string];",
     "type TypedHandlerResponse<T extends Record<string, unknown>> = Response | HandlerResponse<T> | Promise<Response | HandlerResponse<T>> | Promise<void>;",
+    needsEmptyHandlerInput
+      ? "type EmptyHandlerInput = Record<PropertyKey, never>;"
+      : "",
     responseMaps,
     "",
     `export type ${handlerMapName} = {`,
@@ -330,7 +327,19 @@ function buildRouteRegistration(
   ].join("\n");
 }
 
+function hasHandlerInput(operation: HonoRouteOperation) {
+  return (
+    operation.hasJsonBody ||
+    operation.pathParams.length > 0 ||
+    operation.queryParams.length > 0
+  );
+}
+
 function handlerInputType(operation: HonoRouteOperation) {
+  if (!hasHandlerInput(operation)) {
+    return "EmptyHandlerInput";
+  }
+
   const outEntries = [
     operation.pathParams.length > 0
       ? `param: z.infer<typeof ${paramsSchemaName(operation)}>`
@@ -343,9 +352,7 @@ function handlerInputType(operation: HonoRouteOperation) {
       : undefined,
   ].filter((entry): entry is string => Boolean(entry));
 
-  return outEntries.length === 0
-    ? "{}"
-    : `{ out: { ${outEntries.join("; ")} } }`;
+  return `{ out: { ${outEntries.join("; ")} } }`;
 }
 
 function handlerOutputType(operation: HonoRouteOperation) {
@@ -531,20 +538,30 @@ function buildImports(imports: GeneratedImport[]) {
     byModuleAndKind.set(key, existing);
   }
 
-  return Array.from(byModuleAndKind.values())
-    .map((items) => {
-      const uniqueItems = Array.from(
-        new Map(
-          items.map((item) => [`${item.isType}:${item.name}`, item]),
-        ).values(),
-      ).sort((a, b) => a.name.localeCompare(b.name));
-      const { from, isType } = uniqueItems[0]!;
+  const declarations: string[] = [];
 
-      return [
+  for (const items of byModuleAndKind.values()) {
+    const uniqueItems = Array.from(
+      new Map(
+        items.map((item) => [`${item.isType}:${item.name}`, item]),
+      ).values(),
+    ).sort((a, b) => a.name.localeCompare(b.name));
+    const firstItem = uniqueItems[0];
+
+    if (!firstItem) {
+      continue;
+    }
+
+    const { from, isType } = firstItem;
+
+    declarations.push(
+      [
         isType ? "import type {" : "import {",
         ...uniqueItems.map((item) => `  ${item.name},`),
         `} from "${from}";`,
-      ].join("\n");
-    })
-    .join("\n");
+      ].join("\n"),
+    );
+  }
+
+  return declarations.join("\n");
 }

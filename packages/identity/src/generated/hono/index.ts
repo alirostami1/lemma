@@ -44,6 +44,7 @@ type TypedHandlerResponse<T extends Record<string, unknown>> =
   | HandlerResponse<T>
   | Promise<Response | HandlerResponse<T>>
   | Promise<void>;
+type EmptyHandlerInput = Record<PropertyKey, never>;
 type GetCurrentIdentityResponses = {
   "200": IdentityUserResponse;
   "401": ErrorResponse;
@@ -64,11 +65,24 @@ type GetCurrentIdentityRolesResponses = {
   "403": ErrorResponse;
   "502": ErrorResponse;
 };
+type ListIdentityRolesResponses = {
+  "200": RolesResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "502": ErrorResponse;
+};
 type ListIdentityUsersResponses = {
   "200": ListIdentityUsersResponse;
   "400": ErrorResponse;
   "401": ErrorResponse;
   "403": ErrorResponse;
+  "502": ErrorResponse;
+};
+type DeleteIdentityUserResponses = {
+  "200": IdentityUserResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
   "502": ErrorResponse;
 };
 type GetIdentityUserResponses = {
@@ -81,13 +95,6 @@ type GetIdentityUserResponses = {
 type UpdateIdentityUserResponses = {
   "200": IdentityUserResponse;
   "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
-  "502": ErrorResponse;
-};
-type DeleteIdentityUserResponses = {
-  "200": IdentityUserResponse;
   "401": ErrorResponse;
   "403": ErrorResponse;
   "404": ErrorResponse;
@@ -131,17 +138,11 @@ type RevokeIdentityUserRoleResponses = {
   "404": ErrorResponse;
   "502": ErrorResponse;
 };
-type ListIdentityRolesResponses = {
-  "200": RolesResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "502": ErrorResponse;
-};
 export type IdentityHandlerMap = {
   getCurrentIdentity: Handler<
     IdentityAppEnv,
     "/identity/me",
-    Record<string, never>,
+    EmptyHandlerInput,
     TypedHandlerResponse<GetCurrentIdentityResponses>
   >;
   updateCurrentIdentity: Handler<
@@ -153,14 +154,26 @@ export type IdentityHandlerMap = {
   getCurrentIdentityRoles: Handler<
     IdentityAppEnv,
     "/identity/me/roles",
-    Record<string, never>,
+    EmptyHandlerInput,
     TypedHandlerResponse<GetCurrentIdentityRolesResponses>
+  >;
+  listIdentityRoles: Handler<
+    IdentityAppEnv,
+    "/identity/roles",
+    EmptyHandlerInput,
+    TypedHandlerResponse<ListIdentityRolesResponses>
   >;
   listIdentityUsers: Handler<
     IdentityAppEnv,
     "/identity/users",
     { out: { query: z.infer<typeof ListIdentityUsersQueryParams> } },
     TypedHandlerResponse<ListIdentityUsersResponses>
+  >;
+  deleteIdentityUser: Handler<
+    IdentityAppEnv,
+    "/identity/users/:userId",
+    { out: { param: z.infer<typeof DeleteIdentityUserParams> } },
+    TypedHandlerResponse<DeleteIdentityUserResponses>
   >;
   getIdentityUser: Handler<
     IdentityAppEnv,
@@ -178,12 +191,6 @@ export type IdentityHandlerMap = {
       };
     },
     TypedHandlerResponse<UpdateIdentityUserResponses>
-  >;
-  deleteIdentityUser: Handler<
-    IdentityAppEnv,
-    "/identity/users/:userId",
-    { out: { param: z.infer<typeof DeleteIdentityUserParams> } },
-    TypedHandlerResponse<DeleteIdentityUserResponses>
   >;
   activateIdentityUser: Handler<
     IdentityAppEnv,
@@ -220,12 +227,6 @@ export type IdentityHandlerMap = {
     { out: { param: z.infer<typeof RevokeIdentityUserRoleParams> } },
     TypedHandlerResponse<RevokeIdentityUserRoleResponses>
   >;
-  listIdentityRoles: Handler<
-    IdentityAppEnv,
-    "/identity/roles",
-    Record<string, never>,
-    TypedHandlerResponse<ListIdentityRolesResponses>
-  >;
 };
 export function createIdentityRoutes(deps: {
   requireIdentity: RequireIdentity;
@@ -252,10 +253,23 @@ export function createIdentityRoutes(deps: {
   );
 
   app.get(
+    "/identity/roles",
+    deps.requireIdentity,
+    deps.handlers.listIdentityRoles,
+  );
+
+  app.get(
     "/identity/users",
     deps.requireIdentity,
     zValidator("query", ListIdentityUsersQueryParams, validationHook),
     deps.handlers.listIdentityUsers,
+  );
+
+  app.delete(
+    "/identity/users/:userId",
+    deps.requireIdentity,
+    zValidator("param", DeleteIdentityUserParams, validationHook),
+    deps.handlers.deleteIdentityUser,
   );
 
   app.get(
@@ -271,13 +285,6 @@ export function createIdentityRoutes(deps: {
     zValidator("param", UpdateIdentityUserParams, validationHook),
     zValidator("json", UpdateIdentityUserBody, validationHook),
     deps.handlers.updateIdentityUser,
-  );
-
-  app.delete(
-    "/identity/users/:userId",
-    deps.requireIdentity,
-    zValidator("param", DeleteIdentityUserParams, validationHook),
-    deps.handlers.deleteIdentityUser,
   );
 
   app.post(
@@ -314,12 +321,6 @@ export function createIdentityRoutes(deps: {
     deps.requireIdentity,
     zValidator("param", RevokeIdentityUserRoleParams, validationHook),
     deps.handlers.revokeIdentityUserRole,
-  );
-
-  app.get(
-    "/identity/roles",
-    deps.requireIdentity,
-    deps.handlers.listIdentityRoles,
   );
   return app;
 }

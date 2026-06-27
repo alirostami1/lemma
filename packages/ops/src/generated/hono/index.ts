@@ -39,23 +39,12 @@ type TypedHandlerResponse<T extends Record<string, unknown>> =
   | HandlerResponse<T>
   | Promise<Response | HandlerResponse<T>>
   | Promise<void>;
-type GetOpsOverviewResponses = {
-  "200": OpsOverview;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-};
+type EmptyHandlerInput = Record<PropertyKey, never>;
 type ListOpsOutboxEventsResponses = {
   "200": ListOpsOutboxEventsResponse;
   "400": ErrorResponse;
   "401": ErrorResponse;
   "403": ErrorResponse;
-};
-type ReviewOpsOutboxEventResponses = {
-  "200": OpsOutboxEventResponse;
-  "400": ErrorResponse;
-  "401": ErrorResponse;
-  "403": ErrorResponse;
-  "404": ErrorResponse;
 };
 type ReplayOpsOutboxEventResponses = {
   "200": OpsOutboxEventResponse;
@@ -64,9 +53,15 @@ type ReplayOpsOutboxEventResponses = {
   "403": ErrorResponse;
   "404": ErrorResponse;
 };
-type ListOpsFailedQueueJobsResponses = {
-  "200": ListOpsFailedQueueJobsResponse;
+type ReviewOpsOutboxEventResponses = {
+  "200": OpsOutboxEventResponse;
   "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+};
+type GetOpsOverviewResponses = {
+  "200": OpsOverview;
   "401": ErrorResponse;
   "403": ErrorResponse;
 };
@@ -76,29 +71,18 @@ type ListOpsQueueJobsResponses = {
   "401": ErrorResponse;
   "403": ErrorResponse;
 };
+type ListOpsFailedQueueJobsResponses = {
+  "200": ListOpsFailedQueueJobsResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+};
 export type OpsHandlerMap = {
-  getOpsOverview: Handler<
-    OpsAppEnv,
-    "/ops/overview",
-    Record<string, never>,
-    TypedHandlerResponse<GetOpsOverviewResponses>
-  >;
   listOpsOutboxEvents: Handler<
     OpsAppEnv,
     "/ops/outbox-events",
     { out: { query: z.infer<typeof ListOpsOutboxEventsQueryParams> } },
     TypedHandlerResponse<ListOpsOutboxEventsResponses>
-  >;
-  reviewOpsOutboxEvent: Handler<
-    OpsAppEnv,
-    "/ops/outbox-events/:eventId/review",
-    {
-      out: {
-        param: z.infer<typeof ReviewOpsOutboxEventParams>;
-        json: z.infer<typeof ReviewOpsOutboxEventBody>;
-      };
-    },
-    TypedHandlerResponse<ReviewOpsOutboxEventResponses>
   >;
   replayOpsOutboxEvent: Handler<
     OpsAppEnv,
@@ -111,11 +95,22 @@ export type OpsHandlerMap = {
     },
     TypedHandlerResponse<ReplayOpsOutboxEventResponses>
   >;
-  listOpsFailedQueueJobs: Handler<
+  reviewOpsOutboxEvent: Handler<
     OpsAppEnv,
-    "/ops/queue-jobs/failed",
-    { out: { query: z.infer<typeof ListOpsFailedQueueJobsQueryParams> } },
-    TypedHandlerResponse<ListOpsFailedQueueJobsResponses>
+    "/ops/outbox-events/:eventId/review",
+    {
+      out: {
+        param: z.infer<typeof ReviewOpsOutboxEventParams>;
+        json: z.infer<typeof ReviewOpsOutboxEventBody>;
+      };
+    },
+    TypedHandlerResponse<ReviewOpsOutboxEventResponses>
+  >;
+  getOpsOverview: Handler<
+    OpsAppEnv,
+    "/ops/overview",
+    EmptyHandlerInput,
+    TypedHandlerResponse<GetOpsOverviewResponses>
   >;
   listOpsQueueJobs: Handler<
     OpsAppEnv,
@@ -123,27 +118,23 @@ export type OpsHandlerMap = {
     { out: { query: z.infer<typeof ListOpsQueueJobsQueryParams> } },
     TypedHandlerResponse<ListOpsQueueJobsResponses>
   >;
+  listOpsFailedQueueJobs: Handler<
+    OpsAppEnv,
+    "/ops/queue-jobs/failed",
+    { out: { query: z.infer<typeof ListOpsFailedQueueJobsQueryParams> } },
+    TypedHandlerResponse<ListOpsFailedQueueJobsResponses>
+  >;
 };
 export function createOpsRoutes(deps: {
   requireIdentity: RequireIdentity;
   handlers: OpsHandlerMap;
 }) {
   const app = new Hono<OpsAppEnv>();
-  app.get("/ops/overview", deps.requireIdentity, deps.handlers.getOpsOverview);
-
   app.get(
     "/ops/outbox-events",
     deps.requireIdentity,
     zValidator("query", ListOpsOutboxEventsQueryParams, validationHook),
     deps.handlers.listOpsOutboxEvents,
-  );
-
-  app.post(
-    "/ops/outbox-events/:eventId/review",
-    deps.requireIdentity,
-    zValidator("param", ReviewOpsOutboxEventParams, validationHook),
-    zValidator("json", ReviewOpsOutboxEventBody, validationHook),
-    deps.handlers.reviewOpsOutboxEvent,
   );
 
   app.post(
@@ -154,18 +145,28 @@ export function createOpsRoutes(deps: {
     deps.handlers.replayOpsOutboxEvent,
   );
 
-  app.get(
-    "/ops/queue-jobs/failed",
+  app.post(
+    "/ops/outbox-events/:eventId/review",
     deps.requireIdentity,
-    zValidator("query", ListOpsFailedQueueJobsQueryParams, validationHook),
-    deps.handlers.listOpsFailedQueueJobs,
+    zValidator("param", ReviewOpsOutboxEventParams, validationHook),
+    zValidator("json", ReviewOpsOutboxEventBody, validationHook),
+    deps.handlers.reviewOpsOutboxEvent,
   );
+
+  app.get("/ops/overview", deps.requireIdentity, deps.handlers.getOpsOverview);
 
   app.get(
     "/ops/queue-jobs",
     deps.requireIdentity,
     zValidator("query", ListOpsQueueJobsQueryParams, validationHook),
     deps.handlers.listOpsQueueJobs,
+  );
+
+  app.get(
+    "/ops/queue-jobs/failed",
+    deps.requireIdentity,
+    zValidator("query", ListOpsFailedQueueJobsQueryParams, validationHook),
+    deps.handlers.listOpsFailedQueueJobs,
   );
   return app;
 }
