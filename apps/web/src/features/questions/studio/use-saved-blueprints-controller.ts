@@ -11,6 +11,10 @@ import {
   type SavedBlueprintListItem,
   type SavedDraftListItem,
 } from "./saved-blueprints-view-model";
+import {
+  buildStudioContinueCardViewModel,
+  type StudioContinueCardViewModel,
+} from "./unfinished-work-view-model";
 
 const BLUEPRINT_PAGE_SIZE = 12;
 const DRAFT_PAGE_SIZE = 10;
@@ -42,6 +46,10 @@ export function useSavedBlueprintsController({
     [blueprintsQuery.data?.pages],
   );
   const draftItems = useMemo(() => buildSavedDraftsViewModel(drafts), [drafts]);
+  const latestDraft = useMemo(
+    () => buildStudioContinueCardViewModel(drafts),
+    [drafts],
+  );
   const blueprintItems = useMemo(
     () => buildSavedBlueprintsViewModel(blueprints),
     [blueprints],
@@ -54,11 +62,11 @@ export function useSavedBlueprintsController({
   return {
     blueprints: blueprintItems,
     draftLoadMoreErrorMessage: draftsQuery.isFetchNextPageError
-      ? "More recent drafts could not be loaded."
+      ? "More recent work could not be loaded."
       : null,
     drafts: draftItems,
     draftsErrorMessage: draftsQuery.isError
-      ? "Recent drafts could not be loaded."
+      ? "Recent work could not be loaded."
       : null,
     errorMessage: blueprintsQuery.isError
       ? "Saved blueprints could not be loaded."
@@ -69,6 +77,7 @@ export function useSavedBlueprintsController({
     isInitialLoading: blueprintsQuery.isLoading,
     isLoadingBlueprintsMore: blueprintsQuery.isFetchingNextPage,
     isLoadingDraftsMore: draftsQuery.isFetchingNextPage,
+    latestDraft,
     loadMoreErrorMessage: blueprintsQuery.isFetchNextPageError
       ? "More saved blueprints could not be loaded."
       : null,
@@ -96,6 +105,7 @@ export function useSavedBlueprintsController({
     isDraftsInitialLoading: boolean;
     draftsErrorMessage: string | null;
     draftLoadMoreErrorMessage: string | null;
+    latestDraft: StudioContinueCardViewModel | null;
     blueprints: SavedBlueprintListItem[];
     isInitialLoading: boolean;
     errorMessage: string | null;

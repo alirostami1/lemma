@@ -58,12 +58,12 @@ describe("saved draft view model", () => {
       }),
     ]);
 
-    expect(result[0]?.metadata).toContain("Draft");
+    expect(result[0]?.metadata).toContain("Unpublished changes");
     expect(result[0]?.metadata).toContain("2 sources");
-    expect(result[0]?.metadata).toContain("Blueprint blueprint-1");
-    expect(result[1]?.metadata).toContain("No linked blueprint");
-    expect(result[0]?.metadata).toContain("Updated Jun 20, 2026, 12:00 AM UTC");
-    expect(result[0]?.metadata).toContain("Saved Jun 21, 2026, 12:00 AM UTC");
+    expect(result[0]?.metadata).toContain(
+      "Last edited Jun 21, 2026, 12:00 AM UTC",
+    );
+    expect(result[1]?.metadata).not.toContain("Blueprint");
   });
 });
 

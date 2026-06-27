@@ -3,6 +3,7 @@ import type {
   QuestionBlueprintDraftSummary,
 } from "#/domains/questions/model";
 import { formatStableDateTime } from "#/lib/date-format";
+import { formatUnfinishedWorkLastEditedLabel } from "./unfinished-work-view-model";
 
 export type SavedBlueprintListItem = {
   id: string;
@@ -43,13 +44,9 @@ export function buildSavedDraftsViewModel(
       description: draft.description,
       id: draft.id,
       metadata: [
-        "Draft",
+        "Unpublished changes",
         sourceText,
-        `Updated ${formatStableDateTime(draft.updatedAt)}`,
-        `Saved ${formatStableDateTime(draft.lastSavedAt)}`,
-        draft.blueprintId
-          ? `Blueprint ${draft.blueprintId}`
-          : "No linked blueprint",
+        formatUnfinishedWorkLastEditedLabel(draft),
       ].join(" | "),
       title: draft.name,
     };

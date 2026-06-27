@@ -1815,6 +1815,15 @@ export const paths: Paths = {
           required: false,
           schema: { type: "string" },
         },
+        {
+          in: "query",
+          name: "status",
+          required: false,
+          schema: {
+            enum: ["draft", "publishing", "published", "discarded"],
+            type: "string",
+          },
+        },
       ],
       responses: {
         "200": {

@@ -71,8 +71,8 @@ export function SavedBlueprintsDialog({
 }: SavedBlueprintsDialogProps) {
   const draftsDescription =
     drafts.length > 0
-      ? `${drafts.length} recent draft${drafts.length === 1 ? "" : "s"}`
-      : "Drafts in progress";
+      ? `${drafts.length} unfinished item${drafts.length === 1 ? "" : "s"}`
+      : "Work in progress";
   const blueprintsDescription =
     blueprints.length > 0
       ? `${blueprints.length} saved blueprint${blueprints.length === 1 ? "" : "s"}`
@@ -82,9 +82,9 @@ export function SavedBlueprintsDialog({
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Open</DialogTitle>
+          <DialogTitle>Browse work and blueprints</DialogTitle>
           <DialogDescription>
-            Open a draft in progress or a saved blueprint to continue.
+            Continue recent work or open a saved blueprint.
           </DialogDescription>
         </DialogHeader>
         <div className="grid max-h-[65vh] gap-4 overflow-y-auto pr-1">
@@ -93,11 +93,11 @@ export function SavedBlueprintsDialog({
             className="grid gap-2"
           >
             <h2 className="text-sm font-medium" id="recent-drafts-heading">
-              Recent drafts
+              Recent work
             </h2>
             <p className="text-sm text-muted-foreground">{draftsDescription}</p>
             <AsyncPanel
-              empty={<EmptyState description="No drafts yet." />}
+              empty={<EmptyState description="No unfinished work yet." />}
               error={(message) => (
                 <InlineError message={message} onRetry={onRetry} />
               )}
@@ -106,7 +106,7 @@ export function SavedBlueprintsDialog({
               isLoading={isDraftsInitialLoading}
               loading={
                 <p className="text-sm text-muted-foreground">
-                  Loading recent drafts...
+                  Loading recent work...
                 </p>
               }
             >
@@ -200,12 +200,11 @@ function SavedBlueprintListRow({
     variant?: "default" | "outline";
   };
 }) {
-  const openLabel = `Open draft ${item.title}`;
   const action =
     kind === "draft" && onOpen
       ? {
           icon: <FolderOpen />,
-          label: openLabel,
+          label: `Continue editing ${item.title}`,
           onSelect: onOpen,
           variant: "outline" as const,
         }
@@ -243,7 +242,7 @@ function getBlueprintRowAction(
 ) {
   return {
     icon: <PenLine />,
-    label: action.label ?? `Edit as draft ${item.title}`,
+    label: action.label ?? `Edit blueprint ${item.title}`,
     onSelect: () => action.onEditAsDraft(item.id),
     variant: "outline" as const,
   };

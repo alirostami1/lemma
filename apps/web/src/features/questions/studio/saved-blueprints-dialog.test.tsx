@@ -32,7 +32,8 @@ describe("saved blueprints dialog", () => {
     cleanup();
   });
 
-  const openDialog = () => within(screen.getByRole("dialog", { name: "Open" }));
+  const openDialog = () =>
+    within(screen.getByRole("dialog", { name: "Browse work and blueprints" }));
   const defaultProps = {
     blueprintAction: {
       onEditAsDraft: () => {},
@@ -65,8 +66,10 @@ describe("saved blueprints dialog", () => {
     );
 
     const dialog = openDialog();
-    expect(dialog.getByRole("heading", { name: "Open" })).toBeTruthy();
-    expect(dialog.getByRole("heading", { name: "Recent drafts" })).toBeTruthy();
+    expect(
+      dialog.getByRole("heading", { name: "Browse work and blueprints" }),
+    ).toBeTruthy();
+    expect(dialog.getByRole("heading", { name: "Recent work" })).toBeTruthy();
     expect(
       dialog.getByRole("heading", { name: "Saved blueprints" }),
     ).toBeTruthy();
@@ -87,7 +90,7 @@ describe("saved blueprints dialog", () => {
 
     const dialog = openDialog();
     await user.click(
-      dialog.getByRole("button", { name: "Open draft Draft one" }),
+      dialog.getByRole("button", { name: "Continue editing Draft one" }),
     );
     expect(onOpenDraft).toHaveBeenCalledWith("draft-1");
     expect(
@@ -112,7 +115,7 @@ describe("saved blueprints dialog", () => {
 
     const dialog = openDialog();
     await user.click(
-      dialog.getByRole("button", { name: "Edit as draft Blueprint one" }),
+      dialog.getByRole("button", { name: "Edit blueprint Blueprint one" }),
     );
     expect(onSelect).toHaveBeenCalledWith("blueprint-1");
     expect(
@@ -133,8 +136,8 @@ describe("saved blueprints dialog", () => {
 
     const dialog = openDialog();
     expect(
-      within(dialog.getByRole("region", { name: "Recent drafts" })).getByText(
-        "Loading recent drafts...",
+      within(dialog.getByRole("region", { name: "Recent work" })).getByText(
+        "Loading recent work...",
       ),
     ).toBeTruthy();
     expect(
@@ -149,9 +152,9 @@ describe("saved blueprints dialog", () => {
       <SavedBlueprintsDialog
         {...defaultProps}
         blueprints={[]}
-        draftLoadMoreErrorMessage="More recent drafts could not be loaded."
+        draftLoadMoreErrorMessage="More recent work could not be loaded."
         drafts={[]}
-        draftsErrorMessage="Recent drafts could not be loaded."
+        draftsErrorMessage="Recent work could not be loaded."
         errorMessage="Saved blueprints could not be loaded."
         loadMoreErrorMessage="More saved blueprints could not be loaded."
       />,
@@ -159,8 +162,8 @@ describe("saved blueprints dialog", () => {
 
     const dialog = openDialog();
     expect(
-      within(dialog.getByRole("region", { name: "Recent drafts" })).getByText(
-        "Recent drafts could not be loaded.",
+      within(dialog.getByRole("region", { name: "Recent work" })).getByText(
+        "Recent work could not be loaded.",
       ),
     ).toBeTruthy();
     expect(
@@ -177,8 +180,8 @@ describe("saved blueprints dialog", () => {
 
     const dialog = openDialog();
     expect(
-      within(dialog.getByRole("region", { name: "Recent drafts" })).getByText(
-        "No drafts yet.",
+      within(dialog.getByRole("region", { name: "Recent work" })).getByText(
+        "No unfinished work yet.",
       ),
     ).toBeTruthy();
     expect(
@@ -199,8 +202,8 @@ describe("saved blueprints dialog", () => {
 
     const dialog = openDialog();
     expect(
-      within(dialog.getByRole("region", { name: "Recent drafts" })).getByText(
-        "No drafts yet.",
+      within(dialog.getByRole("region", { name: "Recent work" })).getByText(
+        "No unfinished work yet.",
       ),
     ).toBeTruthy();
     expect(
@@ -226,8 +229,8 @@ describe("saved blueprints dialog", () => {
       ).getByText("No saved blueprints yet."),
     ).toBeTruthy();
     expect(
-      within(dialog.getByRole("region", { name: "Recent drafts" })).queryByText(
-        "No drafts yet.",
+      within(dialog.getByRole("region", { name: "Recent work" })).queryByText(
+        "No unfinished work yet.",
       ),
     ).toBeNull();
   });

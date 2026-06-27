@@ -10,6 +10,7 @@ import {
   markQuestionBlueprintDraftPublished,
   type QuestionBlueprint,
   type QuestionBlueprintDraft,
+  type QuestionBlueprintDraftStatus,
   questionBlueprintDescription,
   questionBlueprintDocument,
   questionBlueprintDraftId,
@@ -59,6 +60,39 @@ type TestBlueprintInput = {
 };
 
 describe("QuestionBlueprintDraftService", () => {
+  it("lists published drafts with published status filter", async () => {
+    let receivedStatuses: readonly string[] | undefined;
+    const service = createService({
+      onListQuestionBlueprintDrafts: (input) => {
+        receivedStatuses = input.statuses;
+      },
+    });
+
+    await service.listQuestionBlueprintDrafts({
+      currentUser: currentUser(),
+      limit: 10,
+      status: "published",
+    });
+
+    assert.deepEqual(receivedStatuses, ["published"]);
+  });
+
+  it("lists drafts by default when no status filter is provided", async () => {
+    let receivedStatuses: readonly string[] | undefined;
+    const service = createService({
+      onListQuestionBlueprintDrafts: (input) => {
+        receivedStatuses = input.statuses;
+      },
+    });
+
+    await service.listQuestionBlueprintDrafts({
+      currentUser: currentUser(),
+      limit: 10,
+    });
+
+    assert.deepEqual(receivedStatuses, ["draft"]);
+  });
+
   it("sets baseVersionId for targeted drafts", async () => {
     const service = createService();
 
@@ -601,6 +635,9 @@ function createService(
     attachRaceBeforeMaterialization?: boolean;
     draft?: QuestionBlueprintDraft | null;
     fileMetadata?: DraftSourceFileMetadata;
+    onListQuestionBlueprintDrafts?: (input: {
+      statuses?: readonly QuestionBlueprintDraftStatus[];
+    }) => void;
     onPublish?: (input: unknown) => void;
     onRegisterWorkbook?: (input: unknown) => void;
     publishError?: Error;
@@ -636,6 +673,10 @@ function createService(
     async findQuestionBlueprintVersionById(id) {
       if (id !== nextVersionId) return null;
       return createTestBlueprintVersion();
+    },
+    async listQuestionBlueprintDraftsByOwnerUserId(input) {
+      options.onListQuestionBlueprintDrafts?.(input);
+      return [];
     },
     async publishQuestionBlueprintDraft(input) {
       options.onPublish?.(input);
@@ -718,6 +759,7 @@ function createService(
     | "findQuestionBlueprintDraftById"
     | "findQuestionBlueprintById"
     | "findQuestionBlueprintVersionById"
+    | "listQuestionBlueprintDraftsByOwnerUserId"
     | "publishQuestionBlueprintDraft"
     | "updateQuestionBlueprintDraftWithExpectedRevision"
   >;

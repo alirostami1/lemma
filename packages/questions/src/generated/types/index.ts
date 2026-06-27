@@ -31,6 +31,7 @@ export * from "./gradeResultSchemaVersion.js";
 export * from "./gradeResultStatus.js";
 export * from "./listQuestionBlueprintDraftsParams.js";
 export * from "./listQuestionBlueprintDraftsResponse.js";
+export * from "./listQuestionBlueprintDraftsStatus.js";
 export * from "./listQuestionBlueprintsParams.js";
 export * from "./listQuestionBlueprintsResponse.js";
 export * from "./listQuestionBlueprintsStatus.js";

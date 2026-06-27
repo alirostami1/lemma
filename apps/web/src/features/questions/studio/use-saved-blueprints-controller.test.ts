@@ -141,6 +141,8 @@ describe("useSavedBlueprintsController", () => {
     expect(result.current.blueprints).toHaveLength(2);
     expect(result.current.drafts[0]?.id).toBe("draft-1");
     expect(result.current.blueprints[0]?.id).toBe("blueprint-1");
+    expect(result.current.latestDraft?.draftId).toBe("draft-2");
+    expect(result.current.latestDraft?.title).toBe("Draft two");
   });
 
   it("routes open and explicit blueprint action callbacks", () => {
@@ -191,7 +193,7 @@ describe("useSavedBlueprintsController", () => {
     );
 
     expect(result.current.draftsErrorMessage).toBe(
-      "Recent drafts could not be loaded.",
+      "Recent work could not be loaded.",
     );
     expect(result.current.draftLoadMoreErrorMessage).toBeNull();
   });
@@ -212,7 +214,7 @@ describe("useSavedBlueprintsController", () => {
       "More saved blueprints could not be loaded.",
     );
     expect(result.current.draftLoadMoreErrorMessage).toBe(
-      "More recent drafts could not be loaded.",
+      "More recent work could not be loaded.",
     );
   });
 });

@@ -66,6 +66,7 @@ export * from "./listFilesResponse.ts";
 export * from "./listFilesStatus.ts";
 export * from "./listQuestionBlueprintDraftsParams.ts";
 export * from "./listQuestionBlueprintDraftsResponse.ts";
+export * from "./listQuestionBlueprintDraftsStatus.ts";
 export * from "./listQuestionBlueprintsParams.ts";
 export * from "./listQuestionBlueprintsResponse.ts";
 export * from "./listQuestionBlueprintsStatus.ts";
