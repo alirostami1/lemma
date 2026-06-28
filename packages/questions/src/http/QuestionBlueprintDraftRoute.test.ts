@@ -74,6 +74,50 @@ describe("question blueprint draft route", () => {
     assert.equal(response.status, 200);
   });
 
+  it("rejects Python source intents before draft create or update", async () => {
+    let createCalled = false;
+    let updateCalled = false;
+    const app = createApp({
+      questionBlueprintDraftService: {
+        async createQuestionBlueprintDraft() {
+          createCalled = true;
+          return { draft: createDraft() };
+        },
+        async updateQuestionBlueprintDraft() {
+          updateCalled = true;
+          return { draft: createDraft() };
+        },
+      } as unknown as QuestionBlueprintDraftService,
+    });
+    const sources = [
+      { name: "Generator", sourceId: "generator", type: "python" },
+    ];
+
+    const createResponse = await app.request("/question-blueprint-drafts", {
+      body: JSON.stringify({
+        description: null,
+        document: emptyDocument(),
+        name: "Draft",
+        sources,
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    });
+    const updateResponse = await app.request(
+      `/question-blueprint-drafts/${draftId}`,
+      {
+        body: JSON.stringify(updateDraftBody({ sources })),
+        headers: { "content-type": "application/json" },
+        method: "PATCH",
+      },
+    );
+
+    assert.equal(createResponse.status, 400);
+    assert.equal(updateResponse.status, 400);
+    assert.equal(createCalled, false);
+    assert.equal(updateCalled, false);
+  });
+
   for (const field of [
     "byteSize",
     "checksumSha256",

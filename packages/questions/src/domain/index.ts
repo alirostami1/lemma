@@ -265,6 +265,8 @@ export {
   parseWorkbookReferenceKey,
 } from "./reference-key.js";
 export type {
+  PythonSourceArtifactMetadata,
+  PythonSourceRevisionMetadata,
   SourceArtifact,
   SourceArtifactStatus,
   SourceDocument,
@@ -276,6 +278,8 @@ export {
   createSourceArtifact,
   createSourceDocument,
   createSourceRevision,
+  pythonSourceArtifactMetadata,
+  pythonSourceRevisionMetadata,
   reconstituteSourceArtifact,
   reconstituteSourceDocument,
   reconstituteSourceRevision,

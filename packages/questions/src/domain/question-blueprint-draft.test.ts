@@ -8,6 +8,7 @@ import {
   questionBlueprintDescription,
   questionBlueprintDocument,
   questionBlueprintDraftId,
+  questionBlueprintDraftSourceIntents,
   questionBlueprintDraftSourcesFromRows,
   questionBlueprintId,
   questionBlueprintName,
@@ -33,6 +34,16 @@ const testSourceRevisionId = sourceRevisionId(
 const testSourceArtifactId = sourceArtifactId(
   "0197a777-7777-7777-8777-777777777777",
 );
+
+test("rejects Python draft source intent while its runtime is deferred", () => {
+  assert.throws(
+    () =>
+      questionBlueprintDraftSourceIntents([
+        { name: "Generator", sourceId: "generator", type: "python" },
+      ]),
+    /question blueprint draft source intent type is invalid/,
+  );
+});
 
 test("draft permits referenced workbook source without file or workbook", () => {
   const draft = createQuestionBlueprintDraft(
