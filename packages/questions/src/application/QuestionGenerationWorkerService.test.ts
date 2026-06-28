@@ -21,6 +21,9 @@ import {
   questionGenerationRunId,
   questionId,
   questionSetId,
+  sourceArtifactId,
+  sourceDocumentId,
+  sourceRevisionId,
   type UserId,
   userId,
   type WorkbookId,
@@ -50,6 +53,15 @@ const workbookAId = workbookId("019e9315-6a87-715f-9861-8654df077011");
 const workbookBId = workbookId("019e9315-6a87-715f-9861-8654df077012");
 const calculationId = workbookCalculationId(
   "019e9315-6a87-715f-9861-8654df077013",
+);
+const testSourceDocumentId = sourceDocumentId(
+  "019e9315-6a87-715f-9861-8654df077014",
+);
+const testSourceRevisionId = sourceRevisionId(
+  "019e9315-6a87-715f-9861-8654df077015",
+);
+const testSourceArtifactId = sourceArtifactId(
+  "019e9315-6a87-715f-9861-8654df077016",
 );
 
 describe("QuestionGenerationWorkerService", () => {
@@ -327,6 +339,9 @@ function createIds(): IdGenerator {
     questionGenerationRunId: () => runId,
     questionId: () => questionId("019e9315-6a87-715f-9861-8654df077009"),
     questionSetId: () => targetQuestionSetId,
+    sourceArtifactId: () => testSourceArtifactId,
+    sourceDocumentId: () => testSourceDocumentId,
+    sourceRevisionId: () => testSourceRevisionId,
   };
 }
 
@@ -429,12 +444,16 @@ function workbookDocument() {
 
 function workbookSource(sourceWorkbookId: WorkbookId) {
   return {
-    byteSize: null,
-    checksumSha256: null,
-    fileId: null,
+    byteSize: 1024,
+    checksumSha256:
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    fileId: "019e9315-6a87-715f-9861-8654df077017",
     name: "Workbook source",
-    originalName: null,
+    originalName: "source.xlsx",
+    sourceArtifactId: testSourceArtifactId,
+    sourceDocumentId: testSourceDocumentId,
     sourceId: "source_1",
+    sourceRevisionId: testSourceRevisionId,
     type: "workbook" as const,
     workbookId: sourceWorkbookId,
   };

@@ -15,6 +15,9 @@ export type {
   QuestionGenerationRunId,
   QuestionId,
   QuestionSetId,
+  SourceArtifactId,
+  SourceDocumentId,
+  SourceRevisionId,
   UserId,
   WorkbookCalculationId,
   WorkbookId,
@@ -26,6 +29,9 @@ export {
   questionGenerationRunId,
   questionId,
   questionSetId,
+  sourceArtifactId,
+  sourceDocumentId,
+  sourceRevisionId,
   userId,
   workbookCalculationId,
   workbookId,
@@ -77,6 +83,7 @@ export type {
 } from "./question-blueprint-document.js";
 export { questionBlueprintDocument } from "./question-blueprint-document.js";
 export type {
+  PublishableWorkbookDraftSource,
   QuestionBlueprintDraft,
   QuestionBlueprintDraftId,
   QuestionBlueprintDraftSource,
@@ -88,6 +95,9 @@ export {
   createQuestionBlueprintDraft,
   discardQuestionBlueprintDraft,
   markQuestionBlueprintDraftPublished,
+  publishableWorkbookDraftSource,
+  publishedWorkbookSourceFromDraft,
+  publishedWorkbookVersionSourceFromDraft,
   questionBlueprintDraftId,
   questionBlueprintDraftPublishIdempotencyKey,
   questionBlueprintDraftRevision,
@@ -254,3 +264,21 @@ export {
   isCanonicalWorkbookReferenceKey,
   parseWorkbookReferenceKey,
 } from "./reference-key.js";
+export type {
+  SourceArtifact,
+  SourceArtifactStatus,
+  SourceDocument,
+  SourceDocumentStatus,
+  SourceKind,
+  SourceRevision,
+} from "./source-lifecycle.js";
+export {
+  createSourceArtifact,
+  createSourceDocument,
+  createSourceRevision,
+  reconstituteSourceArtifact,
+  reconstituteSourceDocument,
+  reconstituteSourceRevision,
+  sourceArtifactStatus,
+  sourceKind,
+} from "./source-lifecycle.js";

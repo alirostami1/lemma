@@ -29,6 +29,19 @@ export type Workbook = {
   updatedAt: Date;
 };
 
+export type CreateWorkbookFromFileInput = {
+  id: WorkbookId;
+  ownerUserId: UserId;
+  createdByUserId: UserId;
+  name: string;
+  fileId: FileId;
+  checksumSha256: string;
+  originalName: string;
+  byteSize: number;
+  contentType: string;
+  engine: WorkbookEngineName;
+};
+
 export function createWorkbook(
   input: {
     id: WorkbookId;
@@ -58,6 +71,19 @@ export function createWorkbook(
     updatedAt: at,
     validationError: null,
   };
+}
+
+export function createWorkbookFromFile(
+  input: CreateWorkbookFromFileInput,
+  at: Date,
+): Workbook {
+  assertWorkbookFileMetadata({
+    byteSize: input.byteSize,
+    contentType: input.contentType,
+    originalName: input.originalName,
+  });
+  assertWorkbookChecksumSha256(input.checksumSha256);
+  return createWorkbook(input, at);
 }
 
 export function updateWorkbook(
@@ -171,4 +197,13 @@ export function assertWorkbookFileMetadata(input: {
       "Workbook file must be a .xlsx file.",
     );
   }
+}
+
+export function assertWorkbookChecksumSha256(value: string): string {
+  if (!/^[a-f0-9]{64}$/u.test(value)) {
+    throw new InvalidWorkbookFileMetadataError(
+      "Workbook checksum must be lowercase SHA-256.",
+    );
+  }
+  return value;
 }

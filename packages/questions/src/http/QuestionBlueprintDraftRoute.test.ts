@@ -81,6 +81,7 @@ describe("question blueprint draft route", () => {
     "originalName",
     "processor",
     "sourceArtifactId",
+    "sourceDocumentId",
     "sourceRevisionId",
     "status",
     "workbookId",
@@ -123,6 +124,7 @@ describe("question blueprint draft route", () => {
             originalName: "evil.xlsx",
             processor: { anything: true },
             sourceArtifactId: "evil",
+            sourceDocumentId: "evil",
             sourceRevisionId: "evil",
             status: "validated",
             workbookId: "019e9315-6a87-715f-9861-8654df099007",
@@ -304,6 +306,11 @@ function createRealQuestionBlueprintDraftService() {
       questionBlueprintId: () => blueprintId,
       questionBlueprintVersionId: () => versionId,
     } as never,
+    questionBlueprintDraftTransaction: {
+      async transaction() {
+        throw new Error("not implemented in route test");
+      },
+    } as never,
     questionsRepository: {
       async findQuestionBlueprintDraftById() {
         return draft;
@@ -320,7 +327,6 @@ function createRealQuestionBlueprintDraftService() {
         return draft;
       },
     } as never,
-    workbookRegistrationPort: {} as never,
   });
 }
 
@@ -342,7 +348,11 @@ function serverOwnedValue(field: string) {
   if (field === "byteSize") return 1234;
   if (field === "status") return "uploaded";
   if (field === "processor") return { anything: true };
-  if (field === "sourceArtifactId" || field === "sourceRevisionId") {
+  if (
+    field === "sourceArtifactId" ||
+    field === "sourceDocumentId" ||
+    field === "sourceRevisionId"
+  ) {
     return "evil";
   }
   if (field === "checksumSha256") {

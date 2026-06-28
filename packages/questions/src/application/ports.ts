@@ -25,6 +25,13 @@ import type {
   QuestionSetQuestion,
   QuestionSetStatus,
   QuestionStatus,
+  SourceArtifact,
+  SourceArtifactId,
+  SourceDocument,
+  SourceDocumentId,
+  SourceKind,
+  SourceRevision,
+  SourceRevisionId,
   UserId,
   WorkbookCalculationId,
   WorkbookId,
@@ -32,21 +39,20 @@ import type {
 } from "../domain/index.js";
 
 export interface QuestionsRepository {
-  attachQuestionBlueprintDraftSourceFileWithExpectedRevision(input: {
-    currentUser: CurrentUser;
-    draftId: QuestionBlueprintDraftId;
-    expectedRevision: number;
-    file: DraftSourceFileMetadata;
-    lineage: OperationLineage;
-    registeredAt: Date;
-    sourceId: string;
-    registerWorkbookFromFile(input: {
-      currentUser: CurrentUser;
-      fileId: string;
-      lineage: OperationLineage;
-      name: string;
-    }): Promise<{ workbookId: WorkbookId }>;
-  }): Promise<QuestionBlueprintDraft | null>;
+  applyWorkbookValidationResultToDraftSources(input: {
+    artifactIds: readonly SourceArtifactId[];
+    draftSourceStatus: "validated" | "invalid";
+    ownerUserId: UserId;
+    updatedAt: Date;
+    workbookId: WorkbookId;
+  }): Promise<number>;
+  applyWorkbookValidationResultToSourceArtifacts(input: {
+    artifactStatus: "valid" | "invalid";
+    ownerUserId: UserId;
+    updatedAt: Date;
+    validationError: string | null;
+    workbookId: WorkbookId;
+  }): Promise<readonly SourceArtifact[]>;
   completeQuestionGenerationRun(input: {
     run: QuestionGenerationRun;
     questions: readonly Question[];
@@ -67,6 +73,9 @@ export interface QuestionsRepository {
     run: QuestionGenerationRun,
   ): Promise<QuestionGenerationRun>;
   createQuestionSet(set: QuestionSet): Promise<QuestionSet>;
+  createSourceArtifact(artifact: SourceArtifact): Promise<SourceArtifact>;
+  createSourceDocument(document: SourceDocument): Promise<SourceDocument>;
+  createSourceRevision(revision: SourceRevision): Promise<SourceRevision>;
   deleteQuestion(question: Question): Promise<Question | null>;
   findActiveQuestionBlueprintDraftByOwnerAndBlueprint(input: {
     ownerUserId: UserId;
@@ -77,6 +86,9 @@ export interface QuestionsRepository {
     id: QuestionBlueprintId,
   ): Promise<QuestionBlueprint | null>;
   findQuestionBlueprintDraftById(
+    id: QuestionBlueprintDraftId,
+  ): Promise<QuestionBlueprintDraft | null>;
+  findQuestionBlueprintDraftByIdForUpdate(
     id: QuestionBlueprintDraftId,
   ): Promise<QuestionBlueprintDraft | null>;
   findQuestionBlueprintVersionById(
@@ -92,6 +104,9 @@ export interface QuestionsRepository {
     id: WorkbookCalculationId,
   ): Promise<QuestionGenerationRun | null>;
   findQuestionSetById(id: QuestionSetId): Promise<QuestionSet | null>;
+  findSourceArtifactById(id: SourceArtifactId): Promise<SourceArtifact | null>;
+  findSourceDocumentById(id: SourceDocumentId): Promise<SourceDocument | null>;
+  findSourceRevisionById(id: SourceRevisionId): Promise<SourceRevision | null>;
   listQuestionBlueprintDraftsByOwnerUserId(input: {
     ownerUserId: UserId;
     statuses?: readonly QuestionBlueprintDraftStatus[];
@@ -151,6 +166,13 @@ export interface QuestionsRepository {
   saveQuestionBlueprintLifecycleState(
     blueprint: QuestionBlueprint,
   ): Promise<QuestionBlueprint | null>;
+  setSourceDocumentCurrentRevision(input: {
+    sourceDocumentId: SourceDocumentId;
+    ownerUserId: UserId;
+    kind: SourceKind;
+    currentRevisionId: SourceRevisionId;
+    updatedAt: Date;
+  }): Promise<SourceDocument>;
   updateQuestionBlueprintDraftWithExpectedRevision(input: {
     draft: QuestionBlueprintDraft;
     expectedRevision: number;
@@ -163,7 +185,28 @@ export interface QuestionsRepository {
 
 export type PublishSourceMaterialization = {
   sourceId: string;
+  sourceDocumentId: SourceDocumentId;
+  sourceRevisionId: SourceRevisionId;
+  sourceArtifactId: SourceArtifactId;
   workbookId: WorkbookId;
+};
+
+export type DraftSourceWorkbookMaterialization = {
+  attachedAt: Date;
+  draftSourceStatus: "uploaded" | "validated" | "invalid";
+  sourceDocument: SourceDocument | null;
+  sourceDocumentId: SourceDocumentId;
+  sourceRevision: SourceRevision;
+  sourceRevisionId: SourceRevisionId;
+  sourceArtifact: SourceArtifact;
+  sourceArtifactId: SourceArtifactId;
+  workbookId: WorkbookId;
+  advanceDocumentHead: boolean;
+};
+
+export type SourceArtifactValidationResult = {
+  finalizedArtifactCount: number;
+  updatedDraftSourceCount: number;
 };
 
 export interface WorkbookCalculationPort {
@@ -263,23 +306,33 @@ export interface DraftSourceFilePort {
   }): Promise<DraftSourceFileMetadata>;
 }
 
-export interface WorkbookRegistrationPort {
-  /**
-   * Prepare workbook materialization for publish.
-   *
-   * This is a pre-#101/#102 bridge for source artifacts. Implementations must be
-   * idempotent for the same owner + file + source-name intent and must be safe if
-   * the enclosing draft publish later fails. Repeating the same request must
-   * return the same reusable workbook/materialization or an equivalent
-   * already-prepared one; it must not create publish-only state that requires the
-   * draft transaction to commit.
-   */
+export type DraftSourceWorkbookRegistrationResult = {
+  workbookId: WorkbookId;
+  status: "pending_validation" | "valid" | "invalid" | "archived" | "deleted";
+  validationError?: string | null;
+};
+
+export interface DraftSourceWorkbookRegistrationPort {
   registerWorkbookFromFile(input: {
-    currentUser: CurrentUser;
+    ownerUserId: UserId;
+    createdByUserId: UserId;
     fileId: string;
     name: string;
+    byteSize: number;
+    contentType: string;
+    checksumSha256: string;
+    originalName: string;
     lineage: OperationLineage;
-  }): Promise<{ workbookId: WorkbookId }>;
+  }): Promise<DraftSourceWorkbookRegistrationResult>;
+}
+
+export interface QuestionBlueprintDraftTransactionPort {
+  transaction<T>(
+    fn: (deps: {
+      questionsRepository: QuestionsRepository;
+      workbookRegistrationPort: DraftSourceWorkbookRegistrationPort;
+    }) => Promise<T>,
+  ): Promise<T>;
 }
 
 export interface QuestionGenerationTransactionPort {
@@ -291,6 +344,12 @@ export interface QuestionGenerationTransactionPort {
   ): Promise<T>;
 }
 
+export interface QuestionsTransactionPort {
+  transaction<T>(
+    fn: (deps: { questionsRepository: QuestionsRepository }) => Promise<T>,
+  ): Promise<T>;
+}
+
 export interface IdGenerator {
   eventId(): EventId;
   questionBlueprintDraftId(): QuestionBlueprintDraftId;
@@ -299,6 +358,9 @@ export interface IdGenerator {
   questionGenerationRunId(): QuestionGenerationRunId;
   questionId(): QuestionId;
   questionSetId(): QuestionSetId;
+  sourceArtifactId(): SourceArtifactId;
+  sourceDocumentId(): SourceDocumentId;
+  sourceRevisionId(): SourceRevisionId;
 }
 
 export interface Clock {

@@ -4,6 +4,9 @@ import type { JsonValue } from "@lemma/domain";
 import {
   type QuestionReferenceSource,
   questionBlueprintDocument,
+  sourceArtifactId,
+  sourceDocumentId,
+  sourceRevisionId,
   type WorkbookCalculationId,
   type WorkbookId,
   type WorkbookSnapshotId,
@@ -17,6 +20,24 @@ const secondWorkbookSnapshotId =
   "019e9315-6a87-715f-9861-8654df070c4d" as WorkbookSnapshotId;
 const workbookId = "019e9315-6a87-715f-9861-8654df070c4e" as WorkbookId;
 const secondWorkbookId = "019e9315-6a87-715f-9861-8654df070c4f" as WorkbookId;
+const firstSourceDocumentId = sourceDocumentId(
+  "019e9315-6a87-715f-9861-8654df070c52",
+);
+const firstSourceRevisionId = sourceRevisionId(
+  "019e9315-6a87-715f-9861-8654df070c53",
+);
+const firstSourceArtifactId = sourceArtifactId(
+  "019e9315-6a87-715f-9861-8654df070c54",
+);
+const secondSourceDocumentId = sourceDocumentId(
+  "019e9315-6a87-715f-9861-8654df070c55",
+);
+const secondSourceRevisionId = sourceRevisionId(
+  "019e9315-6a87-715f-9861-8654df070c56",
+);
+const secondSourceArtifactId = sourceArtifactId(
+  "019e9315-6a87-715f-9861-8654df070c57",
+);
 const generationRunId = "019e9315-6a87-715f-9861-8654df070c50";
 const workbookCalculationId =
   "019e9315-6a87-715f-9861-8654df070c51" as WorkbookCalculationId;
@@ -352,12 +373,26 @@ function publishedWorkbookSource(
   name: string,
   sourceWorkbookId: WorkbookId,
 ) {
+  const pins =
+    sourceId === "source_1"
+      ? {
+          sourceArtifactId: firstSourceArtifactId,
+          sourceDocumentId: firstSourceDocumentId,
+          sourceRevisionId: firstSourceRevisionId,
+        }
+      : {
+          sourceArtifactId: secondSourceArtifactId,
+          sourceDocumentId: secondSourceDocumentId,
+          sourceRevisionId: secondSourceRevisionId,
+        };
   return {
-    byteSize: null,
-    checksumSha256: null,
-    fileId: null,
+    byteSize: 1234,
+    checksumSha256:
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    fileId: "019e9315-6a87-715f-9861-8654df070ca1",
     name,
-    originalName: null,
+    originalName: `${sourceId}.xlsx`,
+    ...pins,
     sourceId,
     type: "workbook" as const,
     workbookId: sourceWorkbookId,

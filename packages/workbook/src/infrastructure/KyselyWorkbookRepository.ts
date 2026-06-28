@@ -1,5 +1,8 @@
 import type { DatabaseExecutor } from "@lemma/db";
-import { WorkbookRepositoryFailureError } from "../application/errors.js";
+import {
+  WorkbookRepositoryDataError,
+  WorkbookRepositoryFailureError,
+} from "../application/errors.js";
 import type {
   WorkbookCalculationSourceRecord,
   WorkbookRepository,
@@ -57,6 +60,15 @@ export class KyselyWorkbookRepository implements WorkbookRepository {
   createWorkbook(workbook: Workbook): Promise<Workbook> {
     return this.withRepositoryError(() =>
       this.catalog.createWorkbook(workbook),
+    );
+  }
+
+  createWorkbookIfAbsentByOwnerAndFile(input: { workbook: Workbook }): Promise<{
+    workbook: Workbook;
+    created: boolean;
+  }> {
+    return this.withRepositoryError(() =>
+      this.catalog.createWorkbookIfAbsentByOwnerAndFile(input),
     );
   }
 
@@ -190,6 +202,9 @@ export class KyselyWorkbookRepository implements WorkbookRepository {
     try {
       return await operation();
     } catch (error) {
+      if (error instanceof WorkbookRepositoryDataError) {
+        throw error;
+      }
       throw new WorkbookRepositoryFailureError("Workbook repository failed.", {
         cause: error,
       });

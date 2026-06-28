@@ -17,6 +17,9 @@ const calculationId = "019e9315-6a87-715f-9861-8654df074013";
 const snapshotId = "019e9315-6a87-715f-9861-8654df074014";
 const questionSetId = "019e9315-6a87-715f-9861-8654df074015";
 const versionId = "019e9315-6a87-715f-9861-8654df074016";
+const sourceDocumentId = "019e9315-6a87-715f-9861-8654df074017";
+const sourceRevisionId = "019e9315-6a87-715f-9861-8654df074018";
+const sourceArtifactId = "019e9315-6a87-715f-9861-8654df074019";
 const createdAt = new Date("2026-06-18T00:00:00.000Z");
 
 describe("KyselyQuestionMappers", () => {
@@ -221,8 +224,16 @@ function document() {
 
 function source() {
   return {
+    byteSize: 1234,
+    checksumSha256:
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    fileId: "019e9315-6a87-715f-9861-8654df074020",
     name: "Source 1",
+    originalName: "source-1.xlsx",
+    sourceArtifactId,
+    sourceDocumentId,
     sourceId: "source_1",
+    sourceRevisionId,
     type: "workbook" as const,
     workbookId,
   };

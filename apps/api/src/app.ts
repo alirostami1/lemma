@@ -2,7 +2,10 @@ import type { DatabasePort } from "@lemma/db";
 import { createFilesModule } from "@lemma/files/module";
 import { createNotificationsModule } from "@lemma/notifications/module";
 import { createOpsModule } from "@lemma/ops/module";
+import { workbookId as toQuestionWorkbookId } from "@lemma/questions/domain";
+import { KyselyQuestionsRepository } from "@lemma/questions/infrastructure";
 import { createQuestionsModule } from "@lemma/questions/module";
+import { userId as toWorkbookUserId } from "@lemma/workbook/domain";
 import { createWorkbookModule } from "@lemma/workbook/module";
 import { Hono } from "hono";
 import { secureHeaders } from "hono/secure-headers";
@@ -82,22 +85,38 @@ export function newApp({ database, config = defaultConfig }: NewAppDeps) {
         };
       },
     },
-    workbookRegistrationPort: {
-      registerWorkbookFromFile: async ({
-        currentUser,
-        fileId,
-        name,
-        lineage,
-      }) => {
-        const { workbook } =
-          await workbookModule.workbookService.createWorkbook({
-            currentUser,
-            fileId,
-            name,
-            lineage,
+    questionBlueprintDraftTransaction: {
+      transaction: (fn) =>
+        database.transaction(async (tx) => {
+          const workbookRegistrationPort =
+            workbookModule.createDraftSourceWorkbookRegistrationPortForTransaction(
+              tx,
+            );
+          return fn({
+            questionsRepository: new KyselyQuestionsRepository(tx),
+            workbookRegistrationPort: {
+              async registerWorkbookFromFile(input) {
+                const result =
+                  await workbookRegistrationPort.registerWorkbookFromFile({
+                    byteSize: input.byteSize,
+                    checksumSha256: input.checksumSha256,
+                    contentType: input.contentType,
+                    createdByUserId: toWorkbookUserId(input.createdByUserId),
+                    fileId: input.fileId,
+                    lineage: input.lineage,
+                    name: input.name,
+                    originalName: input.originalName,
+                    ownerUserId: toWorkbookUserId(input.ownerUserId),
+                  });
+                return {
+                  status: result.status,
+                  validationError: result.validationError,
+                  workbookId: toQuestionWorkbookId(result.workbookId),
+                };
+              },
+            },
           });
-        return { workbookId: workbook.id };
-      },
+        }),
     },
   });
   const notificationsModule = createNotificationsModule({

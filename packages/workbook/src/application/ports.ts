@@ -52,6 +52,10 @@ export interface WorkbookRepository {
     calculation: WorkbookCalculation;
     sources: readonly WorkbookCalculationSource[];
   }): Promise<WorkbookCalculation>;
+  createWorkbookIfAbsentByOwnerAndFile(input: { workbook: Workbook }): Promise<{
+    workbook: Workbook;
+    created: boolean;
+  }>;
   createWorkbookSnapshots(
     snapshots: readonly WorkbookSnapshot[],
   ): Promise<WorkbookSnapshot[]>;
@@ -207,4 +211,28 @@ export interface WorkbookInternalSnapshotResolverPort {
     workbookSnapshotId: WorkbookSnapshotId;
     source: ValueSource;
   }): Promise<JsonValue>;
+}
+
+export type DraftSourceWorkbookRegistrationCommand = {
+  ownerUserId: UserId;
+  createdByUserId: UserId;
+  fileId: string;
+  name: string;
+  byteSize: number;
+  contentType: string;
+  checksumSha256: string;
+  originalName: string;
+  lineage: OperationLineage;
+};
+
+export type DraftSourceWorkbookRegistrationResult = {
+  workbookId: WorkbookId;
+  status: WorkbookStatus;
+  validationError: string | null;
+};
+
+export interface DraftSourceWorkbookRegistrationPort {
+  registerWorkbookFromFile(
+    input: DraftSourceWorkbookRegistrationCommand,
+  ): Promise<DraftSourceWorkbookRegistrationResult>;
 }

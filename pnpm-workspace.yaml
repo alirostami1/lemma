@@ -3,11 +3,13 @@ packages:
   - "packages/*"
 allowBuilds:
   core-js: true
+  cpu-features: true
   es5-ext: true
   esbuild: true
   lefthook: true
   msw: true
   protobufjs: true
+  ssh2: true
   vue-demi: true
 minimumReleaseAge: 10080
 catalog:

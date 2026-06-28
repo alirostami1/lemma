@@ -1,11 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { DatabaseExecutor } from "@lemma/db";
-import { rootOperationLineage } from "@lemma/domain";
-import type { CurrentUser } from "@lemma/identity/application";
 import {
   QuestionBlueprintBaseVersionConflictError,
   QuestionBlueprintDraftRevisionConflictError,
+  SourceDocumentHeadUpdateFailedError,
 } from "../application/index.js";
 import {
   createQuestionBlueprint,
@@ -26,16 +25,30 @@ import {
   questionBlueprintVersionId,
   questionBlueprintVersionNumber,
   questionBlueprintVisibility,
+  sourceArtifactId,
+  sourceDocumentId,
+  sourceRevisionId,
   userId,
   type WorkbookId,
   workbookId,
 } from "../domain/index.js";
 import { KyselyQuestionBlueprintDraftRepository } from "./KyselyQuestionBlueprintDraftRepository.js";
 import { KyselyQuestionBlueprintRepository } from "./KyselyQuestionBlueprintRepository.js";
+import { KyselySourceRepository } from "./KyselySourceRepository.js";
 
 const at = new Date("2026-06-18T00:00:00.000Z");
 const ownerUserId = userId("019e9315-6a87-715f-9861-8654df074010");
 const creatorUserId = userId("019e9315-6a87-715f-9861-8654df074011");
+const testSourceDocumentId = sourceDocumentId(
+  "019e9315-6a87-715f-9861-8654df074301",
+);
+const testSourceRevisionId = sourceRevisionId(
+  "019e9315-6a87-715f-9861-8654df074302",
+);
+const testSourceArtifactId = sourceArtifactId(
+  "019e9315-6a87-715f-9861-8654df074303",
+);
+const testWorkbookId = workbookId("019e9315-6a87-715f-9861-8654df074201");
 
 type DraftInputPatch = Partial<{
   baseVersionId: QuestionBlueprintDraft["baseVersionId"];
@@ -174,7 +187,7 @@ describe("KyselyQuestion persistence", () => {
     );
   });
 
-  it("attaches source file after locking expected draft revision", async () => {
+  it("locks draft row for attach workflow reload", async () => {
     const draft = createTargetedDraftWithSources({
       document: documentUsing("sourceA"),
       sources: localSource("sourceA"),
@@ -183,208 +196,119 @@ describe("KyselyQuestion persistence", () => {
       rowsByTable: { questionBlueprintDrafts: rowFromDraft(draft) },
     });
     const repository = new KyselyQuestionBlueprintDraftRepository(db);
-    let registered = false;
 
-    const result =
-      await repository.attachQuestionBlueprintDraftSourceFileWithExpectedRevision(
-        {
-          currentUser: currentUser(),
-          draftId: draft.id,
-          expectedRevision: 1,
-          file: createFileMetadata(),
-          lineage: rootOperationLineage("019e9315-6a87-715f-9861-8654df074501"),
-          registeredAt: at,
-          registerWorkbookFromFile: async () => {
-            registered = true;
-            return {
-              workbookId: workbookId("019e9315-6a87-715f-9861-8654df074201"),
-            };
-          },
-          sourceId: "sourceA",
-        },
-      );
+    const locked = await repository.findQuestionBlueprintDraftByIdForUpdate(
+      draft.id,
+    );
 
-    assert.equal(registered, true);
-    assert.equal(result?.revision, 2);
-    assert.equal(result?.sources[0]?.status, "validated");
+    assert.equal(locked?.id, draft.id);
+    assert.equal(db.state.lockedForUpdate.questionBlueprintDrafts, true);
+  });
+
+  it("persists draft source pins in draft source rows", async () => {
+    const draft = createTargetedDraftWithSources({
+      document: documentUsing("sourceA"),
+      sources: validatedSource("sourceA", testWorkbookId),
+    });
+    const db = createDbSpy(rowFromDraft(draft));
+    const repository = new KyselyQuestionBlueprintDraftRepository(db);
+
+    await repository.updateQuestionBlueprintDraftWithExpectedRevision({
+      draft,
+      expectedRevision: 1,
+    });
+
+    const values = db.state.insertValuesByTable.questionBlueprintDraftSources;
+    assert.ok(Array.isArray(values));
+    const first = values[0];
+    if (!first || typeof first !== "object") {
+      throw new Error("missing persisted source row");
+    }
+    const persisted = first as Record<string, unknown>;
+    assert.equal(persisted.sourceDocumentId, testSourceDocumentId);
+    assert.equal(persisted.sourceRevisionId, testSourceRevisionId);
+    assert.equal(persisted.sourceArtifactId, testSourceArtifactId);
+  });
+
+  it("advances source document head without touching published version snapshots", async () => {
+    const db = createDbSpy({
+      createdAt: at,
+      currentRevisionId: testSourceRevisionId,
+      deletedAt: null,
+      id: testSourceDocumentId,
+      kind: "workbook",
+      name: "Source A",
+      ownerUserId,
+      status: "active",
+      updatedAt: at,
+    });
+    const repository = new KyselySourceRepository(db);
+
+    await repository.setSourceDocumentCurrentRevision({
+      currentRevisionId: sourceRevisionId(
+        "019e9315-6a87-715f-9861-8654df074304",
+      ),
+      kind: "workbook",
+      ownerUserId,
+      sourceDocumentId: testSourceDocumentId,
+      updatedAt: at,
+    });
+
     assert.equal(
-      db.state.updateExecutionsByTable.questionBlueprintDraftSources,
-      1,
+      db.state.updateValuesByTable.sourceDocuments?.currentRevisionId,
+      "019e9315-6a87-715f-9861-8654df074304",
     );
     assert.equal(
-      db.state.updateValuesByTable.questionBlueprintDraftSources?.workbookId,
-      "019e9315-6a87-715f-9861-8654df074201",
+      db.state.updateValuesByTable.questionBlueprintVersionSources,
+      undefined,
     );
   });
 
-  it("does not register workbook when attach revision is stale", async () => {
-    const draft = {
-      ...createTargetedDraftWithSources({
-        document: documentUsing("sourceA"),
-        sources: localSource("sourceA"),
-      }),
-      revision: 2,
-    };
-    const repository = new KyselyQuestionBlueprintDraftRepository(
-      createDbSpy(rowFromDraft(draft), {
-        rowsByTable: { questionBlueprintDrafts: rowFromDraft(draft) },
-      }),
-    );
-    let registered = false;
+  it("fails source document head update with typed error when no row is updated", async () => {
+    const repository = new KyselySourceRepository(createDbSpy(null));
 
     await assert.rejects(
       () =>
-        repository.attachQuestionBlueprintDraftSourceFileWithExpectedRevision({
-          currentUser: currentUser(),
-          draftId: draft.id,
-          expectedRevision: 1,
-          file: createFileMetadata(),
-          lineage: rootOperationLineage("019e9315-6a87-715f-9861-8654df074502"),
-          registeredAt: at,
-          registerWorkbookFromFile: async () => {
-            registered = true;
-            return {
-              workbookId: workbookId("019e9315-6a87-715f-9861-8654df074201"),
-            };
-          },
-          sourceId: "sourceA",
+        repository.setSourceDocumentCurrentRevision({
+          currentRevisionId: sourceRevisionId(
+            "019e9315-6a87-715f-9861-8654df074305",
+          ),
+          kind: "workbook",
+          ownerUserId,
+          sourceDocumentId: testSourceDocumentId,
+          updatedAt: at,
         }),
-      QuestionBlueprintDraftRevisionConflictError,
+      SourceDocumentHeadUpdateFailedError,
     );
-    assert.equal(registered, false);
   });
 
-  it("does not register workbook when attaching another user's draft", async () => {
-    const draft = createTargetedDraftWithSources({
-      document: documentUsing("sourceA"),
-      sources: localSource("sourceA"),
-    });
-    const repository = new KyselyQuestionBlueprintDraftRepository(
-      createDbSpy(rowFromDraft(draft), {
-        rowsByTable: { questionBlueprintDrafts: rowFromDraft(draft) },
-      }),
-    );
-    let registered = false;
-
-    const result =
-      await repository.attachQuestionBlueprintDraftSourceFileWithExpectedRevision(
-        {
-          currentUser: currentUser("019e9315-6a87-715f-9861-8654df074099"),
-          draftId: draft.id,
-          expectedRevision: 1,
-          file: createFileMetadata(),
-          lineage: rootOperationLineage("019e9315-6a87-715f-9861-8654df074504"),
-          registeredAt: at,
-          registerWorkbookFromFile: async () => {
-            registered = true;
-            return {
-              workbookId: workbookId("019e9315-6a87-715f-9861-8654df074201"),
-            };
-          },
-          sourceId: "sourceA",
-        },
-      );
-
-    assert.equal(result, null);
-    assert.equal(registered, false);
-  });
-
-  it("does not register workbook when source file belongs to another user", async () => {
-    const draft = createTargetedDraftWithSources({
-      document: documentUsing("sourceA"),
-      sources: localSource("sourceA"),
-    });
-    const repository = new KyselyQuestionBlueprintDraftRepository(
-      createDbSpy(rowFromDraft(draft), {
-        rowsByTable: { questionBlueprintDrafts: rowFromDraft(draft) },
-      }),
-    );
-    let registered = false;
-
-    await assert.rejects(() =>
-      repository.attachQuestionBlueprintDraftSourceFileWithExpectedRevision({
-        currentUser: currentUser(),
-        draftId: draft.id,
-        expectedRevision: 1,
-        file: createFileMetadata({
-          ownerUserId: userId("019e9315-6a87-715f-9861-8654df074099"),
+  it("finalizes draft source validation without touching published version snapshots", async () => {
+    const db = createDbSpy(
+      rowFromDraft(
+        createTargetedDraftWithSources({
+          document: emptyDocument(),
+          sources: uploadedSource("sourceA"),
         }),
-        lineage: rootOperationLineage("019e9315-6a87-715f-9861-8654df074505"),
-        registeredAt: at,
-        registerWorkbookFromFile: async () => {
-          registered = true;
-          return {
-            workbookId: workbookId("019e9315-6a87-715f-9861-8654df074201"),
-          };
-        },
-        sourceId: "sourceA",
-      }),
+      ),
     );
-    assert.equal(registered, false);
-  });
+    const repository = new KyselyQuestionBlueprintDraftRepository(db);
 
-  it("does not register workbook for non-workbook source files", async () => {
-    const draft = createTargetedDraftWithSources({
-      document: documentUsing("sourceA"),
-      sources: localSource("sourceA"),
+    await repository.applyWorkbookValidationResultToDraftSources({
+      artifactIds: [testSourceArtifactId],
+      draftSourceStatus: "validated",
+      ownerUserId,
+      updatedAt: at,
+      workbookId: testWorkbookId,
     });
-    const repository = new KyselyQuestionBlueprintDraftRepository(
-      createDbSpy(rowFromDraft(draft), {
-        rowsByTable: { questionBlueprintDrafts: rowFromDraft(draft) },
-      }),
-    );
-    let registered = false;
 
-    await assert.rejects(() =>
-      repository.attachQuestionBlueprintDraftSourceFileWithExpectedRevision({
-        currentUser: currentUser(),
-        draftId: draft.id,
-        expectedRevision: 1,
-        file: createFileMetadata({ contentType: "text/plain" }),
-        lineage: rootOperationLineage("019e9315-6a87-715f-9861-8654df074506"),
-        registeredAt: at,
-        registerWorkbookFromFile: async () => {
-          registered = true;
-          return {
-            workbookId: workbookId("019e9315-6a87-715f-9861-8654df074201"),
-          };
-        },
-        sourceId: "sourceA",
-      }),
+    assert.equal(
+      db.state.updateValuesByTable.questionBlueprintDraftSources?.status,
+      "validated",
     );
-    assert.equal(registered, false);
-  });
-
-  it("rejects missing attach source before registering workbook", async () => {
-    const draft = createTargetedDraftWithSources({
-      document: emptyDocument(),
-      sources: localSource("sourceA"),
-    });
-    const repository = new KyselyQuestionBlueprintDraftRepository(
-      createDbSpy(rowFromDraft(draft), {
-        rowsByTable: { questionBlueprintDrafts: rowFromDraft(draft) },
-      }),
+    assert.equal(
+      db.state.updateValuesByTable.questionBlueprintVersionSources,
+      undefined,
     );
-    let registered = false;
-
-    await assert.rejects(() =>
-      repository.attachQuestionBlueprintDraftSourceFileWithExpectedRevision({
-        currentUser: currentUser(),
-        draftId: draft.id,
-        expectedRevision: 1,
-        file: createFileMetadata(),
-        lineage: rootOperationLineage("019e9315-6a87-715f-9861-8654df074503"),
-        registeredAt: at,
-        registerWorkbookFromFile: async () => {
-          registered = true;
-          return {
-            workbookId: workbookId("019e9315-6a87-715f-9861-8654df074201"),
-          };
-        },
-        sourceId: "missingSource",
-      }),
-    );
-    assert.equal(registered, false);
   });
 
   it("rejects publish when draft base version is stale", async () => {
@@ -602,7 +526,7 @@ describe("KyselyQuestion persistence", () => {
           idempotencyKey: "publish-key",
           ownerUserId,
           sourceMaterialization: [
-            { sourceId: "sourceA", workbookId: sourceWorkbookId },
+            publishSourceMaterialization("sourceA", sourceWorkbookId),
           ],
           publishedAt: at,
           versionId: questionBlueprintVersionId(
@@ -631,10 +555,7 @@ describe("KyselyQuestion persistence", () => {
           idempotencyKey: "publish-key",
           ownerUserId,
           sourceMaterialization: [
-            {
-              sourceId: "missingSource",
-              workbookId: workbookId("019e9315-6a87-715f-9861-8654df074201"),
-            },
+            publishSourceMaterialization("missingSource"),
           ],
           publishedAt: at,
           versionId: questionBlueprintVersionId(
@@ -664,8 +585,8 @@ describe("KyselyQuestion persistence", () => {
           idempotencyKey: "publish-key",
           ownerUserId,
           sourceMaterialization: [
-            { sourceId: "sourceA", workbookId: sourceWorkbookId },
-            { sourceId: "sourceA", workbookId: sourceWorkbookId },
+            publishSourceMaterialization("sourceA", sourceWorkbookId),
+            publishSourceMaterialization("sourceA", sourceWorkbookId),
           ],
           publishedAt: at,
           versionId: questionBlueprintVersionId(
@@ -695,12 +616,7 @@ describe("KyselyQuestion persistence", () => {
           expectedRevision: 1,
           idempotencyKey: "publish-key",
           ownerUserId,
-          sourceMaterialization: [
-            {
-              sourceId: "sourceA",
-              workbookId: workbookId("019e9315-6a87-715f-9861-8654df074201"),
-            },
-          ],
+          sourceMaterialization: [publishSourceMaterialization("sourceA")],
           publishedAt: at,
           versionId: questionBlueprintVersionId(
             "019e9315-6a87-715f-9861-8654df074101",
@@ -731,10 +647,10 @@ describe("KyselyQuestion persistence", () => {
           idempotencyKey: "publish-key",
           ownerUserId,
           sourceMaterialization: [
-            {
-              sourceId: "sourceA",
-              workbookId: workbookId("019e9315-6a87-715f-9861-8654df074202"),
-            },
+            publishSourceMaterialization(
+              "sourceA",
+              workbookId("019e9315-6a87-715f-9861-8654df074202"),
+            ),
           ],
           publishedAt: at,
           versionId: questionBlueprintVersionId(
@@ -766,7 +682,7 @@ describe("KyselyQuestion persistence", () => {
           idempotencyKey: "publish-key",
           ownerUserId,
           sourceMaterialization: [
-            { sourceId: "sourceA", workbookId: sourceWorkbookId },
+            publishSourceMaterialization("sourceA", sourceWorkbookId),
           ],
           publishedAt: at,
           versionId: questionBlueprintVersionId(
@@ -789,12 +705,16 @@ describe("KyselyQuestion persistence", () => {
     const blueprint = createTestBlueprint();
     const publishedSources = [
       {
-        byteSize: null,
-        checksumSha256: null,
-        fileId: null,
+        byteSize: 1234,
+        checksumSha256:
+          "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        fileId: "019e9315-6a87-715f-9861-8654df074203",
         name: "Source A",
-        originalName: null,
+        originalName: "sourceA.xlsx",
+        sourceArtifactId: testSourceArtifactId,
+        sourceDocumentId: testSourceDocumentId,
         sourceId: "sourceA",
+        sourceRevisionId: testSourceRevisionId,
         type: "workbook" as const,
         workbookId: sourceWorkbookId,
       },
@@ -838,6 +758,7 @@ describe("KyselyQuestion persistence", () => {
         rowsByTable: {
           questionBlueprintDrafts: rowFromDraft(draft),
           questionBlueprints: rowFromBlueprint(blueprint),
+          sourceArtifacts: [sourceArtifactRow(sourceWorkbookId)],
           questionBlueprintVersionSources: versionSourceRows(
             versionId,
             publishedSources,
@@ -854,7 +775,7 @@ describe("KyselyQuestion persistence", () => {
       idempotencyKey: "publish-key",
       ownerUserId,
       sourceMaterialization: [
-        { sourceId: "sourceA", workbookId: sourceWorkbookId },
+        publishSourceMaterialization("sourceA", sourceWorkbookId),
       ],
       publishedAt: at,
       versionId,
@@ -865,6 +786,168 @@ describe("KyselyQuestion persistence", () => {
     assert.equal(
       result?.questionBlueprintVersion.sources[0]?.workbookId,
       sourceWorkbookId,
+    );
+  });
+
+  it("rejects publish when pinned artifact owner does not match", async () => {
+    const sourceWorkbookId = workbookId("019e9315-6a87-715f-9861-8654df074201");
+    const draft = createTargetedDraftWithSources({
+      document: documentUsing("sourceA"),
+      sources: validatedSource("sourceA", sourceWorkbookId),
+    });
+    const repository = new KyselyQuestionBlueprintDraftRepository(
+      createDbSpy(rowFromDraft(draft), {
+        rowsByTable: {
+          questionBlueprintDrafts: rowFromDraft(draft),
+          questionBlueprints: rowFromBlueprint(createTestBlueprint()),
+          sourceArtifacts: [
+            sourceArtifactRow(sourceWorkbookId, {
+              artifactOwnerUserId: userId(
+                "019e9315-6a87-715f-9861-8654df074099",
+              ),
+            }),
+          ],
+        },
+      }),
+    );
+
+    await assert.rejects(
+      () =>
+        repository.publishQuestionBlueprintDraft({
+          blueprintId: draft.blueprintId ?? createTestBlueprint().id,
+          draftId: draft.id,
+          expectedRevision: 1,
+          idempotencyKey: "publish-key",
+          ownerUserId,
+          publishedAt: at,
+          sourceMaterialization: [
+            publishSourceMaterialization("sourceA", sourceWorkbookId),
+          ],
+          versionId: questionBlueprintVersionId(
+            "019e9315-6a87-715f-9861-8654df074101",
+          ),
+        }),
+      InvalidQuestionStateTransitionError,
+    );
+  });
+
+  it("rejects publish when pinned artifact status is not valid", async () => {
+    const sourceWorkbookId = workbookId("019e9315-6a87-715f-9861-8654df074201");
+    const draft = createTargetedDraftWithSources({
+      document: documentUsing("sourceA"),
+      sources: validatedSource("sourceA", sourceWorkbookId),
+    });
+    const repository = new KyselyQuestionBlueprintDraftRepository(
+      createDbSpy(rowFromDraft(draft), {
+        rowsByTable: {
+          questionBlueprintDrafts: rowFromDraft(draft),
+          questionBlueprints: rowFromBlueprint(createTestBlueprint()),
+          sourceArtifacts: [
+            sourceArtifactRow(sourceWorkbookId, { artifactStatus: "invalid" }),
+          ],
+        },
+      }),
+    );
+
+    await assert.rejects(
+      () =>
+        repository.publishQuestionBlueprintDraft({
+          blueprintId: draft.blueprintId ?? createTestBlueprint().id,
+          draftId: draft.id,
+          expectedRevision: 1,
+          idempotencyKey: "publish-key",
+          ownerUserId,
+          publishedAt: at,
+          sourceMaterialization: [
+            publishSourceMaterialization("sourceA", sourceWorkbookId),
+          ],
+          versionId: questionBlueprintVersionId(
+            "019e9315-6a87-715f-9861-8654df074101",
+          ),
+        }),
+      InvalidQuestionStateTransitionError,
+    );
+  });
+
+  it("rejects publish when pinned artifact revision does not match", async () => {
+    const sourceWorkbookId = workbookId("019e9315-6a87-715f-9861-8654df074201");
+    const draft = createTargetedDraftWithSources({
+      document: documentUsing("sourceA"),
+      sources: validatedSource("sourceA", sourceWorkbookId),
+    });
+    const repository = new KyselyQuestionBlueprintDraftRepository(
+      createDbSpy(rowFromDraft(draft), {
+        rowsByTable: {
+          questionBlueprintDrafts: rowFromDraft(draft),
+          questionBlueprints: rowFromBlueprint(createTestBlueprint()),
+          sourceArtifacts: [
+            sourceArtifactRow(sourceWorkbookId, {
+              sourceRevisionId: sourceRevisionId(
+                "019e9315-6a87-715f-9861-8654df074305",
+              ),
+            }),
+          ],
+        },
+      }),
+    );
+
+    await assert.rejects(
+      () =>
+        repository.publishQuestionBlueprintDraft({
+          blueprintId: draft.blueprintId ?? createTestBlueprint().id,
+          draftId: draft.id,
+          expectedRevision: 1,
+          idempotencyKey: "publish-key",
+          ownerUserId,
+          publishedAt: at,
+          sourceMaterialization: [
+            publishSourceMaterialization("sourceA", sourceWorkbookId),
+          ],
+          versionId: questionBlueprintVersionId(
+            "019e9315-6a87-715f-9861-8654df074101",
+          ),
+        }),
+      InvalidQuestionStateTransitionError,
+    );
+  });
+
+  it("rejects publish when pinned artifact workbook does not match", async () => {
+    const sourceWorkbookId = workbookId("019e9315-6a87-715f-9861-8654df074201");
+    const draft = createTargetedDraftWithSources({
+      document: documentUsing("sourceA"),
+      sources: validatedSource("sourceA", sourceWorkbookId),
+    });
+    const repository = new KyselyQuestionBlueprintDraftRepository(
+      createDbSpy(rowFromDraft(draft), {
+        rowsByTable: {
+          questionBlueprintDrafts: rowFromDraft(draft),
+          questionBlueprints: rowFromBlueprint(createTestBlueprint()),
+          sourceArtifacts: [
+            sourceArtifactRow(
+              workbookId("019e9315-6a87-715f-9861-8654df074202"),
+            ),
+          ],
+        },
+      }),
+    );
+
+    await assert.rejects(
+      () =>
+        repository.publishQuestionBlueprintDraft({
+          blueprintId: draft.blueprintId ?? createTestBlueprint().id,
+          draftId: draft.id,
+          expectedRevision: 1,
+          idempotencyKey: "publish-key",
+          ownerUserId,
+          publishedAt: at,
+          sourceMaterialization: [
+            publishSourceMaterialization("sourceA", sourceWorkbookId),
+          ],
+          versionId: questionBlueprintVersionId(
+            "019e9315-6a87-715f-9861-8654df074101",
+          ),
+        }),
+      InvalidQuestionStateTransitionError,
     );
   });
 
@@ -888,12 +971,7 @@ describe("KyselyQuestion persistence", () => {
           expectedRevision: 1,
           idempotencyKey: "publish-key",
           ownerUserId,
-          sourceMaterialization: [
-            {
-              sourceId: "sourceB",
-              workbookId: workbookId("019e9315-6a87-715f-9861-8654df074201"),
-            },
-          ],
+          sourceMaterialization: [publishSourceMaterialization("sourceB")],
           publishedAt: at,
           versionId: questionBlueprintVersionId(
             "019e9315-6a87-715f-9861-8654df074101",
@@ -1091,8 +1169,13 @@ function createDbSpy(
           state.lockedForUpdate[table] = true;
           return selectQuery;
         },
-        select() {
-          selectsMaxVersionNumber = true;
+        innerJoin() {
+          return selectQuery;
+        },
+        select(selection?: unknown) {
+          if (selection === undefined) {
+            selectsMaxVersionNumber = true;
+          }
           return selectQuery;
         },
         selectAll() {
@@ -1106,6 +1189,9 @@ function createDbSpy(
             ...(state.whereCallsByTable[table] ?? []),
             { column, operator, value },
           ];
+          return selectQuery;
+        },
+        whereRef() {
           return selectQuery;
         },
       };
@@ -1139,6 +1225,9 @@ function createDbSpy(
         returningAll() {
           return updateQuery;
         },
+        returning() {
+          return updateQuery;
+        },
         set(values: Record<string, unknown>) {
           state.updateValuesByTable[table] = values as Values;
           return updateQuery;
@@ -1148,6 +1237,9 @@ function createDbSpy(
             ...(state.whereCallsByTable[table] ?? []),
             { column, operator, value },
           ];
+          return updateQuery;
+        },
+        whereExists() {
           return updateQuery;
         },
       };
@@ -1231,40 +1323,15 @@ function uploadedSource(sourceId: string, name = "Source A") {
       fileId: "019e9315-6a87-715f-9861-8654df074203",
       name,
       originalName: `${sourceId}.xlsx`,
+      sourceArtifactId: testSourceArtifactId,
+      sourceDocumentId: testSourceDocumentId,
       sourceId,
+      sourceRevisionId: testSourceRevisionId,
       status: "uploaded",
       type: "workbook",
-      workbookId: null,
+      workbookId: testWorkbookId,
     },
   ]);
-}
-
-function createFileMetadata(
-  patch: Partial<{
-    contentType: string;
-    ownerUserId: typeof ownerUserId;
-  }> = {},
-) {
-  return {
-    byteSize: 1234,
-    checksumSha256:
-      "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-    contentType:
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    fileId: "019e9315-6a87-715f-9861-8654df074203",
-    originalName: "source.xlsx",
-    ownerUserId,
-    purpose: "workbook",
-    ...patch,
-  };
-}
-
-function currentUser(id: string = ownerUserId): CurrentUser {
-  return {
-    isAdmin: false,
-    roles: [],
-    user: { id },
-  } as unknown as CurrentUser;
 }
 
 function validatedSource(sourceId: string, sourceWorkbookId: WorkbookId) {
@@ -1276,7 +1343,10 @@ function validatedSource(sourceId: string, sourceWorkbookId: WorkbookId) {
       fileId: "019e9315-6a87-715f-9861-8654df074203",
       name: "Source A",
       originalName: `${sourceId}.xlsx`,
+      sourceArtifactId: testSourceArtifactId,
+      sourceDocumentId: testSourceDocumentId,
       sourceId,
+      sourceRevisionId: testSourceRevisionId,
       status: "validated",
       type: "workbook",
       workbookId: sourceWorkbookId,
@@ -1406,6 +1476,46 @@ function rowFromVersion(version: QuestionBlueprintVersion) {
   };
 }
 
+function publishSourceMaterialization(
+  sourceId: string,
+  sourceWorkbookId: WorkbookId = testWorkbookId,
+) {
+  return {
+    sourceArtifactId: testSourceArtifactId,
+    sourceDocumentId: testSourceDocumentId,
+    sourceId,
+    sourceRevisionId: testSourceRevisionId,
+    workbookId: sourceWorkbookId,
+  };
+}
+
+function sourceArtifactRow(
+  sourceWorkbookId: WorkbookId = testWorkbookId,
+  patch: Partial<{
+    artifactOwnerUserId: typeof ownerUserId;
+    sourceDocumentId: typeof testSourceDocumentId;
+    sourceRevisionId: typeof testSourceRevisionId;
+    artifactStatus: string;
+    workbookId: WorkbookId;
+    workbookOwnerUserId: typeof ownerUserId;
+    workbookStatus: string;
+    sourceDocumentOwnerUserId: typeof ownerUserId;
+  }> = {},
+) {
+  return {
+    artifactOwnerUserId: ownerUserId,
+    id: testSourceArtifactId,
+    sourceDocumentId: testSourceDocumentId,
+    sourceDocumentOwnerUserId: ownerUserId,
+    sourceRevisionId: testSourceRevisionId,
+    artifactStatus: "valid",
+    workbookId: sourceWorkbookId,
+    workbookOwnerUserId: ownerUserId,
+    workbookStatus: "valid",
+    ...patch,
+  };
+}
+
 function sourcesFromSelectedDraft(selected: unknown) {
   if (!selected || typeof selected !== "object") return [];
   const draft = selected as {
@@ -1420,7 +1530,10 @@ function sourcesFromSelectedDraft(selected: unknown) {
     fileId: source.fileId,
     name: source.name,
     originalName: source.originalName,
+    sourceArtifactId: source.sourceArtifactId,
+    sourceDocumentId: source.sourceDocumentId,
     sourceId: source.sourceId,
+    sourceRevisionId: source.sourceRevisionId,
     status: source.status,
     type: source.type,
     updatedAt: at,
@@ -1442,7 +1555,10 @@ function sourcesFromSelectedVersion(selected: unknown) {
     fileId: source.fileId,
     name: source.name,
     originalName: source.originalName,
+    sourceArtifactId: source.sourceArtifactId,
+    sourceDocumentId: source.sourceDocumentId,
     sourceId: source.sourceId,
+    sourceRevisionId: source.sourceRevisionId,
     type: source.type,
     workbookId: source.workbookId,
   }));
@@ -1460,7 +1576,10 @@ function versionSourceRows(
     fileId: source.fileId,
     name: source.name,
     originalName: source.originalName,
+    sourceArtifactId: source.sourceArtifactId,
+    sourceDocumentId: source.sourceDocumentId,
     sourceId: source.sourceId,
+    sourceRevisionId: source.sourceRevisionId,
     type: source.type,
     workbookId: source.workbookId,
   }));

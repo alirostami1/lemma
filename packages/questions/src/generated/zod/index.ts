@@ -3412,16 +3412,15 @@ export const PublishQuestionBlueprintDraft200Response = zod.strictObject({
     sources: zod
       .array(
         zod.strictObject({
-          byteSize: zod.number().min(1).nullable(),
+          byteSize: zod.number().min(1),
           checksumSha256: zod
             .string()
             .regex(
               publishQuestionBlueprintDraft200ResponseQuestionBlueprintSourcesItemChecksumSha256RegExp,
-            )
-            .nullable(),
-          fileId: zod.uuid().nullable(),
+            ),
+          fileId: zod.uuid(),
           name: zod.string().min(1),
-          originalName: zod.string().nullable(),
+          originalName: zod.string().min(1),
           sourceId: zod
             .string()
             .regex(
@@ -3802,16 +3801,15 @@ export const PublishQuestionBlueprintDraft200Response = zod.strictObject({
     sources: zod
       .array(
         zod.strictObject({
-          byteSize: zod.number().min(1).nullable(),
+          byteSize: zod.number().min(1),
           checksumSha256: zod
             .string()
             .regex(
               publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionSourcesItemChecksumSha256RegExp,
-            )
-            .nullable(),
-          fileId: zod.uuid().nullable(),
+            ),
+          fileId: zod.uuid(),
           name: zod.string().min(1),
-          originalName: zod.string().nullable(),
+          originalName: zod.string().min(1),
           sourceId: zod
             .string()
             .regex(
@@ -4647,16 +4645,15 @@ export const ListQuestionBlueprints200Response = zod.strictObject({
       sources: zod
         .array(
           zod.strictObject({
-            byteSize: zod.number().min(1).nullable(),
+            byteSize: zod.number().min(1),
             checksumSha256: zod
               .string()
               .regex(
                 listQuestionBlueprints200ResponseQuestionBlueprintsItemSourcesItemChecksumSha256RegExp,
-              )
-              .nullable(),
-            fileId: zod.uuid().nullable(),
+              ),
+            fileId: zod.uuid(),
             name: zod.string().min(1),
-            originalName: zod.string().nullable(),
+            originalName: zod.string().min(1),
             sourceId: zod
               .string()
               .regex(
@@ -5027,16 +5024,15 @@ export const GetQuestionBlueprint200Response = zod.strictObject({
     sources: zod
       .array(
         zod.strictObject({
-          byteSize: zod.number().min(1).nullable(),
+          byteSize: zod.number().min(1),
           checksumSha256: zod
             .string()
             .regex(
               getQuestionBlueprint200ResponseQuestionBlueprintSourcesItemChecksumSha256RegExp,
-            )
-            .nullable(),
-          fileId: zod.uuid().nullable(),
+            ),
+          fileId: zod.uuid(),
           name: zod.string().min(1),
-          originalName: zod.string().nullable(),
+          originalName: zod.string().min(1),
           sourceId: zod
             .string()
             .regex(
@@ -6441,16 +6437,15 @@ export const GetQuestionBlueprintAuthoring200Response = zod.strictObject({
     sources: zod
       .array(
         zod.strictObject({
-          byteSize: zod.number().min(1).nullable(),
+          byteSize: zod.number().min(1),
           checksumSha256: zod
             .string()
             .regex(
               getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSourcesItemChecksumSha256RegExp,
-            )
-            .nullable(),
-          fileId: zod.uuid().nullable(),
+            ),
+          fileId: zod.uuid(),
           name: zod.string().min(1),
-          originalName: zod.string().nullable(),
+          originalName: zod.string().min(1),
           sourceId: zod
             .string()
             .regex(

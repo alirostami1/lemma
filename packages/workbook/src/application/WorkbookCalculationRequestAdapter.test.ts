@@ -349,6 +349,13 @@ class FakeWorkbookRepository implements WorkbookRepository {
     throw new Error("Not implemented.");
   }
 
+  async createWorkbookIfAbsentByOwnerAndFile(): Promise<{
+    workbook: Workbook;
+    created: boolean;
+  }> {
+    throw new Error("Not implemented.");
+  }
+
   async updateWorkbook(): Promise<Workbook | null> {
     throw new Error("Not implemented.");
   }

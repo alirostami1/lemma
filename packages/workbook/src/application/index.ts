@@ -18,6 +18,7 @@ export type {
   WorkbookSnapshotRangeBatchCommand,
   WorkbookSnapshotRangeCommand,
 } from "./commands.js";
+export { DraftSourceWorkbookRegistrationService } from "./DraftSourceWorkbookRegistrationService.js";
 export type {
   WorkbookCalculationDto,
   WorkbookCalculationsResult,
@@ -43,6 +44,7 @@ export {
   WorkbookFileProviderFailureError,
   WorkbookFileUnavailableError,
   WorkbookNotFoundError,
+  WorkbookRepositoryDataError,
   WorkbookRepositoryFailureError,
   WorkbookSnapshotNotFoundError,
 } from "./errors.js";
@@ -66,6 +68,9 @@ export {
 } from "./policies.js";
 export type {
   Clock,
+  DraftSourceWorkbookRegistrationCommand,
+  DraftSourceWorkbookRegistrationPort,
+  DraftSourceWorkbookRegistrationResult,
   IdGenerator,
   WorkbookAccessPort,
   WorkbookCalculationPort,

@@ -4,6 +4,12 @@ import {
   type QuestionBlueprintVersionId,
   questionBlueprintId,
   questionBlueprintVersionId,
+  type SourceArtifactId,
+  type SourceDocumentId,
+  type SourceRevisionId,
+  sourceArtifactId,
+  sourceDocumentId,
+  sourceRevisionId,
   type UserId,
   userId,
   type WorkbookId,
@@ -49,11 +55,14 @@ export type QuestionBlueprintVersionSource = {
   type: "workbook";
   sourceId: string;
   name: string;
-  fileId: string | null;
+  fileId: string;
+  sourceDocumentId: SourceDocumentId;
+  sourceRevisionId: SourceRevisionId;
+  sourceArtifactId: SourceArtifactId;
   workbookId: WorkbookId;
-  originalName: string | null;
-  byteSize: number | null;
-  checksumSha256: string | null;
+  originalName: string;
+  byteSize: number;
+  checksumSha256: string;
 };
 
 export function questionBlueprintVersionNumber(
@@ -164,12 +173,15 @@ export function questionBlueprintVersionSourcesFromRows(
     }
     ids.add(sourceId);
     return {
-      byteSize: nullablePositiveNumber(record.byteSize),
-      checksumSha256: nullableChecksum(record.checksumSha256),
-      fileId: nullableString(record.fileId, "fileId"),
+      byteSize: requiredPositiveNumber(record.byteSize, "byteSize"),
+      checksumSha256: requiredChecksum(record.checksumSha256, "checksumSha256"),
+      fileId: requiredString(record.fileId, "fileId"),
       name: questionBlueprintSourceName(record.name),
-      originalName: nullableString(record.originalName, "originalName"),
+      originalName: requiredString(record.originalName, "originalName"),
       sourceId,
+      sourceArtifactId: requiredSourceArtifactId(record.sourceArtifactId),
+      sourceDocumentId: requiredSourceDocumentId(record.sourceDocumentId),
+      sourceRevisionId: requiredSourceRevisionId(record.sourceRevisionId),
       type: "workbook",
       workbookId: workbookId(record.workbookId),
     };
@@ -183,12 +195,15 @@ function toVersionSources(
   )[],
 ): QuestionBlueprintVersionSource[] {
   return sources.map((source) => ({
-    byteSize: "byteSize" in source ? source.byteSize : null,
-    checksumSha256: "checksumSha256" in source ? source.checksumSha256 : null,
-    fileId: "fileId" in source ? source.fileId : null,
+    byteSize: source.byteSize,
+    checksumSha256: source.checksumSha256,
+    fileId: source.fileId,
     name: source.name,
-    originalName: "originalName" in source ? source.originalName : null,
+    originalName: source.originalName,
     sourceId: source.sourceId,
+    sourceArtifactId: source.sourceArtifactId,
+    sourceDocumentId: source.sourceDocumentId,
+    sourceRevisionId: source.sourceRevisionId,
     type: "workbook",
     workbookId: source.workbookId,
   }));
@@ -207,6 +222,9 @@ export function questionBlueprintVersionSourcesReferencedByDocument(
       name: source.name,
       originalName: source.originalName,
       sourceId: source.sourceId,
+      sourceArtifactId: source.sourceArtifactId,
+      sourceDocumentId: source.sourceDocumentId,
+      sourceRevisionId: source.sourceRevisionId,
       type: source.type,
       workbookId: source.workbookId,
     })),
@@ -225,30 +243,50 @@ export function questionBlueprintVersionSourcesReferencedByDocument(
   });
 }
 
-function nullableString(value: unknown, field: string): string | null {
-  if (value === null) return null;
+function requiredString(value: unknown, field: string): string {
   if (typeof value !== "string" || value.length === 0) {
-    throw new InvalidQuestionFieldError(`${field} must be a string or null`);
+    throw new InvalidQuestionFieldError(`${field} must be a non-empty string`);
   }
   return value;
 }
 
-function nullablePositiveNumber(value: unknown): number | null {
-  if (value === null) return null;
+function requiredPositiveNumber(value: unknown, field: string): number {
   if (typeof value !== "number" || !Number.isSafeInteger(value) || value <= 0) {
-    throw new InvalidQuestionFieldError(
-      "byteSize must be a positive integer or null",
-    );
+    throw new InvalidQuestionFieldError(`${field} must be a positive integer`);
   }
   return value;
 }
 
-function nullableChecksum(value: unknown): string | null {
-  if (value === null) return null;
+function requiredChecksum(value: unknown, field: string): string {
   if (typeof value !== "string" || !/^[a-f0-9]{64}$/u.test(value)) {
-    throw new InvalidQuestionFieldError(
-      "checksumSha256 must be lowercase SHA-256 or null",
-    );
+    throw new InvalidQuestionFieldError(`${field} must be lowercase SHA-256`);
   }
   return value;
+}
+
+function requiredSourceDocumentId(value: unknown): SourceDocumentId {
+  if (value === undefined || value === null) {
+    throw new InvalidQuestionFieldError(
+      "sourceDocumentId must be present for version workbook sources",
+    );
+  }
+  return sourceDocumentId(value);
+}
+
+function requiredSourceRevisionId(value: unknown): SourceRevisionId {
+  if (value === undefined || value === null) {
+    throw new InvalidQuestionFieldError(
+      "sourceRevisionId must be present for version workbook sources",
+    );
+  }
+  return sourceRevisionId(value);
+}
+
+function requiredSourceArtifactId(value: unknown): SourceArtifactId {
+  if (value === undefined || value === null) {
+    throw new InvalidQuestionFieldError(
+      "sourceArtifactId must be present for version workbook sources",
+    );
+  }
+  return sourceArtifactId(value);
 }

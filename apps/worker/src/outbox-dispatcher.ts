@@ -4,6 +4,7 @@ import { type OutboxEvent, outboxConsumerName } from "@lemma/events/domain";
 import type { JobDispatcher } from "@lemma/jobs/application";
 import type { NotificationProjector } from "@lemma/notifications/application";
 import { withSpan } from "@lemma/observability/node";
+import type { SourceArtifactValidationResult } from "@lemma/questions/application";
 import {
   QUESTION_GENERATION_RUN_CANCELLED_EVENT,
   QUESTION_GENERATION_RUN_FAILED_EVENT,
@@ -30,6 +31,7 @@ import {
   runEventConsumer,
 } from "./pipeline.js";
 import { PollingLoop } from "./polling-loop.js";
+import { logWorkerInfo } from "./worker-logging.js";
 
 const queueQuestionGenerationConsumer = outboxConsumerName(
   "queue-question-generation",
@@ -56,6 +58,10 @@ const workbookCalculationResultEventTypes = [
   WORKBOOK_CALCULATION_SUCCEEDED_EVENT,
   WORKBOOK_CALCULATION_FAILED_EVENT,
 ] as const;
+const workbookValidationResultEventTypes = [
+  WORKBOOK_VALIDATION_SUCCEEDED_EVENT,
+  WORKBOOK_VALIDATION_FAILED_EVENT,
+] as const;
 const realtimeNotificationEventTypes = [
   QUESTION_GENERATION_RUN_REQUESTED_EVENT,
   QUESTION_GENERATION_RUN_WAITING_FOR_WORKBOOK_CALCULATION_EVENT,
@@ -65,11 +71,6 @@ const realtimeNotificationEventTypes = [
   QUESTION_GENERATION_RUN_FAILED_EVENT,
   QUESTION_SET_QUESTIONS_ADDED_EVENT,
 ] as const;
-const publishedOnlyEventTypes = [
-  WORKBOOK_VALIDATION_SUCCEEDED_EVENT,
-  WORKBOOK_VALIDATION_FAILED_EVENT,
-] as const;
-
 export type OutboxPollingDispatcherConfig = {
   workerId: string;
   batchSize: number;
@@ -90,6 +91,15 @@ export class OutboxPollingDispatcher {
       outboxService: OutboxService;
       jobDispatcher: JobDispatcher;
       notificationProjector: NotificationProjector;
+      sourceArtifactValidationService: {
+        applyWorkbookValidationResult(input: {
+          workbookId: string;
+          ownerUserId: string;
+          status: "valid" | "invalid";
+          validationError: string | null;
+          occurredAt: Date;
+        }): Promise<SourceArtifactValidationResult>;
+      };
       clock: { now(): Date };
       config: OutboxPollingDispatcherConfig;
     },
@@ -120,6 +130,11 @@ export class OutboxPollingDispatcher {
         handle: (event) =>
           this.dispatchQuestionGenerationWorkbookResultEvent(event),
         name: queueQuestionGenerationConsumer,
+      },
+      {
+        eventTypes: workbookValidationResultEventTypes,
+        handle: (event) => this.applyWorkbookValidationResult(event),
+        name: outboxConsumerName("apply-workbook-validation-result"),
       },
       {
         eventTypes: realtimeNotificationEventTypes,
@@ -257,6 +272,31 @@ export class OutboxPollingDispatcher {
     return { status: "processed" };
   }
 
+  private async applyWorkbookValidationResult(
+    event: OutboxEvent,
+  ): Promise<EventConsumerResult> {
+    const result = getWorkbookValidationResult(event);
+    const finalization =
+      await this.deps.sourceArtifactValidationService.applyWorkbookValidationResult(
+        {
+          // OutboxEvent exposes persisted outbox row timestamp, not original
+          // domain-event occurredAt. Use it as projection timestamp.
+          occurredAt: event.createdAt,
+          ownerUserId: result.ownerUserId,
+          status: result.status,
+          validationError: result.validationError,
+          workbookId: result.workbookId,
+        },
+      );
+    logWorkerInfo("workbook validation projected to source artifacts", {
+      "draft_sources.updated_count": finalization.updatedDraftSourceCount,
+      "outbox.event_id": event.id,
+      "source_artifacts.finalized_count": finalization.finalizedArtifactCount,
+      "workbook.id": result.workbookId,
+    });
+    return { status: "processed" };
+  }
+
   private async markFailed(event: OutboxEvent, error: unknown): Promise<void> {
     const now = this.deps.clock.now();
     await this.deps.outboxService.markEventFailed({
@@ -274,12 +314,7 @@ export class OutboxPollingDispatcher {
   }
 
   private dispatchableEventTypes(): string[] {
-    return [
-      ...new Set([
-        ...this.eventConsumers.flatMap((item) => item.eventTypes),
-        ...publishedOnlyEventTypes,
-      ]),
-    ];
+    return [...new Set(this.eventConsumers.flatMap((item) => item.eventTypes))];
   }
 }
 
@@ -396,5 +431,46 @@ function getWorkbookCalculationResultFromEvent(event: OutboxEvent): {
         : null,
     snapshotIds,
     workbookCalculationId,
+  };
+}
+
+function getWorkbookValidationResult(event: OutboxEvent): {
+  ownerUserId: string;
+  status: "valid" | "invalid";
+  validationError: string | null;
+  workbookId: string;
+} {
+  if (
+    event.eventType !== WORKBOOK_VALIDATION_SUCCEEDED_EVENT &&
+    event.eventType !== WORKBOOK_VALIDATION_FAILED_EVENT
+  ) {
+    throw new Error(`Unsupported outbox event type: ${event.eventType}`);
+  }
+  const workbookId = event.payload.workbookId;
+  const status = event.payload.status;
+  const validationError = event.payload.validationError;
+  if (typeof workbookId !== "string" || workbookId.length === 0) {
+    throw new Error(
+      "workbook validation finished payload is missing workbookId.",
+    );
+  }
+  if (status !== "valid" && status !== "invalid") {
+    throw new Error("workbook validation finished payload has invalid status.");
+  }
+  if (validationError !== null && typeof validationError !== "string") {
+    throw new Error(
+      "workbook validation finished payload has invalid validationError.",
+    );
+  }
+  if (typeof event.ownerUserId !== "string" || event.ownerUserId.length === 0) {
+    throw new Error(
+      "workbook validation finished event is missing ownerUserId.",
+    );
+  }
+  return {
+    ownerUserId: event.ownerUserId,
+    status,
+    validationError,
+    workbookId,
   };
 }

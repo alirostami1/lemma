@@ -126,6 +126,20 @@ export class WorkbookQuestionReferenceError extends QuestionsApplicationError {
   }
 }
 
+export class SourceDocumentHeadUpdateFailedError extends QuestionsApplicationError {
+  readonly applicationCode = "SOURCE_DOCUMENT_HEAD_UPDATE_FAILED";
+  constructor(message = "source document head update failed") {
+    super(message);
+  }
+}
+
+export class QuestionsRepositoryDataError extends QuestionsApplicationError {
+  readonly applicationCode = "QUESTIONS_REPOSITORY_DATA_ERROR";
+  constructor(message = "persisted questions data is invalid") {
+    super(message);
+  }
+}
+
 export class UnsupportedQuestionValueExpressionError extends QuestionsApplicationError {
   readonly applicationCode = "UNSUPPORTED_QUESTION_VALUE_EXPRESSION";
   constructor(message = "unsupported question value expression") {

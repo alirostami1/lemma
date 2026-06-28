@@ -7,22 +7,15 @@
 import type { QuestionBlueprintVersionSourceType } from "./questionBlueprintVersionSourceType.ts";
 
 export interface QuestionBlueprintVersionSource {
-  /**
-   * @minimum 1
-   * @nullable
-   */
-  byteSize: number | null;
-  /**
-   * @nullable
-   * @pattern ^[a-f0-9]{64}$
-   */
-  checksumSha256: string | null;
-  /** @nullable */
-  fileId: string | null;
+  /** @minimum 1 */
+  byteSize: number;
+  /** @pattern ^[a-f0-9]{64}$ */
+  checksumSha256: string;
+  fileId: string;
   /** @minLength 1 */
   name: string;
-  /** @nullable */
-  originalName: string | null;
+  /** @minLength 1 */
+  originalName: string;
   /** @pattern ^[A-Za-z][A-Za-z0-9_-]*$ */
   sourceId: string;
   type: QuestionBlueprintVersionSourceType;

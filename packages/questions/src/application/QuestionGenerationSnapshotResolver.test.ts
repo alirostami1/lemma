@@ -6,6 +6,11 @@ import type {
   WorkbookId,
   WorkbookSnapshotId,
 } from "../domain/index.js";
+import {
+  sourceArtifactId,
+  sourceDocumentId,
+  sourceRevisionId,
+} from "../domain/index.js";
 import { WorkbookQuestionReferenceError } from "./errors.js";
 import type { WorkbookSnapshotForQuestionGeneration } from "./ports.js";
 import { resolveQuestionGenerationSnapshots } from "./QuestionGenerationSnapshotResolver.js";
@@ -16,6 +21,24 @@ const otherCalculationId =
   "019e9315-6a87-715f-9861-8654df071002" as WorkbookCalculationId;
 const workbookId = "019e9315-6a87-715f-9861-8654df071003" as WorkbookId;
 const otherWorkbookId = "019e9315-6a87-715f-9861-8654df071004" as WorkbookId;
+const sourceOneDocumentId = sourceDocumentId(
+  "019e9315-6a87-715f-9861-8654df071005",
+);
+const sourceOneRevisionId = sourceRevisionId(
+  "019e9315-6a87-715f-9861-8654df071006",
+);
+const sourceOneArtifactId = sourceArtifactId(
+  "019e9315-6a87-715f-9861-8654df071007",
+);
+const sourceTwoDocumentId = sourceDocumentId(
+  "019e9315-6a87-715f-9861-8654df071008",
+);
+const sourceTwoRevisionId = sourceRevisionId(
+  "019e9315-6a87-715f-9861-8654df071009",
+);
+const sourceTwoArtifactId = sourceArtifactId(
+  "019e9315-6a87-715f-9861-8654df071010",
+);
 
 describe("resolveQuestionGenerationSnapshots", () => {
   it("maps valid snapshots by source id and question index", () => {
@@ -142,12 +165,26 @@ function sources(): QuestionBlueprintSource[] {
 }
 
 function testSource(name: string, sourceId: string): QuestionBlueprintSource {
+  const pins =
+    sourceId === "source_1"
+      ? {
+          sourceArtifactId: sourceOneArtifactId,
+          sourceDocumentId: sourceOneDocumentId,
+          sourceRevisionId: sourceOneRevisionId,
+        }
+      : {
+          sourceArtifactId: sourceTwoArtifactId,
+          sourceDocumentId: sourceTwoDocumentId,
+          sourceRevisionId: sourceTwoRevisionId,
+        };
   return {
-    byteSize: null,
-    checksumSha256: null,
-    fileId: null,
+    byteSize: 1234,
+    checksumSha256:
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    fileId: "019e9315-6a87-715f-9861-8654df070cb1",
     name,
-    originalName: null,
+    originalName: `${sourceId}.xlsx`,
+    ...pins,
     sourceId,
     type: "workbook",
     workbookId,

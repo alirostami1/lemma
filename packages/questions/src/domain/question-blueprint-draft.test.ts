@@ -15,12 +15,24 @@ import {
   questionBlueprintVersionNumber,
   reconstituteQuestionBlueprintDraft,
   reconstituteQuestionBlueprintVersion,
+  sourceArtifactId,
+  sourceDocumentId,
+  sourceRevisionId,
   updateQuestionBlueprintDraft,
   userId,
   workbookId,
 } from "./index.js";
 
 const at = new Date("2026-06-22T00:00:00.000Z");
+const testSourceDocumentId = sourceDocumentId(
+  "0197a555-5555-7555-8555-555555555555",
+);
+const testSourceRevisionId = sourceRevisionId(
+  "0197a666-6666-7666-8666-666666666666",
+);
+const testSourceArtifactId = sourceArtifactId(
+  "0197a777-7777-7777-8777-777777777777",
+);
 
 test("draft permits referenced workbook source without file or workbook", () => {
   const draft = createQuestionBlueprintDraft(
@@ -218,6 +230,54 @@ test("blueprint version rejects missing referenced source", () => {
   );
 });
 
+test("published blueprint reconstitution rejects missing source document pin", () => {
+  assert.throws(
+    () =>
+      reconstituteQuestionBlueprintVersion({
+        ...versionRow(),
+        sources: [
+          {
+            ...publishedSources()[0],
+            sourceDocumentId: null,
+          },
+        ],
+      }),
+    /sourceDocumentId must be present for version workbook sources/,
+  );
+});
+
+test("published blueprint version reconstitution rejects missing source revision pin", () => {
+  assert.throws(
+    () =>
+      reconstituteQuestionBlueprintVersion({
+        ...versionRow(),
+        sources: [
+          {
+            ...publishedSources()[0],
+            sourceRevisionId: null,
+          },
+        ],
+      }),
+    /sourceRevisionId must be present for version workbook sources/,
+  );
+});
+
+test("published blueprint version reconstitution rejects missing source artifact pin", () => {
+  assert.throws(
+    () =>
+      reconstituteQuestionBlueprintVersion({
+        ...versionRow(),
+        sources: [
+          {
+            ...publishedSources()[0],
+            sourceArtifactId: null,
+          },
+        ],
+      }),
+    /sourceArtifactId must be present for version workbook sources/,
+  );
+});
+
 test("attaching draft source file materializes workbook state", () => {
   const draft = createDraft();
   const attachedWorkbookId = workbookId("0197a444-4444-7444-8444-444444444444");
@@ -228,7 +288,11 @@ test("attaching draft source file materializes workbook state", () => {
       checksumSha256: "a".repeat(64),
       fileId: "0197a333-3333-7333-8333-333333333333",
       originalName: "source.xlsx",
+      sourceArtifactId: testSourceArtifactId,
+      sourceDocumentId: testSourceDocumentId,
       sourceId: "sourceA",
+      sourceRevisionId: testSourceRevisionId,
+      status: "validated",
       workbookId: attachedWorkbookId,
     },
     at,
@@ -244,17 +308,14 @@ test("attaching draft source file materializes workbook state", () => {
 
 test("published draft keeps source history and registered workbook id", () => {
   const draft = createDraft();
-  const sourcesWithWorkbook = draft.sources.map((source) => ({
-    ...source,
-    status: "validated" as const,
-    workbookId: workbookId("0197a444-4444-7444-8444-444444444444"),
-  }));
+  const [validated] = publishedSources();
+  if (!validated) throw new Error("missing source fixture");
   const published = markQuestionBlueprintDraftPublished(
     draft,
     {
       blueprintId: questionBlueprintId("0197a555-5555-7555-8555-555555555555"),
       idempotencyKey: "publish-once",
-      sources: sourcesWithWorkbook,
+      sources: [validated],
       versionId: questionBlueprintVersionId(
         "0197a666-6666-7666-8666-666666666666",
       ),
@@ -266,6 +327,92 @@ test("published draft keeps source history and registered workbook id", () => {
   assert.equal(
     published.sources[0]?.workbookId,
     "0197a444-4444-7444-8444-444444444444",
+  );
+});
+
+test("published draft rejects validated workbook source without pins", () => {
+  const draft = createDraft();
+  const [source] = draft.sources;
+  if (!source) throw new Error("missing source fixture");
+
+  assert.throws(
+    () =>
+      markQuestionBlueprintDraftPublished(
+        draft,
+        {
+          blueprintId: questionBlueprintId(
+            "0197a555-5555-7555-8555-555555555555",
+          ),
+          idempotencyKey: "publish-once",
+          sources: [
+            {
+              ...source,
+              status: "validated" as const,
+              workbookId: workbookId("0197a444-4444-7444-8444-444444444444"),
+            },
+          ],
+          versionId: questionBlueprintVersionId(
+            "0197a666-6666-7666-8666-666666666666",
+          ),
+        },
+        at,
+      ),
+    /published workbook sources must pin source document, revision, artifact, and workbook/,
+  );
+});
+
+test("published draft reconstitution rejects validated workbook source without pins", () => {
+  const [source] = draftRow().sources;
+  if (!source) throw new Error("missing source fixture");
+
+  assert.throws(
+    () =>
+      reconstituteQuestionBlueprintDraft({
+        ...draftRow(),
+        publishedAt: at,
+        publishedVersionId: "0197a666-6666-7666-8666-666666666666",
+        publishIdempotencyKey: "publish-once",
+        sources: [
+          {
+            ...source,
+            status: "validated",
+            workbookId: "0197a444-4444-7444-8444-444444444444",
+          },
+        ],
+        status: "published",
+      }),
+    /published workbook sources must pin source document, revision, artifact, and workbook/,
+  );
+});
+
+test("published draft reconstitution rejects used local workbook source", () => {
+  const [source] = draftRow().sources;
+  if (!source) throw new Error("missing source fixture");
+
+  assert.throws(
+    () =>
+      reconstituteQuestionBlueprintDraft({
+        ...draftRow(),
+        publishedAt: at,
+        publishedVersionId: "0197a666-6666-7666-8666-666666666666",
+        publishIdempotencyKey: "publish-once",
+        sources: [
+          {
+            ...source,
+            byteSize: null,
+            checksumSha256: null,
+            fileId: null,
+            originalName: null,
+            sourceArtifactId: null,
+            sourceDocumentId: null,
+            sourceRevisionId: null,
+            status: "local",
+            workbookId: null,
+          },
+        ],
+        status: "published",
+      }),
+    /published workbook sources must pin source document, revision, artifact, and workbook/,
   );
 });
 
@@ -282,7 +429,7 @@ test("published new-blueprint draft keeps null base version", () => {
     {
       blueprintId,
       idempotencyKey: "publish-once",
-      sources: draft.sources,
+      sources: publishedSources(),
       versionId,
     },
     at,
@@ -294,6 +441,7 @@ test("published new-blueprint draft keeps null base version", () => {
     publishedAt: at,
     publishedVersionId: versionId,
     publishIdempotencyKey: "publish-once",
+    sources: publishedSources(),
     status: "published",
   });
 
@@ -341,23 +489,37 @@ function sources() {
 function publishedSources() {
   return [
     {
-      byteSize: null,
-      checksumSha256: null,
-      fileId: null,
+      byteSize: 1234,
+      checksumSha256:
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      fileId: "0197a444-4444-7444-8444-444444444440",
       name: "Source A",
-      originalName: null,
+      originalName: "source-a.xlsx",
+      sourceArtifactId: testSourceArtifactId,
+      sourceDocumentId: testSourceDocumentId,
       sourceId: "sourceA",
+      sourceRevisionId: testSourceRevisionId,
       status: "validated" as const,
       type: "workbook" as const,
       workbookId: workbookId("0197a444-4444-7444-8444-444444444444"),
     },
     {
-      byteSize: null,
-      checksumSha256: null,
-      fileId: null,
+      byteSize: 2345,
+      checksumSha256:
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      fileId: "0197a444-4444-7444-8444-444444444441",
       name: "Source B",
-      originalName: null,
+      originalName: "source-b.xlsx",
+      sourceArtifactId: sourceArtifactId(
+        "0197a888-8888-7888-8888-888888888888",
+      ),
+      sourceDocumentId: sourceDocumentId(
+        "0197a999-9999-7999-8999-999999999999",
+      ),
       sourceId: "sourceB",
+      sourceRevisionId: sourceRevisionId(
+        "0197aaaa-aaaa-7aaa-8aaa-aaaaaaaaaaaa",
+      ),
       status: "validated" as const,
       type: "workbook" as const,
       workbookId: workbookId("0197a444-4444-7444-8444-444444444445"),
@@ -385,6 +547,23 @@ function draftRow() {
     sources: sources(),
     status: "draft",
     updatedAt: at,
+  };
+}
+
+function versionRow() {
+  return {
+    blueprintId: "0197a555-5555-7555-8555-555555555555",
+    createdAt: at,
+    createdByUserId: "0197a222-2222-7222-8222-222222222222",
+    description: null,
+    document: documentUsing("sourceA"),
+    id: "0197a666-6666-7666-8666-666666666666",
+    name: "Versioned",
+    ownerUserId: "0197a222-2222-7222-8222-222222222222",
+    parentVersionId: null,
+    publishedAt: at,
+    sources: publishedSources(),
+    versionNumber: 1,
   };
 }
 
