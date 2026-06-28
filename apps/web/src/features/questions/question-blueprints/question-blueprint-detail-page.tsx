@@ -85,11 +85,8 @@ export function QuestionBlueprintDetailPage({
         <div className="flex flex-wrap gap-2">
           <Button asChild>
             <Link search={{ blueprintId: questionBlueprintId }} to="/studio">
-              Create edit draft
+              Edit in Studio
             </Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link to="/create">Use blueprint</Link>
           </Button>
         </div>
       </section>

@@ -2,9 +2,15 @@ import type { QuestionBlueprint, QuestionSet } from "#/domains/questions/model";
 
 export type HomeAction = {
   label: string;
-  to: "/" | "/create" | "/question-sets";
+  to: "/" | "/studio" | "/question-sets";
   variant: "primary" | "secondary";
 };
+
+export const HOME_CREATE_BLUEPRINT_ACTION = {
+  label: "Create blueprint",
+  to: "/studio",
+  variant: "primary",
+} as const satisfies HomeAction;
 
 export type RecentHomeItem =
   | {
@@ -71,11 +77,7 @@ export function buildHomePageViewModel({
     emptyState: hasRecentWork
       ? null
       : {
-          action: {
-            label: "Create blueprint",
-            to: "/create",
-            variant: "primary",
-          },
+          action: HOME_CREATE_BLUEPRINT_ACTION,
           description:
             "Start in Studio, save your blueprint, then generate questions into a question set.",
           title: "Create your first blueprint",
@@ -84,11 +86,7 @@ export function buildHomePageViewModel({
     hero: {
       description:
         "Create reusable blueprints and generate questions into question sets.",
-      primaryAction: {
-        label: "Create blueprint",
-        to: "/create",
-        variant: "primary",
-      },
+      primaryAction: HOME_CREATE_BLUEPRINT_ACTION,
       secondaryAction: {
         label: "Question sets",
         to: "/question-sets",

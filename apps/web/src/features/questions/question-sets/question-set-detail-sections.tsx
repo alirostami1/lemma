@@ -26,7 +26,7 @@ export function QuestionSetDetailHeader({
             </Link>
           </Button>
           <Button asChild>
-            <Link to="/create">
+            <Link to="/studio">
               <FilePlus2 />
               {viewModel.createLabel}
             </Link>
