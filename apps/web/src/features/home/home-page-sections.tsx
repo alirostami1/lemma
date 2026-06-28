@@ -148,7 +148,7 @@ function HomeActionButton({ action }: { action: HomeAction }) {
   const icon =
     action.to === "/question-sets" ? (
       <ListChecks />
-    ) : action.to === "/create" ? (
+    ) : action.to === "/studio" ? (
       <FilePlus2 />
     ) : null;
 

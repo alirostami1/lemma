@@ -86,20 +86,6 @@ export function notifyQuestionGenerationRetryFailed(input: {
   });
 }
 
-export function notifySourceUploaded(input: {
-  context: "create" | "studio";
-  sourceName?: string | null;
-}): void {
-  toast.success("Source uploaded.", {
-    description:
-      input.context === "create"
-        ? "Opening Studio with this source."
-        : input.sourceName
-          ? `${input.sourceName} selected for this blueprint.`
-          : "Source selected for this blueprint.",
-  });
-}
-
 export function notifyGeneratedQuestionsLoadMoreFailed(): void {
   toast.error("More generated questions could not be loaded.");
 }

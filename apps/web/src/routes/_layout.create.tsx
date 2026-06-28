@@ -1,13 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { requireLogin } from "#/features/auth";
-import { CreatePage } from "#/features/create-flow";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_layout/create")({
-  beforeLoad: requireLogin,
-  component: RouteComponent,
-  ssr: false,
+  beforeLoad: redirectCreateToStudio,
 });
 
-function RouteComponent() {
-  return <CreatePage />;
+export function redirectCreateToStudio(): never {
+  throw redirect({ replace: true, to: "/studio" });
 }
