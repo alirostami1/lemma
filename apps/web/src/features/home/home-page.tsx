@@ -6,6 +6,7 @@ import {
   HomeHeroSection,
   RecentWorkSection,
 } from "./home-page-sections";
+import { HOME_CREATE_BLUEPRINT_ACTION } from "./home-page-view-model";
 import { useHomePageController } from "./use-home-page-controller";
 
 export function HomePage() {
@@ -47,8 +48,7 @@ export function HomePage() {
           controller.blueprints.errorMessage ? (
             <RecentWorkSection
               action={{
-                label: "Create blueprint",
-                to: "/create",
+                ...HOME_CREATE_BLUEPRINT_ACTION,
                 variant: "secondary",
               }}
               emptyMessage="No saved blueprints yet."

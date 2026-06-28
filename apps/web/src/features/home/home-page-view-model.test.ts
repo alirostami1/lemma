@@ -4,6 +4,7 @@ import {
   buildHomePageViewModel,
   buildRecentBlueprintItems,
   buildRecentQuestionSetItems,
+  HOME_CREATE_BLUEPRINT_ACTION,
 } from "./home-page-view-model";
 
 function blueprint(
@@ -77,15 +78,12 @@ describe("home page view model", () => {
     });
 
     expect(viewModel.emptyState).toEqual({
-      action: {
-        label: "Create blueprint",
-        to: "/create",
-        variant: "primary",
-      },
+      action: HOME_CREATE_BLUEPRINT_ACTION,
       description:
         "Start in Studio, save your blueprint, then generate questions into a question set.",
       title: "Create your first blueprint",
     });
+    expect(viewModel.hero.primaryAction).toEqual(HOME_CREATE_BLUEPRINT_ACTION);
   });
 
   it("filters deleted and system blueprints", () => {

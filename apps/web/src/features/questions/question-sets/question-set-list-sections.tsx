@@ -53,7 +53,7 @@ export function QuestionSetListSection({
                 <>
                   <CreateQuestionSetDialogController />
                   <Button asChild variant="outline">
-                    <Link to="/create">
+                    <Link to="/studio">
                       <FilePlus2 />
                       Create blueprint
                     </Link>
