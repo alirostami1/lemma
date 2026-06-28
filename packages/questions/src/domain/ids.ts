@@ -9,6 +9,9 @@ export type QuestionBlueprintVersionId = Brand<
 >;
 export type QuestionId = Brand<string, "QuestionId">;
 export type QuestionGenerationRunId = Brand<string, "QuestionGenerationRunId">;
+export type SourceDocumentId = Brand<string, "SourceDocumentId">;
+export type SourceRevisionId = Brand<string, "SourceRevisionId">;
+export type SourceArtifactId = Brand<string, "SourceArtifactId">;
 export type UserId = Brand<string, "UserId">;
 export type WorkbookId = Brand<string, "WorkbookId">;
 export type WorkbookCalculationId = Brand<string, "WorkbookCalculationId">;
@@ -42,6 +45,18 @@ export function questionGenerationRunId(
     value,
     "questionGenerationRunId",
   ) as QuestionGenerationRunId;
+}
+
+export function sourceDocumentId(value: unknown): SourceDocumentId {
+  return assertUuid(value, "sourceDocumentId") as SourceDocumentId;
+}
+
+export function sourceRevisionId(value: unknown): SourceRevisionId {
+  return assertUuid(value, "sourceRevisionId") as SourceRevisionId;
+}
+
+export function sourceArtifactId(value: unknown): SourceArtifactId {
+  return assertUuid(value, "sourceArtifactId") as SourceArtifactId;
 }
 
 export function userId(value: unknown): UserId {

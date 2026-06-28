@@ -53,7 +53,17 @@ export const presentQuestionBlueprintDraft = (
     publishedAt: presentNullableDate(result.draft.publishedAt),
     publishedVersionId: result.draft.publishedVersionId,
     revision: result.draft.revision,
-    sources: [...result.draft.sources],
+    sources: result.draft.sources.map((source) => ({
+      byteSize: source.byteSize,
+      checksumSha256: source.checksumSha256,
+      fileId: source.fileId,
+      name: source.name,
+      originalName: source.originalName,
+      sourceId: source.sourceId,
+      status: source.status,
+      type: source.type,
+      workbookId: source.workbookId,
+    })),
     status: result.draft.status,
     updatedAt: presentDate(result.draft.updatedAt),
   },
@@ -114,7 +124,7 @@ export const presentQuestionBlueprint = (
     document: toLearnerQuestionBlueprintDocumentDto(
       result.questionBlueprint.document,
     ),
-    sources: [...result.questionBlueprint.sources],
+    sources: result.questionBlueprint.sources.map(toQuestionBlueprintSourceDto),
     updatedAt: presentDate(result.questionBlueprint.updatedAt),
   },
 });
@@ -127,7 +137,7 @@ export const presentQuestionBlueprintAuthoring = (
     archivedAt: presentNullableDate(result.questionBlueprint.archivedAt),
     createdAt: presentDate(result.questionBlueprint.createdAt),
     document: result.questionBlueprint.document,
-    sources: [...result.questionBlueprint.sources],
+    sources: result.questionBlueprint.sources.map(toQuestionBlueprintSourceDto),
     updatedAt: presentDate(result.questionBlueprint.updatedAt),
   },
 });
@@ -198,7 +208,24 @@ function toQuestionBlueprintVersionDto(
     createdAt: presentDate(version.createdAt),
     document: version.document,
     publishedAt: presentDate(version.publishedAt),
-    sources: [...version.sources],
+    sources: version.sources.map(toQuestionBlueprintSourceDto),
+  };
+}
+
+function toQuestionBlueprintSourceDto(
+  source:
+    | PublishedQuestionBlueprintDraftResult["questionBlueprint"]["sources"][number]
+    | PublishedQuestionBlueprintDraftResult["questionBlueprintVersion"]["sources"][number],
+) {
+  return {
+    byteSize: source.byteSize,
+    checksumSha256: source.checksumSha256,
+    fileId: source.fileId,
+    name: source.name,
+    originalName: source.originalName,
+    sourceId: source.sourceId,
+    type: source.type,
+    workbookId: source.workbookId,
   };
 }
 

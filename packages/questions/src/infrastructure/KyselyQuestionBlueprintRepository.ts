@@ -13,6 +13,9 @@ import type {
 import {
   createQuestionBlueprintVersion,
   questionBlueprintVersionNumber,
+  sourceArtifactId,
+  sourceDocumentId,
+  sourceRevisionId,
   workbookId,
 } from "../domain/index.js";
 import {
@@ -193,13 +196,16 @@ export async function insertVersionSources(
   const values: Insertable<QuestionBlueprintVersionSources>[] = sources.map(
     (source) => ({
       blueprintVersionId: versionId,
-      byteSize: source.byteSize === null ? null : String(source.byteSize),
+      byteSize: String(source.byteSize),
       checksumSha256: source.checksumSha256,
       createdAt,
       fileId: source.fileId,
       name: source.name,
       originalName: source.originalName,
+      sourceArtifactId: source.sourceArtifactId,
+      sourceDocumentId: source.sourceDocumentId,
       sourceId: source.sourceId,
+      sourceRevisionId: source.sourceRevisionId,
       type: source.type,
       workbookId: source.workbookId,
     }),
@@ -214,12 +220,15 @@ function mapVersionSourceRow(
   row: Selectable<QuestionBlueprintVersionSources>,
 ): QuestionBlueprintVersionSource {
   return {
-    byteSize: row.byteSize === null ? null : Number(row.byteSize),
+    byteSize: Number(row.byteSize),
     checksumSha256: row.checksumSha256,
     fileId: row.fileId,
     name: row.name,
     originalName: row.originalName,
+    sourceArtifactId: sourceArtifactId(row.sourceArtifactId),
+    sourceDocumentId: sourceDocumentId(row.sourceDocumentId),
     sourceId: row.sourceId,
+    sourceRevisionId: sourceRevisionId(row.sourceRevisionId),
     type: "workbook",
     workbookId: workbookId(row.workbookId),
   };

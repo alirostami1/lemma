@@ -52,11 +52,12 @@ describe("create page view model", () => {
       blueprint("blueprint-2", {
         sources: [
           {
-            byteSize: null,
-            checksumSha256: null,
-            fileId: null,
+            byteSize: 1024,
+            checksumSha256:
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            fileId: "file-1",
             name: "Workbook 1",
-            originalName: null,
+            originalName: "workbook-1.xlsx",
             sourceId: "source-1",
             type: "workbook",
             workbookId: "workbook-1",

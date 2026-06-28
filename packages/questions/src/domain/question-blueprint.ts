@@ -8,6 +8,12 @@ import {
   type QuestionBlueprintVersionId,
   questionBlueprintId,
   questionBlueprintVersionId,
+  type SourceArtifactId,
+  type SourceDocumentId,
+  type SourceRevisionId,
+  sourceArtifactId,
+  sourceDocumentId,
+  sourceRevisionId,
   type UserId,
   userId,
   type WorkbookId,
@@ -48,10 +54,13 @@ export type QuestionBlueprintSource = {
   sourceId: string;
   name: string;
   workbookId: WorkbookId;
-  fileId: string | null;
-  originalName: string | null;
-  byteSize: number | null;
-  checksumSha256: string | null;
+  fileId: string;
+  sourceDocumentId: SourceDocumentId;
+  sourceRevisionId: SourceRevisionId;
+  sourceArtifactId: SourceArtifactId;
+  originalName: string;
+  byteSize: number;
+  checksumSha256: string;
 };
 
 export function createQuestionBlueprint(
@@ -151,44 +160,67 @@ export function questionBlueprintSources(
     }
     sourceIds.add(sourceId);
     return {
-      byteSize: nullablePositiveNumber(record.byteSize),
-      checksumSha256: nullableChecksum(record.checksumSha256),
-      fileId: nullableString(record.fileId, "fileId"),
+      byteSize: requiredPositiveNumber(record.byteSize, "byteSize"),
+      checksumSha256: requiredChecksum(record.checksumSha256, "checksumSha256"),
+      fileId: requiredString(record.fileId, "fileId"),
       name: questionBlueprintSourceName(record.name),
-      originalName: nullableString(record.originalName, "originalName"),
+      originalName: requiredString(record.originalName, "originalName"),
       sourceId,
+      sourceArtifactId: requiredSourceArtifactId(record.sourceArtifactId),
+      sourceDocumentId: requiredSourceDocumentId(record.sourceDocumentId),
+      sourceRevisionId: requiredSourceRevisionId(record.sourceRevisionId),
       type: "workbook" as const,
       workbookId: workbookId(record.workbookId),
     };
   });
 }
 
-function nullableString(value: unknown, field: string): string | null {
-  if (value === undefined || value === null) return null;
+function requiredString(value: unknown, field: string): string {
   if (typeof value !== "string" || value.length === 0) {
-    throw new InvalidQuestionFieldError(`${field} must be a string or null`);
+    throw new InvalidQuestionFieldError(`${field} must be a non-empty string`);
   }
   return value;
 }
 
-function nullablePositiveNumber(value: unknown): number | null {
-  if (value === undefined || value === null) return null;
+function requiredPositiveNumber(value: unknown, field: string): number {
   if (typeof value !== "number" || !Number.isSafeInteger(value) || value <= 0) {
-    throw new InvalidQuestionFieldError(
-      "byteSize must be a positive integer or null",
-    );
+    throw new InvalidQuestionFieldError(`${field} must be a positive integer`);
   }
   return value;
 }
 
-function nullableChecksum(value: unknown): string | null {
-  if (value === undefined || value === null) return null;
+function requiredChecksum(value: unknown, field: string): string {
   if (typeof value !== "string" || !/^[a-f0-9]{64}$/u.test(value)) {
-    throw new InvalidQuestionFieldError(
-      "checksumSha256 must be lowercase SHA-256 or null",
-    );
+    throw new InvalidQuestionFieldError(`${field} must be lowercase SHA-256`);
   }
   return value;
+}
+
+function requiredSourceDocumentId(value: unknown): SourceDocumentId {
+  if (value === undefined || value === null) {
+    throw new InvalidQuestionFieldError(
+      "sourceDocumentId must be present for published workbook sources",
+    );
+  }
+  return sourceDocumentId(value);
+}
+
+function requiredSourceRevisionId(value: unknown): SourceRevisionId {
+  if (value === undefined || value === null) {
+    throw new InvalidQuestionFieldError(
+      "sourceRevisionId must be present for published workbook sources",
+    );
+  }
+  return sourceRevisionId(value);
+}
+
+function requiredSourceArtifactId(value: unknown): SourceArtifactId {
+  if (value === undefined || value === null) {
+    throw new InvalidQuestionFieldError(
+      "sourceArtifactId must be present for published workbook sources",
+    );
+  }
+  return sourceArtifactId(value);
 }
 
 export function questionBlueprintSourceId(value: unknown): string {

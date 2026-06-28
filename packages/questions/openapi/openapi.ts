@@ -165,14 +165,14 @@ const questionBlueprintVersionSourceSchema: Schema = {
   schema: {
     additionalProperties: false,
     properties: {
-      byteSize: { minimum: 1, type: ["integer", "null"] },
+      byteSize: { minimum: 1, type: "integer" },
       checksumSha256: {
         pattern: "^[a-f0-9]{64}$",
-        type: ["string", "null"],
+        type: "string",
       },
-      fileId: { format: "uuid", type: ["string", "null"] },
+      fileId: { format: "uuid", type: "string" },
       name: { minLength: 1, type: "string" },
-      originalName: { type: ["string", "null"] },
+      originalName: { minLength: 1, type: "string" },
       sourceId: { pattern: "^[A-Za-z][A-Za-z0-9_-]*$", type: "string" },
       type: { enum: ["workbook"], type: "string" },
       workbookId: { format: "uuid", type: "string" },

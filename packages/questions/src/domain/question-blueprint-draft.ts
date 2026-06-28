@@ -8,12 +8,19 @@ import {
   type QuestionBlueprintVersionId,
   questionBlueprintId,
   questionBlueprintVersionId,
+  type SourceArtifactId,
+  type SourceDocumentId,
+  type SourceRevisionId,
+  sourceArtifactId,
+  sourceDocumentId,
+  sourceRevisionId,
   type UserId,
   userId,
   type WorkbookId,
   workbookId,
 } from "./ids.js";
 import {
+  type QuestionBlueprintSource,
   questionBlueprintSourceId,
   questionBlueprintSourceIdsUsedByDocument,
   questionBlueprintSourceName,
@@ -22,6 +29,7 @@ import {
   type QuestionBlueprintDocument,
   questionBlueprintDocument,
 } from "./question-blueprint-document.js";
+import type { QuestionBlueprintVersionSource } from "./question-blueprint-version.js";
 import {
   type QuestionBlueprintDescription,
   type QuestionBlueprintName,
@@ -43,6 +51,9 @@ export type QuestionBlueprintDraftSource = {
   sourceId: string;
   name: string;
   fileId: string | null;
+  sourceDocumentId: SourceDocumentId | null;
+  sourceRevisionId: SourceRevisionId | null;
+  sourceArtifactId: SourceArtifactId | null;
   workbookId: WorkbookId | null;
   status: "local" | "uploaded" | "validated" | "invalid";
   originalName: string | null;
@@ -73,6 +84,18 @@ export type QuestionBlueprintDraft = Timestamped & {
   lastSavedAt: Date;
   publishedAt: Date | null;
   discardedAt: Date | null;
+};
+
+export type PublishableWorkbookDraftSource = QuestionBlueprintDraftSource & {
+  status: "validated";
+  fileId: string;
+  sourceDocumentId: SourceDocumentId;
+  sourceRevisionId: SourceRevisionId;
+  sourceArtifactId: SourceArtifactId;
+  workbookId: WorkbookId;
+  originalName: string;
+  byteSize: number;
+  checksumSha256: string;
 };
 
 export function questionBlueprintDraftId(
@@ -129,6 +152,9 @@ export function questionBlueprintDraftSourcesFromRows(
       name: questionBlueprintSourceName(source.name),
       originalName: nullableString(source.originalName, "originalName"),
       sourceId,
+      sourceArtifactId: nullableSourceArtifactId(source.sourceArtifactId),
+      sourceDocumentId: nullableSourceDocumentId(source.sourceDocumentId),
+      sourceRevisionId: nullableSourceRevisionId(source.sourceRevisionId),
       status: status as QuestionBlueprintDraftSource["status"],
       type: "workbook",
       workbookId:
@@ -247,6 +273,9 @@ export function reconstituteQuestionBlueprintDraft(input: {
   const document = questionBlueprintDocument(input.document);
   const sources = questionBlueprintDraftSourcesFromRows(input.sources);
   assertDraftReferences(document, sources);
+  if (status === "published") {
+    assertPublishedDraftSources({ document, sources });
+  }
   return {
     blueprintId,
     baseVersionId,
@@ -292,7 +321,11 @@ export function attachDraftSourceFile(
   input: {
     sourceId: string;
     fileId: string;
+    sourceDocumentId: SourceDocumentId;
+    sourceRevisionId: SourceRevisionId;
+    sourceArtifactId: SourceArtifactId;
     workbookId: WorkbookId;
+    status: "uploaded" | "validated" | "invalid";
     originalName: string;
     byteSize: number;
     checksumSha256: string;
@@ -318,7 +351,10 @@ export function attachDraftSourceFile(
             checksumSha256: input.checksumSha256,
             fileId: input.fileId,
             originalName: input.originalName,
-            status: "validated",
+            sourceArtifactId: input.sourceArtifactId,
+            sourceDocumentId: input.sourceDocumentId,
+            sourceRevisionId: input.sourceRevisionId,
+            status: input.status,
             workbookId: input.workbookId,
           }
         : source,
@@ -337,6 +373,10 @@ export function markQuestionBlueprintDraftPublished(
   at: Date,
 ): QuestionBlueprintDraft {
   assertMutable(draft);
+  assertPublishedDraftSources({
+    document: draft.document,
+    sources: input.sources,
+  });
   return {
     ...touch(draft, at),
     blueprintId: input.blueprintId,
@@ -471,6 +511,103 @@ function assertDraftReferences(
   }
 }
 
+function assertPublishedDraftSources(input: {
+  document: QuestionBlueprintDocument;
+  sources: readonly QuestionBlueprintDraftSource[];
+}) {
+  const sourcesById = new Map(
+    input.sources.map((source) => [source.sourceId, source]),
+  );
+  for (const sourceId of questionBlueprintSourceIdsUsedByDocument(
+    input.document,
+  )) {
+    const source = sourcesById.get(sourceId);
+    if (!source) {
+      throw new InvalidQuestionStateTransitionError(
+        "published workbook sources must pin source document, revision, artifact, and workbook metadata",
+      );
+    }
+    try {
+      publishableWorkbookDraftSource(source);
+    } catch {
+      throw new InvalidQuestionStateTransitionError(
+        "published workbook sources must pin source document, revision, artifact, and workbook metadata",
+      );
+    }
+  }
+}
+
+export function publishableWorkbookDraftSource(
+  source: QuestionBlueprintDraftSource,
+): PublishableWorkbookDraftSource {
+  if (
+    source.type !== "workbook" ||
+    source.status !== "validated" ||
+    source.fileId === null ||
+    source.originalName === null ||
+    source.byteSize === null ||
+    source.checksumSha256 === null ||
+    source.workbookId === null ||
+    source.sourceDocumentId === null ||
+    source.sourceRevisionId === null ||
+    source.sourceArtifactId === null
+  ) {
+    throw new InvalidQuestionStateTransitionError(
+      "draft workbook source is not ready for publish",
+    );
+  }
+  return {
+    ...source,
+    byteSize: source.byteSize,
+    checksumSha256: source.checksumSha256,
+    fileId: source.fileId,
+    originalName: source.originalName,
+    sourceArtifactId: source.sourceArtifactId,
+    sourceDocumentId: source.sourceDocumentId,
+    sourceRevisionId: source.sourceRevisionId,
+    status: "validated",
+    workbookId: source.workbookId,
+  };
+}
+
+export function publishedWorkbookSourceFromDraft(
+  source: QuestionBlueprintDraftSource,
+): QuestionBlueprintSource {
+  const ready = publishableWorkbookDraftSource(source);
+  return {
+    byteSize: ready.byteSize,
+    checksumSha256: ready.checksumSha256,
+    fileId: ready.fileId,
+    name: ready.name,
+    originalName: ready.originalName,
+    sourceArtifactId: ready.sourceArtifactId,
+    sourceDocumentId: ready.sourceDocumentId,
+    sourceId: ready.sourceId,
+    sourceRevisionId: ready.sourceRevisionId,
+    type: "workbook",
+    workbookId: ready.workbookId,
+  };
+}
+
+export function publishedWorkbookVersionSourceFromDraft(
+  source: QuestionBlueprintDraftSource,
+): QuestionBlueprintVersionSource {
+  const ready = publishableWorkbookDraftSource(source);
+  return {
+    byteSize: ready.byteSize,
+    checksumSha256: ready.checksumSha256,
+    fileId: ready.fileId,
+    name: ready.name,
+    originalName: ready.originalName,
+    sourceArtifactId: ready.sourceArtifactId,
+    sourceDocumentId: ready.sourceDocumentId,
+    sourceId: ready.sourceId,
+    sourceRevisionId: ready.sourceRevisionId,
+    type: "workbook",
+    workbookId: ready.workbookId,
+  };
+}
+
 function assertMutable(draft: QuestionBlueprintDraft) {
   if (draft.status !== "draft") {
     throw new InvalidQuestionStateTransitionError(
@@ -514,4 +651,16 @@ function nullableChecksum(value: unknown): string | null {
     );
   }
   return value;
+}
+
+function nullableSourceDocumentId(value: unknown): SourceDocumentId | null {
+  return value === undefined || value === null ? null : sourceDocumentId(value);
+}
+
+function nullableSourceRevisionId(value: unknown): SourceRevisionId | null {
+  return value === undefined || value === null ? null : sourceRevisionId(value);
+}
+
+function nullableSourceArtifactId(value: unknown): SourceArtifactId | null {
+  return value === undefined || value === null ? null : sourceArtifactId(value);
 }

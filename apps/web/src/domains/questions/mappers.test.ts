@@ -20,8 +20,8 @@ describe("mapQuestionBlueprintDraftSummary", () => {
       lastSavedAt: "2026-06-22T00:00:00.000Z",
       name: "Draft",
       ownerUserId: "owner-1",
-      publishedAt: null,
-      publishedVersionId: null,
+      publishedAt: "2026-06-22T00:00:00.000Z",
+      publishedVersionId: "version-1",
       revision: 1,
       sources: [
         {
@@ -31,7 +31,7 @@ describe("mapQuestionBlueprintDraftSummary", () => {
           name: "Source",
           originalName: null,
           sourceId: "source_1",
-          status: "invalid",
+          status: "local",
           type: "workbook",
           workbookId: null,
         },

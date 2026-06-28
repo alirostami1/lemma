@@ -9,6 +9,9 @@ import {
   questionBlueprintName,
   questionBlueprintVersionId,
   questionBlueprintVisibility,
+  sourceArtifactId,
+  sourceDocumentId,
+  sourceRevisionId,
   userId as toUserId,
   workbookId as toWorkbookId,
   type WorkbookId,
@@ -19,6 +22,15 @@ import { QuestionGenerationSourceResolver } from "./QuestionGenerationSourceReso
 
 const ownerUserId = toUserId("019e9315-6a87-715f-9861-8654df070c50");
 const workbookId = toWorkbookId("019e9315-6a87-715f-9861-8654df070c51");
+const testSourceDocumentId = sourceDocumentId(
+  "019e9315-6a87-715f-9861-8654df070c52",
+);
+const testSourceRevisionId = sourceRevisionId(
+  "019e9315-6a87-715f-9861-8654df070c53",
+);
+const testSourceArtifactId = sourceArtifactId(
+  "019e9315-6a87-715f-9861-8654df070c54",
+);
 const currentUser = {
   isAdmin: false,
   roles: [],
@@ -99,12 +111,16 @@ function createBlueprint(input: { workbookId: WorkbookId }) {
       ownerUserId,
       sources: [
         {
-          byteSize: null,
-          checksumSha256: null,
-          fileId: null,
+          byteSize: 1234,
+          checksumSha256:
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          fileId: "019e9315-6a87-715f-9861-8654df070cb2",
           name: "Source 1",
-          originalName: null,
+          originalName: "source-1.xlsx",
+          sourceArtifactId: testSourceArtifactId,
+          sourceDocumentId: testSourceDocumentId,
           sourceId: "source_1",
+          sourceRevisionId: testSourceRevisionId,
           type: "workbook",
           workbookId: input.workbookId,
         },

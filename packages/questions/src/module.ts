@@ -6,13 +6,14 @@ import {
   type DraftSourceFilePort,
   type IdGenerator,
   QuestionBlueprintDraftService,
+  type QuestionBlueprintDraftTransactionPort,
   QuestionBlueprintService,
   QuestionGenerationService,
   QuestionGradingService,
   QuestionLibraryService,
   QuestionSetService,
+  SourceArtifactValidationService,
   type WorkbookAccessPort,
-  type WorkbookRegistrationPort,
 } from "./application/index.js";
 import type { RequireIdentity } from "./http/index.js";
 import { questionsRoutes } from "./http/index.js";
@@ -29,7 +30,7 @@ export function createQuestionsModule(deps: {
   customQuestionGraderPort?: CustomQuestionGraderPort;
   workbookAccessPort?: WorkbookAccessPort;
   draftSourceFilePort: DraftSourceFilePort;
-  workbookRegistrationPort: WorkbookRegistrationPort;
+  questionBlueprintDraftTransaction: QuestionBlueprintDraftTransactionPort;
 }) {
   const questionsRepository = new KyselyQuestionsRepository(deps.db.executor);
   const questionGradingService = new QuestionGradingService({
@@ -49,8 +50,8 @@ export function createQuestionsModule(deps: {
     clock: deps.clock,
     draftSourceFilePort: deps.draftSourceFilePort,
     idGenerator: deps.idGenerator,
+    questionBlueprintDraftTransaction: deps.questionBlueprintDraftTransaction,
     questionsRepository,
-    workbookRegistrationPort: deps.workbookRegistrationPort,
   });
   const questionLibraryService = new QuestionLibraryService({
     clock: deps.clock,
@@ -73,6 +74,16 @@ export function createQuestionsModule(deps: {
     questionsRepository,
     workbookAccessPort: deps.workbookAccessPort ?? new DenyWorkbookAccessPort(),
   });
+  const sourceArtifactValidationService = new SourceArtifactValidationService({
+    questionsTransaction: {
+      transaction: (fn) =>
+        deps.db.transaction((tx) =>
+          fn({
+            questionsRepository: new KyselyQuestionsRepository(tx),
+          }),
+        ),
+    },
+  });
 
   const routes = questionsRoutes({
     questionBlueprintDraftService,
@@ -89,6 +100,7 @@ export function createQuestionsModule(deps: {
     questionGenerationService,
     questionLibraryService,
     questionSetService,
+    sourceArtifactValidationService,
     routes,
   };
 }

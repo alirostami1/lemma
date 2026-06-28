@@ -26,6 +26,9 @@ import {
   questionSetDescription,
   questionSetId,
   questionSetName,
+  sourceArtifactId,
+  sourceDocumentId,
+  sourceRevisionId,
   userId,
   workbookId,
 } from "../domain/index.js";
@@ -54,6 +57,15 @@ const setId = questionSetId("019e9315-6a87-715f-9861-8654df076005");
 const runId = questionGenerationRunId("019e9315-6a87-715f-9861-8654df076006");
 const retryRunId = questionGenerationRunId(
   "019e9315-6a87-715f-9861-8654df076007",
+);
+const testSourceDocumentId = sourceDocumentId(
+  "019e9315-6a87-715f-9861-8654df076018",
+);
+const testSourceRevisionId = sourceRevisionId(
+  "019e9315-6a87-715f-9861-8654df076019",
+);
+const testSourceArtifactId = sourceArtifactId(
+  "019e9315-6a87-715f-9861-8654df076020",
 );
 
 const currentUser = {
@@ -250,6 +262,9 @@ function createIds(): IdGenerator {
     },
     questionId: () => questionId("019e9315-6a87-715f-9861-8654df076014"),
     questionSetId: () => setId,
+    sourceArtifactId: () => testSourceArtifactId,
+    sourceDocumentId: () => testSourceDocumentId,
+    sourceRevisionId: () => testSourceRevisionId,
   };
 }
 
@@ -330,12 +345,16 @@ function document(label: string) {
 
 function source(label: string) {
   return {
-    byteSize: null,
-    checksumSha256: null,
-    fileId: null,
+    byteSize: 1024,
+    checksumSha256:
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    fileId: "019e9315-6a87-715f-9861-8654df076021",
     name: `Source ${label}`,
-    originalName: null,
+    originalName: "source.xlsx",
+    sourceArtifactId: testSourceArtifactId,
+    sourceDocumentId: testSourceDocumentId,
     sourceId: "source_1",
+    sourceRevisionId: testSourceRevisionId,
     type: "workbook" as const,
     workbookId: workbookId(
       label === "v1"

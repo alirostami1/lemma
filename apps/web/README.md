@@ -16,7 +16,7 @@ workbooks, generating question sets, and playing or reviewing questions.
 pnpm --filter web dev
 pnpm --filter web build
 pnpm --filter web test
-pnpm --filter web generate:api
+pnpm --filter web generate:client
 ```
 
 ## Generated Files

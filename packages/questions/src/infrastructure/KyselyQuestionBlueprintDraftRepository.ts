@@ -5,8 +5,6 @@ import type {
   QuestionBlueprintDrafts,
   QuestionBlueprintVersions,
 } from "@lemma/db/tables";
-import type { OperationLineage } from "@lemma/domain";
-import type { CurrentUser } from "@lemma/identity/application";
 import type {
   Insertable,
   InsertObject,
@@ -14,20 +12,17 @@ import type {
   UpdateObject,
 } from "kysely";
 import {
-  DraftSourceFileForbiddenError,
-  DraftSourceFileInvalidError,
-  type DraftSourceFileMetadata,
-  DraftSourceKindUnsupportedError,
-  DraftSourceNotFoundError,
   type PublishSourceMaterialization,
   QuestionBlueprintBaseVersionConflictError,
   QuestionBlueprintDraftRevisionConflictError,
 } from "../application/index.js";
 import {
-  attachDraftSourceFile,
   createQuestionBlueprint,
   InvalidQuestionStateTransitionError,
   markQuestionBlueprintDraftPublished,
+  publishableWorkbookDraftSource,
+  publishedWorkbookSourceFromDraft,
+  publishedWorkbookVersionSourceFromDraft,
   type QuestionBlueprint,
   type QuestionBlueprintDraft,
   type QuestionBlueprintDraftId,
@@ -43,6 +38,12 @@ import {
   questionBlueprintVisibility,
   reconstituteQuestionBlueprintDraft,
   reconstituteQuestionBlueprintVersion,
+  type SourceArtifactId,
+  type SourceDocumentId,
+  type SourceRevisionId,
+  sourceArtifactId,
+  sourceDocumentId,
+  sourceRevisionId,
   type UserId,
   updateQuestionBlueprintDefinition,
   updateQuestionBlueprintMetadata,
@@ -71,6 +72,20 @@ export class KyselyQuestionBlueprintDraftRepository {
       .where("id", "=", id)
       .executeTakeFirst();
     return row ? mapRow(row, await listDraftSources(this.db, [row.id])) : null;
+  }
+
+  async findQuestionBlueprintDraftByIdForUpdate(
+    id: QuestionBlueprintDraftId,
+  ): Promise<QuestionBlueprintDraft | null> {
+    return withTransaction(this.db, async (tx) => {
+      const row = await tx
+        .selectFrom("questionBlueprintDrafts")
+        .selectAll()
+        .where("id", "=", id)
+        .forUpdate()
+        .executeTakeFirst();
+      return row ? mapRow(row, await listDraftSources(tx, [row.id])) : null;
+    });
   }
 
   async findActiveQuestionBlueprintDraftByOwnerAndBlueprint(input: {
@@ -163,26 +178,6 @@ export class KyselyQuestionBlueprintDraftRepository {
     );
   }
 
-  async attachQuestionBlueprintDraftSourceFileWithExpectedRevision(input: {
-    currentUser: CurrentUser;
-    draftId: QuestionBlueprintDraftId;
-    expectedRevision: number;
-    file: DraftSourceFileMetadata;
-    lineage: OperationLineage;
-    registeredAt: Date;
-    sourceId: string;
-    registerWorkbookFromFile(input: {
-      currentUser: CurrentUser;
-      fileId: string;
-      lineage: OperationLineage;
-      name: string;
-    }): Promise<{ workbookId: WorkbookId }>;
-  }): Promise<QuestionBlueprintDraft | null> {
-    return withTransaction(this.db, (tx) =>
-      attachQuestionBlueprintDraftSourceFileInTransaction(tx, input),
-    );
-  }
-
   async publishQuestionBlueprintDraft(input: {
     blueprintId: QuestionBlueprintId;
     draftId: QuestionBlueprintDraftId;
@@ -201,118 +196,48 @@ export class KyselyQuestionBlueprintDraftRepository {
       publishQuestionBlueprintDraftInTransaction(tx, input),
     );
   }
-}
 
-async function attachQuestionBlueprintDraftSourceFileInTransaction(
-  db: DatabaseExecutor,
-  input: {
-    currentUser: CurrentUser;
-    draftId: QuestionBlueprintDraftId;
-    expectedRevision: number;
-    file: DraftSourceFileMetadata;
-    lineage: OperationLineage;
-    registeredAt: Date;
-    sourceId: string;
-    registerWorkbookFromFile(input: {
-      currentUser: CurrentUser;
-      fileId: string;
-      lineage: OperationLineage;
-      name: string;
-    }): Promise<{ workbookId: WorkbookId }>;
-  },
-): Promise<QuestionBlueprintDraft | null> {
-  const lockedDraftRow = await db
-    .selectFrom("questionBlueprintDrafts")
-    .selectAll()
-    .where("id", "=", input.draftId)
-    .forUpdate()
-    .executeTakeFirst();
-  if (!lockedDraftRow) return null;
-
-  const lockedDraft = mapRow(
-    lockedDraftRow,
-    await listDraftSources(db, [lockedDraftRow.id]),
-  );
-  if (lockedDraft.ownerUserId !== input.currentUser.user.id) return null;
-  if (lockedDraft.status !== "draft") {
-    throw new InvalidQuestionStateTransitionError(
-      "question blueprint draft cannot change from current state",
-    );
+  async applyWorkbookValidationResultToDraftSources(input: {
+    artifactIds: readonly SourceArtifactId[];
+    draftSourceStatus: "validated" | "invalid";
+    ownerUserId: UserId;
+    updatedAt: Date;
+    workbookId: WorkbookId;
+  }): Promise<number> {
+    if (input.artifactIds.length === 0) {
+      return 0;
+    }
+    const eligibleDraftIds = await this.db
+      .selectFrom("questionBlueprintDrafts")
+      .select("id")
+      .where("ownerUserId", "=", input.ownerUserId)
+      // Background workbook validation can complete while a draft is
+      // publishing, so publishing drafts still receive source-binding
+      // finalization. Published version snapshots remain immutable and are
+      // never updated here.
+      .where("status", "in", ["draft", "publishing"])
+      .execute();
+    if (eligibleDraftIds.length === 0) {
+      return 0;
+    }
+    const result = await this.db
+      .updateTable("questionBlueprintDraftSources")
+      .set({
+        status: input.draftSourceStatus,
+        updatedAt: input.updatedAt,
+      })
+      .where(
+        "draftId",
+        "in",
+        eligibleDraftIds.map((draft) => draft.id),
+      )
+      .where("sourceArtifactId", "in", [...input.artifactIds])
+      .where("workbookId", "=", input.workbookId)
+      .where("status", "=", "uploaded")
+      .returning("sourceId")
+      .execute();
+    return result.length;
   }
-  if (lockedDraft.revision !== input.expectedRevision) {
-    throw new QuestionBlueprintDraftRevisionConflictError();
-  }
-  if (input.file.ownerUserId !== lockedDraft.ownerUserId) {
-    throw new DraftSourceFileForbiddenError(
-      "Draft source file must belong to draft owner.",
-    );
-  }
-  if (
-    input.file.purpose !== "workbook" ||
-    input.file.contentType !==
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-  ) {
-    throw new DraftSourceFileInvalidError(
-      "Draft source file must be an xlsx workbook.",
-    );
-  }
-
-  const source = lockedDraft.sources.find(
-    (candidate) => candidate.sourceId === input.sourceId,
-  );
-  if (!source) throw new DraftSourceNotFoundError();
-  if (source.type !== "workbook") throw new DraftSourceKindUnsupportedError();
-
-  // Intentionally call workbook registration only after the locked revision
-  // check so stale attaches cannot create materialization side effects.
-  const registered = await input.registerWorkbookFromFile({
-    currentUser: input.currentUser,
-    fileId: input.file.fileId,
-    lineage: input.lineage,
-    name: source.name,
-  });
-  const updated = attachDraftSourceFile(
-    lockedDraft,
-    {
-      byteSize: input.file.byteSize,
-      checksumSha256: input.file.checksumSha256,
-      fileId: input.file.fileId,
-      originalName: input.file.originalName,
-      sourceId: input.sourceId,
-      workbookId: workbookId(registered.workbookId),
-    },
-    input.registeredAt,
-  );
-  const row = await db
-    .updateTable("questionBlueprintDrafts")
-    .set(mapUpdate(updated))
-    .where("id", "=", updated.id)
-    .where("revision", "=", input.expectedRevision)
-    .returningAll()
-    .executeTakeFirst();
-  if (!row) throw new QuestionBlueprintDraftRevisionConflictError();
-
-  const updatedSource = updated.sources.find(
-    (candidate) => candidate.sourceId === input.sourceId,
-  );
-  if (!updatedSource) throw new DraftSourceNotFoundError();
-  await db
-    .updateTable("questionBlueprintDraftSources")
-    .set({
-      byteSize:
-        updatedSource.byteSize === null ? null : String(updatedSource.byteSize),
-      checksumSha256: updatedSource.checksumSha256,
-      fileId: updatedSource.fileId,
-      originalName: updatedSource.originalName,
-      status: updatedSource.status,
-      updatedAt: updated.updatedAt,
-      workbookId: updatedSource.workbookId,
-    })
-    .where("draftId", "=", updated.id)
-    .where("sourceId", "=", input.sourceId)
-    .execute();
-
-  return mapRow(row, await listDraftSources(db, [row.id]));
 }
 
 async function publishQuestionBlueprintDraftInTransaction(
@@ -364,6 +289,7 @@ async function publishQuestionBlueprintDraftInTransaction(
   if (lockedDraft.revision !== input.expectedRevision) {
     throw new QuestionBlueprintDraftRevisionConflictError();
   }
+  await assertPublishSourceArtifactsValid(db, input);
 
   const sources = derivePublishedDraftSources(input, lockedDraft);
   const publishedSources = derivePublishedBlueprintSources(
@@ -437,7 +363,15 @@ function derivePublishedDraftSources(
   const lockedById = new Map(
     lockedDraft.sources.map((source) => [source.sourceId, source]),
   );
-  const preparedById = new Map<string, WorkbookId>();
+  const preparedById = new Map<
+    string,
+    {
+      sourceDocumentId: SourceDocumentId;
+      sourceArtifactId: SourceArtifactId;
+      sourceRevisionId: SourceRevisionId;
+      workbookId: WorkbookId;
+    }
+  >();
   for (const prepared of input.sourceMaterialization) {
     if (preparedById.has(prepared.sourceId)) {
       throw new InvalidQuestionStateTransitionError(
@@ -460,19 +394,93 @@ function derivePublishedDraftSources(
         "publish source materialization conflicts with locked draft",
       );
     }
+    if (
+      lockedSource.sourceDocumentId !== prepared.sourceDocumentId ||
+      lockedSource.sourceRevisionId !== prepared.sourceRevisionId ||
+      lockedSource.sourceArtifactId !== prepared.sourceArtifactId
+    ) {
+      throw new InvalidQuestionStateTransitionError(
+        "publish source materialization conflicts with locked draft",
+      );
+    }
 
-    preparedById.set(prepared.sourceId, prepared.workbookId);
+    preparedById.set(prepared.sourceId, prepared);
   }
   return lockedDraft.sources.map((source) => {
-    const workbookId = preparedById.get(source.sourceId);
-    if (workbookId === undefined) return source;
-    if (source.status !== "validated" || source.workbookId !== workbookId) {
+    const prepared = preparedById.get(source.sourceId);
+    if (prepared === undefined) return source;
+    if (
+      source.status !== "validated" ||
+      source.workbookId !== prepared.workbookId ||
+      source.sourceDocumentId !== prepared.sourceDocumentId ||
+      source.sourceRevisionId !== prepared.sourceRevisionId ||
+      source.sourceArtifactId !== prepared.sourceArtifactId
+    ) {
       throw new InvalidQuestionStateTransitionError(
         "publish source materialization conflicts with locked draft",
       );
     }
     return source;
   });
+}
+
+async function assertPublishSourceArtifactsValid(
+  db: DatabaseExecutor,
+  input: {
+    ownerUserId: UserId;
+    sourceMaterialization: readonly PublishSourceMaterialization[];
+  },
+): Promise<void> {
+  if (input.sourceMaterialization.length === 0) return;
+  const rows = await db
+    .selectFrom("sourceArtifacts")
+    .innerJoin(
+      "sourceRevisions",
+      "sourceRevisions.id",
+      "sourceArtifacts.sourceRevisionId",
+    )
+    .innerJoin(
+      "sourceDocuments",
+      "sourceDocuments.id",
+      "sourceRevisions.sourceDocumentId",
+    )
+    .innerJoin("workbooks", "workbooks.id", "sourceArtifacts.workbookId")
+    .select([
+      "sourceArtifacts.id as id",
+      "sourceArtifacts.sourceRevisionId as sourceRevisionId",
+      "sourceArtifacts.ownerUserId as artifactOwnerUserId",
+      "sourceArtifacts.status as artifactStatus",
+      "sourceArtifacts.workbookId as workbookId",
+      "sourceDocuments.ownerUserId as sourceDocumentOwnerUserId",
+      "sourceRevisions.sourceDocumentId as sourceDocumentId",
+      "workbooks.ownerUserId as workbookOwnerUserId",
+      "workbooks.status as workbookStatus",
+    ])
+    .where(
+      "sourceArtifacts.id",
+      "in",
+      input.sourceMaterialization.map((source) => source.sourceArtifactId),
+    )
+    .execute();
+  const rowById = new Map(rows.map((row) => [row.id, row]));
+  for (const source of input.sourceMaterialization) {
+    const row = rowById.get(source.sourceArtifactId);
+    if (
+      !row ||
+      row.artifactOwnerUserId !== input.ownerUserId ||
+      row.sourceDocumentOwnerUserId !== input.ownerUserId ||
+      row.workbookOwnerUserId !== input.ownerUserId ||
+      row.sourceDocumentId !== source.sourceDocumentId ||
+      row.sourceRevisionId !== source.sourceRevisionId ||
+      row.workbookId !== source.workbookId ||
+      row.artifactStatus !== "valid" ||
+      row.workbookStatus !== "valid"
+    ) {
+      throw new InvalidQuestionStateTransitionError(
+        "publish source materialization does not match locked draft",
+      );
+    }
+  }
 }
 
 function derivePublishedBlueprintSources(
@@ -487,21 +495,14 @@ function derivePublishedBlueprintSources(
   );
   return usedIds.map((sourceId) => {
     const source = sourcesById.get(sourceId);
-    if (source?.status !== "validated" || source.workbookId === null) {
+    if (!source) {
       throw new InvalidQuestionStateTransitionError(
         "publish source materialization does not match locked draft",
       );
     }
-    return {
-      byteSize: source.byteSize,
-      checksumSha256: source.checksumSha256,
-      fileId: source.fileId,
-      name: source.name,
-      originalName: source.originalName,
-      sourceId,
-      type: "workbook" as const,
-      workbookId: source.workbookId,
-    };
+    return publishedWorkbookSourceFromDraft(
+      publishableWorkbookDraftSource(source),
+    );
   });
 }
 
@@ -514,23 +515,11 @@ function derivePublishedVersionSources(
   );
   return sources
     .filter((source) => usedIds.has(source.sourceId))
-    .map((source) => {
-      if (source.status !== "validated" || source.workbookId === null) {
-        throw new InvalidQuestionStateTransitionError(
-          "publish source materialization does not match locked draft",
-        );
-      }
-      return {
-        byteSize: source.byteSize,
-        checksumSha256: source.checksumSha256,
-        fileId: source.fileId,
-        name: source.name,
-        originalName: source.originalName,
-        sourceId: source.sourceId,
-        type: "workbook" as const,
-        workbookId: source.workbookId,
-      };
-    });
+    .map((source) =>
+      publishedWorkbookVersionSourceFromDraft(
+        publishableWorkbookDraftSource(source),
+      ),
+    );
 }
 
 async function publishNewBlueprintDraft(
@@ -796,7 +785,10 @@ async function replaceDraftSources(
       fileId: source.fileId,
       name: source.name,
       originalName: source.originalName,
+      sourceArtifactId: source.sourceArtifactId ?? null,
+      sourceDocumentId: source.sourceDocumentId ?? null,
       sourceId: source.sourceId,
+      sourceRevisionId: source.sourceRevisionId ?? null,
       status: source.status,
       type: source.type,
       updatedAt: draft.updatedAt,
@@ -813,6 +805,9 @@ async function replaceDraftSources(
         fileId: eb.ref("excluded.fileId"),
         name: eb.ref("excluded.name"),
         originalName: eb.ref("excluded.originalName"),
+        sourceArtifactId: eb.ref("excluded.sourceArtifactId"),
+        sourceDocumentId: eb.ref("excluded.sourceDocumentId"),
+        sourceRevisionId: eb.ref("excluded.sourceRevisionId"),
         status: eb.ref("excluded.status"),
         type: eb.ref("excluded.type"),
         updatedAt: eb.ref("excluded.updatedAt"),
@@ -831,7 +826,16 @@ function mapDraftSourceRow(
     fileId: row.fileId,
     name: row.name,
     originalName: row.originalName,
+    sourceArtifactId: row.sourceArtifactId
+      ? sourceArtifactId(row.sourceArtifactId)
+      : null,
+    sourceDocumentId: row.sourceDocumentId
+      ? sourceDocumentId(row.sourceDocumentId)
+      : null,
     sourceId: row.sourceId,
+    sourceRevisionId: row.sourceRevisionId
+      ? sourceRevisionId(row.sourceRevisionId)
+      : null,
     status: row.status as QuestionBlueprintDraftSource["status"],
     type: "workbook",
     workbookId: row.workbookId === null ? null : workbookId(row.workbookId),

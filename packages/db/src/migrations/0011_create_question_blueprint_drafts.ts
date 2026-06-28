@@ -136,6 +136,9 @@ export async function up(db: MigrationDb): Promise<void> {
     .addColumn("type", "text", (c) => c.notNull())
     .addColumn("name", "text", (c) => c.notNull())
     .addColumn("file_id", "uuid")
+    .addColumn("source_document_id", "uuid")
+    .addColumn("source_revision_id", "uuid")
+    .addColumn("source_artifact_id", "uuid")
     .addColumn("workbook_id", "uuid")
     .addColumn("original_name", "text")
     .addColumn("byte_size", "bigint")
@@ -175,6 +178,30 @@ export async function up(db: MigrationDb): Promise<void> {
       "question_blueprint_draft_sources_checksum_check",
       sql`checksum_sha256 is null or checksum_sha256 ~ '^[a-f0-9]{64}$'`,
     )
+    .addCheckConstraint(
+      "question_blueprint_draft_sources_materialization_completeness_check",
+      sql`(
+          status = 'local'
+          and file_id is null
+          and source_document_id is null
+          and source_revision_id is null
+          and source_artifact_id is null
+          and workbook_id is null
+          and original_name is null
+          and byte_size is null
+          and checksum_sha256 is null
+        ) or (
+          status in ('uploaded', 'validated', 'invalid')
+          and file_id is not null
+          and source_document_id is not null
+          and source_revision_id is not null
+          and source_artifact_id is not null
+          and workbook_id is not null
+          and original_name is not null
+          and byte_size is not null
+          and checksum_sha256 is not null
+        )`,
+    )
     .addForeignKeyConstraint(
       "question_blueprint_draft_sources_draft_id_foreign",
       ["draft_id"],
@@ -187,6 +214,27 @@ export async function up(db: MigrationDb): Promise<void> {
       ["file_id"],
       "files",
       ["id"],
+      (cb) => cb.onDelete("restrict"),
+    )
+    .addForeignKeyConstraint(
+      "question_blueprint_draft_sources_source_document_id_foreign",
+      ["source_document_id"],
+      "source_documents",
+      ["id"],
+      (cb) => cb.onDelete("restrict"),
+    )
+    .addForeignKeyConstraint(
+      "question_blueprint_draft_sources_source_revision_document_foreign",
+      ["source_revision_id", "source_document_id"],
+      "source_revisions",
+      ["id", "source_document_id"],
+      (cb) => cb.onDelete("restrict"),
+    )
+    .addForeignKeyConstraint(
+      "question_blueprint_draft_sources_source_artifact_revision_foreign",
+      ["source_artifact_id", "source_revision_id"],
+      "source_artifacts",
+      ["id", "source_revision_id"],
       (cb) => cb.onDelete("restrict"),
     )
     .addForeignKeyConstraint(

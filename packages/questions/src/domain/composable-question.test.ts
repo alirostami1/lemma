@@ -11,12 +11,24 @@ import {
   questionBlueprintVisibility,
   questionSourceEvidence,
   reconstituteQuestionBlueprint,
+  sourceArtifactId,
+  sourceDocumentId,
+  sourceRevisionId,
   userId,
   workbookId,
 } from "./index.js";
 
 const ownerUserId = userId("019e9315-6a87-715f-9861-8654df070c01");
 const evidenceWorkbookId = workbookId("019e9315-6a87-715f-9861-8654df070c02");
+const evidenceSourceDocumentId = sourceDocumentId(
+  "019e9315-6a87-715f-9861-8654df070c08",
+);
+const evidenceSourceRevisionId = sourceRevisionId(
+  "019e9315-6a87-715f-9861-8654df070c09",
+);
+const evidenceSourceArtifactId = sourceArtifactId(
+  "019e9315-6a87-715f-9861-8654df070c10",
+);
 const createdAt = new Date("2026-01-01T00:00:00.000Z");
 
 describe("composable question canonical model", () => {
@@ -231,12 +243,16 @@ function documentWithWorkbookReference(sourceId: string) {
 
 function workbookSource(sourceId: string) {
   return {
-    byteSize: null,
-    checksumSha256: null,
-    fileId: null,
+    byteSize: 1234,
+    checksumSha256:
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    fileId: "019e9315-6a87-715f-9861-8654df070cb3",
     name: "Source 1",
-    originalName: null,
+    originalName: "source-1.xlsx",
+    sourceArtifactId: evidenceSourceArtifactId,
+    sourceDocumentId: evidenceSourceDocumentId,
     sourceId,
+    sourceRevisionId: evidenceSourceRevisionId,
     type: "workbook" as const,
     workbookId: evidenceWorkbookId,
   };

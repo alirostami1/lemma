@@ -1,7 +1,6 @@
 import { instrumentService } from "@lemma/observability";
 import {
   assertWorkbookFileMetadata,
-  createWorkbook as createWorkbookDomain,
   deleteWorkbook as deleteWorkbookDomain,
   markWorkbookInvalid,
   markWorkbookValid,
@@ -10,6 +9,7 @@ import {
   workbookId as toWorkbookId,
   updateWorkbook as updateWorkbookDomain,
   type Workbook,
+  type WorkbookEngineName,
   workbookStatus,
 } from "../domain/index.js";
 import type {
@@ -19,6 +19,7 @@ import type {
   ValidateWorkbookCommand,
   WorkbookByIdCommand,
 } from "./commands.js";
+import { createWorkbookForFile } from "./createWorkbookForFile.js";
 import type { WorkbookResult, WorkbooksResult } from "./dto.js";
 import {
   ForbiddenWorkbookActionError,
@@ -59,6 +60,7 @@ export class WorkbookService {
       workbookTransaction: WorkbookTransactionPort;
       workbookFileProvider: WorkbookFileProviderPort;
       workbookCalculator: WorkbookCalculator;
+      workbookEngine: WorkbookEngineName;
       idGenerator: IdGenerator;
       clock: Clock;
     },
@@ -117,19 +119,19 @@ export class WorkbookService {
       if (existing) {
         return { workbook: existing };
       }
-      const workbook = createWorkbookDomain(
-        {
-          checksumSha256: file.checksumSha256,
-          createdByUserId: command.currentUser.user.id,
-          engine: "libreoffice",
-          fileId: file.fileId,
-          id: this.deps.idGenerator.workbookId(),
-          name: command.name,
-          originalName: file.originalName,
-          ownerUserId: command.currentUser.user.id,
-        },
-        this.deps.clock.now(),
-      );
+      const workbook = createWorkbookForFile({
+        at: this.deps.clock.now(),
+        byteSize: file.byteSize,
+        checksumSha256: file.checksumSha256,
+        contentType: file.contentType,
+        createdByUserId: command.currentUser.user.id,
+        engine: this.deps.workbookEngine,
+        fileId: file.fileId,
+        id: this.deps.idGenerator.workbookId(),
+        name: command.name,
+        originalName: file.originalName,
+        ownerUserId: command.currentUser.user.id,
+      });
       const created = await this.deps.workbookTransaction.transaction(
         async ({ workbookRepository, outboxRepository }) => {
           const persisted = await workbookRepository.createWorkbook(workbook);

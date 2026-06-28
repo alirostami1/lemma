@@ -1,4 +1,5 @@
 import type { DatabaseExecutor } from "@lemma/db";
+import { WorkbookRepositoryDataError } from "../application/errors.js";
 import type {
   FileId,
   UserId,
@@ -67,6 +68,39 @@ export class KyselyWorkbookCatalogRepository {
       .returningAll()
       .executeTakeFirstOrThrow();
     return mapWorkbookRowToDomain(row);
+  }
+
+  async createWorkbookIfAbsentByOwnerAndFile(input: {
+    workbook: Workbook;
+  }): Promise<{
+    workbook: Workbook;
+    created: boolean;
+  }> {
+    const inserted = await this.db
+      .insertInto("workbooks")
+      .values(mapWorkbookToInsert(input.workbook))
+      .onConflict((conflict) =>
+        conflict.columns(["ownerUserId", "fileId"]).doNothing(),
+      )
+      .returningAll()
+      .executeTakeFirst();
+    if (inserted) {
+      return {
+        created: true,
+        workbook: mapWorkbookRowToDomain(inserted),
+      };
+    }
+
+    const existing = await this.findWorkbookByOwnerUserIdAndFileId({
+      fileId: input.workbook.fileId,
+      ownerUserId: input.workbook.ownerUserId,
+    });
+    if (!existing) {
+      throw new WorkbookRepositoryDataError(
+        "Workbook owner/file registration conflicted but no persisted workbook was found.",
+      );
+    }
+    return { created: false, workbook: existing };
   }
 
   async updateWorkbook(workbook: Workbook): Promise<Workbook | null> {

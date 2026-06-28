@@ -32,9 +32,11 @@ export {
 export type { Workbook } from "./workbook.js";
 export {
   archiveWorkbook,
+  assertWorkbookChecksumSha256,
   assertWorkbookFileMetadata,
   assertWorkbookIsUsable,
   createWorkbook,
+  createWorkbookFromFile,
   deleteWorkbook,
   markWorkbookInvalid,
   markWorkbookValid,

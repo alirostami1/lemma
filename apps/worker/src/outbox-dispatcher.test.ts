@@ -15,6 +15,8 @@ import type { NotificationProjector } from "@lemma/notifications/application";
 import {
   WORKBOOK_CALCULATION_REQUESTED_EVENT,
   WORKBOOK_CALCULATION_SUCCEEDED_EVENT,
+  WORKBOOK_VALIDATION_FAILED_EVENT,
+  WORKBOOK_VALIDATION_SUCCEEDED_EVENT,
 } from "@lemma/workbook/domain";
 import { OutboxPollingDispatcher } from "./outbox-dispatcher.js";
 
@@ -32,6 +34,8 @@ describe("OutboxPollingDispatcher", () => {
     ]);
     const jobDispatcher = new FakeJobDispatcher();
     const notificationProjector = new FakeNotificationProjector();
+    const sourceArtifactValidationService =
+      new FakeSourceArtifactValidationService();
     const dispatcher = new OutboxPollingDispatcher({
       clock: { now: () => at },
       config: {
@@ -48,6 +52,7 @@ describe("OutboxPollingDispatcher", () => {
       notificationProjector:
         notificationProjector as unknown as NotificationProjector,
       outboxService: outboxService as unknown as OutboxService,
+      sourceArtifactValidationService,
     });
 
     assert.equal(await dispatcher.runOnce(), 1);
@@ -67,6 +72,8 @@ describe("OutboxPollingDispatcher", () => {
       createWorkbookCalculationSucceededEventWithoutSources(),
     ]);
     const jobDispatcher = new FakeJobDispatcher();
+    const sourceArtifactValidationService =
+      new FakeSourceArtifactValidationService();
     const dispatcher = new OutboxPollingDispatcher({
       clock: { now: () => at },
       config: {
@@ -83,6 +90,7 @@ describe("OutboxPollingDispatcher", () => {
       notificationProjector:
         new FakeNotificationProjector() as unknown as NotificationProjector,
       outboxService: outboxService as unknown as OutboxService,
+      sourceArtifactValidationService,
     });
 
     assert.equal(await dispatcher.runOnce(), 1);
@@ -94,6 +102,123 @@ describe("OutboxPollingDispatcher", () => {
       },
     ]);
     assert.equal(outboxService.failedCalls.length, 0);
+  });
+
+  it("applies workbook validation succeeded events to source artifacts", async () => {
+    const outboxService = new FakeOutboxService([
+      {
+        ...createWorkbookValidationSucceededEvent(),
+        createdAt: new Date("2026-06-21T00:00:00.000Z"),
+      },
+    ]);
+    const sourceArtifactValidationService =
+      new FakeSourceArtifactValidationService();
+    const dispatcher = new OutboxPollingDispatcher({
+      clock: { now: () => at },
+      config: {
+        batchSize: 1,
+        lockTimeoutMs: 10_000,
+        maxAttempts: 3,
+        pollIntervalMs: 1_000,
+        queueRetryDelaySeconds: 15,
+        queueRetryLimit: 10,
+        retryDelayMs: 30_000,
+        workerId: "worker-1",
+      },
+      jobDispatcher: new FakeJobDispatcher() as unknown as JobDispatcher,
+      notificationProjector:
+        new FakeNotificationProjector() as unknown as NotificationProjector,
+      outboxService: outboxService as unknown as OutboxService,
+      sourceArtifactValidationService,
+    });
+
+    assert.equal(await dispatcher.runOnce(), 1);
+    assert.deepEqual(sourceArtifactValidationService.calls, [
+      {
+        occurredAt: new Date("2026-06-21T00:00:00.000Z"),
+        ownerUserId: "019e9315-6a87-715f-9861-8654df090009",
+        status: "valid",
+        validationError: null,
+        workbookId: "019e9315-6a87-715f-9861-8654df090005",
+      },
+    ]);
+  });
+
+  it("applies workbook validation failed events to source artifacts", async () => {
+    const outboxService = new FakeOutboxService([
+      {
+        ...createWorkbookValidationFailedEvent(),
+        createdAt: new Date("2026-06-22T00:00:00.000Z"),
+      },
+    ]);
+    const sourceArtifactValidationService =
+      new FakeSourceArtifactValidationService();
+    const dispatcher = new OutboxPollingDispatcher({
+      clock: { now: () => at },
+      config: {
+        batchSize: 1,
+        lockTimeoutMs: 10_000,
+        maxAttempts: 3,
+        pollIntervalMs: 1_000,
+        queueRetryDelaySeconds: 15,
+        queueRetryLimit: 10,
+        retryDelayMs: 30_000,
+        workerId: "worker-1",
+      },
+      jobDispatcher: new FakeJobDispatcher() as unknown as JobDispatcher,
+      notificationProjector:
+        new FakeNotificationProjector() as unknown as NotificationProjector,
+      outboxService: outboxService as unknown as OutboxService,
+      sourceArtifactValidationService,
+    });
+
+    assert.equal(await dispatcher.runOnce(), 1);
+    assert.deepEqual(sourceArtifactValidationService.calls, [
+      {
+        occurredAt: new Date("2026-06-22T00:00:00.000Z"),
+        ownerUserId: "019e9315-6a87-715f-9861-8654df090009",
+        status: "invalid",
+        validationError: "bad workbook",
+        workbookId: "019e9315-6a87-715f-9861-8654df090005",
+      },
+    ]);
+  });
+
+  it("records no-op workbook validation projections as processed", async () => {
+    const outboxService = new FakeOutboxService([
+      createWorkbookValidationSucceededEvent(),
+    ]);
+    const sourceArtifactValidationService =
+      new FakeSourceArtifactValidationService({
+        finalizedArtifactCount: 0,
+        updatedDraftSourceCount: 0,
+      });
+    const dispatcher = new OutboxPollingDispatcher({
+      clock: { now: () => at },
+      config: {
+        batchSize: 1,
+        lockTimeoutMs: 10_000,
+        maxAttempts: 3,
+        pollIntervalMs: 1_000,
+        queueRetryDelaySeconds: 15,
+        queueRetryLimit: 10,
+        retryDelayMs: 30_000,
+        workerId: "worker-1",
+      },
+      jobDispatcher: new FakeJobDispatcher() as unknown as JobDispatcher,
+      notificationProjector:
+        new FakeNotificationProjector() as unknown as NotificationProjector,
+      outboxService: outboxService as unknown as OutboxService,
+      sourceArtifactValidationService,
+    });
+
+    assert.equal(await dispatcher.runOnce(), 1);
+    assert.deepEqual(outboxService.recordProcessedEventCalls, [
+      {
+        consumer: "apply-workbook-validation-result",
+        eventId: "019e9315-6a87-715f-9861-8654df090010",
+      },
+    ]);
   });
 });
 
@@ -139,6 +264,52 @@ function createWorkbookCalculationSucceededEventWithoutSources(): OutboxEvent {
   );
 }
 
+function createWorkbookValidationSucceededEvent(): OutboxEvent {
+  return outboxEventFromEnvelope(
+    domainEventEnvelope({
+      aggregate: {
+        id: aggregateId("019e9315-6a87-715f-9861-8654df090005"),
+        type: aggregateType("workbook"),
+      },
+      id: eventId("019e9315-6a87-715f-9861-8654df090010"),
+      lineage,
+      occurredAt: at,
+      ownerUserId: "019e9315-6a87-715f-9861-8654df090009",
+      payload: {
+        engineVersion: "1.0.0",
+        status: "valid",
+        validationError: null,
+        workbookId: "019e9315-6a87-715f-9861-8654df090005",
+      },
+      schemaVersion: 1,
+      type: WORKBOOK_VALIDATION_SUCCEEDED_EVENT,
+    }),
+  );
+}
+
+function createWorkbookValidationFailedEvent(): OutboxEvent {
+  return outboxEventFromEnvelope(
+    domainEventEnvelope({
+      aggregate: {
+        id: aggregateId("019e9315-6a87-715f-9861-8654df090005"),
+        type: aggregateType("workbook"),
+      },
+      id: eventId("019e9315-6a87-715f-9861-8654df090011"),
+      lineage,
+      occurredAt: at,
+      ownerUserId: "019e9315-6a87-715f-9861-8654df090009",
+      payload: {
+        engineVersion: "1.0.0",
+        status: "invalid",
+        validationError: "bad workbook",
+        workbookId: "019e9315-6a87-715f-9861-8654df090005",
+      },
+      schemaVersion: 1,
+      type: WORKBOOK_VALIDATION_FAILED_EVENT,
+    }),
+  );
+}
+
 class FakeOutboxService {
   readonly failedCalls: Array<{
     eventId: string;
@@ -146,6 +317,10 @@ class FakeOutboxService {
     retryAt: Date | undefined;
   }> = [];
   readonly publishedCalls: string[] = [];
+  readonly recordProcessedEventCalls: Array<{
+    consumer: string;
+    eventId: string;
+  }> = [];
 
   constructor(private readonly events: OutboxEvent[]) {}
 
@@ -195,6 +370,7 @@ class FakeOutboxService {
   }
 
   async recordProcessedEvent(_input: { eventId: string; consumer: string }) {
+    this.recordProcessedEventCalls.push(_input);
     return {
       processedEvent: {
         consumer: _input.consumer,
@@ -281,5 +457,36 @@ class FakeNotificationProjector {
   async publishOutboxEvent(_event: OutboxEvent): Promise<number> {
     this.publishCalls += 1;
     return 0;
+  }
+}
+
+class FakeSourceArtifactValidationService {
+  readonly calls: Array<{
+    workbookId: string;
+    ownerUserId: string;
+    status: "valid" | "invalid";
+    validationError: string | null;
+    occurredAt: Date;
+  }> = [];
+
+  constructor(
+    private readonly result: {
+      finalizedArtifactCount: number;
+      updatedDraftSourceCount: number;
+    } = {
+      finalizedArtifactCount: 1,
+      updatedDraftSourceCount: 1,
+    },
+  ) {}
+
+  async applyWorkbookValidationResult(input: {
+    workbookId: string;
+    ownerUserId: string;
+    status: "valid" | "invalid";
+    validationError: string | null;
+    occurredAt: Date;
+  }) {
+    this.calls.push(input);
+    return this.result;
   }
 }

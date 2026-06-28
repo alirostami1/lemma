@@ -14,11 +14,12 @@ describe("saved blueprints view model", () => {
       createBlueprint({
         sources: [
           {
-            byteSize: null,
-            checksumSha256: null,
-            fileId: null,
+            byteSize: 1024,
+            checksumSha256:
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            fileId: "file_1",
             name: "Source 1",
-            originalName: null,
+            originalName: "source-1.xlsx",
             sourceId: "source_1",
             type: "workbook",
             workbookId: "workbook_1",

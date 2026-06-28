@@ -14,6 +14,9 @@ import {
   questionGenerationRunId as toQuestionGenerationRunId,
   questionId as toQuestionId,
   questionSetId as toQuestionSetId,
+  sourceArtifactId as toSourceArtifactId,
+  sourceDocumentId as toSourceDocumentId,
+  sourceRevisionId as toSourceRevisionId,
 } from "@lemma/questions/domain";
 import type { IdGenerator as WorkbookIdGenerator } from "@lemma/workbook/application";
 import {
@@ -52,6 +55,9 @@ export function createIdGenerators(): ApiIdGenerators {
       questionBlueprintDraftId: () => toQuestionBlueprintDraftId(uuidv7()),
       questionId: () => toQuestionId(uuidv7()),
       questionGenerationRunId: () => toQuestionGenerationRunId(uuidv7()),
+      sourceArtifactId: () => toSourceArtifactId(uuidv7()),
+      sourceDocumentId: () => toSourceDocumentId(uuidv7()),
+      sourceRevisionId: () => toSourceRevisionId(uuidv7()),
       eventId: () => toEventId(uuidv7()),
     },
   };

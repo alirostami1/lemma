@@ -149,7 +149,10 @@ export interface QuestionBlueprintDraftSources {
   fileId: string | null;
   name: string;
   originalName: string | null;
+  sourceArtifactId: string | null;
+  sourceDocumentId: string | null;
   sourceId: string;
+  sourceRevisionId: string | null;
   status: Generated<string>;
   type: string;
   updatedAt: Generated<Timestamp>;
@@ -196,13 +199,16 @@ export interface QuestionBlueprintVersions {
 
 export interface QuestionBlueprintVersionSources {
   blueprintVersionId: string;
-  byteSize: Int8 | null;
-  checksumSha256: string | null;
+  byteSize: Int8;
+  checksumSha256: string;
   createdAt: Generated<Timestamp>;
-  fileId: string | null;
+  fileId: string;
   name: string;
-  originalName: string | null;
+  originalName: string;
+  sourceArtifactId: string;
+  sourceDocumentId: string;
   sourceId: string;
+  sourceRevisionId: string;
   type: string;
   workbookId: string;
 }
@@ -282,6 +288,48 @@ export interface Roles {
   key: string;
   name: string;
   updatedAt: Generated<Timestamp>;
+}
+
+export interface SourceArtifacts {
+  artifactMetadata: Generated<Json>;
+  createdAt: Generated<Timestamp>;
+  id: Generated<string>;
+  kind: string;
+  ownerUserId: string;
+  processor: string;
+  processorVersion: string;
+  sourceRevisionId: string;
+  status: Generated<string>;
+  updatedAt: Generated<Timestamp>;
+  validationError: Json | null;
+  workbookId: string | null;
+}
+
+export interface SourceDocuments {
+  createdAt: Generated<Timestamp>;
+  currentRevisionId: string | null;
+  deletedAt: Timestamp | null;
+  id: Generated<string>;
+  kind: string;
+  name: string;
+  ownerUserId: string;
+  status: Generated<string>;
+  updatedAt: Generated<Timestamp>;
+}
+
+export interface SourceRevisions {
+  byteSize: Int8;
+  checksumSha256: string;
+  contentType: string;
+  createdAt: Generated<Timestamp>;
+  createdByUserId: string;
+  editorMetadata: Generated<Json>;
+  fileId: string | null;
+  id: Generated<string>;
+  kind: string;
+  ownerUserId: string;
+  parentRevisionId: string | null;
+  sourceDocumentId: string;
 }
 
 export interface UserRoles {
@@ -374,6 +422,9 @@ export interface DB {
   questionSets: QuestionSets;
   questions: Questions;
   roles: Roles;
+  sourceArtifacts: SourceArtifacts;
+  sourceDocuments: SourceDocuments;
+  sourceRevisions: SourceRevisions;
   userRoles: UserRoles;
   users: Users;
   workbookCalculationSources: WorkbookCalculationSources;

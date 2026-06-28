@@ -1,7 +1,9 @@
 import type { DatabasePort } from "@lemma/db";
+import { createKyselyOutboxRepository } from "@lemma/events/infrastructure";
 import type { WorkbookEngineConfig } from "@lemma/workbook-engine/domain";
 import {
   type Clock,
+  DraftSourceWorkbookRegistrationService,
   type IdGenerator,
   mapWorkbookFileProviderErrors,
   WorkbookAccessAdapter,
@@ -37,6 +39,7 @@ export function createWorkbookModule(deps: {
     clock: deps.clock,
     idGenerator: deps.idGenerator,
     workbookCalculator,
+    workbookEngine: deps.workbookConfig.engine,
     workbookFileProvider,
     workbookRepository,
     workbookTransaction,
@@ -91,6 +94,18 @@ export function createWorkbookModule(deps: {
   });
 
   return {
+    createDraftSourceWorkbookRegistrationPortForTransaction(
+      tx: DatabasePort["executor"],
+    ) {
+      return new DraftSourceWorkbookRegistrationService({
+        clock: deps.clock,
+        eventId: () => deps.idGenerator.eventId(),
+        outboxRepository: createKyselyOutboxRepository(tx),
+        workbookEngine: deps.workbookConfig.engine,
+        workbookId: () => deps.idGenerator.workbookId(),
+        workbookRepository: new KyselyWorkbookRepository(tx),
+      });
+    },
     routes,
     workbookAccessPort,
     workbookCalculationPort,

@@ -1,13 +1,12 @@
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createDatabaseConfig } from "@lemma/config";
+import type { MigrationResultSet } from "kysely";
 import {
-  FileMigrationProvider,
-  type MigrationResultSet,
-  Migrator,
-} from "kysely";
-import { closeDatabase, createDatabase } from "./index.js";
+  closeDatabase,
+  createDatabase,
+  createDatabaseMigrator,
+} from "./index.js";
 
 const command = process.argv[2] ?? "latest";
 const config = createDatabaseConfig();
@@ -23,14 +22,7 @@ async function runMigrations() {
   const currentDir = path.dirname(fileURLToPath(import.meta.url));
   const migrationFolder = path.join(currentDir, "migrations");
   console.log("applying migrations from folder: ", migrationFolder);
-  const migrator = new Migrator({
-    db,
-    provider: new FileMigrationProvider({
-      fs,
-      migrationFolder,
-      path,
-    }),
-  });
+  const migrator = createDatabaseMigrator(db);
 
   let result: MigrationResultSet;
   switch (command) {

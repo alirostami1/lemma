@@ -40,10 +40,10 @@ export type QuestionBlueprintWorkbookSource = {
 };
 
 export type QuestionBlueprintVersionSource = QuestionBlueprintWorkbookSource & {
-  fileId: string | null;
-  originalName: string | null;
-  byteSize: number | null;
-  checksumSha256: string | null;
+  fileId: string;
+  originalName: string;
+  byteSize: number;
+  checksumSha256: string;
 };
 
 export type QuestionBlueprintDraftSource = {

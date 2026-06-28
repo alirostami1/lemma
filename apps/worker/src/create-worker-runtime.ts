@@ -13,6 +13,7 @@ import { NotificationProjector } from "@lemma/notifications/application";
 import { CentrifugoRealtimePublisher } from "@lemma/notifications/infrastructure";
 import {
   QuestionGenerationWorkerService,
+  SourceArtifactValidationService,
   WorkbookQuestionValueResolverAdapter,
 } from "@lemma/questions/application";
 import {
@@ -22,6 +23,11 @@ import {
   questionGenerationRunId as toQuestionGenerationRunId,
   questionId as toQuestionId,
   questionSetId as toQuestionSetId,
+  userId as toQuestionUserId,
+  workbookId as toQuestionWorkbookId,
+  sourceArtifactId as toSourceArtifactId,
+  sourceDocumentId as toSourceDocumentId,
+  sourceRevisionId as toSourceRevisionId,
 } from "@lemma/questions/domain";
 import { KyselyQuestionsRepository } from "@lemma/questions/infrastructure";
 import {
@@ -167,6 +173,9 @@ export function createWorkerRuntime(
       questionGenerationRunId: () => toQuestionGenerationRunId(uuidv7()),
       questionId: () => toQuestionId(uuidv7()),
       questionSetId: () => toQuestionSetId(uuidv7()),
+      sourceArtifactId: () => toSourceArtifactId(uuidv7()),
+      sourceDocumentId: () => toSourceDocumentId(uuidv7()),
+      sourceRevisionId: () => toSourceRevisionId(uuidv7()),
     },
     questionGenerationTransaction: {
       transaction: (fn) =>
@@ -186,6 +195,16 @@ export function createWorkerRuntime(
     workbookCalculationPort: workbookModule.workbookCalculationPort,
     workbookSnapshotReadPort: workbookModule.workbookSnapshotReadPort,
   });
+  const sourceArtifactValidationService = new SourceArtifactValidationService({
+    questionsTransaction: {
+      transaction: (fn) =>
+        database.transaction((tx) =>
+          fn({
+            questionsRepository: new KyselyQuestionsRepository(tx),
+          }),
+        ),
+    },
+  });
   const outboxDispatcher = new OutboxPollingDispatcher({
     clock,
     config: {
@@ -201,6 +220,16 @@ export function createWorkerRuntime(
     jobDispatcher,
     notificationProjector,
     outboxService,
+    sourceArtifactValidationService: {
+      applyWorkbookValidationResult: (input) =>
+        sourceArtifactValidationService.applyWorkbookValidationResult({
+          occurredAt: input.occurredAt,
+          ownerUserId: toQuestionUserId(input.ownerUserId),
+          status: input.status,
+          validationError: input.validationError,
+          workbookId: toQuestionWorkbookId(input.workbookId),
+        }),
+    },
   });
   const outboxCleanupScheduler = new OutboxCleanupScheduler({
     config: config.outboxCleanup,

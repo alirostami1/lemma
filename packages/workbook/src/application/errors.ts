@@ -75,6 +75,13 @@ export class WorkbookRepositoryFailureError extends WorkbookApplicationError {
   }
 }
 
+export class WorkbookRepositoryDataError extends WorkbookApplicationError {
+  readonly applicationCode = "WORKBOOK_REPOSITORY_DATA_ERROR";
+  constructor(message = "workbook repository data is invalid") {
+    super(message);
+  }
+}
+
 export class WorkbookEngineFailureError extends WorkbookApplicationError {
   readonly applicationCode = "WORKBOOK_ENGINE_FAILURE";
   constructor(

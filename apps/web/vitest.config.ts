@@ -80,6 +80,11 @@ export default defineConfig({
   ],
   test: {
     environment: "jsdom",
+    environmentOptions: {
+      jsdom: {
+        url: "http://localhost:3000/",
+      },
+    },
     setupFiles: ["./src/test/setup-env.ts", "./src/test/setup.ts"],
   },
 });
