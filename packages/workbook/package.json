@@ -60,6 +60,7 @@
     "@lemma/domain": "workspace:*",
     "@lemma/error": "workspace:*",
     "@lemma/events": "workspace:*",
+    "@lemma/files": "workspace:*",
     "@lemma/http": "workspace:*",
     "@lemma/identity": "workspace:*",
     "@lemma/observability": "workspace:*",

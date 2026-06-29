@@ -2,7 +2,10 @@ import type { DatabaseExecutor } from "@lemma/db";
 import type { Files, FileUploads } from "@lemma/db/tables";
 import type { JsonObject } from "@lemma/domain";
 import type { Insertable, Selectable, Updateable } from "kysely";
-import type { FilesRepository } from "../application/index.js";
+import type {
+  FilesRepository,
+  ProtectedFileReferenceCounts,
+} from "../application/index.js";
 import {
   type File,
   type FileId,
@@ -57,6 +60,16 @@ export class KyselyFilesRepository implements FilesRepository {
     return row ? mapFileRowToDomain(row) : null;
   }
 
+  async findFileByIdForUpdate(fileId: FileId): Promise<File | null> {
+    const row = await this.db
+      .selectFrom("files")
+      .selectAll()
+      .where("id", "=", fileId)
+      .forUpdate()
+      .executeTakeFirst();
+    return row ? mapFileRowToDomain(row) : null;
+  }
+
   async findFileByUploadId(uploadId: FileUploadId): Promise<File | null> {
     const row = await this.db
       .selectFrom("files")
@@ -65,6 +78,182 @@ export class KyselyFilesRepository implements FilesRepository {
       .executeTakeFirst();
 
     return row ? mapFileRowToDomain(row) : null;
+  }
+
+  async countProtectedFileReferences(
+    fileId: FileId,
+  ): Promise<ProtectedFileReferenceCounts> {
+    const [
+      activeDraftSourceBindings,
+      activeFileAliases,
+      activeSourceDocuments,
+      activeWorkbooks,
+      generatedQuestions,
+      generatedQuestionSetMembershipsConservativelyRetained,
+      generationRunsConservativelyRetained,
+      publishedBlueprintVersionSources,
+      uncollectedSourceArtifacts,
+      sourceRevisionsWithoutArtifactsConservativelyRetained,
+      workbookCalculationsConservativelyRetained,
+      workbookSnapshotsConservativelyRetained,
+    ] = await Promise.all([
+      this.db
+        .selectFrom("questionBlueprintDraftSources")
+        .innerJoin(
+          "questionBlueprintDrafts",
+          "questionBlueprintDrafts.id",
+          "questionBlueprintDraftSources.draftId",
+        )
+        .select(({ fn }) => fn.countAll<number>().as("count"))
+        .where("questionBlueprintDraftSources.fileId", "=", fileId)
+        .where("questionBlueprintDrafts.status", "in", ["draft", "publishing"])
+        .executeTakeFirstOrThrow(),
+      this.db
+        .selectFrom("files")
+        .select(({ fn }) => fn.countAll<number>().as("count"))
+        .where("id", "=", fileId)
+        .where("status", "=", "uploaded")
+        .executeTakeFirstOrThrow(),
+      this.db
+        .selectFrom("sourceRevisions")
+        .innerJoin(
+          "sourceDocuments",
+          "sourceDocuments.id",
+          "sourceRevisions.sourceDocumentId",
+        )
+        .select(({ fn }) => fn.countAll<number>().as("count"))
+        .where("sourceRevisions.fileId", "=", fileId)
+        .where("sourceDocuments.status", "!=", "deleted")
+        .executeTakeFirstOrThrow(),
+      this.db
+        .selectFrom("workbooks")
+        .select(({ fn }) => fn.countAll<number>().as("count"))
+        .where("fileId", "=", fileId)
+        .where("status", "!=", "deleted")
+        .executeTakeFirstOrThrow(),
+      this.db
+        .selectFrom("questions")
+        .innerJoin(
+          "questionGenerationRuns",
+          "questionGenerationRuns.id",
+          "questions.generationRunId",
+        )
+        .innerJoin(
+          "questionBlueprintVersionSources",
+          "questionBlueprintVersionSources.blueprintVersionId",
+          "questionGenerationRuns.blueprintVersionId",
+        )
+        .select(({ fn }) => fn.countAll<number>().as("count"))
+        .where("questionBlueprintVersionSources.fileId", "=", fileId)
+        .where("questions.status", "!=", "deleted")
+        .executeTakeFirstOrThrow(),
+      this.db
+        .selectFrom("questionSets")
+        .innerJoin(
+          "questionSetQuestions",
+          "questionSetQuestions.questionSetId",
+          "questionSets.id",
+        )
+        .innerJoin(
+          "questions",
+          "questions.id",
+          "questionSetQuestions.questionId",
+        )
+        .innerJoin(
+          "questionGenerationRuns",
+          "questionGenerationRuns.id",
+          "questions.generationRunId",
+        )
+        .innerJoin(
+          "questionBlueprintVersionSources",
+          "questionBlueprintVersionSources.blueprintVersionId",
+          "questionGenerationRuns.blueprintVersionId",
+        )
+        .select(({ fn }) => fn.countAll<number>().as("count"))
+        .where("questionBlueprintVersionSources.fileId", "=", fileId)
+        .where("questionSets.status", "!=", "deleted")
+        .executeTakeFirstOrThrow(),
+      this.db
+        .selectFrom("questionGenerationRuns")
+        .innerJoin(
+          "questionBlueprintVersionSources",
+          "questionBlueprintVersionSources.blueprintVersionId",
+          "questionGenerationRuns.blueprintVersionId",
+        )
+        .select(({ fn }) => fn.countAll<number>().as("count"))
+        .where("questionBlueprintVersionSources.fileId", "=", fileId)
+        .executeTakeFirstOrThrow(),
+      this.db
+        .selectFrom("questionBlueprintVersionSources")
+        .select(({ fn }) => fn.countAll<number>().as("count"))
+        .where("fileId", "=", fileId)
+        .executeTakeFirstOrThrow(),
+      this.db
+        .selectFrom("sourceArtifacts")
+        .innerJoin(
+          "sourceRevisions",
+          "sourceRevisions.id",
+          "sourceArtifacts.sourceRevisionId",
+        )
+        .select(({ fn }) => fn.countAll<number>().as("count"))
+        .where("sourceRevisions.fileId", "=", fileId)
+        .where("sourceArtifacts.collectedAt", "is", null)
+        .executeTakeFirstOrThrow(),
+      this.db
+        .selectFrom("sourceRevisions")
+        .leftJoin(
+          "sourceArtifacts",
+          "sourceArtifacts.sourceRevisionId",
+          "sourceRevisions.id",
+        )
+        .select(({ fn }) => fn.countAll<number>().as("count"))
+        .where("sourceRevisions.fileId", "=", fileId)
+        .where("sourceArtifacts.id", "is", null)
+        .executeTakeFirstOrThrow(),
+      this.db
+        .selectFrom("workbookCalculationSources")
+        .innerJoin(
+          "workbooks",
+          "workbooks.id",
+          "workbookCalculationSources.workbookId",
+        )
+        .select(({ fn }) => fn.countAll<number>().as("count"))
+        .where("workbooks.fileId", "=", fileId)
+        .executeTakeFirstOrThrow(),
+      this.db
+        .selectFrom("workbookSnapshots")
+        .innerJoin("workbooks", "workbooks.id", "workbookSnapshots.workbookId")
+        .select(({ fn }) => fn.countAll<number>().as("count"))
+        .where("workbooks.fileId", "=", fileId)
+        .executeTakeFirstOrThrow(),
+    ]);
+
+    return {
+      activeDraftSourceBindings: Number(activeDraftSourceBindings.count),
+      activeFileAliases: Number(activeFileAliases.count),
+      activeSourceDocuments: Number(activeSourceDocuments.count),
+      activeWorkbooks: Number(activeWorkbooks.count),
+      generatedQuestions: Number(generatedQuestions.count),
+      generatedQuestionSetMembershipsConservativelyRetained: Number(
+        generatedQuestionSetMembershipsConservativelyRetained.count,
+      ),
+      generationRunsConservativelyRetained: Number(
+        generationRunsConservativelyRetained.count,
+      ),
+      publishedBlueprintVersionSources: Number(
+        publishedBlueprintVersionSources.count,
+      ),
+      uncollectedSourceArtifacts: Number(uncollectedSourceArtifacts.count),
+      sourceRevisionsWithoutArtifactsConservativelyRetained: Number(
+        sourceRevisionsWithoutArtifactsConservativelyRetained.count,
+      ),
+      workbookCalculationsConservativelyRetained: Number(
+        workbookCalculationsConservativelyRetained.count,
+      ),
+      workbookSnapshotsConservativelyRetained: Number(
+        workbookSnapshotsConservativelyRetained.count,
+      ),
+    };
   }
 
   async createFileFromUpload(input: {
@@ -97,6 +286,36 @@ export class KyselyFilesRepository implements FilesRepository {
       .returningAll()
       .executeTakeFirst();
 
+    return row ? mapFileRowToDomain(row) : null;
+  }
+
+  async updateFileWithExpectedStatus(input: {
+    file: File;
+    expectedStatus: FileStatus;
+  }): Promise<File | null> {
+    const row = await this.db
+      .updateTable("files")
+      .set(mapFileToUpdate(input.file))
+      .where("id", "=", input.file.id)
+      .where("status", "=", input.expectedStatus)
+      .returningAll()
+      .executeTakeFirst();
+    return row ? mapFileRowToDomain(row) : null;
+  }
+
+  async updateFileForGarbageCollection(input: {
+    file: File;
+    claimToken: string;
+  }): Promise<File | null> {
+    const row = await this.db
+      .updateTable("files")
+      .set(mapFileToUpdate(input.file))
+      .where("id", "=", input.file.id)
+      .where("gcClaimToken", "=", input.claimToken)
+      .where("gcClaimedAt", "is not", null)
+      .where("status", "=", "deleting")
+      .returningAll()
+      .executeTakeFirst();
     return row ? mapFileRowToDomain(row) : null;
   }
 
@@ -141,6 +360,8 @@ function mapFileRowToDomain(row: Selectable<Files>): File {
     createdAt: row.createdAt,
     createdByUserId: row.createdByUserId,
     deletedAt: row.deletedAt,
+    gcClaimedAt: row.gcClaimedAt,
+    gcClaimToken: row.gcClaimToken,
     id: row.id,
     metadata: row.metadata as Record<string, unknown>,
     objectKey: row.objectKey,
@@ -184,6 +405,8 @@ function mapFileToInsert(file: File): Insertable<Files> {
     createdAt: file.createdAt,
     createdByUserId: file.createdByUserId,
     deletedAt: file.deletedAt,
+    gcClaimedAt: file.gcClaimedAt,
+    gcClaimToken: file.gcClaimToken,
     id: file.id,
     metadata: file.metadata as JsonObject,
     objectKey: file.objectKey,
@@ -205,6 +428,8 @@ function mapFileToUpdate(file: File): Updateable<Files> {
     contentType: file.contentType,
     createdByUserId: file.createdByUserId,
     deletedAt: file.deletedAt,
+    gcClaimedAt: file.gcClaimedAt,
+    gcClaimToken: file.gcClaimToken,
     metadata: file.metadata as JsonObject,
     objectKey: file.objectKey,
     originalName: file.originalName,

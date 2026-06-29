@@ -1,4 +1,5 @@
 export {
+  FileAliasUnavailableError,
   FileNotFoundError,
   FileNotVisibleError,
   FileStorageObjectMismatchError,
@@ -10,12 +11,15 @@ export {
   InvalidFileDataError,
   InvalidFileStateError,
 } from "./errors.js";
-export type { File } from "./file.js";
+export type { File, FileGarbageCollectionClaimToken } from "./file.js";
 export {
   assertFileCanBeDownloaded,
   assertFileIsOwnedBy,
   assertFileIsVisible,
+  claimFileGarbageCollection,
   createFileFromUpload,
+  DELETED_FILE_RETENTION_DAYS,
+  fileGarbageCollectionClaimToken,
   markFileDeleted,
   markFileDeleting,
   reconstituteFile,

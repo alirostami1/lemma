@@ -81,6 +81,7 @@ export type {
   Clock,
   CustomQuestionGraderPort,
   DraftSourceFileMetadata,
+  DraftSourceFileMetadataLookup,
   DraftSourceFilePort,
   DraftSourceWorkbookMaterialization,
   DraftSourceWorkbookRegistrationPort,
@@ -138,6 +139,8 @@ export {
   questionSetQuestionsAddedEvent,
 } from "./question-generation-events.js";
 export { SourceArtifactValidationService } from "./SourceArtifactValidationService.js";
+export type { SourceArtifactCollectionResult } from "./SourceGarbageCollectionService.js";
+export { SourceGarbageCollectionService } from "./SourceGarbageCollectionService.js";
 export {
   toWorkbookValueSource,
   WorkbookQuestionValueResolverAdapter,

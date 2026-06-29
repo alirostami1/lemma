@@ -5,6 +5,7 @@ import {
   type Workbook,
   type WorkbookEngineName,
   type WorkbookId,
+  type WorkbookOrigin,
 } from "../domain/index.js";
 
 export function createWorkbookForFile(input: {
@@ -18,6 +19,7 @@ export function createWorkbookForFile(input: {
   id: WorkbookId;
   name: string;
   originalName: string;
+  origin?: WorkbookOrigin;
   ownerUserId: UserId;
 }): Workbook {
   return createWorkbookFromFile(
@@ -31,6 +33,7 @@ export function createWorkbookForFile(input: {
       id: input.id,
       name: input.name,
       originalName: input.originalName,
+      origin: input.origin,
       ownerUserId: input.ownerUserId,
     },
     input.at,

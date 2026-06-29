@@ -93,12 +93,15 @@ test("rejects reconstituted valid workbook artifact without workbook", () => {
     () =>
       reconstituteSourceArtifact({
         artifactMetadata: {},
+        collectedAt: null,
         createdAt: at,
+        deletedAt: null,
         id: artifactId,
         kind: "workbook",
         ownerUserId,
         processor: "lemma-workbook",
         processorVersion: "1",
+        retentionExpiresAt: null,
         sourceRevisionId: revisionId,
         status: "valid",
         updatedAt: at,

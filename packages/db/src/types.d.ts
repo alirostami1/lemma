@@ -38,6 +38,8 @@ export interface Files {
   createdAt: Generated<Timestamp>;
   createdByUserId: string;
   deletedAt: Timestamp | null;
+  gcClaimedAt: Timestamp | null;
+  gcClaimToken: string | null;
   id: Generated<string>;
   metadata: Generated<Json>;
   objectKey: string;
@@ -292,12 +294,15 @@ export interface Roles {
 
 export interface SourceArtifacts {
   artifactMetadata: Generated<Json>;
+  collectedAt: Timestamp | null;
   createdAt: Generated<Timestamp>;
+  deletedAt: Timestamp | null;
   id: Generated<string>;
   kind: string;
   ownerUserId: string;
   processor: string;
   processorVersion: string;
+  retentionExpiresAt: Timestamp | null;
   sourceRevisionId: string;
   status: Generated<string>;
   updatedAt: Generated<Timestamp>;
@@ -313,6 +318,7 @@ export interface SourceDocuments {
   kind: string;
   name: string;
   ownerUserId: string;
+  retentionExpiresAt: Timestamp | null;
   status: Generated<string>;
   updatedAt: Generated<Timestamp>;
 }
@@ -323,12 +329,14 @@ export interface SourceRevisions {
   contentType: string;
   createdAt: Generated<Timestamp>;
   createdByUserId: string;
+  deletedAt: Timestamp | null;
   editorMetadata: Generated<Json>;
   fileId: string | null;
   id: Generated<string>;
   kind: string;
   ownerUserId: string;
   parentRevisionId: string | null;
+  retentionExpiresAt: Timestamp | null;
   sourceDocumentId: string;
 }
 
@@ -385,6 +393,7 @@ export interface Workbooks {
   id: Generated<string>;
   inspection: Json | null;
   name: string;
+  origin: Generated<string>;
   originalName: string;
   ownerUserId: string;
   status: Generated<string>;

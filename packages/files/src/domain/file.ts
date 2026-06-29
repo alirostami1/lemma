@@ -38,7 +38,25 @@ export type File = Timestamped & {
   uploadId: string | null;
   retentionExpiresAt: Date | null;
   deletedAt: Date | null;
+  gcClaimedAt: Date | null;
+  gcClaimToken: string | null;
 };
+
+export const DELETED_FILE_RETENTION_DAYS = 30;
+export type FileGarbageCollectionClaimToken = string & {
+  readonly __brand: "FileGarbageCollectionClaimToken";
+};
+
+export function fileGarbageCollectionClaimToken(
+  value: string,
+): FileGarbageCollectionClaimToken {
+  if (value.trim().length === 0) {
+    throw new InvalidFileStateError(
+      "file garbage collection claim token must not be blank",
+    );
+  }
+  return value as FileGarbageCollectionClaimToken;
+}
 
 export function createFileFromUpload(
   input: {
@@ -65,6 +83,8 @@ export function createFileFromUpload(
     createdAt: at,
     createdByUserId: userId(input.createdByUserId),
     deletedAt: null,
+    gcClaimedAt: null,
+    gcClaimToken: null,
     id: fileId(input.id),
     metadata: fileMetadata(input.metadata ?? {}),
     objectKey: fileObjectKey(input.objectKey),
@@ -94,6 +114,8 @@ export function reconstituteFile(input: {
   uploadId: string | null;
   retentionExpiresAt: Date | null;
   deletedAt: Date | null;
+  gcClaimedAt: Date | null;
+  gcClaimToken: string | null;
   createdAt: Date;
   updatedAt: Date;
 }): File {
@@ -105,6 +127,8 @@ export function reconstituteFile(input: {
     createdAt: input.createdAt,
     createdByUserId: userId(input.createdByUserId),
     deletedAt: input.deletedAt,
+    gcClaimedAt: input.gcClaimedAt,
+    gcClaimToken: input.gcClaimToken,
     id: fileId(input.id),
     metadata: fileMetadata(input.metadata),
     objectKey: fileObjectKey(input.objectKey),
@@ -138,6 +162,9 @@ export function updateFile(
 }
 
 export function markFileDeleting(file: File, at = new Date()): File {
+  if (file.status === "deleting") {
+    return file;
+  }
   if (file.status === "deleted") {
     throw new InvalidFileStateError(
       "file cannot be deleted from current state",
@@ -146,6 +173,10 @@ export function markFileDeleting(file: File, at = new Date()): File {
 
   return {
     ...touch(file, at),
+    deletedAt: at,
+    retentionExpiresAt: new Date(
+      at.getTime() + DELETED_FILE_RETENTION_DAYS * 24 * 60 * 60 * 1000,
+    ),
     status: "deleting",
   };
 }
@@ -156,8 +187,25 @@ export function markFileDeleted(file: File, at = new Date()): File {
   }
   return {
     ...touch(file, at),
-    deletedAt: at,
+    deletedAt: file.deletedAt ?? at,
+    gcClaimedAt: null,
+    gcClaimToken: null,
     status: "deleted",
+  };
+}
+
+export function claimFileGarbageCollection(
+  file: File,
+  claimToken: FileGarbageCollectionClaimToken,
+  at: Date,
+): File {
+  if (file.status !== "deleting") {
+    throw new InvalidFileStateError("only tombstoned files can be claimed");
+  }
+  return {
+    ...touch(file, at),
+    gcClaimedAt: at,
+    gcClaimToken: claimToken,
   };
 }
 

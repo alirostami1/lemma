@@ -1,9 +1,11 @@
 import type { JsonValue, OperationLineage } from "@lemma/domain";
 import type { OutboxRepository } from "@lemma/events/application";
 import type { EventId } from "@lemma/events/domain";
+import type { FileReferenceGuardPort } from "@lemma/files/application";
 import type { CurrentUser } from "@lemma/identity/application";
 import type {
   GradeResult,
+  ProtectedSourceReferenceCounts,
   Question,
   QuestionAnswer,
   QuestionBlueprint,
@@ -38,6 +40,8 @@ import type {
   WorkbookSnapshotId,
 } from "../domain/index.js";
 
+export type { FileReferenceGuardPort } from "@lemma/files/application";
+
 export interface QuestionsRepository {
   applyWorkbookValidationResultToDraftSources(input: {
     artifactIds: readonly SourceArtifactId[];
@@ -58,6 +62,9 @@ export interface QuestionsRepository {
     questions: readonly Question[];
     memberships: readonly QuestionSetQuestion[];
   }): Promise<QuestionGenerationRun | null>;
+  countProtectedSourceArtifactReferences(
+    id: SourceArtifactId,
+  ): Promise<ProtectedSourceReferenceCounts>;
   createOrResumeQuestionBlueprintEditDraft(input: {
     draft: QuestionBlueprintDraft;
     ownerUserId: UserId;
@@ -81,7 +88,6 @@ export interface QuestionsRepository {
     ownerUserId: UserId;
     blueprintId: QuestionBlueprintId;
   }): Promise<QuestionBlueprintDraft | null>;
-
   findQuestionBlueprintById(
     id: QuestionBlueprintId,
   ): Promise<QuestionBlueprint | null>;
@@ -104,8 +110,18 @@ export interface QuestionsRepository {
     id: WorkbookCalculationId,
   ): Promise<QuestionGenerationRun | null>;
   findQuestionSetById(id: QuestionSetId): Promise<QuestionSet | null>;
+  findSourceArtifactBackingWorkbookForUpdate(input: {
+    sourceArtifactId: SourceArtifactId;
+    workbookId: WorkbookId;
+  }): Promise<SourceArtifactBackingWorkbook | null>;
   findSourceArtifactById(id: SourceArtifactId): Promise<SourceArtifact | null>;
+  findSourceArtifactByIdForUpdate(
+    id: SourceArtifactId,
+  ): Promise<SourceArtifact | null>;
   findSourceDocumentById(id: SourceDocumentId): Promise<SourceDocument | null>;
+  findSourceDocumentByIdForUpdate(
+    id: SourceDocumentId,
+  ): Promise<SourceDocument | null>;
   findSourceRevisionById(id: SourceRevisionId): Promise<SourceRevision | null>;
   listQuestionBlueprintDraftsByOwnerUserId(input: {
     ownerUserId: UserId;
@@ -173,6 +189,9 @@ export interface QuestionsRepository {
     currentRevisionId: SourceRevisionId;
     updatedAt: Date;
   }): Promise<SourceDocument>;
+  tombstoneSourceDocumentGraph(input: {
+    document: SourceDocument;
+  }): Promise<boolean>;
   updateQuestionBlueprintDraftWithExpectedRevision(input: {
     draft: QuestionBlueprintDraft;
     expectedRevision: number;
@@ -181,6 +200,10 @@ export interface QuestionsRepository {
     run: QuestionGenerationRun,
   ): Promise<QuestionGenerationRun | null>;
   updateQuestionSet(set: QuestionSet): Promise<QuestionSet | null>;
+  updateSourceArtifactForCollection(input: {
+    artifact: SourceArtifact;
+    retireBackingWorkbook: boolean;
+  }): Promise<SourceArtifact | null>;
 }
 
 export type PublishSourceMaterialization = {
@@ -189,6 +212,12 @@ export type PublishSourceMaterialization = {
   sourceRevisionId: SourceRevisionId;
   sourceArtifactId: SourceArtifactId;
   workbookId: WorkbookId;
+};
+
+export type SourceArtifactBackingWorkbook = {
+  id: WorkbookId;
+  origin: "standalone" | "source_artifact";
+  otherUncollectedSourceArtifacts: number;
 };
 
 export type DraftSourceWorkbookMaterialization = {
@@ -299,11 +328,15 @@ export type DraftSourceFileMetadata = {
   purpose: string;
 };
 
+export type DraftSourceFileMetadataLookup =
+  | { status: "available"; file: DraftSourceFileMetadata }
+  | { status: "unavailable" };
+
 export interface DraftSourceFilePort {
   getFileMetadata(input: {
     currentUser: CurrentUser;
     fileId: string;
-  }): Promise<DraftSourceFileMetadata>;
+  }): Promise<DraftSourceFileMetadataLookup>;
 }
 
 export type DraftSourceWorkbookRegistrationResult = {
@@ -329,6 +362,7 @@ export interface DraftSourceWorkbookRegistrationPort {
 export interface QuestionBlueprintDraftTransactionPort {
   transaction<T>(
     fn: (deps: {
+      fileReferenceGuard: FileReferenceGuardPort;
       questionsRepository: QuestionsRepository;
       workbookRegistrationPort: DraftSourceWorkbookRegistrationPort;
     }) => Promise<T>,

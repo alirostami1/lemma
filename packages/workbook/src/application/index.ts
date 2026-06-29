@@ -71,6 +71,7 @@ export type {
   DraftSourceWorkbookRegistrationCommand,
   DraftSourceWorkbookRegistrationPort,
   DraftSourceWorkbookRegistrationResult,
+  FileReferenceGuardPort,
   IdGenerator,
   WorkbookAccessPort,
   WorkbookCalculationPort,

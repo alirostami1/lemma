@@ -36,6 +36,10 @@ export const WORKBOOK_ENGINE_ACCEPTED_VALUES = [
   "cached",
   "libreoffice",
 ] as const;
+export const WORKBOOK_ORIGIN_ACCEPTED_VALUES = [
+  "standalone",
+  "source_artifact",
+] as const;
 
 export type WorkbookName = Brand<string, "WorkbookName">;
 export type WorkbookStatus = (typeof WORKBOOK_STATUS_ACCEPTED_VALUES)[number];
@@ -43,6 +47,7 @@ export type WorkbookCalculationStatus =
   (typeof WORKBOOK_CALCULATION_STATUS_ACCEPTED_VALUES)[number];
 export type WorkbookEngineName =
   (typeof WORKBOOK_ENGINE_ACCEPTED_VALUES)[number];
+export type WorkbookOrigin = (typeof WORKBOOK_ORIGIN_ACCEPTED_VALUES)[number];
 
 export type WorkbookInspection = {
   sheetCount: number;
@@ -120,6 +125,10 @@ export function workbookCalculationStatus(
 
 export function workbookEngineName(value: string): WorkbookEngineName {
   return oneOf(value, WORKBOOK_ENGINE_ACCEPTED_VALUES, "workbook engine");
+}
+
+export function workbookOrigin(value: string): WorkbookOrigin {
+  return oneOf(value, WORKBOOK_ORIGIN_ACCEPTED_VALUES, "workbook origin");
 }
 
 export function workbookInspection(value: unknown): WorkbookInspection {

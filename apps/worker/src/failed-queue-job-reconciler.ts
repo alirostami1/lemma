@@ -6,7 +6,10 @@ import {
   QUESTION_GENERATION_ORCHESTRATE_JOB,
 } from "@lemma/jobs/application";
 import { withSpan } from "@lemma/observability/node";
-import type { QuestionGenerationWorkerService } from "@lemma/questions/application";
+import type {
+  QuestionGenerationWorkerResult,
+  QuestionGenerationWorkerService,
+} from "@lemma/questions/application";
 import {
   errorMessageFromUnknown,
   jobDataLineageSpanAttributes,
@@ -33,9 +36,7 @@ type ReconciliationResult =
   | "run_failed"
   | "run_not_found"
   | "run_terminal";
-type FailedGenerationJobResult = Awaited<
-  ReturnType<QuestionGenerationWorkerService["reconcileFailedGenerationJob"]>
->;
+type FailedGenerationJobResult = QuestionGenerationWorkerResult;
 
 export type FailedQueueJobReconciliationRepository = {
   claimFailedJobs(input: {

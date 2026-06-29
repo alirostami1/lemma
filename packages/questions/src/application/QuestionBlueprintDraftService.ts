@@ -1,3 +1,4 @@
+import { FileAliasUnavailableError } from "@lemma/files/application";
 import {
   attachDraftSourceFile,
   createQuestionBlueprintDraft,
@@ -229,17 +230,16 @@ export class QuestionBlueprintDraftService {
     if (source.type !== "workbook") {
       throw new DraftSourceKindUnsupportedError();
     }
-    let file: DraftSourceFileMetadata;
-    try {
-      file = await this.deps.draftSourceFilePort.getFileMetadata({
-        currentUser: command.currentUser,
-        fileId: command.fileId,
-      });
-    } catch {
+    const fileLookup = await this.deps.draftSourceFilePort.getFileMetadata({
+      currentUser: command.currentUser,
+      fileId: command.fileId,
+    });
+    if (fileLookup.status === "unavailable") {
       throw new DraftSourceFileInvalidError(
         "Draft source file is unavailable.",
       );
     }
+    const file: DraftSourceFileMetadata = fileLookup.file;
     if (file.ownerUserId !== draft.ownerUserId) {
       throw new DraftSourceFileForbiddenError(
         "Draft source file must belong to draft owner.",
@@ -256,7 +256,11 @@ export class QuestionBlueprintDraftService {
     }
     const persisted =
       await this.deps.questionBlueprintDraftTransaction.transaction(
-        async ({ questionsRepository, workbookRegistrationPort }) => {
+        async ({
+          fileReferenceGuard,
+          questionsRepository,
+          workbookRegistrationPort,
+        }) => {
           const lockedDraft =
             await questionsRepository.findQuestionBlueprintDraftByIdForUpdate(
               draft.id,
@@ -277,6 +281,18 @@ export class QuestionBlueprintDraftService {
           if (!lockedSource) throw new DraftSourceNotFoundError();
           if (lockedSource.type !== "workbook") {
             throw new DraftSourceKindUnsupportedError();
+          }
+          try {
+            await fileReferenceGuard.assertFileAliasReferenceableForUpdate(
+              file.fileId,
+            );
+          } catch (error) {
+            if (error instanceof FileAliasUnavailableError) {
+              throw new DraftSourceFileInvalidError(
+                "Draft source file is unavailable.",
+              );
+            }
+            throw error;
           }
           const materialization = await this.materializeWorkbookSource({
             command,

@@ -4,6 +4,7 @@ import type {
   QuestionsRepository,
 } from "../application/index.js";
 import type {
+  ProtectedSourceReferenceCounts,
   Question,
   QuestionBlueprint,
   QuestionBlueprintDraft,
@@ -95,12 +96,54 @@ export class KyselyQuestionsRepository implements QuestionsRepository {
     return this.sources.findSourceDocumentById(id);
   }
 
+  findSourceDocumentByIdForUpdate(
+    id: SourceDocumentId,
+  ): Promise<SourceDocument | null> {
+    return this.sources.findSourceDocumentByIdForUpdate(id);
+  }
+
   findSourceRevisionById(id: SourceRevisionId): Promise<SourceRevision | null> {
     return this.sources.findSourceRevisionById(id);
   }
 
   findSourceArtifactById(id: SourceArtifactId): Promise<SourceArtifact | null> {
     return this.sources.findSourceArtifactById(id);
+  }
+
+  findSourceArtifactByIdForUpdate(
+    id: SourceArtifactId,
+  ): Promise<SourceArtifact | null> {
+    return this.sources.findSourceArtifactByIdForUpdate(id);
+  }
+
+  countProtectedSourceArtifactReferences(
+    id: SourceArtifactId,
+  ): Promise<ProtectedSourceReferenceCounts> {
+    return this.sources.countProtectedSourceArtifactReferences(id);
+  }
+
+  findSourceArtifactBackingWorkbookForUpdate(input: {
+    sourceArtifactId: SourceArtifactId;
+    workbookId: WorkbookId;
+  }): Promise<{
+    id: WorkbookId;
+    origin: "standalone" | "source_artifact";
+    otherUncollectedSourceArtifacts: number;
+  } | null> {
+    return this.sources.findSourceArtifactBackingWorkbookForUpdate(input);
+  }
+
+  tombstoneSourceDocumentGraph(input: {
+    document: SourceDocument;
+  }): Promise<boolean> {
+    return this.sources.tombstoneSourceDocumentGraph(input);
+  }
+
+  updateSourceArtifactForCollection(input: {
+    artifact: SourceArtifact;
+    retireBackingWorkbook: boolean;
+  }): Promise<SourceArtifact | null> {
+    return this.sources.updateSourceArtifactForCollection(input);
   }
 
   findQuestionSetById(id: QuestionSetId): Promise<QuestionSet | null> {
