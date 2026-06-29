@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { useState } from "react";
+import { type ComponentProps, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ComposedRichContent } from "#/domains/questions/authoring";
 import { RichTextEditor } from "./rich-text-editor";
@@ -91,6 +91,107 @@ describe("RichTextEditor", () => {
     expect(onContentChange).not.toHaveBeenCalled();
   });
 
+  it("renders H1 and H2 references as edit-mode chips without blueprint syntax", () => {
+    const onSelectReference = vi.fn();
+
+    render(
+      <RichTextHarness
+        initialContent={{
+          content: [
+            {
+              content: [
+                { text: "Tax ", type: "text" },
+                { referenceId: "tax_rate", type: "reference" },
+              ],
+              level: 1,
+              type: "heading",
+            },
+            {
+              content: [
+                { text: "Again ", type: "text" },
+                { referenceId: "tax_rate", type: "reference" },
+              ],
+              level: 2,
+              type: "heading",
+            },
+          ],
+          type: "doc",
+        }}
+        onSelectReference={onSelectReference}
+        references={[
+          {
+            id: "tax_rate",
+            label: "Tax rate",
+            source: { type: "literal", value: 0.0825 },
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getAllByRole("button", { name: "Tax rate" })).toHaveLength(2);
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.queryByText(/\{\{\s*\./u)).toBeNull();
+
+    screen.getAllByRole("button", { name: "Tax rate" })[0]?.click();
+
+    expect(onSelectReference).toHaveBeenCalledWith("tax_rate");
+  });
+
+  it("renders unresolved rich text references with product-safe copy", () => {
+    render(
+      <RichTextHarness
+        initialContent={{
+          content: [
+            {
+              content: [{ referenceId: "missing", type: "reference" }],
+              type: "paragraph",
+            },
+          ],
+          type: "doc",
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Added value unavailable")).toBeTruthy();
+    expect(screen.queryByText("missing")).toBeNull();
+    expect(screen.queryByText(/\{\{\s*\./u)).toBeNull();
+  });
+
+  it("does not render selectable reference chips when disabled", () => {
+    const onSelectReference = vi.fn();
+
+    render(
+      <RichTextHarness
+        disabled
+        initialContent={{
+          content: [
+            {
+              content: [
+                { text: "Tax ", type: "text" },
+                { referenceId: "tax_rate", type: "reference" },
+              ],
+              type: "paragraph",
+            },
+          ],
+          type: "doc",
+        }}
+        onSelectReference={onSelectReference}
+        references={[
+          {
+            id: "tax_rate",
+            label: "Tax rate",
+            source: { type: "literal", value: 0.0825 },
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.queryByText(/\{\{\s*\./u)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Tax rate" })).toBeNull();
+    expect(onSelectReference).not.toHaveBeenCalled();
+  });
+
   it("keeps user-typed blueprint syntax as plain rich text", () => {
     const changes: ComposedRichContent[] = [];
 
@@ -115,11 +216,17 @@ describe("RichTextEditor", () => {
 });
 
 function RichTextHarness({
+  disabled,
   initialContent,
   onContentChange,
+  onSelectReference,
+  references,
 }: {
+  disabled?: boolean;
   initialContent?: ComposedRichContent;
   onContentChange?(content: ComposedRichContent): void;
+  onSelectReference?(referenceId: string): void;
+  references?: ComponentProps<typeof RichTextEditor>["references"];
 }) {
   const [content, setContent] = useState<ComposedRichContent>(
     initialContent ?? {
@@ -140,7 +247,9 @@ function RichTextHarness({
 
   return (
     <RichTextEditor
+      disabled={disabled}
       onChange={updateContent}
+      onSelectReference={onSelectReference}
       referencePreviewCache={{
         tax_rate: {
           displayValue: "0.0825",
@@ -150,6 +259,7 @@ function RichTextHarness({
           updatedAt: 1,
         },
       }}
+      references={references}
       value={content}
     />
   );

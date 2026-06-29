@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import type {
   ComposedInlineContent,
   ComposedReferenceDraft,
@@ -10,31 +11,43 @@ import { getReferenceChipLabel } from "./reference-display";
 
 export type InlineRenderMode = "editing" | "preview";
 
-export function InlineContentRenderer({
-  content,
-  mode,
-  referencePreviewValues,
-  references = [],
-  onSelectReference,
-}: {
-  content: Array<ComposedInlineContent | ComposedRenderedInlineContent>;
-  mode: InlineRenderMode;
+type InlineContent = Array<
+  ComposedInlineContent | ComposedRenderedInlineContent
+>;
+
+export type InlineContentPreviewRenderProps = {
+  content: InlineContent;
+  mode: "preview";
+  referencePreviewValues: ReferencePreviewCache;
+  onSelectReference?: never;
+  references?: never;
+};
+
+export type InlineContentEditingRenderProps = {
+  content: InlineContent;
+  mode: "editing";
   referencePreviewValues: ReferencePreviewCache;
   references?: readonly ComposedReferenceDraft[];
   onSelectReference?: (referenceId: string) => void;
-}) {
+};
+
+export type InlineContentRendererProps =
+  | InlineContentPreviewRenderProps
+  | InlineContentEditingRenderProps;
+
+export function InlineContentRenderer(props: InlineContentRendererProps) {
   return (
     <>
-      {content.map((item, index) => {
+      {props.content.map((item, index) => {
         if (item.type === "text") {
-          return <span key={`text-${index}`}>{item.text}</span>;
+          return <Fragment key={`text-${index}`}>{item.text}</Fragment>;
         }
 
         if (item.type === "value") {
           return (
-            <span key={`value-${item.referenceId}-${index}`}>
+            <Fragment key={`value-${item.referenceId}-${index}`}>
               {item.displayValue}
-            </span>
+            </Fragment>
           );
         }
 
@@ -42,43 +55,34 @@ export function InlineContentRenderer({
           fallbackText: item.fallbackText,
           rangeCell: item.rangeCell,
           referenceId: item.referenceId,
-          referencePreviewCache: referencePreviewValues,
+          referencePreviewCache: props.referencePreviewValues,
         });
-        const reference =
-          references.find((candidate) => candidate.id === item.referenceId) ??
-          null;
-        const chipLabel = getReferenceChipLabel({
-          preview: previewValue,
-          reference,
-        });
-        if (mode === "editing") {
+
+        if (props.mode === "editing") {
+          const reference =
+            props.references?.find(
+              (candidate) => candidate.id === item.referenceId,
+            ) ?? null;
+          const chipLabel = getReferenceChipLabel({
+            preview: previewValue,
+            reference,
+          });
+
           return (
             <ReferenceChip
               key={`reference-${item.referenceId}-${index}`}
               label={chipLabel}
-              onSelect={onSelectReference}
+              onSelect={props.onSelectReference}
               referenceId={item.referenceId}
               status={previewValue.status}
             />
           );
         }
 
-        if (previewValue.status === "resolved") {
-          return (
-            <span key={`reference-${item.referenceId}-${index}`}>
-              {previewValue.displayValue}
-            </span>
-          );
-        }
-
         return (
-          <ReferenceChip
-            key={`reference-${item.referenceId}-${index}`}
-            label={chipLabel}
-            onSelect={onSelectReference}
-            referenceId={item.referenceId}
-            status={previewValue.status}
-          />
+          <Fragment key={`reference-${item.referenceId}-${index}`}>
+            {previewValue.displayValue}
+          </Fragment>
         );
       })}
     </>

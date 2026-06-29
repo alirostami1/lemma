@@ -16,7 +16,7 @@ describe("InlineContentRenderer", () => {
       { displayValue: "1200", referenceId: "revenue", type: "value" },
     ];
 
-    render(
+    const { container } = render(
       <InlineContentRenderer
         content={content}
         mode="preview"
@@ -24,8 +24,10 @@ describe("InlineContentRenderer", () => {
       />,
     );
 
-    expect(screen.getByText("Revenue:")).toBeTruthy();
-    expect(screen.getByText("1200")).toBeTruthy();
+    expect(container.textContent).toBe("Revenue: 1200");
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.queryByText(/\{\{\s*\./u)).toBeNull();
+    expectNoReferenceChip(container);
   });
 
   it("renders authoring references as chips while editing", () => {
@@ -67,7 +69,7 @@ describe("InlineContentRenderer", () => {
       { referenceId: "revenue", type: "reference" },
     ];
 
-    render(
+    const { container } = render(
       <InlineContentRenderer
         content={content}
         mode="preview"
@@ -83,7 +85,11 @@ describe("InlineContentRenderer", () => {
       />,
     );
 
-    expect(screen.getByText("1200")).toBeTruthy();
+    expect(container.textContent).toBe("Revenue: 1200");
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.queryByText("revenue")).toBeNull();
+    expect(screen.queryByText(/\{\{\s*\./u)).toBeNull();
+    expectNoReferenceChip(container);
   });
 
   it("renders range cell authoring references as cell values in preview mode", () => {
@@ -95,7 +101,7 @@ describe("InlineContentRenderer", () => {
       },
     ];
 
-    render(
+    const { container } = render(
       <InlineContentRenderer
         content={content}
         mode="preview"
@@ -114,7 +120,11 @@ describe("InlineContentRenderer", () => {
       />,
     );
 
-    expect(screen.getByText("A2")).toBeTruthy();
+    expect(container.textContent).toBe("A2");
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.queryByText("range")).toBeNull();
+    expect(screen.queryByText(/\{\{\s*\./u)).toBeNull();
+    expectNoReferenceChip(container);
   });
 
   it("renders range cell tokens as chips while editing", () => {
@@ -144,7 +154,7 @@ describe("InlineContentRenderer", () => {
       { referenceId: "missing", type: "reference" },
     ];
 
-    render(
+    const { container } = render(
       <InlineContentRenderer
         content={content}
         mode="preview"
@@ -152,8 +162,11 @@ describe("InlineContentRenderer", () => {
       />,
     );
 
-    expect(screen.getByText("Added value unavailable")).toBeTruthy();
+    expect(container.textContent).toBe("Revenue: Added value unavailable");
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.queryByText("missing")).toBeNull();
     expect(screen.queryByText(/\{\{\s*\./u)).toBeNull();
+    expectNoReferenceChip(container);
   });
 
   it("renders missing authoring references with product-safe chips while editing", () => {
@@ -182,7 +195,7 @@ describe("InlineContentRenderer", () => {
       },
     ];
 
-    render(
+    const { container } = render(
       <InlineContentRenderer
         content={content}
         mode="preview"
@@ -198,8 +211,11 @@ describe("InlineContentRenderer", () => {
       />,
     );
 
-    expect(screen.getByText("Added value unavailable")).toBeTruthy();
+    expect(container.textContent).toBe("Added value unavailable");
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.queryByText("range")).toBeNull();
     expect(screen.queryByText("{{ .range[1,0] }}")).toBeNull();
+    expectNoReferenceChip(container);
   });
 
   it("calls onSelectReference when an editing chip is clicked", () => {
@@ -222,3 +238,8 @@ describe("InlineContentRenderer", () => {
     expect(onSelectReference).toHaveBeenCalledWith("revenue");
   });
 });
+
+function expectNoReferenceChip(container: HTMLElement) {
+  expect(container.querySelector(".font-mono")).toBeNull();
+  expect(container.querySelector(".rounded-md.border")).toBeNull();
+}

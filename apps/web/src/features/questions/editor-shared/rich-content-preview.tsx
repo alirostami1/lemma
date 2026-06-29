@@ -1,46 +1,91 @@
 import { cn } from "@lemma/ui/lib/utils";
 import type {
+  ComposedInlineContent,
+  ComposedReferenceDraft,
   ComposedRichContent,
   ComposedRichContentNode,
 } from "#/domains/questions/authoring";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import { InlineContentRenderer } from "./inline-content-renderer";
 
-export function RichContentPreview({
-  content,
-  referencePreviewCache = {},
-}: {
+type RichContentPreviewBaseProps = {
   content: ComposedRichContent;
   referencePreviewCache?: ReferencePreviewCache;
-}) {
+};
+
+type RichContentPreviewPreviewProps = RichContentPreviewBaseProps & {
+  mode: "preview";
+  onSelectReference?: never;
+  references?: never;
+};
+
+type RichContentPreviewEditingProps = RichContentPreviewBaseProps & {
+  mode: "editing";
+  references?: readonly ComposedReferenceDraft[];
+  onSelectReference?: (referenceId: string) => void;
+};
+
+export type RichContentPreviewProps =
+  | RichContentPreviewPreviewProps
+  | RichContentPreviewEditingProps;
+
+type RichInlineRenderSurface =
+  | {
+      mode: "preview";
+      referencePreviewCache: ReferencePreviewCache;
+    }
+  | {
+      mode: "editing";
+      referencePreviewCache: ReferencePreviewCache;
+      references: readonly ComposedReferenceDraft[];
+      onSelectReference?: (referenceId: string) => void;
+    };
+
+export function RichContentPreview(props: RichContentPreviewProps) {
+  const surface = toRichInlineRenderSurface(props);
+
   return (
     <div className="space-y-3 text-sm leading-7 text-foreground [&_li>p]:inline">
-      {content.content.map((node, index) => (
+      {props.content.content.map((node, index) => (
         <RichContentNodePreview
           key={`${node.type}-${index}`}
           node={node}
-          referencePreviewCache={referencePreviewCache}
+          surface={surface}
         />
       ))}
     </div>
   );
 }
 
+function toRichInlineRenderSurface(
+  props: RichContentPreviewProps,
+): RichInlineRenderSurface {
+  const referencePreviewCache = props.referencePreviewCache ?? {};
+
+  if (props.mode === "editing") {
+    return {
+      mode: "editing",
+      onSelectReference: props.onSelectReference,
+      referencePreviewCache,
+      references: props.references ?? [],
+    };
+  }
+
+  return {
+    mode: "preview",
+    referencePreviewCache,
+  };
+}
+
 function RichContentNodePreview({
   node,
-  referencePreviewCache,
+  surface,
 }: {
   node: ComposedRichContentNode;
-  referencePreviewCache: ReferencePreviewCache;
+  surface: RichInlineRenderSurface;
 }) {
   if (node.type === "paragraph" || node.type === "heading") {
-    const content = (
-      <InlineContentRenderer
-        content={node.content}
-        mode="preview"
-        referencePreviewValues={referencePreviewCache}
-      />
-    );
+    const content = renderInlineContent(node.content, surface);
     if (node.type === "paragraph") {
       return <p className="leading-7">{content}</p>;
     }
@@ -62,12 +107,37 @@ function RichContentNodePreview({
             <RichContentNodePreview
               key={childIndex}
               node={child}
-              referencePreviewCache={referencePreviewCache}
+              surface={surface}
             />
           ))}
         </li>
       ))}
     </ListTag>
+  );
+}
+
+function renderInlineContent(
+  content: ComposedInlineContent[],
+  surface: RichInlineRenderSurface,
+) {
+  if (surface.mode === "editing") {
+    return (
+      <InlineContentRenderer
+        content={content}
+        mode="editing"
+        onSelectReference={surface.onSelectReference}
+        referencePreviewValues={surface.referencePreviewCache}
+        references={surface.references}
+      />
+    );
+  }
+
+  return (
+    <InlineContentRenderer
+      content={content}
+      mode="preview"
+      referencePreviewValues={surface.referencePreviewCache}
+    />
   );
 }
 
