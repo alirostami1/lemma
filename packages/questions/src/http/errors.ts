@@ -6,6 +6,9 @@ import {
 import { jsonHttpError } from "@lemma/http";
 import type { Context } from "hono";
 import {
+  type DraftSourceEditorUploadInvalidError,
+  type DraftSourceEditorUploadNotFoundError,
+  type DraftSourceEditorUploadStorageError,
   type DraftSourceFileForbiddenError,
   type DraftSourceFileInvalidError,
   type DraftSourceKindUnsupportedError,
@@ -22,7 +25,9 @@ import {
   type QuestionNotFoundError,
   type QuestionSetNotFoundError,
   QuestionsApplicationError,
+  type SourceDocumentRevisionConflictError,
   type UnsupportedQuestionValueExpressionError,
+  type WorkbookEditorOutputStaleError,
   type WorkbookQuestionReferenceError,
 } from "../application/errors.js";
 import {
@@ -50,6 +55,9 @@ type QuestionsDomainError =
   | InvalidQuestionBlueprintDocumentError;
 
 type QuestionsApplicationErrorType =
+  | DraftSourceEditorUploadInvalidError
+  | DraftSourceEditorUploadNotFoundError
+  | DraftSourceEditorUploadStorageError
   | DraftSourceFileForbiddenError
   | DraftSourceFileInvalidError
   | DraftSourceKindUnsupportedError
@@ -65,7 +73,9 @@ type QuestionsApplicationErrorType =
   | QuestionSetNotFoundError
   | QuestionBlueprintNotFoundError
   | QuestionBlueprintDraftNotFoundError
+  | SourceDocumentRevisionConflictError
   | UnsupportedQuestionValueExpressionError
+  | WorkbookEditorOutputStaleError
   | WorkbookQuestionReferenceError;
 
 const applicationErrorMapper = {
@@ -85,6 +95,18 @@ const applicationErrorMapper = {
   DRAFT_SOURCE_NOT_FOUND: { code: "DRAFT_SOURCE_NOT_FOUND", status: 404 },
   DRAFT_SOURCE_NOT_READY: { code: "DRAFT_SOURCE_NOT_READY", status: 409 },
   DRAFT_REVISION_CONFLICT: { code: "DRAFT_REVISION_CONFLICT", status: 409 },
+  DRAFT_SOURCE_EDITOR_UPLOAD_INVALID: {
+    code: "DRAFT_SOURCE_EDITOR_UPLOAD_INVALID",
+    status: 400,
+  },
+  DRAFT_SOURCE_EDITOR_UPLOAD_NOT_FOUND: {
+    code: "DRAFT_SOURCE_EDITOR_UPLOAD_NOT_FOUND",
+    status: 404,
+  },
+  DRAFT_SOURCE_EDITOR_UPLOAD_STORAGE_ERROR: {
+    code: "DRAFT_SOURCE_EDITOR_UPLOAD_STORAGE_ERROR",
+    status: 502,
+  },
   FORBIDDEN_QUESTION_ACTION: { code: "FORBIDDEN_QUESTION_ACTION", status: 403 },
   INVALID_DRAFT_SOURCE_REFERENCE: {
     code: "INVALID_DRAFT_SOURCE_REFERENCE",
@@ -105,9 +127,17 @@ const applicationErrorMapper = {
   },
   QUESTION_NOT_FOUND: { code: "QUESTION_NOT_FOUND", status: 404 },
   QUESTION_SET_NOT_FOUND: { code: "QUESTION_SET_NOT_FOUND", status: 404 },
+  SOURCE_DOCUMENT_REVISION_CONFLICT: {
+    code: "SOURCE_DOCUMENT_REVISION_CONFLICT",
+    status: 409,
+  },
   UNSUPPORTED_QUESTION_VALUE_EXPRESSION: {
     code: "UNSUPPORTED_QUESTION_VALUE_EXPRESSION",
     status: 400,
+  },
+  WORKBOOK_EDITOR_OUTPUT_STALE: {
+    code: "WORKBOOK_EDITOR_OUTPUT_STALE",
+    status: 409,
   },
   WORKBOOK_QUESTION_REFERENCE_ERROR: {
     code: "WORKBOOK_QUESTION_REFERENCE_ERROR",

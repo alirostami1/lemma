@@ -10,12 +10,14 @@ import * as zod from "zod";
  * @summary List question blueprint drafts
  */
 export const listQuestionBlueprintDraftsQueryLimitMax = 100;
+export const listQuestionBlueprintDraftsQueryLimitMultipleOf = 1;
 
 export const ListQuestionBlueprintDraftsQueryParams = zod.object({
   limit: zod.coerce
     .number()
     .min(1)
     .max(listQuestionBlueprintDraftsQueryLimitMax)
+    .multipleOf(listQuestionBlueprintDraftsQueryLimitMultipleOf)
     .optional(),
   cursor: zod.string().optional(),
   status: zod
@@ -32,18 +34,23 @@ export const listQuestionBlueprintDrafts200ResponseDraftsItemCreatedByUserIdRegE
 export const listQuestionBlueprintDrafts200ResponseDraftsItemDescriptionMax = 1000;
 
 export const listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
+export const listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf = 1;
 
 export const listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemFourGradingTwoToleranceValueMin = 0;
 
 export const listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemFourPointsExclusiveMin = 0;
 
 export const listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
 
@@ -57,6 +64,7 @@ export const listQuestionBlueprintDrafts200ResponseDraftsItemOwnerUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const listQuestionBlueprintDrafts200ResponseDraftsItemPublishedVersionIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const listQuestionBlueprintDrafts200ResponseDraftsItemRevisionMultipleOf = 1;
 
 export const listQuestionBlueprintDrafts200ResponseDraftsItemSourcesItemChecksumSha256RegExp =
   /^[a-f0-9]{64}$/;
@@ -108,11 +116,17 @@ export const ListQuestionBlueprintDrafts200Response = zod.strictObject({
                           .number()
                           .min(
                             listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin,
+                          )
+                          .multipleOf(
+                            listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                           ),
                         rowOffset: zod
                           .number()
                           .min(
                             listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin,
+                          )
+                          .multipleOf(
+                            listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                           ),
                       })
                       .optional(),
@@ -146,6 +160,9 @@ export const ListQuestionBlueprintDrafts200Response = zod.strictObject({
                           .min(1)
                           .max(
                             listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax,
+                          )
+                          .multipleOf(
+                            listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf,
                           ),
                       }),
                       content: zod
@@ -292,11 +309,17 @@ export const ListQuestionBlueprintDrafts200Response = zod.strictObject({
                                 .number()
                                 .min(
                                   listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin,
+                                )
+                                .multipleOf(
+                                  listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                                 ),
                               rowOffset: zod
                                 .number()
                                 .min(
                                   listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin,
+                                )
+                                .multipleOf(
+                                  listQuestionBlueprintDrafts200ResponseDraftsItemDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                                 ),
                             })
                             .optional(),
@@ -432,7 +455,12 @@ export const ListQuestionBlueprintDrafts200Response = zod.strictObject({
           listQuestionBlueprintDrafts200ResponseDraftsItemPublishedVersionIdRegExp,
         )
         .nullable(),
-      revision: zod.number().min(1),
+      revision: zod
+        .number()
+        .min(1)
+        .multipleOf(
+          listQuestionBlueprintDrafts200ResponseDraftsItemRevisionMultipleOf,
+        ),
       sources: zod.array(
         zod.strictObject({
           byteSize: zod.number().min(1).nullable(),
@@ -497,18 +525,23 @@ export const createQuestionBlueprintDraftBodyBlueprintIdRegExp =
 export const createQuestionBlueprintDraftBodyDescriptionMax = 1000;
 
 export const createQuestionBlueprintDraftBodyDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const createQuestionBlueprintDraftBodyDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const createQuestionBlueprintDraftBodyDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const createQuestionBlueprintDraftBodyDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const createQuestionBlueprintDraftBodyDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
+export const createQuestionBlueprintDraftBodyDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf = 1;
 
 export const createQuestionBlueprintDraftBodyDocumentBlocksItemFourGradingTwoToleranceValueMin = 0;
 
 export const createQuestionBlueprintDraftBodyDocumentBlocksItemFourPointsExclusiveMin = 0;
 
 export const createQuestionBlueprintDraftBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const createQuestionBlueprintDraftBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const createQuestionBlueprintDraftBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const createQuestionBlueprintDraftBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const createQuestionBlueprintDraftBodyDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
 
@@ -546,11 +579,17 @@ export const CreateQuestionBlueprintDraftBody = zod.strictObject({
                       .number()
                       .min(
                         createQuestionBlueprintDraftBodyDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin,
+                      )
+                      .multipleOf(
+                        createQuestionBlueprintDraftBodyDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                       ),
                     rowOffset: zod
                       .number()
                       .min(
                         createQuestionBlueprintDraftBodyDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin,
+                      )
+                      .multipleOf(
+                        createQuestionBlueprintDraftBodyDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                       ),
                   })
                   .optional(),
@@ -584,6 +623,9 @@ export const CreateQuestionBlueprintDraftBody = zod.strictObject({
                       .min(1)
                       .max(
                         createQuestionBlueprintDraftBodyDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax,
+                      )
+                      .multipleOf(
+                        createQuestionBlueprintDraftBodyDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf,
                       ),
                   }),
                   content: zod
@@ -730,11 +772,17 @@ export const CreateQuestionBlueprintDraftBody = zod.strictObject({
                             .number()
                             .min(
                               createQuestionBlueprintDraftBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin,
+                            )
+                            .multipleOf(
+                              createQuestionBlueprintDraftBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                             ),
                           rowOffset: zod
                             .number()
                             .min(
                               createQuestionBlueprintDraftBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin,
+                            )
+                            .multipleOf(
+                              createQuestionBlueprintDraftBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                             ),
                         })
                         .optional(),
@@ -871,18 +919,23 @@ export const createQuestionBlueprintDraft201ResponseDraftCreatedByUserIdRegExp =
 export const createQuestionBlueprintDraft201ResponseDraftDescriptionMax = 1000;
 
 export const createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
+export const createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf = 1;
 
 export const createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemFourGradingTwoToleranceValueMin = 0;
 
 export const createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemFourPointsExclusiveMin = 0;
 
 export const createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
 
@@ -896,6 +949,7 @@ export const createQuestionBlueprintDraft201ResponseDraftOwnerUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const createQuestionBlueprintDraft201ResponseDraftPublishedVersionIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const createQuestionBlueprintDraft201ResponseDraftRevisionMultipleOf = 1;
 
 export const createQuestionBlueprintDraft201ResponseDraftSourcesItemChecksumSha256RegExp =
   /^[a-f0-9]{64}$/;
@@ -940,11 +994,17 @@ export const CreateQuestionBlueprintDraft201Response = zod.strictObject({
                         .number()
                         .min(
                           createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin,
+                        )
+                        .multipleOf(
+                          createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                         ),
                       rowOffset: zod
                         .number()
                         .min(
                           createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin,
+                        )
+                        .multipleOf(
+                          createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                         ),
                     })
                     .optional(),
@@ -978,6 +1038,9 @@ export const CreateQuestionBlueprintDraft201Response = zod.strictObject({
                         .min(1)
                         .max(
                           createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax,
+                        )
+                        .multipleOf(
+                          createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf,
                         ),
                     }),
                     content: zod
@@ -1124,11 +1187,17 @@ export const CreateQuestionBlueprintDraft201Response = zod.strictObject({
                               .number()
                               .min(
                                 createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin,
+                              )
+                              .multipleOf(
+                                createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                               ),
                             rowOffset: zod
                               .number()
                               .min(
                                 createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin,
+                              )
+                              .multipleOf(
+                                createQuestionBlueprintDraft201ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                               ),
                           })
                           .optional(),
@@ -1262,7 +1331,12 @@ export const CreateQuestionBlueprintDraft201Response = zod.strictObject({
         createQuestionBlueprintDraft201ResponseDraftPublishedVersionIdRegExp,
       )
       .nullable(),
-    revision: zod.number().min(1),
+    revision: zod
+      .number()
+      .min(1)
+      .multipleOf(
+        createQuestionBlueprintDraft201ResponseDraftRevisionMultipleOf,
+      ),
     sources: zod.array(
       zod.strictObject({
         byteSize: zod.number().min(1).nullable(),
@@ -1336,8 +1410,13 @@ export const DiscardQuestionBlueprintDraftParams = zod.strictObject({
   draftId: zod.string().regex(discardQuestionBlueprintDraftPathDraftIdRegExp),
 });
 
+export const discardQuestionBlueprintDraftBodyExpectedRevisionMultipleOf = 1;
+
 export const DiscardQuestionBlueprintDraftBody = zod.strictObject({
-  expectedRevision: zod.number().min(1),
+  expectedRevision: zod
+    .number()
+    .min(1)
+    .multipleOf(discardQuestionBlueprintDraftBodyExpectedRevisionMultipleOf),
 });
 
 export const DiscardQuestionBlueprintDraft204Response = zod.void();
@@ -1406,18 +1485,23 @@ export const getQuestionBlueprintDraft200ResponseDraftCreatedByUserIdRegExp =
 export const getQuestionBlueprintDraft200ResponseDraftDescriptionMax = 1000;
 
 export const getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
+export const getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf = 1;
 
 export const getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFourGradingTwoToleranceValueMin = 0;
 
 export const getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFourPointsExclusiveMin = 0;
 
 export const getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
 
@@ -1431,6 +1515,7 @@ export const getQuestionBlueprintDraft200ResponseDraftOwnerUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const getQuestionBlueprintDraft200ResponseDraftPublishedVersionIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const getQuestionBlueprintDraft200ResponseDraftRevisionMultipleOf = 1;
 
 export const getQuestionBlueprintDraft200ResponseDraftSourcesItemChecksumSha256RegExp =
   /^[a-f0-9]{64}$/;
@@ -1475,11 +1560,17 @@ export const GetQuestionBlueprintDraft200Response = zod.strictObject({
                         .number()
                         .min(
                           getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin,
+                        )
+                        .multipleOf(
+                          getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                         ),
                       rowOffset: zod
                         .number()
                         .min(
                           getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin,
+                        )
+                        .multipleOf(
+                          getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                         ),
                     })
                     .optional(),
@@ -1513,6 +1604,9 @@ export const GetQuestionBlueprintDraft200Response = zod.strictObject({
                         .min(1)
                         .max(
                           getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax,
+                        )
+                        .multipleOf(
+                          getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf,
                         ),
                     }),
                     content: zod
@@ -1659,11 +1753,17 @@ export const GetQuestionBlueprintDraft200Response = zod.strictObject({
                               .number()
                               .min(
                                 getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin,
+                              )
+                              .multipleOf(
+                                getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                               ),
                             rowOffset: zod
                               .number()
                               .min(
                                 getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin,
+                              )
+                              .multipleOf(
+                                getQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                               ),
                           })
                           .optional(),
@@ -1793,7 +1893,10 @@ export const GetQuestionBlueprintDraft200Response = zod.strictObject({
       .string()
       .regex(getQuestionBlueprintDraft200ResponseDraftPublishedVersionIdRegExp)
       .nullable(),
-    revision: zod.number().min(1),
+    revision: zod
+      .number()
+      .min(1)
+      .multipleOf(getQuestionBlueprintDraft200ResponseDraftRevisionMultipleOf),
     sources: zod.array(
       zod.strictObject({
         byteSize: zod.number().min(1).nullable(),
@@ -1858,21 +1961,28 @@ export const UpdateQuestionBlueprintDraftParams = zod.strictObject({
   draftId: zod.string().regex(updateQuestionBlueprintDraftPathDraftIdRegExp),
 });
 
+export const updateQuestionBlueprintDraftBodyExpectedRevisionMultipleOf = 1;
+
 export const updateQuestionBlueprintDraftBodyDescriptionMax = 1000;
 
 export const updateQuestionBlueprintDraftBodyDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const updateQuestionBlueprintDraftBodyDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const updateQuestionBlueprintDraftBodyDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const updateQuestionBlueprintDraftBodyDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const updateQuestionBlueprintDraftBodyDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
+export const updateQuestionBlueprintDraftBodyDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf = 1;
 
 export const updateQuestionBlueprintDraftBodyDocumentBlocksItemFourGradingTwoToleranceValueMin = 0;
 
 export const updateQuestionBlueprintDraftBodyDocumentBlocksItemFourPointsExclusiveMin = 0;
 
 export const updateQuestionBlueprintDraftBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const updateQuestionBlueprintDraftBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const updateQuestionBlueprintDraftBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const updateQuestionBlueprintDraftBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const updateQuestionBlueprintDraftBodyDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
 
@@ -1884,7 +1994,10 @@ export const updateQuestionBlueprintDraftBodySourcesItemSourceIdRegExp =
   /^[A-Za-z][A-Za-z0-9_-]*$/;
 
 export const UpdateQuestionBlueprintDraftBody = zod.strictObject({
-  expectedRevision: zod.number().min(1),
+  expectedRevision: zod
+    .number()
+    .min(1)
+    .multipleOf(updateQuestionBlueprintDraftBodyExpectedRevisionMultipleOf),
   description: zod
     .string()
     .max(updateQuestionBlueprintDraftBodyDescriptionMax)
@@ -1907,11 +2020,17 @@ export const UpdateQuestionBlueprintDraftBody = zod.strictObject({
                       .number()
                       .min(
                         updateQuestionBlueprintDraftBodyDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin,
+                      )
+                      .multipleOf(
+                        updateQuestionBlueprintDraftBodyDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                       ),
                     rowOffset: zod
                       .number()
                       .min(
                         updateQuestionBlueprintDraftBodyDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin,
+                      )
+                      .multipleOf(
+                        updateQuestionBlueprintDraftBodyDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                       ),
                   })
                   .optional(),
@@ -1945,6 +2064,9 @@ export const UpdateQuestionBlueprintDraftBody = zod.strictObject({
                       .min(1)
                       .max(
                         updateQuestionBlueprintDraftBodyDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax,
+                      )
+                      .multipleOf(
+                        updateQuestionBlueprintDraftBodyDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf,
                       ),
                   }),
                   content: zod
@@ -2091,11 +2213,17 @@ export const UpdateQuestionBlueprintDraftBody = zod.strictObject({
                             .number()
                             .min(
                               updateQuestionBlueprintDraftBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin,
+                            )
+                            .multipleOf(
+                              updateQuestionBlueprintDraftBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                             ),
                           rowOffset: zod
                             .number()
                             .min(
                               updateQuestionBlueprintDraftBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin,
+                            )
+                            .multipleOf(
+                              updateQuestionBlueprintDraftBodyDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                             ),
                         })
                         .optional(),
@@ -2232,18 +2360,23 @@ export const updateQuestionBlueprintDraft200ResponseDraftCreatedByUserIdRegExp =
 export const updateQuestionBlueprintDraft200ResponseDraftDescriptionMax = 1000;
 
 export const updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
+export const updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf = 1;
 
 export const updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFourGradingTwoToleranceValueMin = 0;
 
 export const updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFourPointsExclusiveMin = 0;
 
 export const updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
 
@@ -2257,6 +2390,7 @@ export const updateQuestionBlueprintDraft200ResponseDraftOwnerUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const updateQuestionBlueprintDraft200ResponseDraftPublishedVersionIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const updateQuestionBlueprintDraft200ResponseDraftRevisionMultipleOf = 1;
 
 export const updateQuestionBlueprintDraft200ResponseDraftSourcesItemChecksumSha256RegExp =
   /^[a-f0-9]{64}$/;
@@ -2301,11 +2435,17 @@ export const UpdateQuestionBlueprintDraft200Response = zod.strictObject({
                         .number()
                         .min(
                           updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin,
+                        )
+                        .multipleOf(
+                          updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                         ),
                       rowOffset: zod
                         .number()
                         .min(
                           updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin,
+                        )
+                        .multipleOf(
+                          updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                         ),
                     })
                     .optional(),
@@ -2339,6 +2479,9 @@ export const UpdateQuestionBlueprintDraft200Response = zod.strictObject({
                         .min(1)
                         .max(
                           updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax,
+                        )
+                        .multipleOf(
+                          updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf,
                         ),
                     }),
                     content: zod
@@ -2485,11 +2628,17 @@ export const UpdateQuestionBlueprintDraft200Response = zod.strictObject({
                               .number()
                               .min(
                                 updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin,
+                              )
+                              .multipleOf(
+                                updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                               ),
                             rowOffset: zod
                               .number()
                               .min(
                                 updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin,
+                              )
+                              .multipleOf(
+                                updateQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                               ),
                           })
                           .optional(),
@@ -2623,7 +2772,12 @@ export const UpdateQuestionBlueprintDraft200Response = zod.strictObject({
         updateQuestionBlueprintDraft200ResponseDraftPublishedVersionIdRegExp,
       )
       .nullable(),
-    revision: zod.number().min(1),
+    revision: zod
+      .number()
+      .min(1)
+      .multipleOf(
+        updateQuestionBlueprintDraft200ResponseDraftRevisionMultipleOf,
+      ),
     sources: zod.array(
       zod.strictObject({
         byteSize: zod.number().min(1).nullable(),
@@ -2706,10 +2860,15 @@ export const PublishQuestionBlueprintDraftParams = zod.strictObject({
   draftId: zod.string().regex(publishQuestionBlueprintDraftPathDraftIdRegExp),
 });
 
+export const publishQuestionBlueprintDraftBodyExpectedRevisionMultipleOf = 1;
+
 export const publishQuestionBlueprintDraftBodyIdempotencyKeyMax = 128;
 
 export const PublishQuestionBlueprintDraftBody = zod.strictObject({
-  expectedRevision: zod.number().min(1),
+  expectedRevision: zod
+    .number()
+    .min(1)
+    .multipleOf(publishQuestionBlueprintDraftBodyExpectedRevisionMultipleOf),
   idempotencyKey: zod
     .string()
     .min(1)
@@ -2725,18 +2884,23 @@ export const publishQuestionBlueprintDraft200ResponseDraftCreatedByUserIdRegExp 
 export const publishQuestionBlueprintDraft200ResponseDraftDescriptionMax = 1000;
 
 export const publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
+export const publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf = 1;
 
 export const publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFourGradingTwoToleranceValueMin = 0;
 
 export const publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFourPointsExclusiveMin = 0;
 
 export const publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
 
@@ -2750,6 +2914,7 @@ export const publishQuestionBlueprintDraft200ResponseDraftOwnerUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const publishQuestionBlueprintDraft200ResponseDraftPublishedVersionIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const publishQuestionBlueprintDraft200ResponseDraftRevisionMultipleOf = 1;
 
 export const publishQuestionBlueprintDraft200ResponseDraftSourcesItemChecksumSha256RegExp =
   /^[a-f0-9]{64}$/;
@@ -2763,6 +2928,7 @@ export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintCurrentVer
 export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintDescriptionMax = 1000;
 
 export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
+export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf = 1;
 
 export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
@@ -2770,6 +2936,7 @@ export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintNameMax = 
 
 export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintOwnerUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintSourcesItemByteSizeMultipleOf = 1;
 
 export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintSourcesItemChecksumSha256RegExp =
   /^[a-f0-9]{64}$/;
@@ -2783,18 +2950,23 @@ export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionCre
 export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDescriptionMax = 1000;
 
 export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
+export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf = 1;
 
 export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemFourGradingTwoToleranceValueMin = 0;
 
 export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemFourPointsExclusiveMin = 0;
 
 export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
 
@@ -2808,12 +2980,14 @@ export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionOwn
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionParentVersionIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionSourcesItemByteSizeMultipleOf = 1;
 
 export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionSourcesItemChecksumSha256RegExp =
   /^[a-f0-9]{64}$/;
 
 export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionSourcesItemSourceIdRegExp =
   /^[A-Za-z][A-Za-z0-9_-]*$/;
+export const publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionVersionNumberMultipleOf = 1;
 
 export const PublishQuestionBlueprintDraft200Response = zod.strictObject({
   draft: zod.strictObject({
@@ -2854,11 +3028,17 @@ export const PublishQuestionBlueprintDraft200Response = zod.strictObject({
                         .number()
                         .min(
                           publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin,
+                        )
+                        .multipleOf(
+                          publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                         ),
                       rowOffset: zod
                         .number()
                         .min(
                           publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin,
+                        )
+                        .multipleOf(
+                          publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                         ),
                     })
                     .optional(),
@@ -2892,6 +3072,9 @@ export const PublishQuestionBlueprintDraft200Response = zod.strictObject({
                         .min(1)
                         .max(
                           publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax,
+                        )
+                        .multipleOf(
+                          publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf,
                         ),
                     }),
                     content: zod
@@ -3038,11 +3221,17 @@ export const PublishQuestionBlueprintDraft200Response = zod.strictObject({
                               .number()
                               .min(
                                 publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin,
+                              )
+                              .multipleOf(
+                                publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                               ),
                             rowOffset: zod
                               .number()
                               .min(
                                 publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin,
+                              )
+                              .multipleOf(
+                                publishQuestionBlueprintDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                               ),
                           })
                           .optional(),
@@ -3176,7 +3365,12 @@ export const PublishQuestionBlueprintDraft200Response = zod.strictObject({
         publishQuestionBlueprintDraft200ResponseDraftPublishedVersionIdRegExp,
       )
       .nullable(),
-    revision: zod.number().min(1),
+    revision: zod
+      .number()
+      .min(1)
+      .multipleOf(
+        publishQuestionBlueprintDraft200ResponseDraftRevisionMultipleOf,
+      ),
     sources: zod.array(
       zod.strictObject({
         byteSize: zod.number().min(1).nullable(),
@@ -3256,6 +3450,9 @@ export const PublishQuestionBlueprintDraft200Response = zod.strictObject({
                         .min(1)
                         .max(
                           publishQuestionBlueprintDraft200ResponseQuestionBlueprintDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax,
+                        )
+                        .multipleOf(
+                          publishQuestionBlueprintDraft200ResponseQuestionBlueprintDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf,
                         ),
                     }),
                     content: zod
@@ -3412,7 +3609,12 @@ export const PublishQuestionBlueprintDraft200Response = zod.strictObject({
     sources: zod
       .array(
         zod.strictObject({
-          byteSize: zod.number().min(1),
+          byteSize: zod
+            .number()
+            .min(1)
+            .multipleOf(
+              publishQuestionBlueprintDraft200ResponseQuestionBlueprintSourcesItemByteSizeMultipleOf,
+            ),
           checksumSha256: zod
             .string()
             .regex(
@@ -3471,11 +3673,17 @@ export const PublishQuestionBlueprintDraft200Response = zod.strictObject({
                         .number()
                         .min(
                           publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin,
+                        )
+                        .multipleOf(
+                          publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                         ),
                       rowOffset: zod
                         .number()
                         .min(
                           publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin,
+                        )
+                        .multipleOf(
+                          publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                         ),
                     })
                     .optional(),
@@ -3509,6 +3717,9 @@ export const PublishQuestionBlueprintDraft200Response = zod.strictObject({
                         .min(1)
                         .max(
                           publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax,
+                        )
+                        .multipleOf(
+                          publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf,
                         ),
                     }),
                     content: zod
@@ -3655,11 +3866,17 @@ export const PublishQuestionBlueprintDraft200Response = zod.strictObject({
                               .number()
                               .min(
                                 publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin,
+                              )
+                              .multipleOf(
+                                publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                               ),
                             rowOffset: zod
                               .number()
                               .min(
                                 publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin,
+                              )
+                              .multipleOf(
+                                publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                               ),
                           })
                           .optional(),
@@ -3801,7 +4018,12 @@ export const PublishQuestionBlueprintDraft200Response = zod.strictObject({
     sources: zod
       .array(
         zod.strictObject({
-          byteSize: zod.number().min(1),
+          byteSize: zod
+            .number()
+            .min(1)
+            .multipleOf(
+              publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionSourcesItemByteSizeMultipleOf,
+            ),
           checksumSha256: zod
             .string()
             .regex(
@@ -3822,7 +4044,12 @@ export const PublishQuestionBlueprintDraft200Response = zod.strictObject({
       .describe(
         "Immutable blueprint-local source entries pinned by this version.",
       ),
-    versionNumber: zod.number().min(1),
+    versionNumber: zod
+      .number()
+      .min(1)
+      .multipleOf(
+        publishQuestionBlueprintDraft200ResponseQuestionBlueprintVersionVersionNumberMultipleOf,
+      ),
   }),
 });
 
@@ -3897,11 +4124,18 @@ export const AttachQuestionBlueprintDraftSourceFileParams = zod.strictObject({
     .regex(attachQuestionBlueprintDraftSourceFilePathSourceIdRegExp),
 });
 
+export const attachQuestionBlueprintDraftSourceFileBodyExpectedRevisionMultipleOf = 1;
+
 export const attachQuestionBlueprintDraftSourceFileBodyFileIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 
 export const AttachQuestionBlueprintDraftSourceFileBody = zod.strictObject({
-  expectedRevision: zod.number().min(1),
+  expectedRevision: zod
+    .number()
+    .min(1)
+    .multipleOf(
+      attachQuestionBlueprintDraftSourceFileBodyExpectedRevisionMultipleOf,
+    ),
   fileId: zod
     .string()
     .regex(attachQuestionBlueprintDraftSourceFileBodyFileIdRegExp),
@@ -3916,18 +4150,23 @@ export const attachQuestionBlueprintDraftSourceFile200ResponseDraftCreatedByUser
 export const attachQuestionBlueprintDraftSourceFile200ResponseDraftDescriptionMax = 1000;
 
 export const attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
+export const attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf = 1;
 
 export const attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemFourGradingTwoToleranceValueMin = 0;
 
 export const attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemFourPointsExclusiveMin = 0;
 
 export const attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
 
@@ -3941,6 +4180,7 @@ export const attachQuestionBlueprintDraftSourceFile200ResponseDraftOwnerUserIdRe
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const attachQuestionBlueprintDraftSourceFile200ResponseDraftPublishedVersionIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const attachQuestionBlueprintDraftSourceFile200ResponseDraftRevisionMultipleOf = 1;
 
 export const attachQuestionBlueprintDraftSourceFile200ResponseDraftSourcesItemChecksumSha256RegExp =
   /^[a-f0-9]{64}$/;
@@ -3994,11 +4234,17 @@ export const AttachQuestionBlueprintDraftSourceFile200Response =
                           .number()
                           .min(
                             attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin,
+                          )
+                          .multipleOf(
+                            attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                           ),
                         rowOffset: zod
                           .number()
                           .min(
                             attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin,
+                          )
+                          .multipleOf(
+                            attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                           ),
                       })
                       .optional(),
@@ -4032,6 +4278,9 @@ export const AttachQuestionBlueprintDraftSourceFile200Response =
                           .min(1)
                           .max(
                             attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax,
+                          )
+                          .multipleOf(
+                            attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf,
                           ),
                       }),
                       content: zod
@@ -4178,11 +4427,17 @@ export const AttachQuestionBlueprintDraftSourceFile200Response =
                                 .number()
                                 .min(
                                   attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin,
+                                )
+                                .multipleOf(
+                                  attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                                 ),
                               rowOffset: zod
                                 .number()
                                 .min(
                                   attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin,
+                                )
+                                .multipleOf(
+                                  attachQuestionBlueprintDraftSourceFile200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                                 ),
                             })
                             .optional(),
@@ -4318,7 +4573,12 @@ export const AttachQuestionBlueprintDraftSourceFile200Response =
           attachQuestionBlueprintDraftSourceFile200ResponseDraftPublishedVersionIdRegExp,
         )
         .nullable(),
-      revision: zod.number().min(1),
+      revision: zod
+        .number()
+        .min(1)
+        .multipleOf(
+          attachQuestionBlueprintDraftSourceFile200ResponseDraftRevisionMultipleOf,
+        ),
       sources: zod.array(
         zod.strictObject({
           byteSize: zod.number().min(1).nullable(),
@@ -4397,15 +4657,987 @@ export const AttachQuestionBlueprintDraftSourceFile409Response =
   });
 
 /**
+ * @summary Save workbook editor output as a new source revision
+ */
+export const saveQuestionBlueprintDraftWorkbookSourceRevisionPathDraftIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const saveQuestionBlueprintDraftWorkbookSourceRevisionPathSourceIdRegExp =
+  /^[A-Za-z][A-Za-z0-9_-]*$/;
+
+export const SaveQuestionBlueprintDraftWorkbookSourceRevisionParams =
+  zod.strictObject({
+    draftId: zod
+      .string()
+      .regex(saveQuestionBlueprintDraftWorkbookSourceRevisionPathDraftIdRegExp),
+    sourceId: zod
+      .string()
+      .regex(
+        saveQuestionBlueprintDraftWorkbookSourceRevisionPathSourceIdRegExp,
+      ),
+  });
+
+export const saveQuestionBlueprintDraftWorkbookSourceRevisionBodyEditorOutputFileIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const saveQuestionBlueprintDraftWorkbookSourceRevisionBodyExpectedRevisionMultipleOf = 1;
+
+export const SaveQuestionBlueprintDraftWorkbookSourceRevisionBody =
+  zod.strictObject({
+    editorOutputFileId: zod
+      .string()
+      .regex(
+        saveQuestionBlueprintDraftWorkbookSourceRevisionBodyEditorOutputFileIdRegExp,
+      ),
+    expectedRevision: zod
+      .number()
+      .min(1)
+      .multipleOf(
+        saveQuestionBlueprintDraftWorkbookSourceRevisionBodyExpectedRevisionMultipleOf,
+      ),
+  });
+
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftBaseVersionIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftBlueprintIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftCreatedByUserIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDescriptionMax = 1000;
+
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
+
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
+
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf = 1;
+
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemFourGradingTwoToleranceValueMin = 0;
+
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemFourPointsExclusiveMin = 0;
+
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
+
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
+
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
+
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemFiveCellsItemTwoPointsExclusiveMin = 0;
+
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftNameMax = 160;
+
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftOwnerUserIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftPublishedVersionIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftRevisionMultipleOf = 1;
+
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftSourcesItemChecksumSha256RegExp =
+  /^[a-f0-9]{64}$/;
+
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftSourcesItemSourceIdRegExp =
+  /^[A-Za-z][A-Za-z0-9_-]*$/;
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseSourceArtifactIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseSourceArtifactSourceRevisionIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseSourceArtifactWorkbookIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseSourceRevisionByteSizeMultipleOf = 1;
+
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseSourceRevisionChecksumSha256RegExp =
+  /^[a-f0-9]{64}$/;
+
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseSourceRevisionCreatedByUserIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseSourceRevisionIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseSourceRevisionParentRevisionIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseSourceRevisionSourceDocumentIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+
+export const SaveQuestionBlueprintDraftWorkbookSourceRevision200Response =
+  zod.strictObject({
+    draft: zod.strictObject({
+      baseVersionId: zod
+        .string()
+        .regex(
+          saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftBaseVersionIdRegExp,
+        )
+        .nullable(),
+      blueprintId: zod
+        .string()
+        .regex(
+          saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftBlueprintIdRegExp,
+        )
+        .nullable(),
+      createdAt: zod.iso.datetime({ offset: true }),
+      createdByUserId: zod
+        .string()
+        .regex(
+          saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftCreatedByUserIdRegExp,
+        ),
+      description: zod
+        .string()
+        .max(
+          saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDescriptionMax,
+        )
+        .nullable(),
+      discardedAt: zod.iso.datetime({ offset: true }).nullable(),
+      document: zod.strictObject({
+        blocks: zod.array(
+          zod.union([
+            zod.strictObject({
+              content: zod.array(
+                zod.union([
+                  zod.strictObject({
+                    text: zod.string(),
+                    type: zod.enum(["text"]),
+                  }),
+                  zod.strictObject({
+                    fallbackText: zod.string().optional(),
+                    rangeCell: zod
+                      .strictObject({
+                        columnOffset: zod
+                          .number()
+                          .min(
+                            saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin,
+                          )
+                          .multipleOf(
+                            saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
+                          ),
+                        rowOffset: zod
+                          .number()
+                          .min(
+                            saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin,
+                          )
+                          .multipleOf(
+                            saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
+                          ),
+                      })
+                      .optional(),
+                    referenceId: zod.string().min(1),
+                    type: zod.enum(["reference"]),
+                  }),
+                ]),
+              ),
+              id: zod.string().min(1),
+              type: zod.enum(["text"]),
+            }),
+            zod.strictObject({
+              content: zod.strictObject({
+                content: zod.array(
+                  zod.union([
+                    zod.strictObject({
+                      content: zod
+                        .array(
+                          zod.strictObject({
+                            text: zod.string(),
+                            type: zod.enum(["text"]),
+                          }),
+                        )
+                        .optional(),
+                      type: zod.enum(["paragraph"]),
+                    }),
+                    zod.strictObject({
+                      attrs: zod.strictObject({
+                        level: zod
+                          .number()
+                          .min(1)
+                          .max(
+                            saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax,
+                          )
+                          .multipleOf(
+                            saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf,
+                          ),
+                      }),
+                      content: zod
+                        .array(
+                          zod.strictObject({
+                            text: zod.string(),
+                            type: zod.enum(["text"]),
+                          }),
+                        )
+                        .optional(),
+                      type: zod.enum(["heading"]),
+                    }),
+                    zod.strictObject({
+                      content: zod.array(
+                        zod.strictObject({
+                          content: zod.array(
+                            zod.union([
+                              zod.strictObject({
+                                content: zod
+                                  .array(
+                                    zod.strictObject({
+                                      text: zod.string(),
+                                      type: zod.enum(["text"]),
+                                    }),
+                                  )
+                                  .optional(),
+                                type: zod.enum(["paragraph"]),
+                              }),
+                              zod.unknown(),
+                              zod.strictObject({
+                                content: zod.array(zod.unknown()),
+                                type: zod.enum(["ordered_list"]),
+                              }),
+                            ]),
+                          ),
+                          type: zod.enum(["list_item"]),
+                        }),
+                      ),
+                      type: zod.enum(["bullet_list"]),
+                    }),
+                    zod.strictObject({
+                      content: zod.array(
+                        zod.strictObject({
+                          content: zod.array(
+                            zod.union([
+                              zod.strictObject({
+                                content: zod
+                                  .array(
+                                    zod.strictObject({
+                                      text: zod.string(),
+                                      type: zod.enum(["text"]),
+                                    }),
+                                  )
+                                  .optional(),
+                                type: zod.enum(["paragraph"]),
+                              }),
+                              zod.strictObject({
+                                content: zod.array(zod.unknown()),
+                                type: zod.enum(["bullet_list"]),
+                              }),
+                              zod.unknown(),
+                            ]),
+                          ),
+                          type: zod.enum(["list_item"]),
+                        }),
+                      ),
+                      type: zod.enum(["ordered_list"]),
+                    }),
+                  ]),
+                ),
+                type: zod.enum(["doc"]),
+              }),
+              id: zod.string().min(1),
+              type: zod.enum(["rich_text"]),
+            }),
+            zod.strictObject({
+              id: zod.string().min(1),
+              type: zod.enum(["separator"]),
+            }),
+            zod.strictObject({
+              correctValueSource: zod
+                .union([
+                  zod.strictObject({
+                    schemaVersion: zod.literal(1),
+                    type: zod.enum(["literal"]),
+                    value: zod.unknown(),
+                  }),
+                  zod.strictObject({
+                    referenceId: zod.string().min(1),
+                    schemaVersion: zod.literal(1),
+                    type: zod.enum(["reference"]),
+                  }),
+                ])
+                .optional(),
+              grading: zod.union([
+                zod.strictObject({
+                  mode: zod.enum(["exact"]),
+                }),
+                zod.strictObject({
+                  mode: zod.enum(["number"]),
+                  tolerance: zod.strictObject({
+                    type: zod.enum(["absolute", "relative"]),
+                    value: zod
+                      .number()
+                      .min(
+                        saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemFourGradingTwoToleranceValueMin,
+                      ),
+                  }),
+                }),
+                zod.strictObject({
+                  mode: zod.enum(["case_insensitive_text"]),
+                }),
+                zod.strictObject({
+                  mode: zod.enum(["manual"]),
+                }),
+              ]),
+              id: zod.string().min(1),
+              label: zod.string().optional(),
+              placeholder: zod.string().optional(),
+              points: zod
+                .number()
+                .gt(
+                  saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemFourPointsExclusiveMin,
+                ),
+              responseFieldId: zod.string().min(1),
+              type: zod.enum(["response"]),
+            }),
+            zod.strictObject({
+              cells: zod.array(
+                zod.union([
+                  zod.strictObject({
+                    columnId: zod.string().min(1),
+                    content: zod.array(
+                      zod.union([
+                        zod.strictObject({
+                          text: zod.string(),
+                          type: zod.enum(["text"]),
+                        }),
+                        zod.strictObject({
+                          fallbackText: zod.string().optional(),
+                          rangeCell: zod
+                            .strictObject({
+                              columnOffset: zod
+                                .number()
+                                .min(
+                                  saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin,
+                                )
+                                .multipleOf(
+                                  saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
+                                ),
+                              rowOffset: zod
+                                .number()
+                                .min(
+                                  saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin,
+                                )
+                                .multipleOf(
+                                  saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
+                                ),
+                            })
+                            .optional(),
+                          referenceId: zod.string().min(1),
+                          type: zod.enum(["reference"]),
+                        }),
+                      ]),
+                    ),
+                    id: zod.string().min(1),
+                    rowId: zod.string().min(1),
+                    type: zod.enum(["content"]),
+                  }),
+                  zod.strictObject({
+                    columnId: zod.string().min(1),
+                    correctValueSource: zod
+                      .union([
+                        zod.strictObject({
+                          schemaVersion: zod.literal(1),
+                          type: zod.enum(["literal"]),
+                          value: zod.unknown(),
+                        }),
+                        zod.strictObject({
+                          referenceId: zod.string().min(1),
+                          schemaVersion: zod.literal(1),
+                          type: zod.enum(["reference"]),
+                        }),
+                      ])
+                      .optional(),
+                    grading: zod.union([
+                      zod.strictObject({
+                        mode: zod.enum(["exact"]),
+                      }),
+                      zod.strictObject({
+                        mode: zod.enum(["number"]),
+                        tolerance: zod.strictObject({
+                          type: zod.enum(["absolute", "relative"]),
+                          value: zod
+                            .number()
+                            .min(
+                              saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin,
+                            ),
+                        }),
+                      }),
+                      zod.strictObject({
+                        mode: zod.enum(["case_insensitive_text"]),
+                      }),
+                      zod.strictObject({
+                        mode: zod.enum(["manual"]),
+                      }),
+                    ]),
+                    id: zod.string().min(1),
+                    label: zod.string().optional(),
+                    placeholder: zod.string().optional(),
+                    points: zod
+                      .number()
+                      .gt(
+                        saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftDocumentBlocksItemFiveCellsItemTwoPointsExclusiveMin,
+                      ),
+                    responseFieldId: zod.string().min(1),
+                    rowId: zod.string().min(1),
+                    type: zod.enum(["response"]),
+                  }),
+                ]),
+              ),
+              columns: zod.array(
+                zod.strictObject({
+                  id: zod.string().min(1),
+                  label: zod.string().min(1),
+                }),
+              ),
+              id: zod.string().min(1),
+              rows: zod.array(
+                zod.strictObject({
+                  id: zod.string().min(1),
+                  label: zod.string().min(1),
+                }),
+              ),
+              showColumnNames: zod.boolean(),
+              showRowNames: zod.boolean(),
+              type: zod.enum(["table"]),
+            }),
+          ]),
+        ),
+        references: zod.array(
+          zod.strictObject({
+            id: zod.string().min(1),
+            label: zod.string().optional(),
+            source: zod.union([
+              zod.strictObject({
+                schemaVersion: zod.literal(1),
+                type: zod.enum(["literal"]),
+                value: zod.unknown(),
+              }),
+              zod.strictObject({
+                ref: zod.string(),
+                schemaVersion: zod.literal(1),
+                sourceId: zod
+                  .string()
+                  .min(1)
+                  .describe("Blueprint-local workbook source identifier."),
+                type: zod.enum(["workbook_cell", "workbook_range"]),
+              }),
+            ]),
+          }),
+        ),
+        responseFields: zod.array(
+          zod.strictObject({
+            id: zod.string(),
+            label: zod.string().optional(),
+            required: zod.boolean().optional(),
+            type: zod.enum(["text", "number", "boolean"]),
+          }),
+        ),
+        schemaVersion: zod.literal(1),
+      }),
+      id: zod
+        .string()
+        .regex(
+          saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftIdRegExp,
+        ),
+      lastSavedAt: zod.iso.datetime({ offset: true }),
+      name: zod
+        .string()
+        .min(1)
+        .max(
+          saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftNameMax,
+        ),
+      ownerUserId: zod
+        .string()
+        .regex(
+          saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftOwnerUserIdRegExp,
+        ),
+      publishedAt: zod.iso.datetime({ offset: true }).nullable(),
+      publishedVersionId: zod
+        .string()
+        .regex(
+          saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftPublishedVersionIdRegExp,
+        )
+        .nullable(),
+      revision: zod
+        .number()
+        .min(1)
+        .multipleOf(
+          saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftRevisionMultipleOf,
+        ),
+      sources: zod.array(
+        zod.strictObject({
+          byteSize: zod.number().min(1).nullable(),
+          checksumSha256: zod
+            .string()
+            .regex(
+              saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftSourcesItemChecksumSha256RegExp,
+            )
+            .nullable(),
+          fileId: zod.uuid().nullable(),
+          name: zod.string().min(1),
+          originalName: zod.string().nullable(),
+          sourceId: zod
+            .string()
+            .regex(
+              saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseDraftSourcesItemSourceIdRegExp,
+            ),
+          status: zod.enum(["local", "uploaded", "validated", "invalid"]),
+          type: zod.enum(["workbook"]),
+          workbookId: zod.uuid().nullable(),
+        }),
+      ),
+      status: zod.enum(["draft", "publishing", "published", "discarded"]),
+      updatedAt: zod.iso.datetime({ offset: true }),
+    }),
+    sourceArtifact: zod.strictObject({
+      createdAt: zod.iso.datetime({ offset: true }),
+      id: zod
+        .string()
+        .regex(
+          saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseSourceArtifactIdRegExp,
+        ),
+      kind: zod.enum(["workbook"]),
+      processor: zod.string().min(1),
+      processorVersion: zod.string().min(1),
+      sourceRevisionId: zod
+        .string()
+        .regex(
+          saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseSourceArtifactSourceRevisionIdRegExp,
+        ),
+      status: zod.enum([
+        "pending_validation",
+        "valid",
+        "invalid",
+        "archived",
+        "deleted",
+      ]),
+      updatedAt: zod.iso.datetime({ offset: true }),
+      validationError: zod.record(zod.string(), zod.unknown()).nullable(),
+      workbookId: zod
+        .string()
+        .regex(
+          saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseSourceArtifactWorkbookIdRegExp,
+        )
+        .nullable(),
+    }),
+    sourceRevision: zod.strictObject({
+      byteSize: zod
+        .number()
+        .min(1)
+        .multipleOf(
+          saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseSourceRevisionByteSizeMultipleOf,
+        ),
+      checksumSha256: zod
+        .string()
+        .regex(
+          saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseSourceRevisionChecksumSha256RegExp,
+        ),
+      contentType: zod.string().min(1),
+      createdAt: zod.iso.datetime({ offset: true }),
+      createdByUserId: zod
+        .string()
+        .regex(
+          saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseSourceRevisionCreatedByUserIdRegExp,
+        ),
+      id: zod
+        .string()
+        .regex(
+          saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseSourceRevisionIdRegExp,
+        ),
+      kind: zod.enum(["workbook"]),
+      parentRevisionId: zod
+        .string()
+        .regex(
+          saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseSourceRevisionParentRevisionIdRegExp,
+        )
+        .nullable(),
+      sourceDocumentId: zod
+        .string()
+        .regex(
+          saveQuestionBlueprintDraftWorkbookSourceRevision200ResponseSourceRevisionSourceDocumentIdRegExp,
+        ),
+    }),
+  });
+
+export const SaveQuestionBlueprintDraftWorkbookSourceRevision400Response =
+  zod.strictObject({
+    error: zod.strictObject({
+      code: zod.string(),
+      details: zod.unknown().optional(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+    }),
+  });
+
+export const SaveQuestionBlueprintDraftWorkbookSourceRevision401Response =
+  zod.strictObject({
+    error: zod.strictObject({
+      code: zod.string(),
+      details: zod.unknown().optional(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+    }),
+  });
+
+export const SaveQuestionBlueprintDraftWorkbookSourceRevision403Response =
+  zod.strictObject({
+    error: zod.strictObject({
+      code: zod.string(),
+      details: zod.unknown().optional(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+    }),
+  });
+
+export const SaveQuestionBlueprintDraftWorkbookSourceRevision404Response =
+  zod.strictObject({
+    error: zod.strictObject({
+      code: zod.string(),
+      details: zod.unknown().optional(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+    }),
+  });
+
+export const SaveQuestionBlueprintDraftWorkbookSourceRevision409Response =
+  zod.strictObject({
+    error: zod.strictObject({
+      code: zod.string(),
+      details: zod.unknown().optional(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+    }),
+  });
+
+/**
+ * @summary Create workbook editor output upload for a draft source
+ */
+export const createQuestionBlueprintDraftWorkbookEditorUploadPathDraftIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const createQuestionBlueprintDraftWorkbookEditorUploadPathSourceIdRegExp =
+  /^[A-Za-z][A-Za-z0-9_-]*$/;
+
+export const CreateQuestionBlueprintDraftWorkbookEditorUploadParams =
+  zod.strictObject({
+    draftId: zod
+      .string()
+      .regex(createQuestionBlueprintDraftWorkbookEditorUploadPathDraftIdRegExp),
+    sourceId: zod
+      .string()
+      .regex(
+        createQuestionBlueprintDraftWorkbookEditorUploadPathSourceIdRegExp,
+      ),
+  });
+
+export const createQuestionBlueprintDraftWorkbookEditorUploadBodyByteSizeExclusiveMin = 0;
+export const createQuestionBlueprintDraftWorkbookEditorUploadBodyByteSizeMultipleOf = 1;
+
+export const createQuestionBlueprintDraftWorkbookEditorUploadBodyChecksumSha256RegExp =
+  /^[A-Fa-f0-9]{64}$/;
+export const createQuestionBlueprintDraftWorkbookEditorUploadBodyExpectedRevisionMultipleOf = 1;
+
+export const createQuestionBlueprintDraftWorkbookEditorUploadBodyOriginalNameMax = 500;
+
+export const CreateQuestionBlueprintDraftWorkbookEditorUploadBody =
+  zod.strictObject({
+    byteSize: zod
+      .number()
+      .gt(
+        createQuestionBlueprintDraftWorkbookEditorUploadBodyByteSizeExclusiveMin,
+      )
+      .multipleOf(
+        createQuestionBlueprintDraftWorkbookEditorUploadBodyByteSizeMultipleOf,
+      ),
+    checksumSha256: zod
+      .string()
+      .regex(
+        createQuestionBlueprintDraftWorkbookEditorUploadBodyChecksumSha256RegExp,
+      ),
+    contentType: zod.enum([
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ]),
+    expectedRevision: zod
+      .number()
+      .min(1)
+      .multipleOf(
+        createQuestionBlueprintDraftWorkbookEditorUploadBodyExpectedRevisionMultipleOf,
+      ),
+    originalName: zod
+      .string()
+      .min(1)
+      .max(createQuestionBlueprintDraftWorkbookEditorUploadBodyOriginalNameMax),
+  });
+
+export const createQuestionBlueprintDraftWorkbookEditorUpload201ResponseUploadChecksumSha256RegExp =
+  /^[a-f0-9]{64}$/;
+
+export const createQuestionBlueprintDraftWorkbookEditorUpload201ResponseUploadCreatedByUserIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const createQuestionBlueprintDraftWorkbookEditorUpload201ResponseUploadExpectedByteSizeExclusiveMin = 0;
+export const createQuestionBlueprintDraftWorkbookEditorUpload201ResponseUploadExpectedByteSizeMultipleOf = 1;
+
+export const createQuestionBlueprintDraftWorkbookEditorUpload201ResponseUploadIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+
+export const createQuestionBlueprintDraftWorkbookEditorUpload201ResponseUploadUrlExpiresInSecondsExclusiveMin = 0;
+export const createQuestionBlueprintDraftWorkbookEditorUpload201ResponseUploadUrlExpiresInSecondsMultipleOf = 1;
+
+export const CreateQuestionBlueprintDraftWorkbookEditorUpload201Response =
+  zod.strictObject({
+    upload: zod.strictObject({
+      checksumSha256: zod
+        .string()
+        .regex(
+          createQuestionBlueprintDraftWorkbookEditorUpload201ResponseUploadChecksumSha256RegExp,
+        ),
+      completedAt: zod.iso.datetime({ offset: true }).nullable(),
+      contentType: zod.string().min(1),
+      createdAt: zod.iso.datetime({ offset: true }),
+      createdByUserId: zod
+        .string()
+        .regex(
+          createQuestionBlueprintDraftWorkbookEditorUpload201ResponseUploadCreatedByUserIdRegExp,
+        ),
+      expectedByteSize: zod
+        .number()
+        .gt(
+          createQuestionBlueprintDraftWorkbookEditorUpload201ResponseUploadExpectedByteSizeExclusiveMin,
+        )
+        .multipleOf(
+          createQuestionBlueprintDraftWorkbookEditorUpload201ResponseUploadExpectedByteSizeMultipleOf,
+        ),
+      id: zod
+        .string()
+        .regex(
+          createQuestionBlueprintDraftWorkbookEditorUpload201ResponseUploadIdRegExp,
+        ),
+      originalName: zod.string().min(1),
+      status: zod.enum([
+        "initiated",
+        "verified",
+        "failed",
+        "expired",
+        "cancelled",
+      ]),
+      updatedAt: zod.iso.datetime({ offset: true }),
+      uploadExpiresAt: zod.iso.datetime({ offset: true }),
+    }),
+    uploadUrl: zod.strictObject({
+      expiresInSeconds: zod
+        .number()
+        .gt(
+          createQuestionBlueprintDraftWorkbookEditorUpload201ResponseUploadUrlExpiresInSecondsExclusiveMin,
+        )
+        .multipleOf(
+          createQuestionBlueprintDraftWorkbookEditorUpload201ResponseUploadUrlExpiresInSecondsMultipleOf,
+        ),
+      headers: zod.record(zod.string(), zod.string()),
+      method: zod.enum(["PUT"]),
+      url: zod.url(),
+    }),
+  });
+
+export const CreateQuestionBlueprintDraftWorkbookEditorUpload400Response =
+  zod.strictObject({
+    error: zod.strictObject({
+      code: zod.string(),
+      details: zod.unknown().optional(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+    }),
+  });
+
+export const CreateQuestionBlueprintDraftWorkbookEditorUpload401Response =
+  zod.strictObject({
+    error: zod.strictObject({
+      code: zod.string(),
+      details: zod.unknown().optional(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+    }),
+  });
+
+export const CreateQuestionBlueprintDraftWorkbookEditorUpload403Response =
+  zod.strictObject({
+    error: zod.strictObject({
+      code: zod.string(),
+      details: zod.unknown().optional(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+    }),
+  });
+
+export const CreateQuestionBlueprintDraftWorkbookEditorUpload404Response =
+  zod.strictObject({
+    error: zod.strictObject({
+      code: zod.string(),
+      details: zod.unknown().optional(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+    }),
+  });
+
+export const CreateQuestionBlueprintDraftWorkbookEditorUpload409Response =
+  zod.strictObject({
+    error: zod.strictObject({
+      code: zod.string(),
+      details: zod.unknown().optional(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+    }),
+  });
+
+export const CreateQuestionBlueprintDraftWorkbookEditorUpload502Response =
+  zod.strictObject({
+    error: zod.strictObject({
+      code: zod.string(),
+      details: zod.unknown().optional(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+    }),
+  });
+
+/**
+ * @summary Complete workbook editor output upload for a draft source
+ */
+export const completeQuestionBlueprintDraftWorkbookEditorUploadPathDraftIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const completeQuestionBlueprintDraftWorkbookEditorUploadPathSourceIdRegExp =
+  /^[A-Za-z][A-Za-z0-9_-]*$/;
+export const completeQuestionBlueprintDraftWorkbookEditorUploadPathUploadIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+
+export const CompleteQuestionBlueprintDraftWorkbookEditorUploadParams =
+  zod.strictObject({
+    draftId: zod
+      .string()
+      .regex(
+        completeQuestionBlueprintDraftWorkbookEditorUploadPathDraftIdRegExp,
+      ),
+    sourceId: zod
+      .string()
+      .regex(
+        completeQuestionBlueprintDraftWorkbookEditorUploadPathSourceIdRegExp,
+      ),
+    uploadId: zod
+      .string()
+      .regex(
+        completeQuestionBlueprintDraftWorkbookEditorUploadPathUploadIdRegExp,
+      ),
+  });
+
+export const completeQuestionBlueprintDraftWorkbookEditorUploadBodyExpectedRevisionMultipleOf = 1;
+
+export const CompleteQuestionBlueprintDraftWorkbookEditorUploadBody =
+  zod.strictObject({
+    expectedRevision: zod
+      .number()
+      .min(1)
+      .multipleOf(
+        completeQuestionBlueprintDraftWorkbookEditorUploadBodyExpectedRevisionMultipleOf,
+      ),
+  });
+
+export const completeQuestionBlueprintDraftWorkbookEditorUpload201ResponseEditorOutputFileByteSizeExclusiveMin = 0;
+export const completeQuestionBlueprintDraftWorkbookEditorUpload201ResponseEditorOutputFileByteSizeMultipleOf = 1;
+
+export const completeQuestionBlueprintDraftWorkbookEditorUpload201ResponseEditorOutputFileChecksumSha256RegExp =
+  /^[a-f0-9]{64}$/;
+
+export const completeQuestionBlueprintDraftWorkbookEditorUpload201ResponseEditorOutputFileIdRegExp =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+
+export const CompleteQuestionBlueprintDraftWorkbookEditorUpload201Response =
+  zod.strictObject({
+    editorOutputFile: zod.strictObject({
+      byteSize: zod
+        .number()
+        .gt(
+          completeQuestionBlueprintDraftWorkbookEditorUpload201ResponseEditorOutputFileByteSizeExclusiveMin,
+        )
+        .multipleOf(
+          completeQuestionBlueprintDraftWorkbookEditorUpload201ResponseEditorOutputFileByteSizeMultipleOf,
+        ),
+      checksumSha256: zod
+        .string()
+        .regex(
+          completeQuestionBlueprintDraftWorkbookEditorUpload201ResponseEditorOutputFileChecksumSha256RegExp,
+        ),
+      contentType: zod.string().min(1),
+      id: zod
+        .string()
+        .regex(
+          completeQuestionBlueprintDraftWorkbookEditorUpload201ResponseEditorOutputFileIdRegExp,
+        ),
+      originalName: zod.string().min(1),
+    }),
+  });
+
+export const CompleteQuestionBlueprintDraftWorkbookEditorUpload400Response =
+  zod.strictObject({
+    error: zod.strictObject({
+      code: zod.string(),
+      details: zod.unknown().optional(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+    }),
+  });
+
+export const CompleteQuestionBlueprintDraftWorkbookEditorUpload401Response =
+  zod.strictObject({
+    error: zod.strictObject({
+      code: zod.string(),
+      details: zod.unknown().optional(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+    }),
+  });
+
+export const CompleteQuestionBlueprintDraftWorkbookEditorUpload403Response =
+  zod.strictObject({
+    error: zod.strictObject({
+      code: zod.string(),
+      details: zod.unknown().optional(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+    }),
+  });
+
+export const CompleteQuestionBlueprintDraftWorkbookEditorUpload404Response =
+  zod.strictObject({
+    error: zod.strictObject({
+      code: zod.string(),
+      details: zod.unknown().optional(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+    }),
+  });
+
+export const CompleteQuestionBlueprintDraftWorkbookEditorUpload409Response =
+  zod.strictObject({
+    error: zod.strictObject({
+      code: zod.string(),
+      details: zod.unknown().optional(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+    }),
+  });
+
+export const CompleteQuestionBlueprintDraftWorkbookEditorUpload502Response =
+  zod.strictObject({
+    error: zod.strictObject({
+      code: zod.string(),
+      details: zod.unknown().optional(),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+    }),
+  });
+
+/**
  * @summary List question blueprints
  */
 export const listQuestionBlueprintsQueryLimitMax = 100;
+export const listQuestionBlueprintsQueryLimitMultipleOf = 1;
 
 export const ListQuestionBlueprintsQueryParams = zod.object({
   limit: zod.coerce
     .number()
     .min(1)
     .max(listQuestionBlueprintsQueryLimitMax)
+    .multipleOf(listQuestionBlueprintsQueryLimitMultipleOf)
     .optional(),
   cursor: zod.string().optional(),
   status: zod.enum(["active", "archived", "deleted"]).optional(),
@@ -4418,6 +5650,7 @@ export const listQuestionBlueprints200ResponseQuestionBlueprintsItemCurrentVersi
 export const listQuestionBlueprints200ResponseQuestionBlueprintsItemDescriptionMax = 1000;
 
 export const listQuestionBlueprints200ResponseQuestionBlueprintsItemDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
+export const listQuestionBlueprints200ResponseQuestionBlueprintsItemDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf = 1;
 
 export const listQuestionBlueprints200ResponseQuestionBlueprintsItemIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
@@ -4425,6 +5658,7 @@ export const listQuestionBlueprints200ResponseQuestionBlueprintsItemNameMax = 16
 
 export const listQuestionBlueprints200ResponseQuestionBlueprintsItemOwnerUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const listQuestionBlueprints200ResponseQuestionBlueprintsItemSourcesItemByteSizeMultipleOf = 1;
 
 export const listQuestionBlueprints200ResponseQuestionBlueprintsItemSourcesItemChecksumSha256RegExp =
   /^[a-f0-9]{64}$/;
@@ -4489,6 +5723,9 @@ export const ListQuestionBlueprints200Response = zod.strictObject({
                           .min(1)
                           .max(
                             listQuestionBlueprints200ResponseQuestionBlueprintsItemDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax,
+                          )
+                          .multipleOf(
+                            listQuestionBlueprints200ResponseQuestionBlueprintsItemDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf,
                           ),
                       }),
                       content: zod
@@ -4645,7 +5882,12 @@ export const ListQuestionBlueprints200Response = zod.strictObject({
       sources: zod
         .array(
           zod.strictObject({
-            byteSize: zod.number().min(1),
+            byteSize: zod
+              .number()
+              .min(1)
+              .multipleOf(
+                listQuestionBlueprints200ResponseQuestionBlueprintsItemSourcesItemByteSizeMultipleOf,
+              ),
             checksumSha256: zod
               .string()
               .regex(
@@ -4803,6 +6045,7 @@ export const getQuestionBlueprint200ResponseQuestionBlueprintCurrentVersionIdReg
 export const getQuestionBlueprint200ResponseQuestionBlueprintDescriptionMax = 1000;
 
 export const getQuestionBlueprint200ResponseQuestionBlueprintDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
+export const getQuestionBlueprint200ResponseQuestionBlueprintDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf = 1;
 
 export const getQuestionBlueprint200ResponseQuestionBlueprintIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
@@ -4810,6 +6053,7 @@ export const getQuestionBlueprint200ResponseQuestionBlueprintNameMax = 160;
 
 export const getQuestionBlueprint200ResponseQuestionBlueprintOwnerUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const getQuestionBlueprint200ResponseQuestionBlueprintSourcesItemByteSizeMultipleOf = 1;
 
 export const getQuestionBlueprint200ResponseQuestionBlueprintSourcesItemChecksumSha256RegExp =
   /^[a-f0-9]{64}$/;
@@ -4870,6 +6114,9 @@ export const GetQuestionBlueprint200Response = zod.strictObject({
                         .min(1)
                         .max(
                           getQuestionBlueprint200ResponseQuestionBlueprintDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax,
+                        )
+                        .multipleOf(
+                          getQuestionBlueprint200ResponseQuestionBlueprintDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf,
                         ),
                     }),
                     content: zod
@@ -5024,7 +6271,12 @@ export const GetQuestionBlueprint200Response = zod.strictObject({
     sources: zod
       .array(
         zod.strictObject({
-          byteSize: zod.number().min(1),
+          byteSize: zod
+            .number()
+            .min(1)
+            .multipleOf(
+              getQuestionBlueprint200ResponseQuestionBlueprintSourcesItemByteSizeMultipleOf,
+            ),
           checksumSha256: zod
             .string()
             .regex(
@@ -5128,18 +6380,23 @@ export const createQuestionBlueprintEditDraft200ResponseDraftCreatedByUserIdRegE
 export const createQuestionBlueprintEditDraft200ResponseDraftDescriptionMax = 1000;
 
 export const createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
+export const createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf = 1;
 
 export const createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemFourGradingTwoToleranceValueMin = 0;
 
 export const createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemFourPointsExclusiveMin = 0;
 
 export const createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
 
@@ -5153,6 +6410,7 @@ export const createQuestionBlueprintEditDraft200ResponseDraftOwnerUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const createQuestionBlueprintEditDraft200ResponseDraftPublishedVersionIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const createQuestionBlueprintEditDraft200ResponseDraftRevisionMultipleOf = 1;
 
 export const createQuestionBlueprintEditDraft200ResponseDraftSourcesItemChecksumSha256RegExp =
   /^[a-f0-9]{64}$/;
@@ -5201,11 +6459,17 @@ export const CreateQuestionBlueprintEditDraft200Response = zod.strictObject({
                         .number()
                         .min(
                           createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin,
+                        )
+                        .multipleOf(
+                          createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                         ),
                       rowOffset: zod
                         .number()
                         .min(
                           createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin,
+                        )
+                        .multipleOf(
+                          createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                         ),
                     })
                     .optional(),
@@ -5239,6 +6503,9 @@ export const CreateQuestionBlueprintEditDraft200Response = zod.strictObject({
                         .min(1)
                         .max(
                           createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax,
+                        )
+                        .multipleOf(
+                          createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf,
                         ),
                     }),
                     content: zod
@@ -5385,11 +6652,17 @@ export const CreateQuestionBlueprintEditDraft200Response = zod.strictObject({
                               .number()
                               .min(
                                 createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin,
+                              )
+                              .multipleOf(
+                                createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                               ),
                             rowOffset: zod
                               .number()
                               .min(
                                 createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin,
+                              )
+                              .multipleOf(
+                                createQuestionBlueprintEditDraft200ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                               ),
                           })
                           .optional(),
@@ -5523,7 +6796,12 @@ export const CreateQuestionBlueprintEditDraft200Response = zod.strictObject({
         createQuestionBlueprintEditDraft200ResponseDraftPublishedVersionIdRegExp,
       )
       .nullable(),
-    revision: zod.number().min(1),
+    revision: zod
+      .number()
+      .min(1)
+      .multipleOf(
+        createQuestionBlueprintEditDraft200ResponseDraftRevisionMultipleOf,
+      ),
     sources: zod.array(
       zod.strictObject({
         byteSize: zod.number().min(1).nullable(),
@@ -5561,18 +6839,23 @@ export const createQuestionBlueprintEditDraft201ResponseDraftCreatedByUserIdRegE
 export const createQuestionBlueprintEditDraft201ResponseDraftDescriptionMax = 1000;
 
 export const createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
+export const createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf = 1;
 
 export const createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemFourGradingTwoToleranceValueMin = 0;
 
 export const createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemFourPointsExclusiveMin = 0;
 
 export const createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
 
@@ -5586,6 +6869,7 @@ export const createQuestionBlueprintEditDraft201ResponseDraftOwnerUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const createQuestionBlueprintEditDraft201ResponseDraftPublishedVersionIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const createQuestionBlueprintEditDraft201ResponseDraftRevisionMultipleOf = 1;
 
 export const createQuestionBlueprintEditDraft201ResponseDraftSourcesItemChecksumSha256RegExp =
   /^[a-f0-9]{64}$/;
@@ -5634,11 +6918,17 @@ export const CreateQuestionBlueprintEditDraft201Response = zod.strictObject({
                         .number()
                         .min(
                           createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin,
+                        )
+                        .multipleOf(
+                          createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                         ),
                       rowOffset: zod
                         .number()
                         .min(
                           createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin,
+                        )
+                        .multipleOf(
+                          createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                         ),
                     })
                     .optional(),
@@ -5672,6 +6962,9 @@ export const CreateQuestionBlueprintEditDraft201Response = zod.strictObject({
                         .min(1)
                         .max(
                           createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax,
+                        )
+                        .multipleOf(
+                          createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf,
                         ),
                     }),
                     content: zod
@@ -5818,11 +7111,17 @@ export const CreateQuestionBlueprintEditDraft201Response = zod.strictObject({
                               .number()
                               .min(
                                 createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin,
+                              )
+                              .multipleOf(
+                                createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                               ),
                             rowOffset: zod
                               .number()
                               .min(
                                 createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin,
+                              )
+                              .multipleOf(
+                                createQuestionBlueprintEditDraft201ResponseDraftDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                               ),
                           })
                           .optional(),
@@ -5956,7 +7255,12 @@ export const CreateQuestionBlueprintEditDraft201Response = zod.strictObject({
         createQuestionBlueprintEditDraft201ResponseDraftPublishedVersionIdRegExp,
       )
       .nullable(),
-    revision: zod.number().min(1),
+    revision: zod
+      .number()
+      .min(1)
+      .multipleOf(
+        createQuestionBlueprintEditDraft201ResponseDraftRevisionMultipleOf,
+      ),
     sources: zod.array(
       zod.strictObject({
         byteSize: zod.number().min(1).nullable(),
@@ -6050,18 +7354,23 @@ export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintCurrentVer
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDescriptionMax = 1000;
 
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf = 1;
 
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFourGradingTwoToleranceValueMin = 0;
 
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFourPointsExclusiveMin = 0;
 
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin = 0;
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf = 1;
 
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin = 0;
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf = 1;
 
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFiveCellsItemTwoGradingTwoToleranceValueMin = 0;
 
@@ -6073,6 +7382,7 @@ export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintNameMax = 
 
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintOwnerUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSourcesItemByteSizeMultipleOf = 1;
 
 export const getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSourcesItemChecksumSha256RegExp =
   /^[a-f0-9]{64}$/;
@@ -6118,11 +7428,17 @@ export const GetQuestionBlueprintAuthoring200Response = zod.strictObject({
                         .number()
                         .min(
                           getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMin,
+                        )
+                        .multipleOf(
+                          getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                         ),
                       rowOffset: zod
                         .number()
                         .min(
                           getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMin,
+                        )
+                        .multipleOf(
+                          getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                         ),
                     })
                     .optional(),
@@ -6156,6 +7472,9 @@ export const GetQuestionBlueprintAuthoring200Response = zod.strictObject({
                         .min(1)
                         .max(
                           getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMax,
+                        )
+                        .multipleOf(
+                          getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf,
                         ),
                     }),
                     content: zod
@@ -6302,11 +7621,17 @@ export const GetQuestionBlueprintAuthoring200Response = zod.strictObject({
                               .number()
                               .min(
                                 getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMin,
+                              )
+                              .multipleOf(
+                                getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellColumnOffsetMultipleOf,
                               ),
                             rowOffset: zod
                               .number()
                               .min(
                                 getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMin,
+                              )
+                              .multipleOf(
+                                getQuestionBlueprintAuthoring200ResponseQuestionBlueprintDocumentBlocksItemFiveCellsItemOneContentItemTwoRangeCellRowOffsetMultipleOf,
                               ),
                           })
                           .optional(),
@@ -6437,7 +7762,12 @@ export const GetQuestionBlueprintAuthoring200Response = zod.strictObject({
     sources: zod
       .array(
         zod.strictObject({
-          byteSize: zod.number().min(1),
+          byteSize: zod
+            .number()
+            .min(1)
+            .multipleOf(
+              getQuestionBlueprintAuthoring200ResponseQuestionBlueprintSourcesItemByteSizeMultipleOf,
+            ),
           checksumSha256: zod
             .string()
             .regex(
@@ -6520,12 +7850,14 @@ export const GetQuestionBlueprintAuthoring502Response = zod.strictObject({
  * @summary List question generation runs
  */
 export const listQuestionGenerationRunsQueryLimitMax = 100;
+export const listQuestionGenerationRunsQueryLimitMultipleOf = 1;
 
 export const ListQuestionGenerationRunsQueryParams = zod.object({
   limit: zod.coerce
     .number()
     .min(1)
     .max(listQuestionGenerationRunsQueryLimitMax)
+    .multipleOf(listQuestionGenerationRunsQueryLimitMultipleOf)
     .optional(),
   cursor: zod.string().optional(),
   status: zod
@@ -6540,7 +7872,10 @@ export const ListQuestionGenerationRunsQueryParams = zod.object({
     .optional(),
 });
 
+export const listQuestionGenerationRuns200ResponseQuestionGenerationRunsItemAttemptNumberMultipleOf = 1;
+
 export const listQuestionGenerationRuns200ResponseQuestionGenerationRunsItemAttemptsMin = 0;
+export const listQuestionGenerationRuns200ResponseQuestionGenerationRunsItemAttemptsMultipleOf = 1;
 
 export const listQuestionGenerationRuns200ResponseQuestionGenerationRunsItemBlueprintIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
@@ -6553,6 +7888,7 @@ export const listQuestionGenerationRuns200ResponseQuestionGenerationRunsItemIdRe
 export const listQuestionGenerationRuns200ResponseQuestionGenerationRunsItemOwnerUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const listQuestionGenerationRuns200ResponseQuestionGenerationRunsItemRequestedCountMax = 100;
+export const listQuestionGenerationRuns200ResponseQuestionGenerationRunsItemRequestedCountMultipleOf = 1;
 
 export const listQuestionGenerationRuns200ResponseQuestionGenerationRunsItemResultOneQuestionIdsItemRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
@@ -6567,11 +7903,19 @@ export const ListQuestionGenerationRuns200Response = zod.strictObject({
   nextCursor: zod.string().nullable(),
   questionGenerationRuns: zod.array(
     zod.strictObject({
-      attemptNumber: zod.number().min(1),
+      attemptNumber: zod
+        .number()
+        .min(1)
+        .multipleOf(
+          listQuestionGenerationRuns200ResponseQuestionGenerationRunsItemAttemptNumberMultipleOf,
+        ),
       attempts: zod
         .number()
         .min(
           listQuestionGenerationRuns200ResponseQuestionGenerationRunsItemAttemptsMin,
+        )
+        .multipleOf(
+          listQuestionGenerationRuns200ResponseQuestionGenerationRunsItemAttemptsMultipleOf,
         ),
       blueprintId: zod
         .string()
@@ -6606,6 +7950,9 @@ export const ListQuestionGenerationRuns200Response = zod.strictObject({
         .min(1)
         .max(
           listQuestionGenerationRuns200ResponseQuestionGenerationRunsItemRequestedCountMax,
+        )
+        .multipleOf(
+          listQuestionGenerationRuns200ResponseQuestionGenerationRunsItemRequestedCountMultipleOf,
         ),
       result: zod.union([
         zod.strictObject({
@@ -6711,6 +8058,7 @@ export const ListQuestionGenerationRuns502Response = zod.strictObject({
 export const createQuestionGenerationRunBodyBlueprintIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const createQuestionGenerationRunBodyCountMax = 100;
+export const createQuestionGenerationRunBodyCountMultipleOf = 1;
 
 export const createQuestionGenerationRunBodyTargetQuestionSetIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
@@ -6719,13 +8067,20 @@ export const CreateQuestionGenerationRunBody = zod.strictObject({
   blueprintId: zod
     .string()
     .regex(createQuestionGenerationRunBodyBlueprintIdRegExp),
-  count: zod.number().min(1).max(createQuestionGenerationRunBodyCountMax),
+  count: zod
+    .number()
+    .min(1)
+    .max(createQuestionGenerationRunBodyCountMax)
+    .multipleOf(createQuestionGenerationRunBodyCountMultipleOf),
   targetQuestionSetId: zod
     .string()
     .regex(createQuestionGenerationRunBodyTargetQuestionSetIdRegExp),
 });
 
+export const createQuestionGenerationRun201ResponseQuestionGenerationRunAttemptNumberMultipleOf = 1;
+
 export const createQuestionGenerationRun201ResponseQuestionGenerationRunAttemptsMin = 0;
+export const createQuestionGenerationRun201ResponseQuestionGenerationRunAttemptsMultipleOf = 1;
 
 export const createQuestionGenerationRun201ResponseQuestionGenerationRunBlueprintIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
@@ -6738,6 +8093,7 @@ export const createQuestionGenerationRun201ResponseQuestionGenerationRunIdRegExp
 export const createQuestionGenerationRun201ResponseQuestionGenerationRunOwnerUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const createQuestionGenerationRun201ResponseQuestionGenerationRunRequestedCountMax = 100;
+export const createQuestionGenerationRun201ResponseQuestionGenerationRunRequestedCountMultipleOf = 1;
 
 export const createQuestionGenerationRun201ResponseQuestionGenerationRunResultOneQuestionIdsItemRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
@@ -6750,11 +8106,19 @@ export const createQuestionGenerationRun201ResponseQuestionGenerationRunWorkbook
 
 export const CreateQuestionGenerationRun201Response = zod.strictObject({
   questionGenerationRun: zod.strictObject({
-    attemptNumber: zod.number().min(1),
+    attemptNumber: zod
+      .number()
+      .min(1)
+      .multipleOf(
+        createQuestionGenerationRun201ResponseQuestionGenerationRunAttemptNumberMultipleOf,
+      ),
     attempts: zod
       .number()
       .min(
         createQuestionGenerationRun201ResponseQuestionGenerationRunAttemptsMin,
+      )
+      .multipleOf(
+        createQuestionGenerationRun201ResponseQuestionGenerationRunAttemptsMultipleOf,
       ),
     blueprintId: zod
       .string()
@@ -6789,6 +8153,9 @@ export const CreateQuestionGenerationRun201Response = zod.strictObject({
       .min(1)
       .max(
         createQuestionGenerationRun201ResponseQuestionGenerationRunRequestedCountMax,
+      )
+      .multipleOf(
+        createQuestionGenerationRun201ResponseQuestionGenerationRunRequestedCountMultipleOf,
       ),
     result: zod.union([
       zod.strictObject({
@@ -6898,7 +8265,10 @@ export const GetQuestionGenerationRunParams = zod.strictObject({
     .regex(getQuestionGenerationRunPathQuestionGenerationRunIdRegExp),
 });
 
+export const getQuestionGenerationRun200ResponseQuestionGenerationRunAttemptNumberMultipleOf = 1;
+
 export const getQuestionGenerationRun200ResponseQuestionGenerationRunAttemptsMin = 0;
+export const getQuestionGenerationRun200ResponseQuestionGenerationRunAttemptsMultipleOf = 1;
 
 export const getQuestionGenerationRun200ResponseQuestionGenerationRunBlueprintIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
@@ -6911,6 +8281,7 @@ export const getQuestionGenerationRun200ResponseQuestionGenerationRunIdRegExp =
 export const getQuestionGenerationRun200ResponseQuestionGenerationRunOwnerUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const getQuestionGenerationRun200ResponseQuestionGenerationRunRequestedCountMax = 100;
+export const getQuestionGenerationRun200ResponseQuestionGenerationRunRequestedCountMultipleOf = 1;
 
 export const getQuestionGenerationRun200ResponseQuestionGenerationRunResultOneQuestionIdsItemRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
@@ -6923,10 +8294,18 @@ export const getQuestionGenerationRun200ResponseQuestionGenerationRunWorkbookCal
 
 export const GetQuestionGenerationRun200Response = zod.strictObject({
   questionGenerationRun: zod.strictObject({
-    attemptNumber: zod.number().min(1),
+    attemptNumber: zod
+      .number()
+      .min(1)
+      .multipleOf(
+        getQuestionGenerationRun200ResponseQuestionGenerationRunAttemptNumberMultipleOf,
+      ),
     attempts: zod
       .number()
-      .min(getQuestionGenerationRun200ResponseQuestionGenerationRunAttemptsMin),
+      .min(getQuestionGenerationRun200ResponseQuestionGenerationRunAttemptsMin)
+      .multipleOf(
+        getQuestionGenerationRun200ResponseQuestionGenerationRunAttemptsMultipleOf,
+      ),
     blueprintId: zod
       .string()
       .regex(
@@ -6958,6 +8337,9 @@ export const GetQuestionGenerationRun200Response = zod.strictObject({
       .min(1)
       .max(
         getQuestionGenerationRun200ResponseQuestionGenerationRunRequestedCountMax,
+      )
+      .multipleOf(
+        getQuestionGenerationRun200ResponseQuestionGenerationRunRequestedCountMultipleOf,
       ),
     result: zod.union([
       zod.strictObject({
@@ -7126,7 +8508,10 @@ export const RetryQuestionGenerationRunParams = zod.strictObject({
     .regex(retryQuestionGenerationRunPathQuestionGenerationRunIdRegExp),
 });
 
+export const retryQuestionGenerationRun201ResponseQuestionGenerationRunAttemptNumberMultipleOf = 1;
+
 export const retryQuestionGenerationRun201ResponseQuestionGenerationRunAttemptsMin = 0;
+export const retryQuestionGenerationRun201ResponseQuestionGenerationRunAttemptsMultipleOf = 1;
 
 export const retryQuestionGenerationRun201ResponseQuestionGenerationRunBlueprintIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
@@ -7139,6 +8524,7 @@ export const retryQuestionGenerationRun201ResponseQuestionGenerationRunIdRegExp 
 export const retryQuestionGenerationRun201ResponseQuestionGenerationRunOwnerUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const retryQuestionGenerationRun201ResponseQuestionGenerationRunRequestedCountMax = 100;
+export const retryQuestionGenerationRun201ResponseQuestionGenerationRunRequestedCountMultipleOf = 1;
 
 export const retryQuestionGenerationRun201ResponseQuestionGenerationRunResultOneQuestionIdsItemRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
@@ -7151,11 +8537,19 @@ export const retryQuestionGenerationRun201ResponseQuestionGenerationRunWorkbookC
 
 export const RetryQuestionGenerationRun201Response = zod.strictObject({
   questionGenerationRun: zod.strictObject({
-    attemptNumber: zod.number().min(1),
+    attemptNumber: zod
+      .number()
+      .min(1)
+      .multipleOf(
+        retryQuestionGenerationRun201ResponseQuestionGenerationRunAttemptNumberMultipleOf,
+      ),
     attempts: zod
       .number()
       .min(
         retryQuestionGenerationRun201ResponseQuestionGenerationRunAttemptsMin,
+      )
+      .multipleOf(
+        retryQuestionGenerationRun201ResponseQuestionGenerationRunAttemptsMultipleOf,
       ),
     blueprintId: zod
       .string()
@@ -7190,6 +8584,9 @@ export const RetryQuestionGenerationRun201Response = zod.strictObject({
       .min(1)
       .max(
         retryQuestionGenerationRun201ResponseQuestionGenerationRunRequestedCountMax,
+      )
+      .multipleOf(
+        retryQuestionGenerationRun201ResponseQuestionGenerationRunRequestedCountMultipleOf,
       ),
     result: zod.union([
       zod.strictObject({
@@ -7291,12 +8688,14 @@ export const RetryQuestionGenerationRun502Response = zod.strictObject({
  * @summary List question sets
  */
 export const listQuestionSetsQueryLimitMax = 100;
+export const listQuestionSetsQueryLimitMultipleOf = 1;
 
 export const ListQuestionSetsQueryParams = zod.object({
   limit: zod.coerce
     .number()
     .min(1)
     .max(listQuestionSetsQueryLimitMax)
+    .multipleOf(listQuestionSetsQueryLimitMultipleOf)
     .optional(),
   cursor: zod.string().optional(),
 });
@@ -7769,12 +9168,14 @@ export const ListQuestionSetQuestionsParams = zod.strictObject({
 });
 
 export const listQuestionSetQuestionsQueryLimitMax = 100;
+export const listQuestionSetQuestionsQueryLimitMultipleOf = 1;
 
 export const ListQuestionSetQuestionsQueryParams = zod.object({
   limit: zod.coerce
     .number()
     .min(1)
     .max(listQuestionSetQuestionsQueryLimitMax)
+    .multipleOf(listQuestionSetQuestionsQueryLimitMultipleOf)
     .optional(),
   cursor: zod.string().optional(),
 });
@@ -7783,6 +9184,7 @@ export const listQuestionSetQuestions200ResponseQuestionsItemBlueprintIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 
 export const listQuestionSetQuestions200ResponseQuestionsItemBodyBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
+export const listQuestionSetQuestions200ResponseQuestionsItemBodyBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf = 1;
 
 export const listQuestionSetQuestions200ResponseQuestionsItemCreatedByUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
@@ -7844,6 +9246,9 @@ export const ListQuestionSetQuestions200Response = zod.strictObject({
                           .min(1)
                           .max(
                             listQuestionSetQuestions200ResponseQuestionsItemBodyBlocksItemTwoContentContentItemTwoAttrsLevelMax,
+                          )
+                          .multipleOf(
+                            listQuestionSetQuestions200ResponseQuestionsItemBodyBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf,
                           ),
                       }),
                       content: zod
@@ -8130,6 +9535,7 @@ export const RemoveQuestionFromSet409Response = zod.strictObject({
  * @summary List questions
  */
 export const listQuestionsQueryLimitMax = 100;
+export const listQuestionsQueryLimitMultipleOf = 1;
 
 export const listQuestionsQueryBlueprintIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
@@ -8137,7 +9543,12 @@ export const listQuestionsQueryGenerationRunIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 
 export const ListQuestionsQueryParams = zod.object({
-  limit: zod.coerce.number().min(1).max(listQuestionsQueryLimitMax).optional(),
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(listQuestionsQueryLimitMax)
+    .multipleOf(listQuestionsQueryLimitMultipleOf)
+    .optional(),
   cursor: zod.string().optional(),
   status: zod.enum(["active", "archived", "deleted"]).optional(),
   blueprintId: zod
@@ -8154,6 +9565,7 @@ export const listQuestions200ResponseQuestionsItemBlueprintIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 
 export const listQuestions200ResponseQuestionsItemBodyBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
+export const listQuestions200ResponseQuestionsItemBodyBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf = 1;
 
 export const listQuestions200ResponseQuestionsItemCreatedByUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
@@ -8213,6 +9625,9 @@ export const ListQuestions200Response = zod.strictObject({
                           .min(1)
                           .max(
                             listQuestions200ResponseQuestionsItemBodyBlocksItemTwoContentContentItemTwoAttrsLevelMax,
+                          )
+                          .multipleOf(
+                            listQuestions200ResponseQuestionsItemBodyBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf,
                           ),
                       }),
                       content: zod
@@ -8496,6 +9911,7 @@ export const getQuestion200ResponseQuestionBlueprintIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 
 export const getQuestion200ResponseQuestionBodyBlocksItemTwoContentContentItemTwoAttrsLevelMax = 6;
+export const getQuestion200ResponseQuestionBodyBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf = 1;
 
 export const getQuestion200ResponseQuestionCreatedByUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
@@ -8553,6 +9969,9 @@ export const GetQuestion200Response = zod.strictObject({
                         .min(1)
                         .max(
                           getQuestion200ResponseQuestionBodyBlocksItemTwoContentContentItemTwoAttrsLevelMax,
+                        )
+                        .multipleOf(
+                          getQuestion200ResponseQuestionBodyBlocksItemTwoContentContentItemTwoAttrsLevelMultipleOf,
                         ),
                     }),
                     content: zod

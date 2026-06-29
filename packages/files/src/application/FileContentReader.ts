@@ -102,8 +102,10 @@ export class FileContentReader implements FileContentReaderPort {
       checksumSha256: file.checksumSha256,
       contentType: file.contentType,
       fileId: file.id,
+      metadata: file.metadata,
       originalName: file.originalName,
       ownerUserId: file.ownerUserId,
+      purpose: file.purpose,
     };
   }
 

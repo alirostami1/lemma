@@ -1,4 +1,6 @@
 import type {
+  CompleteQuestionBlueprintDraftWorkbookEditorUploadResponse,
+  CreateQuestionBlueprintDraftWorkbookEditorUploadResponse,
   ListQuestionBlueprintDraftsResponse,
   ListQuestionBlueprintsResponse,
   ListQuestionGenerationRunsResponse,
@@ -20,8 +22,11 @@ import type {
   QuestionResponse,
   QuestionSet as QuestionSetDto,
   QuestionSetResponse,
+  SaveQuestionBlueprintDraftWorkbookSourceRevisionResponse,
 } from "#/api/generated/model";
 import type {
+  CompleteQuestionBlueprintDraftWorkbookEditorUploadResult,
+  CreateQuestionBlueprintDraftWorkbookEditorUploadResult,
   PublishQuestionBlueprintDraftResult,
   Question,
   QuestionBlueprint,
@@ -45,6 +50,7 @@ import type {
   QuestionSetResult,
   QuestionSetsPage,
   QuestionsPage,
+  SaveQuestionBlueprintDraftWorkbookSourceRevisionResult,
 } from "./model";
 
 export function mapQuestionBlueprintDraft(
@@ -64,6 +70,48 @@ export function mapQuestionBlueprintDraftResponse(
   response: QuestionBlueprintDraftResponse,
 ): QuestionBlueprintDraftResult {
   return { draft: mapQuestionBlueprintDraft(response.draft) };
+}
+
+export function mapSaveQuestionBlueprintDraftWorkbookSourceRevisionResponse(
+  response: SaveQuestionBlueprintDraftWorkbookSourceRevisionResponse,
+): SaveQuestionBlueprintDraftWorkbookSourceRevisionResult {
+  return {
+    draft: mapQuestionBlueprintDraft(response.draft),
+    sourceArtifact: {
+      ...response.sourceArtifact,
+      createdAt: new Date(response.sourceArtifact.createdAt),
+      updatedAt: new Date(response.sourceArtifact.updatedAt),
+    },
+    sourceRevision: {
+      ...response.sourceRevision,
+      createdAt: new Date(response.sourceRevision.createdAt),
+    },
+  };
+}
+
+export function mapCreateQuestionBlueprintDraftWorkbookEditorUploadResponse(
+  response: CreateQuestionBlueprintDraftWorkbookEditorUploadResponse,
+): CreateQuestionBlueprintDraftWorkbookEditorUploadResult {
+  return {
+    upload: {
+      ...response.upload,
+      completedAt: response.upload.completedAt
+        ? new Date(response.upload.completedAt)
+        : null,
+      createdAt: new Date(response.upload.createdAt),
+      updatedAt: new Date(response.upload.updatedAt),
+      uploadExpiresAt: new Date(response.upload.uploadExpiresAt),
+    },
+    uploadUrl: response.uploadUrl,
+  };
+}
+
+export function mapCompleteQuestionBlueprintDraftWorkbookEditorUploadResponse(
+  response: CompleteQuestionBlueprintDraftWorkbookEditorUploadResponse,
+): CompleteQuestionBlueprintDraftWorkbookEditorUploadResult {
+  return {
+    editorOutputFile: response.editorOutputFile,
+  };
 }
 
 export function mapQuestionBlueprintEditDraftResponse(

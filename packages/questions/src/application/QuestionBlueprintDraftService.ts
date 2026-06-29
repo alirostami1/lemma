@@ -1,4 +1,4 @@
-import { FileAliasUnavailableError } from "@lemma/files/application";
+import { z } from "zod";
 import {
   attachDraftSourceFile,
   createQuestionBlueprintDraft,
@@ -29,22 +29,29 @@ import {
 } from "../domain/index.js";
 import type {
   AttachQuestionBlueprintDraftSourceFileCommand,
+  CompleteQuestionBlueprintDraftWorkbookEditorUploadCommand,
   CreateQuestionBlueprintDraftCommand,
+  CreateQuestionBlueprintDraftWorkbookEditorUploadCommand,
   CreateQuestionBlueprintEditDraftCommand,
   DiscardQuestionBlueprintDraftCommand,
   ListCommand,
   ListQuestionBlueprintDraftsCommand,
   PublishQuestionBlueprintDraftCommand,
   QuestionBlueprintDraftByIdCommand,
+  SaveQuestionBlueprintDraftWorkbookSourceRevisionCommand,
   UpdateQuestionBlueprintDraftCommand,
 } from "./commands.js";
 import type {
+  CompletedQuestionBlueprintDraftWorkbookEditorUploadResult,
+  CreatedQuestionBlueprintDraftWorkbookEditorUploadResult,
   PublishedQuestionBlueprintDraftResult,
   QuestionBlueprintDraftResult,
   QuestionBlueprintDraftsResult,
   QuestionBlueprintEditDraftResult,
+  SavedQuestionBlueprintDraftWorkbookSourceRevisionResult,
 } from "./dto.js";
 import {
+  DraftSourceEditorUploadInvalidError,
   DraftSourceFileForbiddenError,
   DraftSourceFileInvalidError,
   DraftSourceKindUnsupportedError,
@@ -55,6 +62,7 @@ import {
   QuestionBlueprintDraftNotFoundError,
   QuestionBlueprintDraftRevisionConflictError,
   QuestionBlueprintNotFoundError,
+  WorkbookEditorOutputStaleError,
 } from "./errors.js";
 import {
   decodeListCursor,
@@ -66,6 +74,7 @@ import type {
   Clock,
   DraftSourceFileMetadata,
   DraftSourceFilePort,
+  DraftSourceUploadMetadata,
   DraftSourceWorkbookMaterialization,
   DraftSourceWorkbookRegistrationPort,
   IdGenerator,
@@ -73,9 +82,38 @@ import type {
   QuestionBlueprintDraftTransactionPort,
   QuestionsRepository,
 } from "./ports.js";
+import {
+  WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_TYPE,
+  WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_VERSION,
+} from "./ports.js";
 
 const WORKBOOK_SOURCE_PROCESSOR = "lemma-workbook";
 const WORKBOOK_SOURCE_PROCESSOR_VERSION = "1";
+const workbookEditorOutputFileMetadataSchema = z.strictObject({
+  draftId: z.string().min(1),
+  draftRevision: z.number().int().min(1),
+  ownerUserId: z.string().min(1),
+  sourceArtifactId: z.string().min(1).nullable(),
+  sourceDocumentId: z.string().min(1),
+  sourceId: z.string().min(1),
+  sourceRevisionId: z.string().min(1),
+  type: z.literal(WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_TYPE),
+  version: z.literal(WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_VERSION),
+});
+
+type WorkbookEditorOutputFileMetadata = z.infer<
+  typeof workbookEditorOutputFileMetadataSchema
+>;
+
+type SaveWorkbookSourceRevisionInput = {
+  command:
+    | AttachQuestionBlueprintDraftSourceFileCommand
+    | SaveQuestionBlueprintDraftWorkbookSourceRevisionCommand;
+  editorMetadata: { origin: "file_upload" | "workbook_editor" };
+  expectedFilePurpose: "workbook" | "workbook_editor_output";
+  fileId: string;
+  requireExistingRevision: boolean;
+};
 
 export class QuestionBlueprintDraftService {
   constructor(
@@ -219,6 +257,102 @@ export class QuestionBlueprintDraftService {
   async attachQuestionBlueprintDraftSourceFile(
     command: AttachQuestionBlueprintDraftSourceFileCommand,
   ): Promise<QuestionBlueprintDraftResult> {
+    const result = await this.saveWorkbookSourceRevision({
+      command,
+      editorMetadata: { origin: "file_upload" },
+      expectedFilePurpose: "workbook",
+      fileId: command.fileId,
+      requireExistingRevision: false,
+    });
+    return { draft: result.draft };
+  }
+
+  async saveQuestionBlueprintDraftWorkbookSourceRevision(
+    command: SaveQuestionBlueprintDraftWorkbookSourceRevisionCommand,
+  ): Promise<SavedQuestionBlueprintDraftWorkbookSourceRevisionResult> {
+    return this.saveWorkbookSourceRevision({
+      command,
+      editorMetadata: { origin: "workbook_editor" },
+      expectedFilePurpose: "workbook_editor_output",
+      fileId: command.editorOutputFileId,
+      requireExistingRevision: true,
+    });
+  }
+
+  async createQuestionBlueprintDraftWorkbookEditorUpload(
+    command: CreateQuestionBlueprintDraftWorkbookEditorUploadCommand,
+  ): Promise<CreatedQuestionBlueprintDraftWorkbookEditorUploadResult> {
+    const draft = await this.findOwned(command);
+    assertExpectedDraftRevision(draft, command.expectedRevision);
+    const source = draft.sources.find(
+      (candidate) => candidate.sourceId === command.sourceId,
+    );
+    assertEditorUploadSourceReady(source);
+
+    return this.deps.draftSourceFilePort.createEditorOutputUpload({
+      byteSize: command.byteSize,
+      checksumSha256: command.checksumSha256,
+      contentType: command.contentType,
+      currentUser: command.currentUser,
+      draftId: draft.id,
+      draftRevision: draft.revision,
+      originalName: command.originalName,
+      sourceArtifactId: source.sourceArtifactId,
+      sourceDocumentId: source.sourceDocumentId,
+      sourceId: source.sourceId,
+      sourceRevisionId: source.sourceRevisionId,
+    });
+  }
+
+  async completeQuestionBlueprintDraftWorkbookEditorUpload(
+    command: CompleteQuestionBlueprintDraftWorkbookEditorUploadCommand,
+  ): Promise<CompletedQuestionBlueprintDraftWorkbookEditorUploadResult> {
+    const draft = await this.findOwned(command);
+    assertExpectedDraftRevision(draft, command.expectedRevision);
+    const source = draft.sources.find(
+      (candidate) => candidate.sourceId === command.sourceId,
+    );
+    assertEditorUploadSourceReady(source);
+
+    const upload = await this.deps.draftSourceFilePort.getUploadMetadata({
+      currentUser: command.currentUser,
+      uploadId: command.uploadId,
+    });
+    assertWorkbookEditorOutputMetadataMatchesCurrentSource(upload, {
+      draft,
+      source,
+    });
+
+    const completed =
+      await this.deps.draftSourceFilePort.completeEditorOutputUpload({
+        currentUser: command.currentUser,
+        uploadId: command.uploadId,
+      });
+    assertWorkbookEditorOutputMetadataMatchesCurrentSource(
+      {
+        metadata: completed.file.metadata,
+        ownerUserId: completed.file.ownerUserId,
+        purpose: completed.file.purpose,
+        uploadId: command.uploadId,
+      },
+      { draft, source },
+    );
+
+    return {
+      editorOutputFile: {
+        byteSize: completed.file.byteSize,
+        checksumSha256: completed.file.checksumSha256,
+        contentType: completed.file.contentType,
+        id: completed.file.id,
+        originalName: completed.file.originalName,
+      },
+    };
+  }
+
+  private async saveWorkbookSourceRevision(
+    input: SaveWorkbookSourceRevisionInput,
+  ): Promise<SavedQuestionBlueprintDraftWorkbookSourceRevisionResult> {
+    const { command } = input;
     const draft = await this.findOwned(command);
     // Fast pre-checks give callers deterministic errors before file/workbook work;
     // repository checks after locking remain authoritative.
@@ -230,29 +364,39 @@ export class QuestionBlueprintDraftService {
     if (source.type !== "workbook") {
       throw new DraftSourceKindUnsupportedError();
     }
-    const fileLookup = await this.deps.draftSourceFilePort.getFileMetadata({
-      currentUser: command.currentUser,
-      fileId: command.fileId,
-    });
-    if (fileLookup.status === "unavailable") {
-      throw new DraftSourceFileInvalidError(
-        "Draft source file is unavailable.",
+    if (
+      input.requireExistingRevision &&
+      (!source.sourceDocumentId || !source.sourceRevisionId)
+    ) {
+      throw new DraftSourceNotReadyError(
+        "Workbook editor output requires an existing source revision.",
       );
     }
-    const file: DraftSourceFileMetadata = fileLookup.file;
+    const file = await this.deps.draftSourceFilePort.getFileMetadata({
+      currentUser: command.currentUser,
+      fileId: input.fileId,
+    });
     if (file.ownerUserId !== draft.ownerUserId) {
       throw new DraftSourceFileForbiddenError(
         "Draft source file must belong to draft owner.",
       );
     }
     if (
-      file.purpose !== "workbook" ||
+      file.purpose !== input.expectedFilePurpose ||
       file.contentType !==
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     ) {
       throw new DraftSourceFileInvalidError(
-        "Draft source file must be an xlsx workbook.",
+        input.expectedFilePurpose === "workbook_editor_output"
+          ? "Workbook editor output file is invalid."
+          : "Draft source file must be an xlsx workbook.",
       );
+    }
+    if (input.expectedFilePurpose === "workbook_editor_output") {
+      assertWorkbookEditorOutputFileMetadataMatchesCurrentSource(file, {
+        draft,
+        source,
+      });
     }
     const persisted =
       await this.deps.questionBlueprintDraftTransaction.transaction(
@@ -282,21 +426,27 @@ export class QuestionBlueprintDraftService {
           if (lockedSource.type !== "workbook") {
             throw new DraftSourceKindUnsupportedError();
           }
-          try {
-            await fileReferenceGuard.assertFileAliasReferenceableForUpdate(
-              file.fileId,
+          if (
+            input.requireExistingRevision &&
+            (!lockedSource.sourceDocumentId || !lockedSource.sourceRevisionId)
+          ) {
+            throw new DraftSourceNotReadyError(
+              "Workbook editor output requires an existing source revision.",
             );
-          } catch (error) {
-            if (error instanceof FileAliasUnavailableError) {
-              throw new DraftSourceFileInvalidError(
-                "Draft source file is unavailable.",
-              );
-            }
-            throw error;
           }
+          if (input.expectedFilePurpose === "workbook_editor_output") {
+            assertWorkbookEditorOutputFileMetadataMatchesCurrentSource(file, {
+              draft: lockedDraft,
+              source: lockedSource,
+            });
+          }
+          await fileReferenceGuard.assertFileAliasReferenceableForUpdate(
+            file.fileId,
+          );
           const materialization = await this.materializeWorkbookSource({
             command,
             draft: lockedDraft,
+            editorMetadata: input.editorMetadata,
             file,
             questionsRepository,
             source: lockedSource,
@@ -316,6 +466,8 @@ export class QuestionBlueprintDraftService {
           if (materialization.advanceDocumentHead) {
             await questionsRepository.setSourceDocumentCurrentRevision({
               currentRevisionId: materialization.sourceRevisionId,
+              expectedCurrentRevisionId:
+                materialization.sourceRevision.parentRevisionId,
               kind: materialization.sourceRevision.kind,
               ownerUserId: lockedDraft.ownerUserId,
               sourceDocumentId: materialization.sourceDocumentId,
@@ -338,18 +490,24 @@ export class QuestionBlueprintDraftService {
             },
             materialization.attachedAt,
           );
-          return questionsRepository.updateQuestionBlueprintDraftWithExpectedRevision(
-            {
-              draft: updatedDraft,
-              expectedRevision: command.expectedRevision,
-            },
-          );
+          const persistedDraft =
+            await questionsRepository.updateQuestionBlueprintDraftWithExpectedRevision(
+              {
+                draft: updatedDraft,
+                expectedRevision: command.expectedRevision,
+              },
+            );
+          return persistedDraft
+            ? {
+                draft: persistedDraft,
+                sourceArtifact: materialization.sourceArtifact,
+                sourceRevision: materialization.sourceRevision,
+              }
+            : null;
         },
       );
     if (!persisted) throw new QuestionBlueprintDraftNotFoundError();
-    return {
-      draft: persisted,
-    };
+    return persisted;
   }
 
   async discardQuestionBlueprintDraft(
@@ -499,8 +657,12 @@ export class QuestionBlueprintDraftService {
   }
 
   private async materializeWorkbookSource(input: {
-    command: AttachQuestionBlueprintDraftSourceFileCommand;
+    command: Pick<
+      AttachQuestionBlueprintDraftSourceFileCommand,
+      "currentUser" | "lineage"
+    >;
     draft: QuestionBlueprintDraft;
+    editorMetadata: { origin: "file_upload" | "workbook_editor" };
     file: DraftSourceFileMetadata;
     questionsRepository: QuestionsRepository;
     source: QuestionBlueprintDraftSource;
@@ -555,7 +717,7 @@ export class QuestionBlueprintDraftService {
       contentType: input.file.contentType,
       createdAt: at,
       createdByUserId: userId(input.command.currentUser.user.id),
-      editorMetadata: {},
+      editorMetadata: input.editorMetadata,
       fileId: input.file.fileId,
       id: sourceRevisionId,
       kind: "workbook",
@@ -626,6 +788,122 @@ function assertExpectedDraftRevision(
 ): void {
   if (draft.revision !== questionBlueprintDraftRevision(expectedRevision)) {
     throw new QuestionBlueprintDraftRevisionConflictError();
+  }
+}
+
+function assertEditorUploadSourceReady(
+  source: QuestionBlueprintDraftSource | undefined,
+): asserts source is QuestionBlueprintDraftSource & {
+  sourceDocumentId: NonNullable<
+    QuestionBlueprintDraftSource["sourceDocumentId"]
+  >;
+  sourceRevisionId: NonNullable<
+    QuestionBlueprintDraftSource["sourceRevisionId"]
+  >;
+} {
+  if (!source) throw new DraftSourceNotFoundError();
+  if (source.type !== "workbook") {
+    throw new DraftSourceKindUnsupportedError();
+  }
+  if (!source.sourceDocumentId || !source.sourceRevisionId) {
+    throw new DraftSourceNotReadyError(
+      "Workbook editor output requires an existing source revision.",
+    );
+  }
+}
+
+function assertWorkbookEditorOutputFileMetadataMatchesCurrentSource(
+  file: Pick<DraftSourceFileMetadata, "metadata" | "ownerUserId" | "purpose">,
+  expected: {
+    draft: QuestionBlueprintDraft;
+    source: QuestionBlueprintDraftSource;
+  },
+): void {
+  if (file.purpose !== "workbook_editor_output") {
+    throw new DraftSourceEditorUploadInvalidError(
+      "Workbook editor output file is invalid.",
+    );
+  }
+  if (file.ownerUserId !== expected.draft.ownerUserId) {
+    throw new DraftSourceEditorUploadInvalidError(
+      "Workbook editor output file is invalid.",
+    );
+  }
+  const metadata = parseWorkbookEditorOutputFileMetadata(file.metadata);
+  assertWorkbookEditorOutputMetadataMatchesExpectedSource(metadata, expected);
+}
+
+function assertWorkbookEditorOutputMetadataMatchesCurrentSource(
+  upload: DraftSourceUploadMetadata,
+  expected: {
+    draft: QuestionBlueprintDraft;
+    source: QuestionBlueprintDraftSource;
+  },
+): void {
+  const metadata = parseWorkbookEditorOutputFileMetadata(upload.metadata);
+  if (upload.purpose !== "workbook_editor_output") {
+    throw new DraftSourceEditorUploadInvalidError(
+      "Workbook editor upload is invalid.",
+    );
+  }
+  if (upload.ownerUserId !== expected.draft.ownerUserId) {
+    throw new DraftSourceEditorUploadInvalidError(
+      "Workbook editor upload is invalid.",
+    );
+  }
+  assertWorkbookEditorOutputMetadataMatchesExpectedSource(metadata, expected);
+}
+
+function parseWorkbookEditorOutputFileMetadata(
+  metadata: Record<string, unknown>,
+): WorkbookEditorOutputFileMetadata | null {
+  const parsed = workbookEditorOutputFileMetadataSchema.safeParse(metadata);
+  return parsed.success ? parsed.data : null;
+}
+
+function isWorkbookEditorOutputMetadataForSource(
+  metadata: WorkbookEditorOutputFileMetadata,
+  expected: {
+    draft: QuestionBlueprintDraft;
+    source: QuestionBlueprintDraftSource;
+  },
+): boolean {
+  return (
+    metadata.type === WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_TYPE &&
+    metadata.version === WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_VERSION &&
+    metadata.draftId === expected.draft.id &&
+    metadata.ownerUserId === expected.draft.ownerUserId &&
+    metadata.sourceId === expected.source.sourceId &&
+    metadata.sourceDocumentId === expected.source.sourceDocumentId &&
+    metadata.sourceRevisionId === expected.source.sourceRevisionId &&
+    metadata.sourceArtifactId === expected.source.sourceArtifactId &&
+    metadata.draftRevision === expected.draft.revision
+  );
+}
+
+function assertWorkbookEditorOutputMetadataMatchesExpectedSource(
+  metadata: WorkbookEditorOutputFileMetadata | null,
+  expected: {
+    draft: QuestionBlueprintDraft;
+    source: QuestionBlueprintDraftSource;
+  },
+): void {
+  if (metadata === null) {
+    throw new DraftSourceEditorUploadInvalidError(
+      "Workbook editor output metadata is invalid.",
+    );
+  }
+  if (
+    metadata.draftId !== expected.draft.id ||
+    metadata.ownerUserId !== expected.draft.ownerUserId ||
+    metadata.sourceId !== expected.source.sourceId
+  ) {
+    throw new DraftSourceEditorUploadInvalidError(
+      "Workbook editor output metadata is invalid.",
+    );
+  }
+  if (!isWorkbookEditorOutputMetadataForSource(metadata, expected)) {
+    throw new WorkbookEditorOutputStaleError();
   }
 }
 

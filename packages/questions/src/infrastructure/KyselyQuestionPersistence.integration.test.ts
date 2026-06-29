@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { after, before, beforeEach, describe, it } from "node:test";
 import { sql } from "@lemma/db";
 import { startTestDatabase, type TestDatabase } from "@lemma/db/testing";
+import { rootOperationLineage } from "@lemma/domain";
 import {
   FileLifecycleService,
   type FileStorage,
@@ -13,16 +14,22 @@ import type { RawBuilder } from "kysely";
 import {
   QuestionBlueprintDraftService,
   SourceArtifactValidationService,
+  SourceDocumentRevisionConflictError,
   SourceGarbageCollectionService,
+  WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_TYPE,
+  WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_VERSION,
 } from "../application/index.js";
 import {
+  type QuestionBlueprintDocument,
   questionBlueprintDescription,
   questionBlueprintDocument,
   questionBlueprintDraftId,
   questionBlueprintId,
   questionBlueprintName,
+  questionBlueprintVersionId,
   questionBlueprintVisibility,
   sourceArtifactId as toSourceArtifactId,
+  sourceRevisionId as toSourceRevisionId,
   userId,
   workbookId,
 } from "../domain/index.js";
@@ -37,6 +44,8 @@ const secondWorkbookFileId = "019e9315-6a87-715f-9861-8654df081102";
 const otherOwnerWorkbookFileId = "019e9315-6a87-715f-9861-8654df081103";
 const sourceDocumentId = "019e9315-6a87-715f-9861-8654df081201";
 const sourceRevisionId = "019e9315-6a87-715f-9861-8654df081202";
+const editorSourceRevisionId = "019e9315-6a87-715f-9861-8654df081209";
+const concurrentSourceRevisionId = "019e9315-6a87-715f-9861-8654df081210";
 const otherOwnerSourceDocumentId = "019e9315-6a87-715f-9861-8654df081207";
 const otherOwnerSourceRevisionId = "019e9315-6a87-715f-9861-8654df081208";
 const sourceArtifactId = "019e9315-6a87-715f-9861-8654df081203";
@@ -54,6 +63,9 @@ const untouchedDraftId = "019e9315-6a87-715f-9861-8654df081405";
 const blueprintIdValue = "019e9315-6a87-715f-9861-8654df081501";
 const versionIdValue = "019e9315-6a87-715f-9861-8654df081502";
 const editDraftIdValue = "019e9315-6a87-715f-9861-8654df081503";
+const editorVersionIdValue = "019e9315-6a87-715f-9861-8654df081504";
+const sharedBlueprintIdValue = "019e9315-6a87-715f-9861-8654df081505";
+const sharedVersionIdValue = "019e9315-6a87-715f-9861-8654df081506";
 const checksum =
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const draftSourceMaterializationConstraint =
@@ -840,7 +852,16 @@ describe("KyselyQuestion persistence integration", () => {
       const service = new QuestionBlueprintDraftService({
         clock: { now: () => at },
         draftSourceFilePort: {
+          createEditorOutputUpload: async () => {
+            throw new Error("unused in edit draft creation");
+          },
+          completeEditorOutputUpload: async () => {
+            throw new Error("unused in edit draft creation");
+          },
           getFileMetadata: async () => {
+            throw new Error("unused in edit draft creation");
+          },
+          getUploadMetadata: async () => {
             throw new Error("unused in edit draft creation");
           },
         },
@@ -906,7 +927,319 @@ describe("KyselyQuestion persistence integration", () => {
       assert.equal(row.checksumSha256, checksum);
     },
   );
+
+  integrationDbIt(
+    "saves, validates, and publishes an editor workbook revision without moving old version bindings",
+    async (db) => {
+      const service = await createEditorRevisionService(db);
+
+      const editDraft = await service.createQuestionBlueprintEditDraft({
+        blueprintId: blueprintIdValue,
+        currentUser: currentUser(),
+      });
+      const saved =
+        await service.saveQuestionBlueprintDraftWorkbookSourceRevision({
+          currentUser: currentUser(),
+          draftId: editDraft.draft.id,
+          expectedRevision: 1,
+          editorOutputFileId: secondWorkbookFileId,
+          lineage: rootOperationLineage("019e9315-6a87-715f-9861-8654df081601"),
+          sourceId: "sourceA",
+        });
+
+      assert.equal(saved.draft.sources[0]?.status, "uploaded");
+      assert.equal(
+        saved.draft.sources[0]?.sourceRevisionId,
+        editorSourceRevisionId,
+      );
+      const oldVersionBeforeValidation = await db
+        .selectFrom("questionBlueprintVersionSources")
+        .select(["sourceRevisionId", "sourceArtifactId", "workbookId"])
+        .where("blueprintVersionId", "=", versionIdValue)
+        .executeTakeFirstOrThrow();
+      assert.deepEqual(oldVersionBeforeValidation, {
+        sourceArtifactId,
+        sourceRevisionId,
+        workbookId: workbookSourceWorkbookId,
+      });
+
+      await createValidationService(db).applyWorkbookValidationResult({
+        occurredAt: at,
+        ownerUserId: userId(ownerUserId),
+        status: "valid",
+        validationError: null,
+        workbookId: workbookId(otherWorkbookId),
+      });
+      const published = await service.publishQuestionBlueprintDraft({
+        currentUser: currentUser(),
+        draftId: editDraft.draft.id,
+        expectedRevision: 2,
+        idempotencyKey: "publish-editor-revision",
+        lineage: rootOperationLineage("019e9315-6a87-715f-9861-8654df081602"),
+      });
+
+      assert.equal(published.questionBlueprintVersion.id, editorVersionIdValue);
+      const versionBindings = await db
+        .selectFrom("questionBlueprintVersionSources")
+        .select([
+          "blueprintVersionId",
+          "sourceRevisionId",
+          "sourceArtifactId",
+          "workbookId",
+        ])
+        .orderBy("blueprintVersionId")
+        .execute();
+      assert.deepEqual(versionBindings, [
+        {
+          blueprintVersionId: versionIdValue,
+          sourceArtifactId,
+          sourceRevisionId,
+          workbookId: workbookSourceWorkbookId,
+        },
+        {
+          blueprintVersionId: editorVersionIdValue,
+          sourceArtifactId: secondSourceArtifactId,
+          sourceRevisionId: editorSourceRevisionId,
+          workbookId: otherWorkbookId,
+        },
+        {
+          blueprintVersionId: sharedVersionIdValue,
+          sourceArtifactId,
+          sourceRevisionId,
+          workbookId: workbookSourceWorkbookId,
+        },
+      ]);
+      const revisions = await db
+        .selectFrom("sourceRevisions")
+        .select(["id", "parentRevisionId", "sourceDocumentId"])
+        .where("sourceDocumentId", "=", sourceDocumentId)
+        .orderBy("id")
+        .execute();
+      assert.deepEqual(revisions, [
+        {
+          id: sourceRevisionId,
+          parentRevisionId: null,
+          sourceDocumentId,
+        },
+        {
+          id: editorSourceRevisionId,
+          parentRevisionId: sourceRevisionId,
+          sourceDocumentId,
+        },
+      ]);
+      const artifacts = await db
+        .selectFrom("sourceArtifacts")
+        .select(["id", "sourceRevisionId", "status", "workbookId"])
+        .where("id", "in", [sourceArtifactId, secondSourceArtifactId])
+        .orderBy("id")
+        .execute();
+      assert.deepEqual(artifacts, [
+        {
+          id: sourceArtifactId,
+          sourceRevisionId,
+          status: "valid",
+          workbookId: workbookSourceWorkbookId,
+        },
+        {
+          id: secondSourceArtifactId,
+          sourceRevisionId: editorSourceRevisionId,
+          status: "valid",
+          workbookId: otherWorkbookId,
+        },
+      ]);
+    },
+  );
+
+  integrationDbIt(
+    "rolls back editor revision materialization when the source head changed",
+    async (db) => {
+      const service = await createEditorRevisionService(db);
+      const editDraft = await service.createQuestionBlueprintEditDraft({
+        blueprintId: blueprintIdValue,
+        currentUser: currentUser(),
+      });
+      await insertSourceRevision(
+        db,
+        concurrentSourceRevisionId,
+        sourceDocumentId,
+      );
+      await db
+        .updateTable("sourceDocuments")
+        .set({ currentRevisionId: concurrentSourceRevisionId })
+        .where("id", "=", sourceDocumentId)
+        .executeTakeFirstOrThrow();
+      const publishedSourcesBefore = await db
+        .selectFrom("questionBlueprintVersionSources")
+        .selectAll()
+        .orderBy("blueprintVersionId")
+        .execute();
+
+      await assert.rejects(
+        () =>
+          service.saveQuestionBlueprintDraftWorkbookSourceRevision({
+            currentUser: currentUser(),
+            draftId: editDraft.draft.id,
+            editorOutputFileId: secondWorkbookFileId,
+            expectedRevision: 1,
+            lineage: rootOperationLineage(
+              "019e9315-6a87-715f-9861-8654df081603",
+            ),
+            sourceId: "sourceA",
+          }),
+        SourceDocumentRevisionConflictError,
+      );
+
+      const document = await db
+        .selectFrom("sourceDocuments")
+        .select("currentRevisionId")
+        .where("id", "=", sourceDocumentId)
+        .executeTakeFirstOrThrow();
+      assert.equal(document.currentRevisionId, concurrentSourceRevisionId);
+      const rolledBackRevision = await db
+        .selectFrom("sourceRevisions")
+        .select("id")
+        .where("id", "=", editorSourceRevisionId)
+        .executeTakeFirst();
+      const rolledBackArtifact = await db
+        .selectFrom("sourceArtifacts")
+        .select("id")
+        .where("id", "=", secondSourceArtifactId)
+        .executeTakeFirst();
+      assert.equal(rolledBackRevision, undefined);
+      assert.equal(rolledBackArtifact, undefined);
+      const draft = await db
+        .selectFrom("questionBlueprintDrafts")
+        .innerJoin(
+          "questionBlueprintDraftSources",
+          "questionBlueprintDraftSources.draftId",
+          "questionBlueprintDrafts.id",
+        )
+        .select([
+          "questionBlueprintDrafts.revision",
+          "questionBlueprintDraftSources.sourceRevisionId",
+          "questionBlueprintDraftSources.sourceArtifactId",
+          "questionBlueprintDraftSources.workbookId",
+        ])
+        .where("questionBlueprintDrafts.id", "=", editDraftIdValue)
+        .executeTakeFirstOrThrow();
+      assert.deepEqual(draft, {
+        revision: 1,
+        sourceArtifactId,
+        sourceRevisionId,
+        workbookId: workbookSourceWorkbookId,
+      });
+      const publishedSourcesAfter = await db
+        .selectFrom("questionBlueprintVersionSources")
+        .selectAll()
+        .orderBy("blueprintVersionId")
+        .execute();
+      assert.deepEqual(publishedSourcesAfter, publishedSourcesBefore);
+    },
+  );
 });
+
+async function createEditorRevisionService(db: QuestionsTestDatabase) {
+  await insertUser(db, ownerUserId);
+  await insertFile(db, workbookFileId, ownerUserId, "published.xlsx");
+  await insertFile(db, secondWorkbookFileId, ownerUserId, "edited.xlsx");
+  await insertWorkbook(db, workbookSourceWorkbookId, workbookFileId);
+  await insertWorkbook(db, otherWorkbookId, secondWorkbookFileId, {
+    originalName: "edited.xlsx",
+  });
+  await insertSourceDocument(db, sourceDocumentId);
+  await insertSourceRevision(db, sourceRevisionId, sourceDocumentId);
+  await db
+    .updateTable("sourceDocuments")
+    .set({ currentRevisionId: sourceRevisionId })
+    .where("id", "=", sourceDocumentId)
+    .executeTakeFirstOrThrow();
+  await insertSourceArtifact(
+    db,
+    sourceArtifactId,
+    sourceRevisionId,
+    workbookSourceWorkbookId,
+    "valid",
+  );
+  await insertBlueprintWithVersion(
+    db,
+    blueprintIdValue,
+    versionIdValue,
+    documentUsing("sourceA"),
+  );
+  await insertVersionSourceRow(db, "sourceA");
+  await insertBlueprintWithVersion(
+    db,
+    sharedBlueprintIdValue,
+    sharedVersionIdValue,
+    documentUsing("sourceA"),
+    "Shared blueprint",
+  );
+  await insertVersionSourceRow(db, "sourceA", sharedVersionIdValue);
+
+  return new QuestionBlueprintDraftService({
+    clock: { now: () => at },
+    draftSourceFilePort: {
+      createEditorOutputUpload: async () => {
+        throw new Error("unused in editor save integration");
+      },
+      completeEditorOutputUpload: async () => {
+        throw new Error("unused in editor save integration");
+      },
+      getFileMetadata: async () => ({
+        byteSize: 2345,
+        checksumSha256: checksum,
+        contentType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        fileId: secondWorkbookFileId,
+        metadata: {
+          draftId: editDraftIdValue,
+          draftRevision: 1,
+          ownerUserId,
+          sourceArtifactId,
+          sourceDocumentId,
+          sourceId: "sourceA",
+          sourceRevisionId,
+          type: WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_TYPE,
+          version: WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_VERSION,
+        },
+        originalName: "edited.xlsx",
+        ownerUserId: userId(ownerUserId),
+        purpose: "workbook_editor_output",
+      }),
+      getUploadMetadata: async () => {
+        throw new Error("unused in editor save integration");
+      },
+    },
+    // This integration path creates only a new version, source revision, and
+    // source artifact; unused ID methods are intentionally omitted.
+    idGenerator: {
+      questionBlueprintDraftId: () =>
+        questionBlueprintDraftId(editDraftIdValue),
+      questionBlueprintVersionId: () =>
+        questionBlueprintVersionId(editorVersionIdValue),
+      sourceArtifactId: () => toSourceArtifactId(secondSourceArtifactId),
+      sourceRevisionId: () => toSourceRevisionId(editorSourceRevisionId),
+    } as never,
+    questionBlueprintDraftTransaction: {
+      transaction: (fn) =>
+        db.transaction().execute((tx) =>
+          fn({
+            fileReferenceGuard: {
+              assertFileAliasReferenceableForUpdate: async () => {},
+            },
+            questionsRepository: new KyselyQuestionsRepository(tx),
+            workbookRegistrationPort: {
+              registerWorkbookFromFile: async () => ({
+                status: "pending_validation",
+                workbookId: workbookId(otherWorkbookId),
+              }),
+            },
+          }),
+        ),
+    },
+    questionsRepository: new KyselyQuestionsRepository(db),
+  });
+}
 
 function integrationDbIt(
   name: string,
@@ -1360,11 +1693,17 @@ async function insertBlueprintWithVersion(
   db: QuestionsTestDatabase,
   blueprintValue: string,
   versionValue: string,
-  input?: Partial<{
-    name: string;
-  }>,
+  documentOrInput?: Partial<{ name: string }> | QuestionBlueprintDocument,
+  nameInput = "Blueprint",
 ): Promise<void> {
-  const name = input?.name ?? "Blueprint";
+  const document =
+    documentOrInput && "schemaVersion" in documentOrInput
+      ? documentOrInput
+      : emptyDocument();
+  const name =
+    documentOrInput && !("schemaVersion" in documentOrInput)
+      ? (documentOrInput.name ?? nameInput)
+      : nameInput;
   await db.transaction().execute(async (tx) => {
     await tx
       .insertInto("questionBlueprints")
@@ -1373,7 +1712,7 @@ async function insertBlueprintWithVersion(
         createdByUserId: creatorUserId,
         currentVersionId: versionValue,
         description: questionBlueprintDescription(null),
-        document: emptyDocument(),
+        document,
         id: blueprintValue,
         name: questionBlueprintName(name),
         ownerUserId,
@@ -1387,7 +1726,7 @@ async function insertBlueprintWithVersion(
         blueprintId: blueprintValue,
         createdByUserId: creatorUserId,
         description: null,
-        document: emptyDocument(),
+        document,
         id: versionValue,
         name,
         ownerUserId,
@@ -1402,12 +1741,12 @@ async function insertBlueprintWithVersion(
 async function insertVersionSourceRow(
   db: QuestionsTestDatabase,
   sourceIdValue: string,
-  input: Partial<{
-    blueprintVersionId: string;
-  }> = {},
+  input: Partial<{ blueprintVersionId: string }> | string = {},
 ): Promise<void> {
+  const blueprintVersionId =
+    typeof input === "string" ? input : input.blueprintVersionId;
   await insertVersionSourceMaterializationRow(db, {
-    blueprintVersionId: input.blueprintVersionId,
+    blueprintVersionId,
     originalName: "published.xlsx",
     sourceId: sourceIdValue,
   });
@@ -1416,12 +1755,12 @@ async function insertVersionSourceRow(
 async function insertVersionSourceMaterializationRow(
   db: QuestionsTestDatabase,
   input: Partial<{
+    blueprintVersionId: string;
     byteSize: number | null;
     checksumSha256: string | null;
     fileId: string | null;
     originalName: string | null;
     sourceArtifactId: string | null;
-    blueprintVersionId: string;
     sourceDocumentId: string | null;
     sourceId: string;
     sourceRevisionId: string | null;
@@ -1527,4 +1866,27 @@ class FakeFileStorage implements FileStorage {
   async getObjectMetadata(): Promise<never> {
     throw new Error("Not implemented.");
   }
+}
+
+function documentUsing(sourceId: string) {
+  const referenceId = `workbook:${sourceId}:cell:Sheet1:A1`;
+  return questionBlueprintDocument({
+    blocks: [],
+    references: [
+      {
+        id: referenceId,
+        label: "Reference",
+        required: true,
+        source: {
+          ref: "Sheet1!A1",
+          schemaVersion: 1,
+          sourceId,
+          type: "workbook_cell",
+        },
+        value: { referenceId, schemaVersion: 1, type: "reference" },
+      },
+    ],
+    responseFields: [],
+    schemaVersion: 1,
+  });
 }

@@ -5,23 +5,30 @@ import {
   type File,
   type FileId,
   FileNotFoundError,
+  type FilePurpose,
   type FileStatus,
+  type FileUpload,
+  FileUploadNotFoundError,
   ForbiddenFileActionError,
   filePurpose,
   fileStatus,
   InvalidDomainValueError,
   markFileDeleting,
   originalFileName,
+  PUBLIC_FILE_PURPOSE_ACCEPTED_VALUES,
   fileId as toFileId,
+  fileUploadId as toFileUploadId,
   updateFile as updateFileDomain,
   VISIBLE_FILE_STATUSES,
 } from "../domain/index.js";
 import type {
   CollectDeletedFileContentCommand,
   CompleteFileUploadCommand,
+  CompleteInternalFileUploadCommand,
   CreateDownloadUrlCommand,
   CreateFileUploadCommand,
   CreateFileUploadResult,
+  CreateInternalFileUploadCommand,
   DeleteFileCommand,
   DownloadUrlResult,
   FileResult,
@@ -91,14 +98,18 @@ export class FilesService {
       return { files: [], nextCursor: null };
     }
 
+    const purpose = command.purpose ?? PUBLIC_FILE_PURPOSE_ACCEPTED_VALUES[0];
+    if (!isPublicFilePurpose(purpose)) {
+      throw new InvalidDomainValueError(
+        `purpose should be one of ${PUBLIC_FILE_PURPOSE_ACCEPTED_VALUES}`,
+      );
+    }
+
     const files = await this.deps.filesRepository.listFilesByOwnerUserId({
       cursor: command.cursor ? decodeListCursor(command.cursor) : undefined,
       limit: limit + 1,
       ownerUserId: command.currentUser.user.id,
-      purpose:
-        command.purpose !== undefined
-          ? filePurpose(command.purpose)
-          : undefined,
+      purpose: filePurpose(purpose),
       statuses,
     });
 
@@ -114,7 +125,18 @@ export class FilesService {
   async createFileUpload(
     command: CreateFileUploadCommand,
   ): Promise<CreateFileUploadResult> {
+    if (!isPublicFilePurpose(command.purpose)) {
+      throw new InvalidDomainValueError(
+        `purpose should be one of ${PUBLIC_FILE_PURPOSE_ACCEPTED_VALUES}`,
+      );
+    }
     return this.fileUploadService.createFileUpload(command);
+  }
+
+  async createInternalFileUpload(
+    command: CreateInternalFileUploadCommand,
+  ): Promise<CreateFileUploadResult> {
+    return this.fileUploadService.createInternalFileUpload(command);
   }
 
   async getFile(command: GetFileCommand): Promise<FileResult> {
@@ -124,6 +146,7 @@ export class FilesService {
       canViewFile(command.currentUser, file),
       "You cannot view this file.",
     );
+    assertPublicFile(file);
     assertFileIsVisible(file);
 
     return { file };
@@ -132,9 +155,25 @@ export class FilesService {
   async getFileForOwnerUserId(
     command: GetFileForOwnerUserIdCommand,
   ): Promise<FileResult> {
+    const { file } = await this.getInternalFileForOwnerUserId({
+      allowedPurposes: ["workbook"],
+      fileId: command.fileId,
+      ownerUserId: command.ownerUserId,
+    });
+    return { file };
+  }
+
+  async getInternalFileForOwnerUserId(command: {
+    ownerUserId: string;
+    fileId: string;
+    allowedPurposes: readonly FilePurpose[];
+  }): Promise<FileResult> {
     const file = await this.findFileByIdOrThrow(toFileId(command.fileId));
 
-    if (file.ownerUserId !== command.ownerUserId) {
+    if (
+      file.ownerUserId !== command.ownerUserId ||
+      !command.allowedPurposes.includes(file.purpose)
+    ) {
       throw new FileNotFoundError();
     }
     assertFileIsVisible(file);
@@ -149,6 +188,7 @@ export class FilesService {
       canUpdateFile(command.currentUser, file),
       "You cannot update this file.",
     );
+    assertPublicFile(file);
 
     const updated = updateFileDomain(
       file,
@@ -156,10 +196,6 @@ export class FilesService {
         originalName:
           command.patch.originalName !== undefined
             ? originalFileName(command.patch.originalName)
-            : undefined,
-        purpose:
-          command.patch.purpose !== undefined
-            ? filePurpose(command.patch.purpose)
             : undefined,
       },
       this.deps.clock.now(),
@@ -174,6 +210,32 @@ export class FilesService {
     return this.fileUploadService.completeFileUpload(command);
   }
 
+  async completeInternalFileUpload(
+    command: CompleteInternalFileUploadCommand,
+  ): Promise<FileResult> {
+    return this.fileUploadService.completeInternalFileUpload(command);
+  }
+
+  async getFileUploadForOwnerUserId(command: {
+    ownerUserId: string;
+    uploadId: string;
+    purpose: FilePurpose;
+  }): Promise<{ upload: FileUpload }> {
+    const upload = await this.deps.filesRepository.findFileUploadById(
+      toFileUploadId(command.uploadId),
+    );
+
+    if (
+      !upload ||
+      upload.createdByUserId !== command.ownerUserId ||
+      upload.purpose !== command.purpose
+    ) {
+      throw new FileUploadNotFoundError();
+    }
+
+    return { upload };
+  }
+
   async deleteFile(command: DeleteFileCommand): Promise<void> {
     const file = await this.findFileByIdOrThrow(toFileId(command.fileId));
 
@@ -181,6 +243,7 @@ export class FilesService {
       canDeleteFile(command.currentUser, file),
       "You cannot delete this file.",
     );
+    assertPublicFile(file);
     if (file.status === "deleted") return;
     const tombstoned = markFileDeleting(file, this.deps.clock.now());
     if (tombstoned === file) return;
@@ -207,6 +270,7 @@ export class FilesService {
         canCreateFileDownloadUrl(command.currentUser, file),
         "You cannot download this file.",
       );
+      assertPublicFile(file);
       assertFileCanBeDownloaded(file);
 
       return {
@@ -268,8 +332,22 @@ export class FilesService {
   }
 }
 
+function assertPublicFile(file: File): void {
+  if (!isPublicFilePurpose(file.purpose)) {
+    throw new FileNotFoundError();
+  }
+}
+
 function normalizeListLimit(value: number | undefined): number {
   return Math.min(Math.max(value ?? 50, 1), 100);
+}
+
+function isPublicFilePurpose(
+  value: string,
+): value is (typeof PUBLIC_FILE_PURPOSE_ACCEPTED_VALUES)[number] {
+  return PUBLIC_FILE_PURPOSE_ACCEPTED_VALUES.some(
+    (purpose) => purpose === value,
+  );
 }
 
 function listStatuses(

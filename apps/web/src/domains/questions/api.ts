@@ -1,6 +1,8 @@
 import {
   attachQuestionBlueprintDraftSourceFile as attachQuestionBlueprintDraftSourceFileGenerated,
+  completeQuestionBlueprintDraftWorkbookEditorUpload as completeQuestionBlueprintDraftWorkbookEditorUploadGenerated,
   createQuestionBlueprintDraft as createQuestionBlueprintDraftGenerated,
+  createQuestionBlueprintDraftWorkbookEditorUpload as createQuestionBlueprintDraftWorkbookEditorUploadGenerated,
   createQuestionBlueprintEditDraft as createQuestionBlueprintEditDraftGenerated,
   createQuestionGenerationRun as createQuestionGenerationRunGenerated,
   createQuestionSet as createQuestionSetGenerated,
@@ -18,9 +20,12 @@ import {
   listQuestionSets as listQuestionSetsGenerated,
   publishQuestionBlueprintDraft as publishQuestionBlueprintDraftGenerated,
   retryQuestionGenerationRun as retryQuestionGenerationRunGenerated,
+  saveQuestionBlueprintDraftWorkbookSourceRevision as saveQuestionBlueprintDraftWorkbookSourceRevisionGenerated,
   updateQuestionBlueprintDraft as updateQuestionBlueprintDraftGenerated,
 } from "#/api/generated/questions/questions";
 import {
+  mapCompleteQuestionBlueprintDraftWorkbookEditorUploadResponse,
+  mapCreateQuestionBlueprintDraftWorkbookEditorUploadResponse,
   mapPublishQuestionBlueprintDraftResponse,
   mapQuestionBlueprintAuthoringResponse,
   mapQuestionBlueprintDraftResponse,
@@ -34,10 +39,15 @@ import {
   mapQuestionSetResponse,
   mapQuestionSetsResponse,
   mapQuestionsResponse,
+  mapSaveQuestionBlueprintDraftWorkbookSourceRevisionResponse,
 } from "./mappers";
 import type {
   AttachQuestionBlueprintDraftSourceFileInput,
+  CompleteQuestionBlueprintDraftWorkbookEditorUploadInput,
+  CompleteQuestionBlueprintDraftWorkbookEditorUploadResult,
   CreateQuestionBlueprintDraftInput,
+  CreateQuestionBlueprintDraftWorkbookEditorUploadInput,
+  CreateQuestionBlueprintDraftWorkbookEditorUploadResult,
   CreateQuestionBlueprintEditDraftInput,
   CreateQuestionGenerationRunInput,
   CreateQuestionSetInput,
@@ -65,6 +75,8 @@ import type {
   QuestionSetsPage,
   QuestionsPage,
   RetryQuestionGenerationRunInput,
+  SaveQuestionBlueprintDraftWorkbookSourceRevisionInput,
+  SaveQuestionBlueprintDraftWorkbookSourceRevisionResult,
   UpdateQuestionBlueprintDraftInput,
 } from "./model";
 
@@ -131,6 +143,52 @@ export async function attachQuestionBlueprintDraftSourceFile(
         expectedRevision: input.expectedRevision,
         fileId: input.fileId,
       },
+    ),
+  );
+}
+
+export async function saveQuestionBlueprintDraftWorkbookSourceRevision(
+  input: SaveQuestionBlueprintDraftWorkbookSourceRevisionInput,
+): Promise<SaveQuestionBlueprintDraftWorkbookSourceRevisionResult> {
+  return mapSaveQuestionBlueprintDraftWorkbookSourceRevisionResponse(
+    await saveQuestionBlueprintDraftWorkbookSourceRevisionGenerated(
+      input.draftId,
+      input.sourceId,
+      {
+        expectedRevision: input.expectedRevision,
+        editorOutputFileId: input.editorOutputFileId,
+      },
+    ),
+  );
+}
+
+export async function createQuestionBlueprintDraftWorkbookEditorUpload(
+  input: CreateQuestionBlueprintDraftWorkbookEditorUploadInput,
+): Promise<CreateQuestionBlueprintDraftWorkbookEditorUploadResult> {
+  return mapCreateQuestionBlueprintDraftWorkbookEditorUploadResponse(
+    await createQuestionBlueprintDraftWorkbookEditorUploadGenerated(
+      input.draftId,
+      input.sourceId,
+      {
+        byteSize: input.byteSize,
+        checksumSha256: input.checksumSha256,
+        contentType: input.contentType,
+        expectedRevision: input.expectedRevision,
+        originalName: input.originalName,
+      },
+    ),
+  );
+}
+
+export async function completeQuestionBlueprintDraftWorkbookEditorUpload(
+  input: CompleteQuestionBlueprintDraftWorkbookEditorUploadInput,
+): Promise<CompleteQuestionBlueprintDraftWorkbookEditorUploadResult> {
+  return mapCompleteQuestionBlueprintDraftWorkbookEditorUploadResponse(
+    await completeQuestionBlueprintDraftWorkbookEditorUploadGenerated(
+      input.draftId,
+      input.sourceId,
+      input.uploadId,
+      { expectedRevision: input.expectedRevision },
     ),
   );
 }

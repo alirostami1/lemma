@@ -10,7 +10,9 @@ import {
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   attachQuestionBlueprintDraftSourceFile,
+  completeQuestionBlueprintDraftWorkbookEditorUpload,
   createQuestionBlueprintDraft,
+  createQuestionBlueprintDraftWorkbookEditorUpload,
   createQuestionBlueprintEditDraft,
   createQuestionGenerationRun,
   createQuestionSet,
@@ -27,12 +29,17 @@ import {
   listQuestionSets,
   publishQuestionBlueprintDraft,
   retryQuestionGenerationRun,
+  saveQuestionBlueprintDraftWorkbookSourceRevision,
   updateQuestionBlueprintDraft,
 } from "./api";
 import { questionKeys } from "./keys";
 import type {
   AttachQuestionBlueprintDraftSourceFileInput,
+  CompleteQuestionBlueprintDraftWorkbookEditorUploadInput,
+  CompleteQuestionBlueprintDraftWorkbookEditorUploadResult,
   CreateQuestionBlueprintDraftInput,
+  CreateQuestionBlueprintDraftWorkbookEditorUploadInput,
+  CreateQuestionBlueprintDraftWorkbookEditorUploadResult,
   CreateQuestionBlueprintEditDraftInput,
   CreateQuestionGenerationRunInput,
   CreateQuestionSetInput,
@@ -59,6 +66,8 @@ import type {
   QuestionSetsPage,
   QuestionsPage,
   RetryQuestionGenerationRunInput,
+  SaveQuestionBlueprintDraftWorkbookSourceRevisionInput,
+  SaveQuestionBlueprintDraftWorkbookSourceRevisionResult,
   UpdateQuestionBlueprintDraftInput,
 } from "./model";
 
@@ -119,6 +128,62 @@ export function useAttachQuestionBlueprintDraftSourceFile(
 ) {
   return useMutation({
     mutationFn: attachQuestionBlueprintDraftSourceFile,
+    ...options,
+  });
+}
+
+export function useSaveQuestionBlueprintDraftWorkbookSourceRevision(
+  options?: UseMutationOptions<
+    SaveQuestionBlueprintDraftWorkbookSourceRevisionResult,
+    Error,
+    SaveQuestionBlueprintDraftWorkbookSourceRevisionInput
+  >,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: saveQuestionBlueprintDraftWorkbookSourceRevision,
+    ...options,
+    onSuccess: async (result, variables, onMutateResult, context) => {
+      queryClient.setQueryData(
+        questionKeys.questionBlueprintDraftDetail(result.draft.id),
+        { draft: result.draft },
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: questionKeys.questionBlueprintDraftInfiniteLists(),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: questionKeys.questionBlueprintDraftLists(),
+        }),
+      ]);
+      await options?.onSuccess?.(result, variables, onMutateResult, context);
+    },
+  });
+}
+
+export function useCreateQuestionBlueprintDraftWorkbookEditorUpload(
+  options?: UseMutationOptions<
+    CreateQuestionBlueprintDraftWorkbookEditorUploadResult,
+    Error,
+    CreateQuestionBlueprintDraftWorkbookEditorUploadInput
+  >,
+) {
+  return useMutation({
+    mutationFn: createQuestionBlueprintDraftWorkbookEditorUpload,
+    ...options,
+  });
+}
+
+export function useCompleteQuestionBlueprintDraftWorkbookEditorUpload(
+  options?: UseMutationOptions<
+    CompleteQuestionBlueprintDraftWorkbookEditorUploadResult,
+    Error,
+    CompleteQuestionBlueprintDraftWorkbookEditorUploadInput
+  >,
+) {
+  return useMutation({
+    mutationFn: completeQuestionBlueprintDraftWorkbookEditorUpload,
     ...options,
   });
 }

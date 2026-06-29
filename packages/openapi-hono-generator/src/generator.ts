@@ -53,10 +53,39 @@ export async function resolveOpenApiDocument(
   input: string | OpenApiDocument,
 ): Promise<OpenApiDocument> {
   if (typeof input !== "string") {
-    return input;
+    return normalizeIntegerSchemasForZod(input);
   }
 
-  return loadOpenApiDocument(input);
+  return normalizeIntegerSchemasForZod(await loadOpenApiDocument(input));
+}
+
+/**
+ * Orval 8 emits OpenAPI `integer` schemas as unconstrained Zod numbers.
+ * `multipleOf: 1` preserves the OpenAPI contract while making generated Zod
+ * reject fractional values at request boundaries.
+ */
+export function normalizeIntegerSchemasForZod<T>(input: T): T {
+  if (Array.isArray(input)) {
+    return input.map(normalizeIntegerSchemasForZod) as T;
+  }
+  if (typeof input !== "object" || input === null) {
+    return input;
+  }
+  const record = input as Record<string, unknown>;
+  const normalized = Object.fromEntries(
+    Object.entries(record).map(([key, value]) => [
+      key,
+      normalizeIntegerSchemasForZod(value),
+    ]),
+  );
+  if (record.type === "integer" && record.multipleOf === undefined) {
+    normalized.multipleOf = 1;
+  }
+  return normalized as T;
+}
+
+export function prepareOpenApiDocumentForCodegen<T>(input: T): T {
+  return normalizeIntegerSchemasForZod(input);
 }
 
 export async function generateHonoRoutesSource(

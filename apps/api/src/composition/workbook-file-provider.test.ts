@@ -2,10 +2,25 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { FileContentReaderPort } from "@lemma/files/application";
 import { fileId, userId } from "@lemma/files/domain";
+import { createUser } from "@lemma/identity/domain";
 import { createWorkbookFileProvider } from "./workbook-file-provider.js";
 
 const workbookFileId = fileId("019e9315-6a87-715f-9861-8654df070a01");
 const ownerUserId = userId("019e9315-6a87-715f-9861-8654df070a02");
+const at = new Date("2026-06-24T00:00:00.000Z");
+const currentUser = {
+  isAdmin: false,
+  roles: [],
+  user: createUser(
+    {
+      displayName: "Owner",
+      email: "owner@example.com",
+      id: ownerUserId,
+      identityId: "keycloak|owner",
+    },
+    at,
+  ),
+};
 const metadata = {
   fileId: workbookFileId,
   ownerUserId,
@@ -14,13 +29,18 @@ const metadata = {
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   byteSize: 42,
   checksumSha256: "checksum",
+  metadata: {},
+  purpose: "workbook",
 };
 
 describe("createWorkbookFileProvider", () => {
   it("maps file metadata to the workbook provider contract", async () => {
     const provider = createWorkbookFileProvider(createReader());
 
-    const result = await provider.getWorkbookFileMetadata({} as never);
+    const result = await provider.getWorkbookFileMetadata({
+      currentUser,
+      fileId: workbookFileId,
+    });
 
     assert.deepEqual(result, {
       fileId: workbookFileId,
@@ -35,9 +55,10 @@ describe("createWorkbookFileProvider", () => {
   it("maps file content to the workbook provider contract", async () => {
     const provider = createWorkbookFileProvider(createReader());
 
-    const result = await provider.readWorkbookFileContentForOwnerUserId(
-      {} as never,
-    );
+    const result = await provider.readWorkbookFileContentForOwnerUserId({
+      fileId: workbookFileId,
+      ownerUserId,
+    });
 
     assert.deepEqual(result, {
       fileId: workbookFileId,

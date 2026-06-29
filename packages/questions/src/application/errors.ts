@@ -72,9 +72,37 @@ export class DraftSourceFileInvalidError extends QuestionsApplicationError {
   }
 }
 
+export class DraftSourceEditorUploadNotFoundError extends QuestionsApplicationError {
+  readonly applicationCode = "DRAFT_SOURCE_EDITOR_UPLOAD_NOT_FOUND";
+  constructor(message = "draft source editor upload not found") {
+    super(message);
+  }
+}
+
+export class DraftSourceEditorUploadInvalidError extends QuestionsApplicationError {
+  readonly applicationCode = "DRAFT_SOURCE_EDITOR_UPLOAD_INVALID";
+  constructor(message = "draft source editor upload is invalid") {
+    super(message);
+  }
+}
+
+export class DraftSourceEditorUploadStorageError extends QuestionsApplicationError {
+  readonly applicationCode = "DRAFT_SOURCE_EDITOR_UPLOAD_STORAGE_ERROR";
+  constructor(message = "draft source editor upload storage failed") {
+    super(message);
+  }
+}
+
 export class DraftSourceNotReadyError extends QuestionsApplicationError {
   readonly applicationCode = "DRAFT_SOURCE_NOT_READY";
   constructor(message = "draft source is not ready") {
+    super(message);
+  }
+}
+
+export class WorkbookEditorOutputStaleError extends QuestionsApplicationError {
+  readonly applicationCode = "WORKBOOK_EDITOR_OUTPUT_STALE";
+  constructor(message = "workbook editor output is stale") {
     super(message);
   }
 }
@@ -126,9 +154,9 @@ export class WorkbookQuestionReferenceError extends QuestionsApplicationError {
   }
 }
 
-export class SourceDocumentHeadUpdateFailedError extends QuestionsApplicationError {
-  readonly applicationCode = "SOURCE_DOCUMENT_HEAD_UPDATE_FAILED";
-  constructor(message = "source document head update failed") {
+export class SourceDocumentRevisionConflictError extends QuestionsApplicationError {
+  readonly applicationCode = "SOURCE_DOCUMENT_REVISION_CONFLICT";
+  constructor(message = "source document revision conflict") {
     super(message);
   }
 }
