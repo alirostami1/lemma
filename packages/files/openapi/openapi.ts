@@ -22,11 +22,11 @@ import {
 } from "@lemma/http/openapi";
 import {
   FILE_CONTENT_TYPE_ACCEPTED_VALUES,
-  FILE_PURPOSE_ACCEPTED_VALUES,
   FILE_STATUS_ACCEPTED_VALUES,
   FILE_UPLOAD_STATUS_ACCEPTED_VALUES,
   MAX_FILE_BYTE_SIZE,
   MAX_ORIGINAL_FILE_NAME_LENGTH,
+  PUBLIC_FILE_PURPOSE_ACCEPTED_VALUES,
 } from "../src/domain/index.ts";
 
 const filesTag: Tag = {
@@ -80,7 +80,7 @@ const fileSchema: Schema = {
         ...uuidV7StringSchemaObject(),
       },
       purpose: {
-        enum: FILE_PURPOSE_ACCEPTED_VALUES as unknown as string[],
+        enum: [...PUBLIC_FILE_PURPOSE_ACCEPTED_VALUES],
         example: "workbook",
         type: "string",
       },
@@ -155,7 +155,7 @@ const fileUploadSchema: Schema = {
         type: "string",
       },
       purpose: {
-        enum: FILE_PURPOSE_ACCEPTED_VALUES as unknown as string[],
+        enum: [...PUBLIC_FILE_PURPOSE_ACCEPTED_VALUES],
         example: "workbook",
         type: "string",
       },
@@ -323,7 +323,7 @@ const createFileUploadRequestSchema: Schema = {
         type: "string",
       },
       purpose: {
-        enum: FILE_PURPOSE_ACCEPTED_VALUES as unknown as string[],
+        enum: [...PUBLIC_FILE_PURPOSE_ACCEPTED_VALUES],
         type: "string",
       },
     },
@@ -347,10 +347,6 @@ const updateFileRequestSchema: Schema = {
       originalName: {
         maxLength: MAX_ORIGINAL_FILE_NAME_LENGTH,
         minLength: 1,
-        type: "string",
-      },
-      purpose: {
-        enum: FILE_PURPOSE_ACCEPTED_VALUES as unknown as string[],
         type: "string",
       },
     },
@@ -496,7 +492,7 @@ export const paths: Paths = Object.freeze({
           name: "purpose",
           required: false,
           schema: {
-            enum: FILE_PURPOSE_ACCEPTED_VALUES as unknown as string[],
+            enum: [...PUBLIC_FILE_PURPOSE_ACCEPTED_VALUES],
             type: "string",
           },
         },

@@ -98,6 +98,8 @@ export type FileContentMetadata = {
   contentType: string;
   byteSize: number;
   checksumSha256: string;
+  purpose: string;
+  metadata: Record<string, unknown>;
 };
 
 export type FileContent = FileContentMetadata & {

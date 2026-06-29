@@ -4,7 +4,7 @@ import type { DatabaseExecutor } from "@lemma/db";
 import {
   QuestionBlueprintBaseVersionConflictError,
   QuestionBlueprintDraftRevisionConflictError,
-  SourceDocumentHeadUpdateFailedError,
+  SourceDocumentRevisionConflictError,
 } from "../application/index.js";
 import {
   createQuestionBlueprint,
@@ -248,6 +248,7 @@ describe("KyselyQuestion persistence", () => {
       currentRevisionId: sourceRevisionId(
         "019e9315-6a87-715f-9861-8654df074304",
       ),
+      expectedCurrentRevisionId: testSourceRevisionId,
       kind: "workbook",
       ownerUserId,
       sourceDocumentId: testSourceDocumentId,
@@ -273,12 +274,13 @@ describe("KyselyQuestion persistence", () => {
           currentRevisionId: sourceRevisionId(
             "019e9315-6a87-715f-9861-8654df074305",
           ),
+          expectedCurrentRevisionId: testSourceRevisionId,
           kind: "workbook",
           ownerUserId,
           sourceDocumentId: testSourceDocumentId,
           updatedAt: at,
         }),
-      SourceDocumentHeadUpdateFailedError,
+      SourceDocumentRevisionConflictError,
     );
   });
 

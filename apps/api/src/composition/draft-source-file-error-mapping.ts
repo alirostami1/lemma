@@ -1,4 +1,5 @@
 import {
+  FileAliasUnavailableError,
   FileNotFoundError,
   FileNotVisibleError,
   ForbiddenFileActionError,
@@ -10,6 +11,7 @@ export function isExpectedDraftSourceFileUnavailableError(
   return (
     error instanceof FileNotFoundError ||
     error instanceof FileNotVisibleError ||
+    error instanceof FileAliasUnavailableError ||
     error instanceof ForbiddenFileActionError
   );
 }

@@ -146,7 +146,6 @@ export function updateFile(
   file: File,
   patch: {
     originalName?: OriginalFileName;
-    purpose?: FilePurpose;
     metadata?: FileMetadata;
   },
   at = new Date(),
@@ -157,7 +156,6 @@ export function updateFile(
     ...touch(file, at),
     metadata: patch.metadata ?? file.metadata,
     originalName: patch.originalName ?? file.originalName,
-    purpose: patch.purpose ?? file.purpose,
   };
 }
 

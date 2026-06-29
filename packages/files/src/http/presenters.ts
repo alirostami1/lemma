@@ -5,7 +5,7 @@ import type {
   FileResult,
   FilesResult,
 } from "../application/index.js";
-import type { File, FileUpload } from "../domain/index.js";
+import type { File, FileUpload, PublicFilePurpose } from "../domain/index.js";
 import type {
   CreateFileDownloadUrlResponse as CreateFileDownloadUrlResponseDto,
   CreateFileUploadResponse as CreateFileUploadResponseDto,
@@ -66,7 +66,7 @@ function toFileDto(file: File): FileDto {
     id: file.id,
     originalName: file.originalName,
     ownerUserId: file.ownerUserId,
-    purpose: file.purpose,
+    purpose: toPublicFilePurpose(file.purpose),
     status: file.status,
     updatedAt: presentDate(file.updatedAt),
   };
@@ -82,11 +82,18 @@ function toFileUploadDto(upload: FileUpload): FileUploadDto {
     expectedByteSize: upload.expectedByteSize,
     id: upload.id,
     originalName: upload.originalName,
-    purpose: upload.purpose,
+    purpose: toPublicFilePurpose(upload.purpose),
     status: upload.status,
     updatedAt: presentDate(upload.updatedAt),
     uploadExpiresAt: presentDate(upload.uploadExpiresAt),
   };
+}
+
+function toPublicFilePurpose(purpose: File["purpose"]): PublicFilePurpose {
+  if (purpose === "workbook") return purpose;
+  throw new Error(
+    "internal file purpose cannot be presented by public Files API",
+  );
 }
 
 function toFileDownloadUrlDto(

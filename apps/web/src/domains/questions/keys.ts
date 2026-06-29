@@ -34,6 +34,10 @@ export const questionKeys = {
       "infinite-list",
       input ?? {},
     ] as const,
+  questionBlueprintDraftInfiniteLists: () =>
+    [...questionKeys.questionBlueprintDrafts(), "infinite-list"] as const,
+  questionBlueprintDraftLists: () =>
+    [...questionKeys.questionBlueprintDrafts(), "list"] as const,
   questionBlueprintDraftsList: (input?: ListQuestionBlueprintDraftsInput) =>
     [...questionKeys.questionBlueprintDrafts(), "list", input ?? {}] as const,
   questionBlueprints: () =>

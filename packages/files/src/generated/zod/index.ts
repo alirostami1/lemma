@@ -11,6 +11,7 @@ import * as zod from "zod";
  */
 export const createFileUploadBodyByteSizeExclusiveMin = 0;
 export const createFileUploadBodyByteSizeMax = 26214400;
+export const createFileUploadBodyByteSizeMultipleOf = 1;
 
 export const createFileUploadBodyChecksumSha256RegExp = /^[A-Fa-f0-9]{64}$/;
 export const createFileUploadBodyOriginalNameMax = 500;
@@ -19,7 +20,8 @@ export const CreateFileUploadBody = zod.strictObject({
   byteSize: zod
     .number()
     .gt(createFileUploadBodyByteSizeExclusiveMin)
-    .max(createFileUploadBodyByteSizeMax),
+    .max(createFileUploadBodyByteSizeMax)
+    .multipleOf(createFileUploadBodyByteSizeMultipleOf),
   checksumSha256: zod.string().regex(createFileUploadBodyChecksumSha256RegExp),
   contentType: zod.enum([
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -34,12 +36,14 @@ export const createFileUpload201ResponseUploadCreatedByUserIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const createFileUpload201ResponseUploadExpectedByteSizeExclusiveMin = 0;
 export const createFileUpload201ResponseUploadExpectedByteSizeMax = 26214400;
+export const createFileUpload201ResponseUploadExpectedByteSizeMultipleOf = 1;
 
 export const createFileUpload201ResponseUploadIdRegExp =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const createFileUpload201ResponseUploadOriginalNameMax = 500;
 
 export const createFileUpload201ResponseUploadUrlExpiresInSecondsExclusiveMin = 0;
+export const createFileUpload201ResponseUploadUrlExpiresInSecondsMultipleOf = 1;
 
 export const CreateFileUpload201Response = zod.strictObject({
   upload: zod.strictObject({
@@ -57,7 +61,8 @@ export const CreateFileUpload201Response = zod.strictObject({
     expectedByteSize: zod
       .number()
       .gt(createFileUpload201ResponseUploadExpectedByteSizeExclusiveMin)
-      .max(createFileUpload201ResponseUploadExpectedByteSizeMax),
+      .max(createFileUpload201ResponseUploadExpectedByteSizeMax)
+      .multipleOf(createFileUpload201ResponseUploadExpectedByteSizeMultipleOf),
     id: zod.string().regex(createFileUpload201ResponseUploadIdRegExp),
     originalName: zod
       .string()
@@ -77,7 +82,10 @@ export const CreateFileUpload201Response = zod.strictObject({
   uploadUrl: zod.strictObject({
     expiresInSeconds: zod
       .number()
-      .gt(createFileUpload201ResponseUploadUrlExpiresInSecondsExclusiveMin),
+      .gt(createFileUpload201ResponseUploadUrlExpiresInSecondsExclusiveMin)
+      .multipleOf(
+        createFileUpload201ResponseUploadUrlExpiresInSecondsMultipleOf,
+      ),
     headers: zod.strictObject({
       "Content-Type": zod.string(),
       "x-amz-checksum-sha256": zod.string(),
@@ -135,6 +143,7 @@ export const CompleteFileUploadParams = zod.strictObject({
 
 export const completeFileUpload201ResponseFileByteSizeExclusiveMin = 0;
 export const completeFileUpload201ResponseFileByteSizeMax = 26214400;
+export const completeFileUpload201ResponseFileByteSizeMultipleOf = 1;
 
 export const completeFileUpload201ResponseFileChecksumSha256RegExp =
   /^[A-Fa-f0-9]{64}$/;
@@ -152,7 +161,8 @@ export const CompleteFileUpload201Response = zod.strictObject({
     byteSize: zod
       .number()
       .gt(completeFileUpload201ResponseFileByteSizeExclusiveMin)
-      .max(completeFileUpload201ResponseFileByteSizeMax),
+      .max(completeFileUpload201ResponseFileByteSizeMax)
+      .multipleOf(completeFileUpload201ResponseFileByteSizeMultipleOf),
     checksumSha256: zod
       .string()
       .regex(completeFileUpload201ResponseFileChecksumSha256RegExp),
@@ -237,12 +247,14 @@ export const CompleteFileUpload502Response = zod.strictObject({
  */
 export const listFilesQueryLimitDefault = 50;
 export const listFilesQueryLimitMax = 100;
+export const listFilesQueryLimitMultipleOf = 1;
 
 export const ListFilesQueryParams = zod.object({
   limit: zod.coerce
     .number()
     .min(1)
     .max(listFilesQueryLimitMax)
+    .multipleOf(listFilesQueryLimitMultipleOf)
     .default(listFilesQueryLimitDefault),
   cursor: zod.string().min(1).optional(),
   status: zod.enum(["uploaded", "deleting", "deleted"]).optional(),
@@ -251,6 +263,7 @@ export const ListFilesQueryParams = zod.object({
 
 export const listFiles200ResponseFilesItemByteSizeExclusiveMin = 0;
 export const listFiles200ResponseFilesItemByteSizeMax = 26214400;
+export const listFiles200ResponseFilesItemByteSizeMultipleOf = 1;
 
 export const listFiles200ResponseFilesItemChecksumSha256RegExp =
   /^[A-Fa-f0-9]{64}$/;
@@ -269,7 +282,8 @@ export const ListFiles200Response = zod.strictObject({
       byteSize: zod
         .number()
         .gt(listFiles200ResponseFilesItemByteSizeExclusiveMin)
-        .max(listFiles200ResponseFilesItemByteSizeMax),
+        .max(listFiles200ResponseFilesItemByteSizeMax)
+        .multipleOf(listFiles200ResponseFilesItemByteSizeMultipleOf),
       checksumSha256: zod
         .string()
         .regex(listFiles200ResponseFilesItemChecksumSha256RegExp),
@@ -384,6 +398,7 @@ export const GetFileParams = zod.strictObject({
 
 export const getFile200ResponseFileByteSizeExclusiveMin = 0;
 export const getFile200ResponseFileByteSizeMax = 26214400;
+export const getFile200ResponseFileByteSizeMultipleOf = 1;
 
 export const getFile200ResponseFileChecksumSha256RegExp = /^[A-Fa-f0-9]{64}$/;
 export const getFile200ResponseFileCreatedByUserIdRegExp =
@@ -400,7 +415,8 @@ export const GetFile200Response = zod.strictObject({
     byteSize: zod
       .number()
       .gt(getFile200ResponseFileByteSizeExclusiveMin)
-      .max(getFile200ResponseFileByteSizeMax),
+      .max(getFile200ResponseFileByteSizeMax)
+      .multipleOf(getFile200ResponseFileByteSizeMultipleOf),
     checksumSha256: zod
       .string()
       .regex(getFile200ResponseFileChecksumSha256RegExp),
@@ -478,11 +494,11 @@ export const UpdateFileBody = zod.strictObject({
     .min(1)
     .max(updateFileBodyOriginalNameMax)
     .optional(),
-  purpose: zod.enum(["workbook"]).optional(),
 });
 
 export const updateFile200ResponseFileByteSizeExclusiveMin = 0;
 export const updateFile200ResponseFileByteSizeMax = 26214400;
+export const updateFile200ResponseFileByteSizeMultipleOf = 1;
 
 export const updateFile200ResponseFileChecksumSha256RegExp =
   /^[A-Fa-f0-9]{64}$/;
@@ -500,7 +516,8 @@ export const UpdateFile200Response = zod.strictObject({
     byteSize: zod
       .number()
       .gt(updateFile200ResponseFileByteSizeExclusiveMin)
-      .max(updateFile200ResponseFileByteSizeMax),
+      .max(updateFile200ResponseFileByteSizeMax)
+      .multipleOf(updateFile200ResponseFileByteSizeMultipleOf),
     checksumSha256: zod
       .string()
       .regex(updateFile200ResponseFileChecksumSha256RegExp),
@@ -580,12 +597,16 @@ export const CreateFileDownloadUrlParams = zod.strictObject({
 });
 
 export const createFileDownloadUrl200ResponseDownloadExpiresInSecondsExclusiveMin = 0;
+export const createFileDownloadUrl200ResponseDownloadExpiresInSecondsMultipleOf = 1;
 
 export const CreateFileDownloadUrl200Response = zod.strictObject({
   download: zod.strictObject({
     expiresInSeconds: zod
       .number()
-      .gt(createFileDownloadUrl200ResponseDownloadExpiresInSecondsExclusiveMin),
+      .gt(createFileDownloadUrl200ResponseDownloadExpiresInSecondsExclusiveMin)
+      .multipleOf(
+        createFileDownloadUrl200ResponseDownloadExpiresInSecondsMultipleOf,
+      ),
     method: zod.enum(["GET"]),
     url: zod.url(),
   }),

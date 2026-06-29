@@ -2,18 +2,154 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { useRetryQuestionGenerationRun } from "./hooks";
+import {
+  useCompleteQuestionBlueprintDraftWorkbookEditorUpload,
+  useCreateQuestionBlueprintDraftWorkbookEditorUpload,
+  useRetryQuestionGenerationRun,
+  useSaveQuestionBlueprintDraftWorkbookSourceRevision,
+} from "./hooks";
 import { questionKeys } from "./keys";
-import type { QuestionGenerationRun } from "./model";
+import type {
+  QuestionBlueprintDraft,
+  QuestionGenerationRun,
+  SaveQuestionBlueprintDraftWorkbookSourceRevisionResult,
+} from "./model";
 
 const mocks = vi.hoisted(() => ({
+  createQuestionBlueprintDraftWorkbookEditorUpload: vi.fn(),
+  completeQuestionBlueprintDraftWorkbookEditorUpload: vi.fn(),
   retryQuestionGenerationRun: vi.fn(),
+  saveQuestionBlueprintDraftWorkbookSourceRevision: vi.fn(),
 }));
 
 vi.mock("./api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./api")>()),
+  createQuestionBlueprintDraftWorkbookEditorUpload:
+    mocks.createQuestionBlueprintDraftWorkbookEditorUpload,
+  completeQuestionBlueprintDraftWorkbookEditorUpload:
+    mocks.completeQuestionBlueprintDraftWorkbookEditorUpload,
   retryQuestionGenerationRun: mocks.retryQuestionGenerationRun,
+  saveQuestionBlueprintDraftWorkbookSourceRevision:
+    mocks.saveQuestionBlueprintDraftWorkbookSourceRevision,
 }));
+
+describe("useCreateQuestionBlueprintDraftWorkbookEditorUpload", () => {
+  it("creates a scoped editor upload through the questions domain API", async () => {
+    const response = {
+      upload: {
+        checksumSha256: "b".repeat(64),
+        completedAt: null,
+        contentType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        createdAt: new Date("2026-06-23T00:00:00.000Z"),
+        createdByUserId: "owner-1",
+        expectedByteSize: 1234,
+        id: "upload-1",
+        originalName: "source.xlsx",
+        status: "initiated",
+        updatedAt: new Date("2026-06-23T00:00:00.000Z"),
+        uploadExpiresAt: new Date("2026-06-24T00:00:00.000Z"),
+      },
+      uploadUrl: {
+        expiresInSeconds: 900,
+        headers: {},
+        method: "PUT",
+        url: "https://storage.example/upload",
+      },
+    };
+    mocks.createQuestionBlueprintDraftWorkbookEditorUpload.mockResolvedValue(
+      response,
+    );
+    const queryClient = new QueryClient({
+      defaultOptions: { mutations: { retry: false } },
+    });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(
+      () => useCreateQuestionBlueprintDraftWorkbookEditorUpload(),
+      { wrapper },
+    );
+
+    await act(() =>
+      result.current.mutateAsync({
+        byteSize: 1234,
+        checksumSha256: "b".repeat(64),
+        contentType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        draftId: "draft-1",
+        expectedRevision: 1,
+        originalName: "source.xlsx",
+        sourceId: "source-1",
+      }),
+    );
+
+    expect(
+      mocks.createQuestionBlueprintDraftWorkbookEditorUpload,
+    ).toHaveBeenCalledWith(
+      {
+        byteSize: 1234,
+        checksumSha256: "b".repeat(64),
+        contentType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        draftId: "draft-1",
+        expectedRevision: 1,
+        originalName: "source.xlsx",
+        sourceId: "source-1",
+      },
+      expect.anything(),
+    );
+  });
+});
+
+describe("useCompleteQuestionBlueprintDraftWorkbookEditorUpload", () => {
+  it("completes a scoped editor upload through the questions domain API", async () => {
+    const response = {
+      editorOutputFile: {
+        byteSize: 1234,
+        checksumSha256: "b".repeat(64),
+        contentType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        id: "editor-file-1",
+        originalName: "source.xlsx",
+      },
+    };
+    mocks.completeQuestionBlueprintDraftWorkbookEditorUpload.mockResolvedValue(
+      response,
+    );
+    const queryClient = new QueryClient({
+      defaultOptions: { mutations: { retry: false } },
+    });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(
+      () => useCompleteQuestionBlueprintDraftWorkbookEditorUpload(),
+      { wrapper },
+    );
+
+    await act(() =>
+      result.current.mutateAsync({
+        draftId: "draft-1",
+        expectedRevision: 2,
+        sourceId: "source-1",
+        uploadId: "upload-1",
+      }),
+    );
+
+    expect(
+      mocks.completeQuestionBlueprintDraftWorkbookEditorUpload,
+    ).toHaveBeenCalledWith(
+      {
+        draftId: "draft-1",
+        expectedRevision: 2,
+        sourceId: "source-1",
+        uploadId: "upload-1",
+      },
+      expect.anything(),
+    );
+  });
+});
 
 describe("useRetryQuestionGenerationRun", () => {
   it("caches replacement run under replacement id", async () => {
@@ -66,3 +202,95 @@ describe("useRetryQuestionGenerationRun", () => {
     ).toBeUndefined();
   });
 });
+
+describe("useSaveQuestionBlueprintDraftWorkbookSourceRevision", () => {
+  it("caches the moved draft binding and invalidates draft lists", async () => {
+    const response = savedRevisionResult();
+    mocks.saveQuestionBlueprintDraftWorkbookSourceRevision.mockResolvedValue(
+      response,
+    );
+    const queryClient = new QueryClient({
+      defaultOptions: { mutations: { retry: false } },
+    });
+    const listKey = questionKeys.questionBlueprintDraftsInfiniteList();
+    queryClient.setQueryData(listKey, { drafts: [], nextCursor: null });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(
+      () => useSaveQuestionBlueprintDraftWorkbookSourceRevision(),
+      { wrapper },
+    );
+
+    await act(() =>
+      result.current.mutateAsync({
+        draftId: response.draft.id,
+        editorOutputFileId: "editor-file-2",
+        expectedRevision: 1,
+        sourceId: "source_1",
+      }),
+    );
+
+    expect(
+      queryClient.getQueryData(
+        questionKeys.questionBlueprintDraftDetail(response.draft.id),
+      ),
+    ).toEqual({ draft: response.draft });
+    expect(queryClient.getQueryState(listKey)?.isInvalidated).toBe(true);
+  });
+});
+
+function savedRevisionResult(): SaveQuestionBlueprintDraftWorkbookSourceRevisionResult {
+  const at = new Date("2026-06-23T00:00:00.000Z");
+  const draft: QuestionBlueprintDraft = {
+    baseVersionId: "version-1",
+    blueprintId: "blueprint-1",
+    createdAt: at,
+    createdByUserId: "user-1",
+    description: null,
+    discardedAt: null,
+    document: {
+      blocks: [],
+      references: [],
+      responseFields: [],
+      schemaVersion: 1,
+    },
+    id: "draft-1",
+    lastSavedAt: at,
+    name: "Draft",
+    ownerUserId: "user-1",
+    publishedAt: null,
+    publishedVersionId: null,
+    revision: 2,
+    sources: [],
+    status: "draft",
+    updatedAt: at,
+  };
+  return {
+    draft,
+    sourceArtifact: {
+      createdAt: at,
+      id: "artifact-2",
+      kind: "workbook",
+      processor: "lemma-workbook",
+      processorVersion: "1",
+      sourceRevisionId: "revision-2",
+      status: "pending_validation",
+      updatedAt: at,
+      validationError: null,
+      workbookId: "workbook-2",
+    },
+    sourceRevision: {
+      byteSize: 2048,
+      checksumSha256: "a".repeat(64),
+      contentType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      createdAt: at,
+      createdByUserId: "user-1",
+      id: "revision-2",
+      kind: "workbook",
+      parentRevisionId: "revision-1",
+      sourceDocumentId: "document-1",
+    },
+  };
+}

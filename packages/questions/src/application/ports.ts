@@ -187,6 +187,7 @@ export interface QuestionsRepository {
     ownerUserId: UserId;
     kind: SourceKind;
     currentRevisionId: SourceRevisionId;
+    expectedCurrentRevisionId: SourceRevisionId | null;
     updatedAt: Date;
   }): Promise<SourceDocument>;
   tombstoneSourceDocumentGraph(input: {
@@ -325,18 +326,79 @@ export type DraftSourceFileMetadata = {
   contentType: string;
   byteSize: number;
   checksumSha256: string;
-  purpose: string;
+  purpose: "workbook" | "workbook_editor_output";
+  metadata: Record<string, unknown>;
 };
 
-export type DraftSourceFileMetadataLookup =
-  | { status: "available"; file: DraftSourceFileMetadata }
-  | { status: "unavailable" };
+export type DraftSourceUploadMetadata = {
+  uploadId: string;
+  ownerUserId: UserId;
+  metadata: Record<string, unknown>;
+  purpose: "workbook" | "workbook_editor_output";
+};
+
+export const WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_VERSION = 1;
+export const WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_TYPE =
+  "question_workbook_editor_output";
 
 export interface DraftSourceFilePort {
+  completeEditorOutputUpload(input: {
+    currentUser: CurrentUser;
+    uploadId: string;
+  }): Promise<{
+    file: {
+      id: string;
+      ownerUserId: UserId;
+      originalName: string;
+      contentType: string;
+      byteSize: number;
+      checksumSha256: string;
+      purpose: "workbook" | "workbook_editor_output";
+      metadata: Record<string, unknown>;
+    };
+  }>;
+  createEditorOutputUpload(input: {
+    currentUser: CurrentUser;
+    draftId: QuestionBlueprintDraftId;
+    draftRevision: number;
+    sourceId: string;
+    sourceDocumentId: SourceDocumentId;
+    sourceRevisionId: SourceRevisionId;
+    sourceArtifactId: SourceArtifactId | null;
+    originalName: string;
+    contentType: string;
+    byteSize: number;
+    checksumSha256: string;
+  }): Promise<{
+    upload: {
+      id: string;
+      createdByUserId: string;
+      originalName: string;
+      contentType: string;
+      expectedByteSize: number;
+      checksumSha256: string;
+      status: "initiated" | "verified" | "failed" | "expired" | "cancelled";
+      purpose: string;
+      uploadExpiresAt: Date;
+      completedAt: Date | null;
+      createdAt: Date;
+      updatedAt: Date;
+    };
+    uploadUrl: {
+      expiresInSeconds: number;
+      method: "PUT";
+      url: string;
+      headers: Record<string, string>;
+    };
+  }>;
   getFileMetadata(input: {
     currentUser: CurrentUser;
     fileId: string;
-  }): Promise<DraftSourceFileMetadataLookup>;
+  }): Promise<DraftSourceFileMetadata>;
+  getUploadMetadata(input: {
+    currentUser: CurrentUser;
+    uploadId: string;
+  }): Promise<DraftSourceUploadMetadata>;
 }
 
 export type DraftSourceWorkbookRegistrationResult = {

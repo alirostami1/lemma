@@ -10,6 +10,8 @@ import { Hono } from "hono";
 import type { StatusCode } from "hono/utils/http-status";
 import type * as z from "zod";
 import type {
+  CompleteQuestionBlueprintDraftWorkbookEditorUploadResponse,
+  CreateQuestionBlueprintDraftWorkbookEditorUploadResponse,
   ErrorResponse,
   GradeQuestionResponse,
   ListQuestionBlueprintDraftsResponse,
@@ -25,12 +27,17 @@ import type {
   QuestionGenerationRunResponse,
   QuestionResponse,
   QuestionSetResponse,
+  SaveQuestionBlueprintDraftWorkbookSourceRevisionResponse,
 } from "../types/index.js";
 import {
   AttachQuestionBlueprintDraftSourceFileBody,
   AttachQuestionBlueprintDraftSourceFileParams,
   CancelQuestionGenerationRunParams,
+  CompleteQuestionBlueprintDraftWorkbookEditorUploadBody,
+  CompleteQuestionBlueprintDraftWorkbookEditorUploadParams,
   CreateQuestionBlueprintDraftBody,
+  CreateQuestionBlueprintDraftWorkbookEditorUploadBody,
+  CreateQuestionBlueprintDraftWorkbookEditorUploadParams,
   CreateQuestionBlueprintEditDraftBody,
   CreateQuestionBlueprintEditDraftParams,
   CreateQuestionGenerationRunBody,
@@ -59,6 +66,8 @@ import {
   PublishQuestionBlueprintDraftParams,
   RemoveQuestionFromSetParams,
   RetryQuestionGenerationRunParams,
+  SaveQuestionBlueprintDraftWorkbookSourceRevisionBody,
+  SaveQuestionBlueprintDraftWorkbookSourceRevisionParams,
   UpdateQuestionBlueprintDraftBody,
   UpdateQuestionBlueprintDraftParams,
   UpdateQuestionSetBody,
@@ -129,6 +138,32 @@ type AttachQuestionBlueprintDraftSourceFileResponses = {
   "403": ErrorResponse;
   "404": ErrorResponse;
   "409": ErrorResponse;
+};
+type SaveQuestionBlueprintDraftWorkbookSourceRevisionResponses = {
+  "200": SaveQuestionBlueprintDraftWorkbookSourceRevisionResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+};
+type CreateQuestionBlueprintDraftWorkbookEditorUploadResponses = {
+  "201": CreateQuestionBlueprintDraftWorkbookEditorUploadResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
+};
+type CompleteQuestionBlueprintDraftWorkbookEditorUploadResponses = {
+  "201": CompleteQuestionBlueprintDraftWorkbookEditorUploadResponse;
+  "400": ErrorResponse;
+  "401": ErrorResponse;
+  "403": ErrorResponse;
+  "404": ErrorResponse;
+  "409": ErrorResponse;
+  "502": ErrorResponse;
 };
 type ListQuestionBlueprintsResponses = {
   "200": ListQuestionBlueprintsResponse;
@@ -377,6 +412,51 @@ export type QuestionsHandlerMap = {
     },
     TypedHandlerResponse<AttachQuestionBlueprintDraftSourceFileResponses>
   >;
+  saveQuestionBlueprintDraftWorkbookSourceRevision: Handler<
+    QuestionsAppEnv,
+    "/question-blueprint-drafts/:draftId/sources/:sourceId/revisions",
+    {
+      out: {
+        param: z.infer<
+          typeof SaveQuestionBlueprintDraftWorkbookSourceRevisionParams
+        >;
+        json: z.infer<
+          typeof SaveQuestionBlueprintDraftWorkbookSourceRevisionBody
+        >;
+      };
+    },
+    TypedHandlerResponse<SaveQuestionBlueprintDraftWorkbookSourceRevisionResponses>
+  >;
+  createQuestionBlueprintDraftWorkbookEditorUpload: Handler<
+    QuestionsAppEnv,
+    "/question-blueprint-drafts/:draftId/sources/:sourceId/workbook-editor-uploads",
+    {
+      out: {
+        param: z.infer<
+          typeof CreateQuestionBlueprintDraftWorkbookEditorUploadParams
+        >;
+        json: z.infer<
+          typeof CreateQuestionBlueprintDraftWorkbookEditorUploadBody
+        >;
+      };
+    },
+    TypedHandlerResponse<CreateQuestionBlueprintDraftWorkbookEditorUploadResponses>
+  >;
+  completeQuestionBlueprintDraftWorkbookEditorUpload: Handler<
+    QuestionsAppEnv,
+    "/question-blueprint-drafts/:draftId/sources/:sourceId/workbook-editor-uploads/:uploadId/completions",
+    {
+      out: {
+        param: z.infer<
+          typeof CompleteQuestionBlueprintDraftWorkbookEditorUploadParams
+        >;
+        json: z.infer<
+          typeof CompleteQuestionBlueprintDraftWorkbookEditorUploadBody
+        >;
+      };
+    },
+    TypedHandlerResponse<CompleteQuestionBlueprintDraftWorkbookEditorUploadResponses>
+  >;
   listQuestionBlueprints: Handler<
     QuestionsAppEnv,
     "/question-blueprints",
@@ -588,6 +668,54 @@ export function createQuestionsRoutes(deps: {
       validationHook,
     ),
     deps.handlers.attachQuestionBlueprintDraftSourceFile,
+  );
+
+  app.post(
+    "/question-blueprint-drafts/:draftId/sources/:sourceId/revisions",
+    deps.requireIdentity,
+    zValidator(
+      "param",
+      SaveQuestionBlueprintDraftWorkbookSourceRevisionParams,
+      validationHook,
+    ),
+    zValidator(
+      "json",
+      SaveQuestionBlueprintDraftWorkbookSourceRevisionBody,
+      validationHook,
+    ),
+    deps.handlers.saveQuestionBlueprintDraftWorkbookSourceRevision,
+  );
+
+  app.post(
+    "/question-blueprint-drafts/:draftId/sources/:sourceId/workbook-editor-uploads",
+    deps.requireIdentity,
+    zValidator(
+      "param",
+      CreateQuestionBlueprintDraftWorkbookEditorUploadParams,
+      validationHook,
+    ),
+    zValidator(
+      "json",
+      CreateQuestionBlueprintDraftWorkbookEditorUploadBody,
+      validationHook,
+    ),
+    deps.handlers.createQuestionBlueprintDraftWorkbookEditorUpload,
+  );
+
+  app.post(
+    "/question-blueprint-drafts/:draftId/sources/:sourceId/workbook-editor-uploads/:uploadId/completions",
+    deps.requireIdentity,
+    zValidator(
+      "param",
+      CompleteQuestionBlueprintDraftWorkbookEditorUploadParams,
+      validationHook,
+    ),
+    zValidator(
+      "json",
+      CompleteQuestionBlueprintDraftWorkbookEditorUploadBody,
+      validationHook,
+    ),
+    deps.handlers.completeQuestionBlueprintDraftWorkbookEditorUpload,
   );
 
   app.get(

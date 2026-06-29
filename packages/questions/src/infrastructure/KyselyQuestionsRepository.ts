@@ -271,6 +271,7 @@ export class KyselyQuestionsRepository implements QuestionsRepository {
     ownerUserId: UserId;
     kind: SourceKind;
     currentRevisionId: SourceRevisionId;
+    expectedCurrentRevisionId: SourceRevisionId | null;
     updatedAt: Date;
   }): Promise<SourceDocument> {
     return this.sources.setSourceDocumentCurrentRevision(input);

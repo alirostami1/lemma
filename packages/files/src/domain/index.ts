@@ -43,6 +43,7 @@ export type {
   FileStatus,
   FileUploadStatus,
   OriginalFileName,
+  PublicFilePurpose,
 } from "./file-values.js";
 export {
   ACTIVE_FILE_STATUSES,
@@ -63,6 +64,7 @@ export {
   MAX_FILE_BYTE_SIZE,
   MAX_ORIGINAL_FILE_NAME_LENGTH,
   originalFileName,
+  PUBLIC_FILE_PURPOSE_ACCEPTED_VALUES,
   UPLOAD_EXPIRES_IN_MILLISECONDS,
   uploadExpiresAt,
   VISIBLE_FILE_STATUSES,

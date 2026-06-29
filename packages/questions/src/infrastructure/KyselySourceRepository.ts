@@ -8,7 +8,7 @@ import type { JsonObject } from "@lemma/domain";
 import type { Insertable, Selectable } from "kysely";
 import {
   QuestionsRepositoryDataError,
-  SourceDocumentHeadUpdateFailedError,
+  SourceDocumentRevisionConflictError,
 } from "../application/errors.js";
 import type {
   ProtectedSourceReferenceCounts,
@@ -280,6 +280,7 @@ export class KyselySourceRepository {
     ownerUserId: UserId;
     kind: SourceKind;
     currentRevisionId: SourceRevisionId;
+    expectedCurrentRevisionId: SourceRevisionId | null;
     updatedAt: Date;
   }): Promise<SourceDocument> {
     const row = await this.db
@@ -291,10 +292,15 @@ export class KyselySourceRepository {
       .where("id", "=", input.sourceDocumentId)
       .where("ownerUserId", "=", input.ownerUserId)
       .where("kind", "=", input.kind)
+      .where(
+        "currentRevisionId",
+        input.expectedCurrentRevisionId === null ? "is" : "=",
+        input.expectedCurrentRevisionId,
+      )
       .returningAll()
       .executeTakeFirst();
     if (!row) {
-      throw new SourceDocumentHeadUpdateFailedError();
+      throw new SourceDocumentRevisionConflictError();
     }
     return mapSourceDocumentRow(row);
   }

@@ -99,7 +99,6 @@ export function createFilesHandlers(deps: FilesHandlersDeps): FilesHandlerMap {
         fileId,
         patch: {
           originalName: body.originalName,
-          purpose: body.purpose,
         },
       });
 

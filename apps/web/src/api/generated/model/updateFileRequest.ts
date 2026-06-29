@@ -4,7 +4,6 @@
  * Lemma API
  * OpenAPI spec version: 0.1.0
  */
-import type { UpdateFileRequestPurpose } from "./updateFileRequestPurpose.ts";
 
 export interface UpdateFileRequest {
   /**
@@ -12,5 +11,4 @@ export interface UpdateFileRequest {
    * @maxLength 500
    */
   originalName?: string;
-  purpose?: UpdateFileRequestPurpose;
 }

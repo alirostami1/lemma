@@ -1,47 +1,244 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { describe, it } from "node:test";
+import type { CurrentUser } from "@lemma/identity/application";
 import { createUser } from "@lemma/identity/domain";
 import {
   createFileFromUpload,
+  createFileUploadSession,
   type File,
-  fileId,
-  fileUploadId,
-  userId,
+  FileNotFoundError,
+  type FileUpload,
+  FileUploadNotFoundError,
+  InvalidDomainValueError,
+  fileId as toFileId,
+  fileUploadId as toFileUploadId,
 } from "../domain/index.js";
-import { FilesService } from "./FilesService.js";
-import type { FileStorage, FilesRepository } from "./ports.js";
+import {
+  type FileStorage,
+  type FilesRepository,
+  FilesService,
+} from "./index.js";
 
-const at = new Date("2026-06-15T00:00:00.000Z");
-const ownerUserId = userId("019f0db0-a3a1-7a61-9101-8947e43c3001");
-const targetFileId = fileId("019f0db0-a3a1-7a61-9101-8947e43c3002");
+const ownerUserId = "019e9315-6a87-715f-9861-8654df099001";
+const fileId = "019e9315-6a87-715f-9861-8654df099002";
+const uploadId = "019e9315-6a87-715f-9861-8654df099003";
+const nextUploadId = toFileUploadId("019e9315-6a87-715f-9861-8654df099004");
+const nextFileId = toFileId("019e9315-6a87-715f-9861-8654df099005");
+const checksumSha256 =
+  "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+const contentType =
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-test("deleteFile only tombstones and repeated deletion preserves retention", async () => {
-  let stored = uploadedFile();
-  const deletedObjects: string[] = [];
-  const repository = {
-    async findFileById() {
-      return stored;
-    },
-    async updateFileWithExpectedStatus(input: { file: File }) {
-      stored = input.file;
-      return stored;
-    },
-    // Focused repository fake: implements only the methods exercised by this
-    // delete-file tombstone path.
-  } as unknown as FilesRepository;
-  const storage = {
-    async deleteObject(input: { key: string }) {
-      deletedObjects.push(input.key);
-    },
-    // Focused storage fake: only deleteObject is relevant to proving this
-    // user-facing delete path does not delete physical content.
-  } as unknown as FileStorage;
-  const service = new FilesService({
-    clock: { now: () => at },
+describe("FilesService", () => {
+  it("lists normal workbook library files by default", async () => {
+    const repository = repositoryFixture();
+    const service = createService(repository);
+
+    await service.listFiles({ currentUser: currentUser() });
+
+    assert.equal(repository.receivedListPurpose, "workbook");
+  });
+
+  it("rejects public listing for workbook editor output purpose", async () => {
+    const service = createService();
+
+    await assert.rejects(
+      () =>
+        service.listFiles({
+          currentUser: currentUser(),
+          purpose: "workbook_editor_output",
+        }),
+      InvalidDomainValueError,
+    );
+  });
+
+  it("rejects public creation of workbook editor output uploads", async () => {
+    const service = createService();
+
+    await assert.rejects(
+      () =>
+        service.createFileUpload({
+          byteSize: 1234,
+          checksumSha256:
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          contentType:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          currentUser: currentUser(),
+          originalName: "source.xlsx",
+          purpose: "workbook_editor_output",
+        }),
+      InvalidDomainValueError,
+    );
+  });
+
+  it("rejects public direct-ID operations for editor-output files", async () => {
+    const repository = repositoryFixture({
+      file: fileFixture({ purpose: "workbook_editor_output" }),
+    });
+    const storage = storageFixture();
+    const service = createService(repository, storage);
+
+    await assert.rejects(
+      () => service.getFile({ currentUser: currentUser(), fileId }),
+      FileNotFoundError,
+    );
+    await assert.rejects(
+      () => service.getFileForOwnerUserId({ ownerUserId, fileId }),
+      FileNotFoundError,
+    );
+    await assert.rejects(
+      () =>
+        service.updateFile({
+          currentUser: currentUser(),
+          fileId,
+          patch: { originalName: "renamed.xlsx" },
+        }),
+      FileNotFoundError,
+    );
+    await assert.rejects(
+      () => service.deleteFile({ currentUser: currentUser(), fileId }),
+      FileNotFoundError,
+    );
+    await assert.rejects(
+      () => service.createDownloadUrl({ currentUser: currentUser(), fileId }),
+      FileNotFoundError,
+    );
+
+    assert.equal(repository.updatedFiles.length, 0);
+    assert.equal(storage.downloadUrlCalls, 0);
+  });
+
+  it("rejects public completion for editor-output uploads", async () => {
+    const repository = repositoryFixture({
+      upload: uploadFixture({ purpose: "workbook_editor_output" }),
+    });
+    const storage = storageFixture();
+    const service = createService(repository, storage);
+
+    await assert.rejects(
+      () =>
+        service.completeFileUpload({ currentUser: currentUser(), uploadId }),
+      FileUploadNotFoundError,
+    );
+
+    assert.equal(repository.createdFiles.length, 0);
+    assert.equal(storage.metadataCalls, 0);
+  });
+
+  it("deleteFile only tombstones and repeated deletion preserves retention", async () => {
+    const repository = repositoryFixture({
+      file: fileFixture({ purpose: "workbook" }),
+    });
+    const storage = storageFixture();
+    const service = createService(repository, storage);
+
+    await service.deleteFile({ currentUser: currentUser(), fileId });
+    const firstRetention = repository.updatedFiles.at(-1)?.retentionExpiresAt;
+    await service.deleteFile({ currentUser: currentUser(), fileId });
+    const stored = await repository.findFileById(toFileId(fileId));
+
+    assert.equal(stored?.status, "deleting");
+    assert.equal(
+      stored?.deletedAt?.toISOString(),
+      new Date("2026-06-24T00:00:00.000Z").toISOString(),
+    );
+    assert.equal(stored?.retentionExpiresAt, firstRetention);
+    assert.equal(storage.deletedObjects.length, 0);
+  });
+
+  it("collectDeletedFileContent returns collector results through the service facade", async () => {
+    const service = createService(repositoryFixture());
+
+    assert.deepEqual(
+      await service.collectDeletedFileContent({
+        claimToken: "collector-1",
+        fileId,
+      }),
+      { status: "not_found" },
+    );
+  });
+
+  it("returns upload-specific not found for missing, wrong-owner, and wrong-purpose upload lookups", async () => {
+    const wrongOwnerUserId = "019e9315-6a87-715f-9861-8654df099099";
+
+    for (const [name, repository] of [
+      ["missing", repositoryFixture()],
+      [
+        "wrong owner",
+        repositoryFixture({
+          upload: uploadFixture({
+            createdByUserId: wrongOwnerUserId,
+            purpose: "workbook_editor_output",
+          }),
+        }),
+      ],
+      [
+        "wrong purpose",
+        repositoryFixture({
+          upload: uploadFixture({ purpose: "workbook" }),
+        }),
+      ],
+    ] as const) {
+      const service = createService(repository);
+
+      await assert.rejects(
+        () =>
+          service.getFileUploadForOwnerUserId({
+            ownerUserId,
+            purpose: "workbook_editor_output",
+            uploadId,
+          }),
+        FileUploadNotFoundError,
+        name,
+      );
+    }
+  });
+
+  it("creates and completes internal editor-output uploads", async () => {
+    const repository = repositoryFixture();
+    const storage = storageFixture();
+    const service = createService(repository, storage);
+
+    const created = await service.createInternalFileUpload({
+      byteSize: 1234,
+      checksumSha256: checksumSha256.toUpperCase(),
+      contentType,
+      currentUser: currentUser(),
+      metadata: { type: "test" },
+      originalName: "source.xlsx",
+      purpose: "workbook_editor_output",
+    });
+
+    assert.equal(created.upload.purpose, "workbook_editor_output");
+    assert.equal(created.upload.checksumSha256, checksumSha256);
+
+    storage.metadata = {
+      byteSize: 1234,
+      checksumSha256,
+      contentType,
+    };
+    const completed = await service.completeInternalFileUpload({
+      currentUser: currentUser(),
+      purpose: "workbook_editor_output",
+      uploadId: created.upload.id,
+    });
+
+    assert.equal(completed.file.id, nextFileId);
+    assert.equal(completed.file.purpose, "workbook_editor_output");
+    assert.equal(completed.file.checksumSha256, checksumSha256);
+  });
+});
+
+function createService(
+  repository: FilesRepository = repositoryFixture(),
+  storage: ReturnType<typeof storageFixture> = storageFixture(),
+) {
+  return new FilesService({
+    clock: { now: () => new Date("2026-06-24T00:00:00.000Z") },
     config: {
       bucket: "files",
-      downloadUrlExpiresInSeconds: 60,
-      uploadUrlExpiresInSeconds: 60,
+      downloadUrlExpiresInSeconds: 900,
+      uploadUrlExpiresInSeconds: 900,
     },
     fileStorage: storage,
     filesRepository: repository,
@@ -49,88 +246,177 @@ test("deleteFile only tombstones and repeated deletion preserves retention", asy
       transaction: async (fn) => fn(repository),
     },
     idGenerator: {
-      fileId: () => targetFileId,
-      fileUploadId: () => fileUploadId("019f0db0-a3a1-7a61-9101-8947e43c3003"),
+      fileId: () => nextFileId,
+      fileUploadId: () => nextUploadId,
     },
   });
-  const command = {
-    currentUser: {
-      isAdmin: false,
-      roles: [],
-      user: createUser(
-        {
-          displayName: "Owner",
-          email: "owner@example.com",
-          id: ownerUserId,
-          identityId: `oidc:${ownerUserId}`,
-        },
-        at,
-      ),
+}
+
+function repositoryFixture(input: { file?: File; upload?: FileUpload } = {}) {
+  const files = new Map<string, File>();
+  if (input.file) files.set(input.file.id, input.file);
+  const uploads = new Map<string, FileUpload>();
+  if (input.upload) uploads.set(input.upload.id, input.upload);
+  const fixture = {
+    createdFiles: [] as File[],
+    updatedFiles: [] as File[],
+    async createFileFromUpload(input: {
+      file: File;
+      upload: FileUpload;
+    }): Promise<File> {
+      fixture.createdFiles.push(input.file);
+      files.set(input.file.id, input.file);
+      uploads.set(input.upload.id, input.upload);
+      return input.file;
     },
-    fileId: targetFileId,
-  };
-
-  await service.deleteFile(command);
-  const firstRetention = stored.retentionExpiresAt;
-  await service.deleteFile(command);
-
-  assert.equal(stored.status, "deleting");
-  assert.equal(stored.deletedAt?.toISOString(), at.toISOString());
-  assert.equal(stored.retentionExpiresAt, firstRetention);
-  assert.deepEqual(deletedObjects, []);
-});
-
-test("collectDeletedFileContent returns collector results through the service facade", async () => {
-  const repository = {
-    async findFileByIdForUpdate() {
+    async createFileUpload(upload: FileUpload): Promise<FileUpload> {
+      uploads.set(upload.id, upload);
+      return upload;
+    },
+    async countProtectedFileReferences() {
+      return {
+        activeDraftSourceBindings: 0,
+        activeFileAliases: 0,
+        activeSourceDocuments: 0,
+        activeWorkbooks: 0,
+        generatedQuestionSetMembershipsConservativelyRetained: 0,
+        generatedQuestions: 0,
+        generationRunsConservativelyRetained: 0,
+        publishedBlueprintVersionSources: 0,
+        sourceRevisionsWithoutArtifactsConservativelyRetained: 0,
+        uncollectedSourceArtifacts: 0,
+        workbookCalculationsConservativelyRetained: 0,
+        workbookSnapshotsConservativelyRetained: 0,
+      };
+    },
+    async findFileById(id: File["id"]): Promise<File | null> {
+      return files.get(id) ?? null;
+    },
+    async findFileByIdForUpdate(id: File["id"]): Promise<File | null> {
+      return files.get(id) ?? null;
+    },
+    async findFileByUploadId(id: FileUpload["id"]): Promise<File | null> {
+      return [...files.values()].find((file) => file.uploadId === id) ?? null;
+    },
+    async findFileUploadById(id: FileUpload["id"]): Promise<FileUpload | null> {
+      return uploads.get(id) ?? null;
+    },
+    async listFilesByOwnerUserId(input: { purpose?: string }): Promise<File[]> {
+      fixture.receivedListPurpose = input.purpose;
+      return [];
+    },
+    receivedListPurpose: undefined as string | undefined,
+    async updateFile(file: File): Promise<File | null> {
+      fixture.updatedFiles.push(file);
+      files.set(file.id, file);
+      return file;
+    },
+    async updateFileForGarbageCollection(): Promise<File | null> {
       return null;
     },
-    // Focused repository fake: implements only the collector lookup used by
-    // this facade result test.
-  } as unknown as FilesRepository;
-  const service = new FilesService({
-    clock: { now: () => at },
-    config: {
-      bucket: "files",
-      downloadUrlExpiresInSeconds: 60,
-      uploadUrlExpiresInSeconds: 60,
+    async updateFileUpload(upload: FileUpload): Promise<FileUpload | null> {
+      uploads.set(upload.id, upload);
+      return upload;
     },
-    fileStorage: {} as FileStorage,
-    filesRepository: repository,
-    garbageCollectionTransaction: {
-      transaction: async (fn) => fn(repository),
+    async updateFileWithExpectedStatus(input: {
+      file: File;
+    }): Promise<File | null> {
+      fixture.updatedFiles.push(input.file);
+      files.set(input.file.id, input.file);
+      return input.file;
     },
-    idGenerator: {
-      fileId: () => targetFileId,
-      fileUploadId: () => fileUploadId("019f0db0-a3a1-7a61-9101-8947e43c3003"),
-    },
-  });
+  } satisfies FilesRepository & {
+    createdFiles: File[];
+    receivedListPurpose?: string;
+    updatedFiles: File[];
+  };
+  return fixture;
+}
 
-  assert.deepEqual(
-    await service.collectDeletedFileContent({
-      claimToken: "collector-1",
-      fileId: targetFileId,
-    }),
-    { status: "not_found" },
-  );
-});
-
-function uploadedFile(): File {
+function fileFixture(input: {
+  purpose: "workbook" | "workbook_editor_output";
+}) {
   return createFileFromUpload(
     {
       bucket: "files",
-      byteSize: 42,
-      checksumSha256: "a".repeat(64),
-      contentType:
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      byteSize: 1234,
+      checksumSha256,
+      contentType,
       createdByUserId: ownerUserId,
-      id: targetFileId,
-      objectKey: "source.xlsx",
+      id: fileId,
+      objectKey: "object",
       originalName: "source.xlsx",
       ownerUserId,
-      purpose: "workbook",
-      uploadId: "019f0db0-a3a1-7a61-9101-8947e43c3003",
+      purpose: input.purpose,
+      uploadId,
     },
-    at,
+    new Date("2026-06-24T00:00:00.000Z"),
   );
+}
+
+function uploadFixture(input: {
+  createdByUserId?: string;
+  purpose: "workbook" | "workbook_editor_output";
+}) {
+  return createFileUploadSession(
+    {
+      bucket: "files",
+      checksumSha256,
+      contentType,
+      createdByUserId: input.createdByUserId ?? ownerUserId,
+      expectedByteSize: 1234,
+      id: uploadId,
+      objectKey: "object",
+      originalName: "source.xlsx",
+      purpose: input.purpose,
+    },
+    new Date("2026-06-24T00:00:00.000Z"),
+  );
+}
+
+function storageFixture(): FileStorage & {
+  deletedObjects: { bucket: string; key: string }[];
+  downloadUrlCalls: number;
+  metadata: Awaited<ReturnType<FileStorage["getObjectMetadata"]>>;
+  metadataCalls: number;
+} {
+  return {
+    deletedObjects: [],
+    downloadUrlCalls: 0,
+    metadata: null,
+    metadataCalls: 0,
+    async createDownloadUrl() {
+      this.downloadUrlCalls += 1;
+      return "https://storage.example/download";
+    },
+    async createUploadUrl() {
+      return "https://storage.example/upload";
+    },
+    async deleteObject(input) {
+      this.deletedObjects.push(input);
+    },
+    async getObjectBytes() {
+      throw new Error("unused in test");
+    },
+    async getObjectMetadata() {
+      this.metadataCalls += 1;
+      return this.metadata;
+    },
+  };
+}
+
+function currentUser(): CurrentUser {
+  return {
+    isAdmin: false,
+    roles: [],
+    user: createUser(
+      {
+        displayName: "Owner",
+        email: "owner@example.com",
+        id: ownerUserId,
+        identityId: "keycloak|owner",
+      },
+      new Date("2026-06-24T00:00:00.000Z"),
+    ),
+  };
 }
