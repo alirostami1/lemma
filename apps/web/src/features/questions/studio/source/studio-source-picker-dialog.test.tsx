@@ -68,9 +68,7 @@ describe("StudioSourcePickerDialog", () => {
     expect(await screen.findByText("Parsed")).toBeTruthy();
     expect(screen.getByText("2 sheets")).toBeTruthy();
 
-    await user.click(
-      screen.getByRole("button", { name: "Add workbook source" }),
-    );
+    await user.click(screen.getByRole("button", { name: "Add workbook" }));
 
     expect(onCreateSource).toHaveBeenCalledWith(
       expect.objectContaining({

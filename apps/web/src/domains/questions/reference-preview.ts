@@ -56,11 +56,15 @@ export function resolveReferencePreviewValues({
   return cache;
 }
 
-export function formatReferenceFallback(
+export function formatCanonicalReferenceTokenFallback(
   referenceId: string,
   rangeCell?: RangeCellOffset,
 ) {
   return formatReferenceToken(referenceId, rangeCell);
+}
+
+export function formatReferenceUnavailableDisplay() {
+  return "Added value unavailable";
 }
 
 export function resolveInlineReferencePreview({
@@ -79,8 +83,7 @@ export function resolveInlineReferencePreview({
   const basePreview = referencePreviewCache[referenceId];
   if (!basePreview) {
     return {
-      displayValue:
-        fallbackText ?? formatReferenceFallback(referenceId, rangeCell),
+      displayValue: fallbackText ?? formatReferenceUnavailableDisplay(),
       referenceId,
       status: "missing_source",
       updatedAt: now,
@@ -94,16 +97,14 @@ export function resolveInlineReferencePreview({
   if (basePreview.status !== "resolved") {
     return {
       ...basePreview,
-      displayValue:
-        fallbackText ?? formatReferenceFallback(referenceId, rangeCell),
+      displayValue: fallbackText ?? formatReferenceUnavailableDisplay(),
     };
   }
 
   const cellValue = resolveRangeCellValue(basePreview.rawValue, rangeCell);
   if (cellValue.status === "error") {
     return {
-      displayValue:
-        fallbackText ?? formatReferenceFallback(referenceId, rangeCell),
+      displayValue: fallbackText ?? formatReferenceUnavailableDisplay(),
       referenceId,
       status: "error",
       updatedAt: basePreview.updatedAt,
@@ -138,7 +139,7 @@ export function resolveValueExpressionPreview({
 
   return (
     referencePreviewCache[value.referenceId] ?? {
-      displayValue: formatReferenceFallback(value.referenceId),
+      displayValue: formatReferenceUnavailableDisplay(),
       referenceId: value.referenceId,
       status: "missing_source",
       updatedAt: now,
@@ -196,7 +197,7 @@ function resolveReferenceSourcePreview({
     }
 
     return {
-      displayValue: formatReferenceFallback(referenceId),
+      displayValue: formatReferenceUnavailableDisplay(),
       referenceId,
       status: "missing_source",
       updatedAt: now,
@@ -204,7 +205,7 @@ function resolveReferenceSourcePreview({
   }
 
   return {
-    displayValue: formatReferenceFallback(referenceId),
+    displayValue: formatReferenceUnavailableDisplay(),
     referenceId,
     status: "error",
     updatedAt: now,

@@ -1,13 +1,12 @@
 import type {
   ComposedInlineContent,
+  ComposedReferenceDraft,
   ComposedRenderedInlineContent,
 } from "#/domains/questions/authoring";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
-import {
-  formatReferenceFallback,
-  resolveInlineReferencePreview,
-} from "#/domains/questions/reference-preview";
+import { resolveInlineReferencePreview } from "#/domains/questions/reference-preview";
 import { ReferenceChip } from "./reference-chip";
+import { getReferenceChipLabel } from "./reference-display";
 
 export type InlineRenderMode = "editing" | "preview";
 
@@ -15,11 +14,13 @@ export function InlineContentRenderer({
   content,
   mode,
   referencePreviewValues,
+  references = [],
   onSelectReference,
 }: {
   content: Array<ComposedInlineContent | ComposedRenderedInlineContent>;
   mode: InlineRenderMode;
   referencePreviewValues: ReferencePreviewCache;
+  references?: readonly ComposedReferenceDraft[];
   onSelectReference?: (referenceId: string) => void;
 }) {
   return (
@@ -43,16 +44,18 @@ export function InlineContentRenderer({
           referenceId: item.referenceId,
           referencePreviewCache: referencePreviewValues,
         });
-        const fallbackLabel = formatReferenceFallback(
-          item.referenceId,
-          item.rangeCell,
-        );
-
+        const reference =
+          references.find((candidate) => candidate.id === item.referenceId) ??
+          null;
+        const chipLabel = getReferenceChipLabel({
+          preview: previewValue,
+          reference,
+        });
         if (mode === "editing") {
           return (
             <ReferenceChip
               key={`reference-${item.referenceId}-${index}`}
-              label={fallbackLabel}
+              label={chipLabel}
               onSelect={onSelectReference}
               referenceId={item.referenceId}
               status={previewValue.status}
@@ -71,7 +74,7 @@ export function InlineContentRenderer({
         return (
           <ReferenceChip
             key={`reference-${item.referenceId}-${index}`}
-            label={previewValue.displayValue}
+            label={chipLabel}
             onSelect={onSelectReference}
             referenceId={item.referenceId}
             status={previewValue.status}

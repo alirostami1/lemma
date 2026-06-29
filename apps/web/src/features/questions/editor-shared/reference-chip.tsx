@@ -12,7 +12,7 @@ export function ReferenceChip({
   label?: string;
   onSelect?: (referenceId: string) => void;
 }) {
-  const content = label ?? `{{ .${referenceId} }}`;
+  const content = label ?? "Added value";
 
   if (onSelect) {
     return (

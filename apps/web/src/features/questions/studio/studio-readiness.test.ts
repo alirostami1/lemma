@@ -105,11 +105,11 @@ describe("studio readiness", () => {
     });
 
     expect(getFirstReadinessIssueMessage(readiness, "save")).toBe(
-      "Attach a source before saving.",
+      "Add a workbook before saving.",
     );
     expect(
       getFirstReadinessIssueMessage(readiness, "generate_saved_blueprint"),
-    ).toBe("Attach a source before saving.");
+    ).toBe("Add a workbook before saving.");
   });
 
   it("blocks malformed workbook references", () => {
@@ -140,7 +140,7 @@ describe("studio readiness", () => {
     const readiness = getStudioReadiness(model, readyContext);
 
     expect(getFirstReadinessIssueMessage(readiness, "save")).toBe(
-      "A workbook-backed reference needs an attached source.",
+      "A workbook value needs an attached workbook.",
     );
   });
 
@@ -188,7 +188,7 @@ describe("studio readiness", () => {
     const readiness = getStudioReadiness(model, readyContext);
 
     expect(getFirstReadinessIssueMessage(readiness, "save")).toBe(
-      "A text reference points to a missing reference.",
+      "Text uses a value that is no longer available.",
     );
   });
 
@@ -249,7 +249,7 @@ describe("studio readiness", () => {
     const readiness = getStudioReadiness(model, readyContext);
 
     expect(getFirstReadinessIssueMessage(readiness, "save")).toBe(
-      "A rich text reference points to a missing reference.",
+      "Rich text uses a value that is no longer available.",
     );
   });
 

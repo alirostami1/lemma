@@ -91,8 +91,8 @@ describe("TableCellInspector", () => {
       workbookEnabled: false,
     });
 
-    await user.clear(screen.getByLabelText("Literal value"));
-    await user.type(screen.getByLabelText("Literal value"), "42");
+    await user.clear(screen.getByLabelText("Value"));
+    await user.type(screen.getByLabelText("Value"), "42");
 
     const nextModel = onModelChange.mock.calls.at(-1)?.[0] as TableEditorModel;
     expect(nextModel.cells[0]).toMatchObject({

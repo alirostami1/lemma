@@ -1,10 +1,4 @@
 import { Button } from "@lemma/ui/components/button";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "@lemma/ui/components/context-menu";
 import { Textarea } from "@lemma/ui/components/textarea";
 import {
   Tooltip,
@@ -22,51 +16,33 @@ import {
 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
-  type ComposedEditorModel,
   type ComposedRichContent,
+  type ComposedRichContentNode,
   getMarkdownFormatAtPosition,
   type MarkdownFormat,
-  markdownToRichContent,
+  markdownToRichContentForAuthoring,
   richContentToMarkdown,
   toggleMarkdownFormat,
 } from "#/domains/questions/authoring";
-import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
-import { ReferencePickerPopover } from "./inspector/reference-picker-popover";
-import { insertReferenceSyntaxAtSelection } from "./reference-insertion-controller";
+import { RichContentPreview } from "../editor-shared/rich-content-preview";
 
 export function RichTextEditor({
   value,
-  model,
   referencePreviewCache,
-  workbookEnabled,
-  sources,
-  workbookSheetNamesBySourceId,
   disabled,
-  onModelChange,
   onChange,
-  onCreatedReference,
 }: {
   value: ComposedRichContent;
-  model: ComposedEditorModel;
   referencePreviewCache: ReferencePreviewCache;
-  workbookEnabled: boolean;
-  sources: QuestionBlueprintWorkbookSource[];
-  workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
   disabled?: boolean;
-  onModelChange(model: ComposedEditorModel): void;
   onChange(value: ComposedRichContent): void;
-  onCreatedReference?(input: {
-    nextModel: ComposedEditorModel;
-    nextContent: ComposedRichContent;
-  }): void;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const ignoreNextPickerCloseRef = useRef(false);
+  const hasReferences = useMemo(() => hasRichReferences(value), [value]);
   const initialMarkdown = useMemo(() => richContentToMarkdown(value), [value]);
   const emittedValueMarkdownRef = useRef(initialMarkdown);
   const [markdown, setMarkdown] = useState(initialMarkdown);
-  const [pickerOpen, setPickerOpen] = useState(false);
   const [selectionStart, setSelectionStart] = useState(0);
   const [selectionEnd, setSelectionEnd] = useState(0);
 
@@ -85,7 +61,7 @@ export function RichTextEditor({
   }
 
   function updateMarkdown(nextMarkdown: string) {
-    const nextContent = markdownToRichContent(nextMarkdown);
+    const nextContent = markdownToRichContentForAuthoring(nextMarkdown);
     emittedValueMarkdownRef.current = richContentToMarkdown(nextContent);
     setMarkdown(nextMarkdown);
     onChange(nextContent);
@@ -100,46 +76,6 @@ export function RichTextEditor({
       );
       updateSelection();
     });
-  }
-
-  function insertReference(
-    referenceId: string,
-    options: { emitChange?: boolean } = {},
-  ) {
-    const textarea = textareaRef.current;
-    const result = insertReferenceSyntaxAtSelection({
-      referenceId,
-      selection: textarea
-        ? {
-            end: textarea.selectionEnd,
-            start: textarea.selectionStart,
-          }
-        : { end: selectionEnd, start: selectionStart },
-      text: markdown,
-    });
-    const nextContent = markdownToRichContent(result.text);
-    emittedValueMarkdownRef.current = richContentToMarkdown(nextContent);
-    setMarkdown(result.text);
-    if (options.emitChange !== false) {
-      onChange(nextContent);
-    }
-    restoreSelection(result.selection);
-    return nextContent;
-  }
-
-  function openPickerFromContextMenu() {
-    ignoreNextPickerCloseRef.current = true;
-    setPickerOpen(true);
-    window.setTimeout(() => {
-      ignoreNextPickerCloseRef.current = false;
-    }, 150);
-  }
-
-  function setReferencePickerOpen(open: boolean) {
-    if (!open && ignoreNextPickerCloseRef.current) {
-      return;
-    }
-    setPickerOpen(open);
   }
 
   function applyFormat(format: MarkdownFormat) {
@@ -159,6 +95,21 @@ export function RichTextEditor({
   }
 
   const activeFormat = getMarkdownFormatAtPosition(markdown, selectionStart);
+
+  if (hasReferences) {
+    return (
+      <div className="space-y-3">
+        <RichContentPreview
+          content={value}
+          referencePreviewCache={referencePreviewCache}
+        />
+        <p className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
+          Rich text with added values is read-only in Studio for now. Use text,
+          table, or answer blocks to add and edit values.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <TooltipProvider>
@@ -206,73 +157,40 @@ export function RichTextEditor({
             label="Ordered list"
             onClick={() => applyFormat("orderedList")}
           />
-          <ReferencePickerPopover
-            disabled={disabled}
-            model={model}
-            onCreateAndSelectReference={({ nextModel, referenceId }) => {
-              const nextContent = insertReference(referenceId, {
-                emitChange: false,
-              });
-              if (onCreatedReference) {
-                onCreatedReference({ nextContent, nextModel });
-                return;
-              }
-              onModelChange(nextModel);
-              onChange(nextContent);
-            }}
-            onModelChange={onModelChange}
-            onOpenChange={setReferencePickerOpen}
-            onSelectReference={insertReference}
-            open={pickerOpen}
-            referencePreviewCache={referencePreviewCache}
-            sources={sources}
-            trigger={
-              <Button
-                disabled={disabled}
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  updateSelection();
-                }}
-                size="sm"
-                type="button"
-                variant="outline"
-              >
-                Insert reference
-              </Button>
-            }
-            workbookEnabled={workbookEnabled}
-            workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
-          />
         </div>
 
-        <ContextMenu>
-          <ContextMenuTrigger asChild disabled={disabled}>
-            <Textarea
-              className="min-h-40 font-mono text-sm"
-              disabled={disabled}
-              onBlur={updateSelection}
-              onChange={(event) => updateMarkdown(event.currentTarget.value)}
-              onClick={updateSelection}
-              onContextMenu={updateSelection}
-              onKeyUp={updateSelection}
-              onSelect={updateSelection}
-              ref={textareaRef}
-              value={markdown}
-            />
-          </ContextMenuTrigger>
-          <ContextMenuContent>
-            <ContextMenuItem
-              disabled={disabled}
-              onSelect={() => {
-                openPickerFromContextMenu();
-              }}
-            >
-              Insert reference
-            </ContextMenuItem>
-          </ContextMenuContent>
-        </ContextMenu>
+        <Textarea
+          className="min-h-40 font-mono text-sm"
+          disabled={disabled}
+          onBlur={updateSelection}
+          onChange={(event) => updateMarkdown(event.currentTarget.value)}
+          onClick={updateSelection}
+          onContextMenu={updateSelection}
+          onKeyUp={updateSelection}
+          onSelect={updateSelection}
+          ref={textareaRef}
+          value={markdown}
+        />
       </div>
     </TooltipProvider>
+  );
+}
+
+function hasRichReferences(content: ComposedRichContent) {
+  return content.content.some(richNodeHasReferences);
+}
+
+function richNodeHasReferences(node: ComposedRichContentNode): boolean {
+  if (node.type === "paragraph" || node.type === "heading") {
+    return node.content.some((item) => item.type === "reference");
+  }
+
+  return node.items.some((item) =>
+    item.content.some((child) =>
+      child.type === "paragraph"
+        ? child.content.some((item) => item.type === "reference")
+        : richNodeHasReferences(child),
+    ),
   );
 }
 

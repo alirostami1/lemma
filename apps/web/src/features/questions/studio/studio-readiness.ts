@@ -105,21 +105,21 @@ function mapBlueprintReadinessIssue(
     case "invalid_reference_id":
       return {
         id: `invalid_reference_id_${issue.target?.referenceId ?? "unknown"}`,
-        message: "A reference has an invalid ID.",
+        message: "An added value is invalid.",
         severity: "error",
         target: issue.target,
       };
     case "duplicate_reference_id":
       return {
         id: `duplicate_reference_id_${issue.target?.referenceId ?? "unknown"}`,
-        message: "Reference IDs must be unique.",
+        message: "Added values must be unique.",
         severity: "error",
         target: issue.target,
       };
     case "invalid_reference_source":
       return {
         id: `reference_source_missing_${issue.target?.referenceId ?? "unknown"}`,
-        message: "A workbook-backed reference needs an attached source.",
+        message: "A workbook value needs an attached workbook.",
         severity: "error",
         target: issue.target,
       };
@@ -127,15 +127,15 @@ function mapBlueprintReadinessIssue(
       return {
         id: `missing_text_reference_${issue.target?.blockId ?? "unknown"}_${issue.target?.cellId ?? issue.target?.referenceId ?? "unknown"}`,
         message: issue.target?.cellId
-          ? "A content cell references a missing reference."
-          : "A text reference points to a missing reference.",
+          ? "A content cell uses a value that is no longer available."
+          : "Text uses a value that is no longer available.",
         severity: "error",
         target: issue.target,
       };
     case "missing_rich_text_reference":
       return {
         id: `missing_rich_text_reference_${issue.target?.blockId ?? "unknown"}_${issue.target?.referenceId ?? "unknown"}`,
-        message: "A rich text reference points to a missing reference.",
+        message: "Rich text uses a value that is no longer available.",
         severity: "error",
         target: issue.target,
       };
@@ -149,7 +149,7 @@ function mapBlueprintReadinessIssue(
     case "missing_response_source":
       return {
         id: `missing_response_source_${issue.target?.blockId ?? "unknown"}`,
-        message: "An answer references a missing reference.",
+        message: "An answer uses a value that is no longer available.",
         severity: "error",
         target: issue.target,
       };
@@ -163,15 +163,15 @@ function mapBlueprintReadinessIssue(
     case "missing_table_response_source":
       return {
         id: `missing_table_response_source_${issue.target?.blockId ?? "unknown"}_${issue.target?.cellId ?? "unknown"}`,
-        message: "An answer cell references a missing reference.",
+        message: "An answer cell uses a value that is no longer available.",
         severity: "error",
         target: issue.target,
       };
     case "missing_source":
       return {
-        actionLabel: "Attach source",
+        actionLabel: "Add reference",
         id: "source_not_ready",
-        message: "Attach a source before saving.",
+        message: "Add a workbook before saving.",
         severity: "error",
       };
   }

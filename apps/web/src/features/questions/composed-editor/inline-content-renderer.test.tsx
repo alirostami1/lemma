@@ -47,10 +47,18 @@ describe("InlineContentRenderer", () => {
             updatedAt: 1,
           },
         }}
+        references={[
+          {
+            id: "revenue",
+            label: "Revenue",
+            source: { type: "literal", value: "1200" },
+          },
+        ]}
       />,
     );
 
-    expect(screen.getByText("{{ .revenue }}")).toBeTruthy();
+    expect(screen.getByText("Revenue")).toBeTruthy();
+    expect(screen.queryByText("{{ .revenue }}")).toBeNull();
   });
 
   it("renders resolved authoring references as values in preview mode", () => {
@@ -126,7 +134,72 @@ describe("InlineContentRenderer", () => {
       />,
     );
 
-    expect(screen.getByText("{{ .range[1,0] }}")).toBeTruthy();
+    expect(screen.getByText("Added value unavailable")).toBeTruthy();
+    expect(screen.queryByText("{{ .range[1,0] }}")).toBeNull();
+  });
+
+  it("renders missing authoring references with product-safe fallback in preview mode", () => {
+    const content: ComposedInlineContent[] = [
+      { text: "Revenue: ", type: "text" },
+      { referenceId: "missing", type: "reference" },
+    ];
+
+    render(
+      <InlineContentRenderer
+        content={content}
+        mode="preview"
+        referencePreviewValues={{}}
+      />,
+    );
+
+    expect(screen.getByText("Added value unavailable")).toBeTruthy();
+    expect(screen.queryByText(/\{\{\s*\./u)).toBeNull();
+  });
+
+  it("renders missing authoring references with product-safe chips while editing", () => {
+    const content: ComposedInlineContent[] = [
+      { referenceId: "missing", type: "reference" },
+    ];
+
+    render(
+      <InlineContentRenderer
+        content={content}
+        mode="editing"
+        referencePreviewValues={{}}
+      />,
+    );
+
+    expect(screen.getByText("Added value unavailable")).toBeTruthy();
+    expect(screen.queryByText(/\{\{\s*\./u)).toBeNull();
+  });
+
+  it("renders missing range cells without canonical fallback text", () => {
+    const content: ComposedInlineContent[] = [
+      {
+        rangeCell: { columnOffset: 0, rowOffset: 1 },
+        referenceId: "range",
+        type: "reference",
+      },
+    ];
+
+    render(
+      <InlineContentRenderer
+        content={content}
+        mode="preview"
+        referencePreviewValues={{
+          range: {
+            displayValue: "A1, B1",
+            rawValue: [["A1", "B1"]],
+            referenceId: "range",
+            status: "resolved",
+            updatedAt: 1,
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Added value unavailable")).toBeTruthy();
+    expect(screen.queryByText("{{ .range[1,0] }}")).toBeNull();
   });
 
   it("calls onSelectReference when an editing chip is clicked", () => {
@@ -144,7 +217,7 @@ describe("InlineContentRenderer", () => {
       />,
     );
 
-    screen.getByRole("button", { name: "{{ .revenue }}" }).click();
+    screen.getByRole("button", { name: "Added value unavailable" }).click();
 
     expect(onSelectReference).toHaveBeenCalledWith("revenue");
   });

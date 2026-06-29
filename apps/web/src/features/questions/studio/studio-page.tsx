@@ -6,11 +6,11 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { PageContainer } from "#/components/patterns";
 import { useQuestionBlueprintDraftQuery } from "#/domains/questions";
 import { ComposedQuestionEditor } from "#/features/questions/composed-editor";
+import { AddReferenceActionsProvider } from "#/features/questions/composed-editor/inspector/add-reference-actions";
 import { WorkbookPickerProvider } from "#/features/questions/table-block-editor";
 import { WorkbookPickerDialog } from "../workbook-picker-dialog";
 import { PublishDraftDialog } from "./publish-draft-dialog";
 import { SavedBlueprintsDialog } from "./saved-blueprints-dialog";
-import { StudioSourceList } from "./source/studio-source-list";
 import { StudioSourcePickerDialog } from "./source/studio-source-picker-dialog";
 import { StudioCommandBar } from "./studio-command-bar";
 import type { StudioController } from "./studio-controller-types";
@@ -338,7 +338,6 @@ function StudioEntryRouteView({
 
 function StudioEditorWorkbench({ studio }: { studio: StudioController }) {
   const stickyRegionRef = useRef<HTMLDivElement>(null);
-  const [isSourcePanelExpanded, setIsSourcePanelExpanded] = useState(false);
   const stickyRegionBottom = useStickyRegionBottom(stickyRegionRef);
   const inspectorStickyOffset = stickyRegionBottom + stickyInspectorGap;
 
@@ -346,67 +345,62 @@ function StudioEditorWorkbench({ studio }: { studio: StudioController }) {
     <WorkbookPickerProvider
       value={{ openWorkbookPicker: studio.workbookPicker.openWorkbookPicker }}
     >
-      <PageContainer className="pb-8" variant="workbench">
-        <div
-          className="sticky top-0 z-30 grid gap-2 bg-background/95 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80"
-          ref={stickyRegionRef}
-        >
-          <StudioCommandBar {...studio.commandBar} />
-          <StudioSourceList
-            isExpanded={isSourcePanelExpanded}
-            onAddSource={studio.source.actions.addSource}
-            onExpandedChange={setIsSourcePanelExpanded}
-            onReattachSource={studio.source.actions.reattachSource}
-            onRemoveSource={studio.source.actions.removeSource}
-            sources={studio.source.sources}
-            usageBySourceId={studio.source.usageBySourceId}
-          />
-        </div>
-
-        <section className="rounded-lg border bg-background p-3 shadow-sm sm:p-4">
-          <div className="max-w-none">
-            <ComposedQuestionEditor
-              inspectorStickyOffset={inspectorStickyOffset}
-              model={studio.editor.authoringModel}
-              onModelChange={studio.editor.onAuthoringModelChange}
-              referencePreviewCache={studio.editor.referencePreviewCache}
-              sources={studio.editor.sources}
-              workbookSheetNamesBySourceId={
-                studio.editor.workbookSheetNamesBySourceId
-              }
-            />
+      <AddReferenceActionsProvider
+        value={{ onUploadWorkbook: studio.source.actions.addSource }}
+      >
+        <PageContainer className="pb-8" variant="workbench">
+          <div
+            className="sticky top-0 z-30 grid gap-2 bg-background/95 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+            ref={stickyRegionRef}
+          >
+            <StudioCommandBar {...studio.commandBar} />
           </div>
-        </section>
 
-        <StudioDraftRecoveryDialog {...studio.draftRecovery} />
-        <StudioResetConfirmationDialog {...studio.resetConfirmation} />
-        <PublishDraftDialog {...studio.publishDialog} />
-        <StudioSourcePickerDialog
-          existingSources={studio.source.sources}
-          onCreateSource={studio.source.actions.createSource}
-          onOpenChange={studio.sourcePicker.onOpenChange}
-          open={studio.sourcePicker.open}
-        />
-        <SavedBlueprintsDialog {...studio.savedBlueprints} />
-        <WorkbookPickerDialog
-          fileName={studio.workbookPicker.fileName}
-          hasMoreSheets={studio.workbookPicker.hasMoreWorkbookSheets}
-          isLoadingMoreSheets={
-            studio.workbookPicker.isLoadingMoreWorkbookSheets
-          }
-          localWorkbook={studio.workbookPicker.localWorkbook}
-          onLoadMoreSheets={studio.workbookPicker.onLoadMoreWorkbookSheets}
-          onOpenChange={studio.workbookPicker.onOpenChange}
-          onSelectRange={studio.workbookPicker.onSelect}
-          open={studio.workbookPicker.open}
-          selectionRequirement={
-            studio.workbookPicker.request?.selectionRequirement ?? {}
-          }
-          sourceId={studio.workbookPicker.request?.sourceId ?? null}
-          workbookSheets={studio.workbookPicker.workbookSheets}
-          workbookSnapshotId={studio.workbookPicker.workbookSnapshotId}
-        />
-      </PageContainer>
+          <section className="rounded-lg border bg-background p-3 shadow-sm sm:p-4">
+            <div className="max-w-none">
+              <ComposedQuestionEditor
+                inspectorStickyOffset={inspectorStickyOffset}
+                model={studio.editor.authoringModel}
+                onModelChange={studio.editor.onAuthoringModelChange}
+                referencePreviewCache={studio.editor.referencePreviewCache}
+                sources={studio.editor.sources}
+                workbookSheetNamesBySourceId={
+                  studio.editor.workbookSheetNamesBySourceId
+                }
+              />
+            </div>
+          </section>
+
+          <StudioDraftRecoveryDialog {...studio.draftRecovery} />
+          <StudioResetConfirmationDialog {...studio.resetConfirmation} />
+          <PublishDraftDialog {...studio.publishDialog} />
+          <StudioSourcePickerDialog
+            existingSources={studio.source.sources}
+            onCreateSource={studio.source.actions.createSource}
+            onOpenChange={studio.sourcePicker.onOpenChange}
+            open={studio.sourcePicker.open}
+          />
+          <SavedBlueprintsDialog {...studio.savedBlueprints} />
+          <WorkbookPickerDialog
+            fileName={studio.workbookPicker.fileName}
+            hasMoreSheets={studio.workbookPicker.hasMoreWorkbookSheets}
+            isLoadingMoreSheets={
+              studio.workbookPicker.isLoadingMoreWorkbookSheets
+            }
+            localWorkbook={studio.workbookPicker.localWorkbook}
+            onLoadMoreSheets={studio.workbookPicker.onLoadMoreWorkbookSheets}
+            onOpenChange={studio.workbookPicker.onOpenChange}
+            onSelectRange={studio.workbookPicker.onSelect}
+            open={studio.workbookPicker.open}
+            selectionRequirement={
+              studio.workbookPicker.request?.selectionRequirement ?? {}
+            }
+            sourceId={studio.workbookPicker.request?.sourceId ?? null}
+            workbookSheets={studio.workbookPicker.workbookSheets}
+            workbookSnapshotId={studio.workbookPicker.workbookSnapshotId}
+          />
+        </PageContainer>
+      </AddReferenceActionsProvider>
     </WorkbookPickerProvider>
   );
 }
