@@ -273,6 +273,8 @@ export {
   SOURCE_LIFECYCLE_RETENTION_DEFAULTS,
 } from "./source-garbage-collection.js";
 export type {
+  PythonSourceArtifactMetadata,
+  PythonSourceRevisionMetadata,
   SourceArtifact,
   SourceArtifactStatus,
   SourceDocument,
@@ -285,6 +287,8 @@ export {
   createSourceDocument,
   createSourceRevision,
   markSourceArtifactCollected,
+  pythonSourceArtifactMetadata,
+  pythonSourceRevisionMetadata,
   reconstituteSourceArtifact,
   reconstituteSourceDocument,
   reconstituteSourceRevision,
