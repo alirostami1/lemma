@@ -46,7 +46,7 @@ vi.mock("./reference-picker-popover", () => ({
 describe("ValueExpressionInput", () => {
   afterEach(() => cleanup());
 
-  it("shows literal and reference modes without workbook source options", async () => {
+  it("shows static and added value modes without workbook options", async () => {
     const user = userEvent.setup();
 
     render(
@@ -63,8 +63,8 @@ describe("ValueExpressionInput", () => {
     );
 
     await user.click(screen.getByRole("combobox", { name: "Value mode" }));
-    expect(screen.getByRole("option", { name: "Literal value" })).toBeTruthy();
-    expect(screen.getByRole("option", { name: "Reference" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Static value" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Added value" })).toBeTruthy();
     expect(screen.queryByRole("option", { name: "Workbook cell" })).toBeNull();
     expect(screen.queryByRole("option", { name: "Workbook range" })).toBeNull();
   });
@@ -87,7 +87,7 @@ describe("ValueExpressionInput", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Choose reference" }));
+    await user.click(screen.getByRole("button", { name: "Add reference" }));
     await user.click(
       screen.getByRole("button", { name: "Mock select reference" }),
     );
@@ -96,7 +96,7 @@ describe("ValueExpressionInput", () => {
       type: "reference",
     });
 
-    await user.click(screen.getByRole("button", { name: "Choose reference" }));
+    await user.click(screen.getByRole("button", { name: "Add reference" }));
     await user.click(
       screen.getByRole("button", { name: "Mock create reference" }),
     );
@@ -132,8 +132,10 @@ describe("ValueExpressionInput", () => {
     );
 
     expect(
-      screen.getByText("This reference was deleted or no longer exists."),
+      screen.getByText("This value was deleted or no longer exists."),
     ).toBeTruthy();
+    expect(screen.queryByText("{{ .missing }}")).toBeNull();
+    expect(screen.getByText("Added value unavailable")).toBeTruthy();
   });
 });
 

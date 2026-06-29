@@ -105,13 +105,15 @@ export function StudioSourcePickerDialog({
 
   return (
     <Dialog onOpenChange={reset} open={open}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent
+        className="sm:max-w-lg"
+        data-reference-source-dialog="true"
+      >
         <div className="grid gap-4">
           <DialogHeader>
-            <DialogTitle>Add source</DialogTitle>
+            <DialogTitle>Upload a new file</DialogTitle>
             <DialogDescription>
-              Add a workbook file to this blueprint. It stays local until you
-              save.
+              Add a workbook to this blueprint. It stays local until you save.
             </DialogDescription>
           </DialogHeader>
 
@@ -199,7 +201,7 @@ export function StudioSourcePickerDialog({
               }}
               type="button"
             >
-              Add workbook source
+              Add workbook
             </Button>
           </div>
         </div>

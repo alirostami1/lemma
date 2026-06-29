@@ -40,7 +40,7 @@ export function SelectedElementInspector({
   if (selection.type === "reference") {
     return (
       <p className="text-sm text-muted-foreground">
-        Use References to edit the selected reference.
+        Select an element to edit its settings.
       </p>
     );
   }

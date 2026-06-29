@@ -74,7 +74,6 @@ export function BlockEditor({
       <div className="grid gap-3">
         <RichTextEditor
           disabled={disabled}
-          model={model}
           onChange={(content) =>
             onModelChange({
               ...model,
@@ -85,22 +84,8 @@ export function BlockEditor({
               ) as ComposedEditorBlock[],
             })
           }
-          onCreatedReference={({ nextModel, nextContent }) =>
-            onModelChange({
-              ...nextModel,
-              blocks: nextModel.blocks.map((candidate) =>
-                candidate.id === block.id
-                  ? { ...candidate, content: nextContent }
-                  : candidate,
-              ) as ComposedEditorBlock[],
-            })
-          }
-          onModelChange={onModelChange}
           referencePreviewCache={referencePreviewCache}
-          sources={sources}
           value={block.content}
-          workbookEnabled={workbookEnabled}
-          workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
         />
       </div>
     );

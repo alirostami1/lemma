@@ -105,14 +105,14 @@ export function ValueExpressionInput({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="literal">Literal value</SelectItem>
-            <SelectItem value="reference">Reference</SelectItem>
+            <SelectItem value="literal">Static value</SelectItem>
+            <SelectItem value="reference">Added value</SelectItem>
           </SelectContent>
         </Select>
       </InspectorField>
 
       {value.type === "literal" ? (
-        <InspectorField label="Literal value">
+        <InspectorField label="Value">
           <Input
             disabled={disabled}
             id={literalValueInputId}
@@ -130,13 +130,13 @@ export function ValueExpressionInput({
           />
         </InspectorField>
       ) : (
-        <InspectorField label="Reference">
+        <InspectorField label="Value">
           <div className="grid gap-2 rounded-md border bg-background p-3">
             <div className="grid gap-0.5">
               <p className="text-sm font-medium">
                 {reference
                   ? getReferenceDisplayName(reference)
-                  : "Missing reference"}
+                  : "Missing value"}
               </p>
               <p className="text-xs text-muted-foreground">
                 {preview.displayValue}
@@ -144,7 +144,7 @@ export function ValueExpressionInput({
             </div>
             {missingReference ? (
               <p className="text-xs text-destructive">
-                This reference was deleted or no longer exists.
+                This value was deleted or no longer exists.
               </p>
             ) : null}
             <ReferencePickerPopover
@@ -156,7 +156,6 @@ export function ValueExpressionInput({
                 onChange({ referenceId, type: "reference" })
               }
               referencePreviewCache={referencePreviewCache}
-              selectedReferenceId={value.referenceId || undefined}
               sources={sources}
               trigger={
                 <Button
@@ -165,7 +164,7 @@ export function ValueExpressionInput({
                   type="button"
                   variant="outline"
                 >
-                  Choose reference
+                  {reference ? "Choose value" : "Add reference"}
                 </Button>
               }
               workbookEnabled={workbookEnabled}

@@ -1,5 +1,5 @@
 export {
-  formatReferenceFallback,
+  formatCanonicalReferenceTokenFallback,
   type ReferencePreviewCache,
   type ReferencePreviewStatus,
   type ReferencePreviewValue,

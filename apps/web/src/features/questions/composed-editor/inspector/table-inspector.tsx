@@ -102,11 +102,10 @@ export function TableInspector({
           />
         </FieldGroup>
       </InspectorSection>
-      <InspectorSection title="Source range">
+      <InspectorSection title="Workbook range">
         <ReferencePickerPopover
           allowedSourceTypes={["workbook_range"]}
           createSourceTypeDefault="workbook_range"
-          defaultMode={selectedRangeReferenceId ? "existing" : "create"}
           disabled={disabled}
           model={editorModel}
           onModelChange={onEditorModelChange}
@@ -115,11 +114,10 @@ export function TableInspector({
             setSelectedRangeReferenceId(referenceId);
           }}
           referencePreviewCache={referencePreviewCache}
-          selectedReferenceId={selectedRangeReferenceId ?? undefined}
           sources={sources}
           trigger={
             <Button disabled={disabled} type="button" variant="outline">
-              Choose range reference
+              Add reference
             </Button>
           }
           workbookEnabled={workbookEnabled}
