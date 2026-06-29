@@ -2,11 +2,15 @@ import { execFile } from "node:child_process";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
-import { writeHonoRoutesSource } from "@lemma/openapi-hono-generator";
+import {
+  prepareOpenApiDocumentForCodegen,
+  writeHonoRoutesSource,
+} from "@lemma/openapi-hono-generator";
 import { defineConfig } from "orval";
 import { openapi } from "./openapi/openapi.js";
 
 const execFileAsync = promisify(execFile);
+const generatorOpenapi = prepareOpenApiDocumentForCodegen(openapi);
 
 async function addNodeNextImportExtensions(directory: string) {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -49,7 +53,7 @@ export default defineConfig({
         await writeHonoRoutesSource({
           envType: "QuestionsAppEnv",
           envTypeImport: "@lemma/questions/http",
-          input: openapi,
+          input: generatorOpenapi,
           output: "./src/generated/hono/index.ts",
           requireIdentityType: "RequireIdentity",
           requireIdentityTypeImport: "@lemma/questions/http",
@@ -62,7 +66,7 @@ export default defineConfig({
       },
     },
     input: {
-      target: openapi,
+      target: generatorOpenapi,
     },
     output: {
       clean: true,

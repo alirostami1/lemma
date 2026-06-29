@@ -10,7 +10,12 @@ export const MAX_ORIGINAL_FILE_NAME_LENGTH = 500;
 export const MAX_FILE_BYTE_SIZE = 25 * 1024 * 1024;
 export const UPLOAD_EXPIRES_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
 
-export const FILE_PURPOSE_ACCEPTED_VALUES = ["workbook"] as const;
+export const FILE_PURPOSE_ACCEPTED_VALUES = [
+  "workbook",
+  "workbook_editor_output",
+] as const;
+
+export const PUBLIC_FILE_PURPOSE_ACCEPTED_VALUES = ["workbook"] as const;
 
 export const FILE_CONTENT_TYPE_ACCEPTED_VALUES = [
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -39,6 +44,8 @@ export type OriginalFileName = Brand<string, "OriginalFileName">;
 export type FileContentType =
   (typeof FILE_CONTENT_TYPE_ACCEPTED_VALUES)[number];
 export type FilePurpose = (typeof FILE_PURPOSE_ACCEPTED_VALUES)[number];
+export type PublicFilePurpose =
+  (typeof PUBLIC_FILE_PURPOSE_ACCEPTED_VALUES)[number];
 export type FileStatus = (typeof FILE_STATUS_ACCEPTED_VALUES)[number];
 export type FileUploadStatus =
   (typeof FILE_UPLOAD_STATUS_ACCEPTED_VALUES)[number];

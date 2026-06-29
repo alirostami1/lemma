@@ -3,6 +3,8 @@ export {
   collectOperations,
   generateHonoRoutesSource,
   loadOpenApiDocument,
+  normalizeIntegerSchemasForZod,
+  prepareOpenApiDocumentForCodegen,
   resolveOpenApiDocument,
   toHonoRoutePath,
   writeHonoRoutesSource,

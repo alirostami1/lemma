@@ -3,7 +3,11 @@ import type {
   ComposedRichContentNode,
   ComposedRichListItem,
 } from "./composed-model";
-import { formatInlineBlueprint, parseInlineBlueprint } from "./inline-content";
+import {
+  createTextInlineContent,
+  formatInlineBlueprint,
+  parseInlineBlueprint,
+} from "./inline-content";
 import { normalizeRichContent } from "./rich-content";
 
 export type MarkdownFormat =
@@ -27,8 +31,27 @@ export function richContentToMarkdown(value: ComposedRichContent): string {
 }
 
 export function markdownToRichContent(markdown: string): ComposedRichContent {
+  return markdownToRichContentFromBlueprint(markdown);
+}
+
+export function markdownToRichContentFromBlueprint(
+  markdown: string,
+): ComposedRichContent {
+  return parseMarkdownToRichContent(markdown, parseInlineBlueprint);
+}
+
+export function markdownToRichContentForAuthoring(
+  markdown: string,
+): ComposedRichContent {
+  return parseMarkdownToRichContent(markdown, createTextInlineContent);
+}
+
+function parseMarkdownToRichContent(
+  markdown: string,
+  parseInlineContent: typeof parseInlineBlueprint,
+): ComposedRichContent {
   const lines = markdown.replace(/\r\n?/g, "\n").split("\n");
-  const result = parseMarkdownBlocks(lines, 0, 0);
+  const result = parseMarkdownBlocks(lines, 0, 0, parseInlineContent);
   return normalizeRichContent({
     content: result.nodes,
     type: "doc",
@@ -122,6 +145,7 @@ function parseMarkdownBlocks(
   lines: string[],
   startIndex: number,
   minIndent: number,
+  parseInlineContent: typeof parseInlineBlueprint,
 ): { nodes: ComposedRichContentNode[]; nextIndex: number } {
   const nodes: ComposedRichContentNode[] = [];
   let index = startIndex;
@@ -140,6 +164,7 @@ function parseMarkdownBlocks(
         index,
         listLine.indent,
         listLine.kind,
+        parseInlineContent,
       );
       nodes.push(result.node);
       index = result.nextIndex;
@@ -150,13 +175,13 @@ function parseMarkdownBlocks(
     const heading = parseHeading(line);
     if (heading) {
       nodes.push({
-        content: parseInlineBlueprint(heading.text),
+        content: parseInlineContent(heading.text),
         level: heading.level,
         type: "heading",
       });
     } else {
       nodes.push({
-        content: parseInlineBlueprint(line.trim()),
+        content: parseInlineContent(line.trim()),
         type: "paragraph",
       });
     }
@@ -171,6 +196,7 @@ function parseMarkdownList(
   startIndex: number,
   baseIndent: number,
   kind: ListKind,
+  parseInlineContent: typeof parseInlineBlueprint,
 ): {
   node: Extract<ComposedRichContentNode, { type: ListKind }>;
   nextIndex: number;
@@ -189,6 +215,7 @@ function parseMarkdownList(
         index,
         listLine.indent,
         listLine.kind,
+        parseInlineContent,
       );
       previousItem.content.push(nested.node);
       index = nested.nextIndex;
@@ -199,7 +226,7 @@ function parseMarkdownList(
     items.push({
       content: [
         {
-          content: parseInlineBlueprint(listLine.text),
+          content: parseInlineContent(listLine.text),
           type: "paragraph",
         },
       ],

@@ -61,6 +61,20 @@ export class KyselyWorkbookCatalogRepository {
     return row ? mapWorkbookRowToDomain(row) : null;
   }
 
+  async findWorkbookByOwnerUserIdAndFileIdForUpdate(input: {
+    ownerUserId: UserId;
+    fileId: FileId;
+  }): Promise<Workbook | null> {
+    const row = await this.db
+      .selectFrom("workbooks")
+      .selectAll()
+      .where("ownerUserId", "=", input.ownerUserId)
+      .where("fileId", "=", input.fileId)
+      .forUpdate()
+      .executeTakeFirst();
+    return row ? mapWorkbookRowToDomain(row) : null;
+  }
+
   async createWorkbook(workbook: Workbook): Promise<Workbook> {
     const row = await this.db
       .insertInto("workbooks")
@@ -101,6 +115,23 @@ export class KyselyWorkbookCatalogRepository {
       );
     }
     return { created: false, workbook: existing };
+  }
+
+  async promoteWorkbookToStandalone(
+    workbook: Workbook,
+  ): Promise<Workbook | null> {
+    const row = await this.db
+      .updateTable("workbooks")
+      .set({
+        origin: "standalone",
+        updatedAt: workbook.updatedAt,
+      })
+      .where("id", "=", workbook.id)
+      .where("origin", "=", "source_artifact")
+      .where("status", "!=", "deleted")
+      .returningAll()
+      .executeTakeFirst();
+    return row ? mapWorkbookRowToDomain(row) : null;
   }
 
   async updateWorkbook(workbook: Workbook): Promise<Workbook | null> {

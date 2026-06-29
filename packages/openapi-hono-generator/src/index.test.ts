@@ -4,6 +4,8 @@ import {
   buildHonoRoutesSource,
   collectOperations,
   loadOpenApiDocument,
+  normalizeIntegerSchemasForZod,
+  resolveOpenApiDocument,
   toHonoRoutePath,
 } from "./generator.js";
 
@@ -12,6 +14,48 @@ describe("toHonoRoutePath", () => {
     expect(toHonoRoutePath("/files/{fileId}/download-url")).toBe(
       "/files/:fileId/download-url",
     );
+  });
+});
+
+describe("normalizeIntegerSchemasForZod", () => {
+  it("adds integer validation without changing number schemas", () => {
+    const input = {
+      integer: { minimum: 1, type: "integer" },
+      number: { minimum: 1, type: "number" },
+    } as const;
+
+    expect(normalizeIntegerSchemasForZod(input)).toEqual({
+      integer: { minimum: 1, multipleOf: 1, type: "integer" },
+      number: { minimum: 1, type: "number" },
+    });
+    expect(input.integer).not.toHaveProperty("multipleOf");
+  });
+});
+
+describe("resolveOpenApiDocument", () => {
+  it("normalizes integer schemas for generation entrypoints", async () => {
+    const document = await resolveOpenApiDocument({
+      openapi: "3.1.0",
+      info: { title: "Fixture", version: "1.0.0" },
+      paths: {},
+      components: {
+        schemas: {
+          Body: {
+            type: "object",
+            properties: {
+              expectedRevision: { type: "integer", minimum: 1 },
+            },
+          },
+        },
+      },
+    });
+
+    expect(document.components?.schemas?.Body).toEqual({
+      type: "object",
+      properties: {
+        expectedRevision: { type: "integer", minimum: 1, multipleOf: 1 },
+      },
+    });
   });
 });
 

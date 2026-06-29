@@ -1,5 +1,7 @@
 import { presentDate, presentNullableDate } from "@lemma/http";
 import type {
+  CompletedQuestionBlueprintDraftWorkbookEditorUploadResult,
+  CreatedQuestionBlueprintDraftWorkbookEditorUploadResult,
   GradeQuestionResult,
   PublishedQuestionBlueprintDraftResult,
   QuestionBlueprintAuthoringResult,
@@ -14,8 +16,11 @@ import type {
   QuestionSetResult,
   QuestionSetsResult,
   QuestionsResult,
+  SavedQuestionBlueprintDraftWorkbookSourceRevisionResult,
 } from "../application/index.js";
 import type {
+  CompleteQuestionBlueprintDraftWorkbookEditorUploadResponse,
+  CreateQuestionBlueprintDraftWorkbookEditorUploadResponse,
   GradeQuestionResponse,
   ListQuestionBlueprintDraftsResponse,
   ListQuestionBlueprintsResponse,
@@ -33,6 +38,7 @@ import type {
   QuestionGenerationRunResponse,
   QuestionResponse,
   QuestionSetResponse,
+  SaveQuestionBlueprintDraftWorkbookSourceRevisionResponse,
 } from "../generated/types/index.js";
 
 export const presentQuestionBlueprintDraft = (
@@ -66,6 +72,71 @@ export const presentQuestionBlueprintDraft = (
     })),
     status: result.draft.status,
     updatedAt: presentDate(result.draft.updatedAt),
+  },
+});
+
+export const presentSavedQuestionBlueprintDraftWorkbookSourceRevision = (
+  result: SavedQuestionBlueprintDraftWorkbookSourceRevisionResult,
+): SaveQuestionBlueprintDraftWorkbookSourceRevisionResponse => ({
+  ...presentQuestionBlueprintDraft({ draft: result.draft }),
+  sourceArtifact: {
+    createdAt: presentDate(result.sourceArtifact.createdAt),
+    id: result.sourceArtifact.id,
+    kind: "workbook",
+    processor: result.sourceArtifact.processor,
+    processorVersion: result.sourceArtifact.processorVersion,
+    sourceRevisionId: result.sourceArtifact.sourceRevisionId,
+    status: result.sourceArtifact.status,
+    updatedAt: presentDate(result.sourceArtifact.updatedAt),
+    validationError: result.sourceArtifact.validationError,
+    workbookId: result.sourceArtifact.workbookId,
+  },
+  sourceRevision: {
+    byteSize: result.sourceRevision.byteSize,
+    checksumSha256: result.sourceRevision.checksumSha256,
+    contentType: result.sourceRevision.contentType,
+    createdAt: presentDate(result.sourceRevision.createdAt),
+    createdByUserId: result.sourceRevision.createdByUserId,
+    id: result.sourceRevision.id,
+    kind: "workbook",
+    parentRevisionId: result.sourceRevision.parentRevisionId,
+    sourceDocumentId: result.sourceRevision.sourceDocumentId,
+  },
+});
+
+export const presentCreatedQuestionBlueprintDraftWorkbookEditorUpload = (
+  result: CreatedQuestionBlueprintDraftWorkbookEditorUploadResult,
+): CreateQuestionBlueprintDraftWorkbookEditorUploadResponse => ({
+  upload: {
+    checksumSha256: result.upload.checksumSha256,
+    completedAt: presentNullableDate(result.upload.completedAt),
+    contentType: result.upload.contentType,
+    createdAt: presentDate(result.upload.createdAt),
+    createdByUserId: result.upload.createdByUserId,
+    expectedByteSize: result.upload.expectedByteSize,
+    id: result.upload.id,
+    originalName: result.upload.originalName,
+    status: result.upload.status,
+    updatedAt: presentDate(result.upload.updatedAt),
+    uploadExpiresAt: presentDate(result.upload.uploadExpiresAt),
+  },
+  uploadUrl: {
+    expiresInSeconds: result.uploadUrl.expiresInSeconds,
+    headers: result.uploadUrl.headers,
+    method: result.uploadUrl.method,
+    url: result.uploadUrl.url,
+  },
+});
+
+export const presentCompletedQuestionBlueprintDraftWorkbookEditorUpload = (
+  result: CompletedQuestionBlueprintDraftWorkbookEditorUploadResult,
+): CompleteQuestionBlueprintDraftWorkbookEditorUploadResponse => ({
+  editorOutputFile: {
+    byteSize: result.editorOutputFile.byteSize,
+    checksumSha256: result.editorOutputFile.checksumSha256,
+    contentType: result.editorOutputFile.contentType,
+    id: result.editorOutputFile.id,
+    originalName: result.editorOutputFile.originalName,
   },
 });
 

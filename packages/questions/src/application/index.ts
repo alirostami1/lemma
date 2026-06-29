@@ -1,7 +1,9 @@
 export { CanonicalQuestionMaterializer } from "./CanonicalQuestionMaterializer.js";
 export type {
   AttachQuestionBlueprintDraftSourceFileCommand,
+  CompleteQuestionBlueprintDraftWorkbookEditorUploadCommand,
   CreateQuestionBlueprintDraftCommand,
+  CreateQuestionBlueprintDraftWorkbookEditorUploadCommand,
   CreateQuestionBlueprintEditDraftCommand,
   CreateQuestionGenerationRunCommand,
   CreateQuestionSetCommand,
@@ -16,10 +18,13 @@ export type {
   QuestionGenerationRunMutationCommand,
   QuestionSetByIdCommand,
   RemoveQuestionFromSetCommand,
+  SaveQuestionBlueprintDraftWorkbookSourceRevisionCommand,
   UpdateQuestionBlueprintDraftCommand,
   UpdateQuestionSetCommand,
 } from "./commands.js";
 export type {
+  CompletedQuestionBlueprintDraftWorkbookEditorUploadResult,
+  CreatedQuestionBlueprintDraftWorkbookEditorUploadResult,
   GradeQuestionResult,
   PublishedQuestionBlueprintDraftResult,
   QuestionBlueprintAuthoringResult,
@@ -34,8 +39,12 @@ export type {
   QuestionSetResult,
   QuestionSetsResult,
   QuestionsResult,
+  SavedQuestionBlueprintDraftWorkbookSourceRevisionResult,
 } from "./dto.js";
 export {
+  DraftSourceEditorUploadInvalidError,
+  DraftSourceEditorUploadNotFoundError,
+  DraftSourceEditorUploadStorageError,
   DraftSourceFileForbiddenError,
   DraftSourceFileInvalidError,
   DraftSourceKindUnsupportedError,
@@ -53,8 +62,9 @@ export {
   QuestionSetNotFoundError,
   QuestionsApplicationError,
   QuestionsRepositoryDataError,
-  SourceDocumentHeadUpdateFailedError,
+  SourceDocumentRevisionConflictError,
   UnsupportedQuestionValueExpressionError,
+  WorkbookEditorOutputStaleError,
   WorkbookQuestionReferenceError,
 } from "./errors.js";
 export {
@@ -82,6 +92,7 @@ export type {
   CustomQuestionGraderPort,
   DraftSourceFileMetadata,
   DraftSourceFilePort,
+  DraftSourceUploadMetadata,
   DraftSourceWorkbookMaterialization,
   DraftSourceWorkbookRegistrationPort,
   DraftSourceWorkbookRegistrationResult,
@@ -101,6 +112,10 @@ export type {
   WorkbookSnapshotReadPort,
   WorkbookSnapshotResolverPort,
   WorkbookValueSource,
+} from "./ports.js";
+export {
+  WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_TYPE,
+  WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_VERSION,
 } from "./ports.js";
 export { QuestionBlueprintDraftService } from "./QuestionBlueprintDraftService.js";
 export { QuestionBlueprintService } from "./QuestionBlueprintService.js";
@@ -138,6 +153,8 @@ export {
   questionSetQuestionsAddedEvent,
 } from "./question-generation-events.js";
 export { SourceArtifactValidationService } from "./SourceArtifactValidationService.js";
+export type { SourceArtifactCollectionResult } from "./SourceGarbageCollectionService.js";
+export { SourceGarbageCollectionService } from "./SourceGarbageCollectionService.js";
 export {
   toWorkbookValueSource,
   WorkbookQuestionValueResolverAdapter,

@@ -25,8 +25,12 @@ import { authedFetch } from "../../../lib/custom-fetch";
 import type {
   AttachQuestionBlueprintDraftSourceFileRequest,
   BadRequestResponse,
+  CompleteQuestionBlueprintDraftWorkbookEditorUploadRequest,
+  CompleteQuestionBlueprintDraftWorkbookEditorUploadResponse,
   ConflictResponse,
   CreateQuestionBlueprintDraftRequest,
+  CreateQuestionBlueprintDraftWorkbookEditorUploadRequest,
+  CreateQuestionBlueprintDraftWorkbookEditorUploadResponse,
   CreateQuestionBlueprintEditDraftRequest,
   CreateQuestionGenerationRunRequest,
   CreateQuestionSetRequest,
@@ -55,6 +59,8 @@ import type {
   QuestionGenerationRunResponse,
   QuestionResponse,
   QuestionSetResponse,
+  SaveQuestionBlueprintDraftWorkbookSourceRevisionRequest,
+  SaveQuestionBlueprintDraftWorkbookSourceRevisionResponse,
   UnauthorizedResponse,
   UpdateQuestionBlueprintDraftRequest,
   UpdateQuestionSetRequest,
@@ -1066,6 +1072,486 @@ export const useAttachQuestionBlueprintDraftSourceFile = <
 > => {
   return useMutation(
     getAttachQuestionBlueprintDraftSourceFileMutationOptions(options),
+    queryClient,
+  );
+};
+export const getSaveQuestionBlueprintDraftWorkbookSourceRevisionUrl = (
+  draftId: string,
+  sourceId: string,
+) => {
+  return `/api/v1/question-blueprint-drafts/${draftId}/sources/${sourceId}/revisions`;
+};
+
+/**
+ * @summary Save workbook editor output as a new source revision
+ */
+export const saveQuestionBlueprintDraftWorkbookSourceRevision = async (
+  draftId: string,
+  sourceId: string,
+  saveQuestionBlueprintDraftWorkbookSourceRevisionRequest: SaveQuestionBlueprintDraftWorkbookSourceRevisionRequest,
+  options?: RequestInit,
+): Promise<SaveQuestionBlueprintDraftWorkbookSourceRevisionResponse> => {
+  return authedFetch<SaveQuestionBlueprintDraftWorkbookSourceRevisionResponse>(
+    getSaveQuestionBlueprintDraftWorkbookSourceRevisionUrl(draftId, sourceId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(
+        saveQuestionBlueprintDraftWorkbookSourceRevisionRequest,
+      ),
+    },
+  );
+};
+
+export const getSaveQuestionBlueprintDraftWorkbookSourceRevisionMutationOptions =
+  <
+    TError =
+      | BadRequestResponse
+      | UnauthorizedResponse
+      | ForbiddenResponse
+      | NotFoundResponse
+      | ConflictResponse,
+    TContext = unknown,
+  >(options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<typeof saveQuestionBlueprintDraftWorkbookSourceRevision>
+      >,
+      TError,
+      {
+        draftId: string;
+        sourceId: string;
+        data: SaveQuestionBlueprintDraftWorkbookSourceRevisionRequest;
+      },
+      TContext
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  }): UseMutationOptions<
+    Awaited<
+      ReturnType<typeof saveQuestionBlueprintDraftWorkbookSourceRevision>
+    >,
+    TError,
+    {
+      draftId: string;
+      sourceId: string;
+      data: SaveQuestionBlueprintDraftWorkbookSourceRevisionRequest;
+    },
+    TContext
+  > => {
+    const mutationKey = ["saveQuestionBlueprintDraftWorkbookSourceRevision"];
+    const { mutation: mutationOptions, request: requestOptions } = options
+      ? options.mutation &&
+        "mutationKey" in options.mutation &&
+        options.mutation.mutationKey
+        ? options
+        : { ...options, mutation: { ...options.mutation, mutationKey } }
+      : { mutation: { mutationKey }, request: undefined };
+
+    const mutationFn: MutationFunction<
+      Awaited<
+        ReturnType<typeof saveQuestionBlueprintDraftWorkbookSourceRevision>
+      >,
+      {
+        draftId: string;
+        sourceId: string;
+        data: SaveQuestionBlueprintDraftWorkbookSourceRevisionRequest;
+      }
+    > = (props) => {
+      const { draftId, sourceId, data } = props ?? {};
+
+      return saveQuestionBlueprintDraftWorkbookSourceRevision(
+        draftId,
+        sourceId,
+        data,
+        requestOptions,
+      );
+    };
+
+    return { mutationFn, ...mutationOptions };
+  };
+
+export type SaveQuestionBlueprintDraftWorkbookSourceRevisionMutationResult =
+  NonNullable<
+    Awaited<ReturnType<typeof saveQuestionBlueprintDraftWorkbookSourceRevision>>
+  >;
+export type SaveQuestionBlueprintDraftWorkbookSourceRevisionMutationBody =
+  SaveQuestionBlueprintDraftWorkbookSourceRevisionRequest;
+export type SaveQuestionBlueprintDraftWorkbookSourceRevisionMutationError =
+  | BadRequestResponse
+  | UnauthorizedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | ConflictResponse;
+
+/**
+ * @summary Save workbook editor output as a new source revision
+ */
+export const useSaveQuestionBlueprintDraftWorkbookSourceRevision = <
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<typeof saveQuestionBlueprintDraftWorkbookSourceRevision>
+      >,
+      TError,
+      {
+        draftId: string;
+        sourceId: string;
+        data: SaveQuestionBlueprintDraftWorkbookSourceRevisionRequest;
+      },
+      TContext
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof saveQuestionBlueprintDraftWorkbookSourceRevision>>,
+  TError,
+  {
+    draftId: string;
+    sourceId: string;
+    data: SaveQuestionBlueprintDraftWorkbookSourceRevisionRequest;
+  },
+  TContext
+> => {
+  return useMutation(
+    getSaveQuestionBlueprintDraftWorkbookSourceRevisionMutationOptions(options),
+    queryClient,
+  );
+};
+export const getCreateQuestionBlueprintDraftWorkbookEditorUploadUrl = (
+  draftId: string,
+  sourceId: string,
+) => {
+  return `/api/v1/question-blueprint-drafts/${draftId}/sources/${sourceId}/workbook-editor-uploads`;
+};
+
+/**
+ * @summary Create workbook editor output upload for a draft source
+ */
+export const createQuestionBlueprintDraftWorkbookEditorUpload = async (
+  draftId: string,
+  sourceId: string,
+  createQuestionBlueprintDraftWorkbookEditorUploadRequest: CreateQuestionBlueprintDraftWorkbookEditorUploadRequest,
+  options?: RequestInit,
+): Promise<CreateQuestionBlueprintDraftWorkbookEditorUploadResponse> => {
+  return authedFetch<CreateQuestionBlueprintDraftWorkbookEditorUploadResponse>(
+    getCreateQuestionBlueprintDraftWorkbookEditorUploadUrl(draftId, sourceId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(
+        createQuestionBlueprintDraftWorkbookEditorUploadRequest,
+      ),
+    },
+  );
+};
+
+export const getCreateQuestionBlueprintDraftWorkbookEditorUploadMutationOptions =
+  <
+    TError =
+      | BadRequestResponse
+      | UnauthorizedResponse
+      | ForbiddenResponse
+      | NotFoundResponse
+      | ConflictResponse
+      | UpstreamWorkbookResponse,
+    TContext = unknown,
+  >(options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<typeof createQuestionBlueprintDraftWorkbookEditorUpload>
+      >,
+      TError,
+      {
+        draftId: string;
+        sourceId: string;
+        data: CreateQuestionBlueprintDraftWorkbookEditorUploadRequest;
+      },
+      TContext
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  }): UseMutationOptions<
+    Awaited<
+      ReturnType<typeof createQuestionBlueprintDraftWorkbookEditorUpload>
+    >,
+    TError,
+    {
+      draftId: string;
+      sourceId: string;
+      data: CreateQuestionBlueprintDraftWorkbookEditorUploadRequest;
+    },
+    TContext
+  > => {
+    const mutationKey = ["createQuestionBlueprintDraftWorkbookEditorUpload"];
+    const { mutation: mutationOptions, request: requestOptions } = options
+      ? options.mutation &&
+        "mutationKey" in options.mutation &&
+        options.mutation.mutationKey
+        ? options
+        : { ...options, mutation: { ...options.mutation, mutationKey } }
+      : { mutation: { mutationKey }, request: undefined };
+
+    const mutationFn: MutationFunction<
+      Awaited<
+        ReturnType<typeof createQuestionBlueprintDraftWorkbookEditorUpload>
+      >,
+      {
+        draftId: string;
+        sourceId: string;
+        data: CreateQuestionBlueprintDraftWorkbookEditorUploadRequest;
+      }
+    > = (props) => {
+      const { draftId, sourceId, data } = props ?? {};
+
+      return createQuestionBlueprintDraftWorkbookEditorUpload(
+        draftId,
+        sourceId,
+        data,
+        requestOptions,
+      );
+    };
+
+    return { mutationFn, ...mutationOptions };
+  };
+
+export type CreateQuestionBlueprintDraftWorkbookEditorUploadMutationResult =
+  NonNullable<
+    Awaited<ReturnType<typeof createQuestionBlueprintDraftWorkbookEditorUpload>>
+  >;
+export type CreateQuestionBlueprintDraftWorkbookEditorUploadMutationBody =
+  CreateQuestionBlueprintDraftWorkbookEditorUploadRequest;
+export type CreateQuestionBlueprintDraftWorkbookEditorUploadMutationError =
+  | BadRequestResponse
+  | UnauthorizedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | ConflictResponse
+  | UpstreamWorkbookResponse;
+
+/**
+ * @summary Create workbook editor output upload for a draft source
+ */
+export const useCreateQuestionBlueprintDraftWorkbookEditorUpload = <
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<typeof createQuestionBlueprintDraftWorkbookEditorUpload>
+      >,
+      TError,
+      {
+        draftId: string;
+        sourceId: string;
+        data: CreateQuestionBlueprintDraftWorkbookEditorUploadRequest;
+      },
+      TContext
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createQuestionBlueprintDraftWorkbookEditorUpload>>,
+  TError,
+  {
+    draftId: string;
+    sourceId: string;
+    data: CreateQuestionBlueprintDraftWorkbookEditorUploadRequest;
+  },
+  TContext
+> => {
+  return useMutation(
+    getCreateQuestionBlueprintDraftWorkbookEditorUploadMutationOptions(options),
+    queryClient,
+  );
+};
+export const getCompleteQuestionBlueprintDraftWorkbookEditorUploadUrl = (
+  draftId: string,
+  sourceId: string,
+  uploadId: string,
+) => {
+  return `/api/v1/question-blueprint-drafts/${draftId}/sources/${sourceId}/workbook-editor-uploads/${uploadId}/completions`;
+};
+
+/**
+ * @summary Complete workbook editor output upload for a draft source
+ */
+export const completeQuestionBlueprintDraftWorkbookEditorUpload = async (
+  draftId: string,
+  sourceId: string,
+  uploadId: string,
+  completeQuestionBlueprintDraftWorkbookEditorUploadRequest: CompleteQuestionBlueprintDraftWorkbookEditorUploadRequest,
+  options?: RequestInit,
+): Promise<CompleteQuestionBlueprintDraftWorkbookEditorUploadResponse> => {
+  return authedFetch<CompleteQuestionBlueprintDraftWorkbookEditorUploadResponse>(
+    getCompleteQuestionBlueprintDraftWorkbookEditorUploadUrl(
+      draftId,
+      sourceId,
+      uploadId,
+    ),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(
+        completeQuestionBlueprintDraftWorkbookEditorUploadRequest,
+      ),
+    },
+  );
+};
+
+export const getCompleteQuestionBlueprintDraftWorkbookEditorUploadMutationOptions =
+  <
+    TError =
+      | BadRequestResponse
+      | UnauthorizedResponse
+      | ForbiddenResponse
+      | NotFoundResponse
+      | ConflictResponse
+      | UpstreamWorkbookResponse,
+    TContext = unknown,
+  >(options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<typeof completeQuestionBlueprintDraftWorkbookEditorUpload>
+      >,
+      TError,
+      {
+        draftId: string;
+        sourceId: string;
+        uploadId: string;
+        data: CompleteQuestionBlueprintDraftWorkbookEditorUploadRequest;
+      },
+      TContext
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  }): UseMutationOptions<
+    Awaited<
+      ReturnType<typeof completeQuestionBlueprintDraftWorkbookEditorUpload>
+    >,
+    TError,
+    {
+      draftId: string;
+      sourceId: string;
+      uploadId: string;
+      data: CompleteQuestionBlueprintDraftWorkbookEditorUploadRequest;
+    },
+    TContext
+  > => {
+    const mutationKey = ["completeQuestionBlueprintDraftWorkbookEditorUpload"];
+    const { mutation: mutationOptions, request: requestOptions } = options
+      ? options.mutation &&
+        "mutationKey" in options.mutation &&
+        options.mutation.mutationKey
+        ? options
+        : { ...options, mutation: { ...options.mutation, mutationKey } }
+      : { mutation: { mutationKey }, request: undefined };
+
+    const mutationFn: MutationFunction<
+      Awaited<
+        ReturnType<typeof completeQuestionBlueprintDraftWorkbookEditorUpload>
+      >,
+      {
+        draftId: string;
+        sourceId: string;
+        uploadId: string;
+        data: CompleteQuestionBlueprintDraftWorkbookEditorUploadRequest;
+      }
+    > = (props) => {
+      const { draftId, sourceId, uploadId, data } = props ?? {};
+
+      return completeQuestionBlueprintDraftWorkbookEditorUpload(
+        draftId,
+        sourceId,
+        uploadId,
+        data,
+        requestOptions,
+      );
+    };
+
+    return { mutationFn, ...mutationOptions };
+  };
+
+export type CompleteQuestionBlueprintDraftWorkbookEditorUploadMutationResult =
+  NonNullable<
+    Awaited<
+      ReturnType<typeof completeQuestionBlueprintDraftWorkbookEditorUpload>
+    >
+  >;
+export type CompleteQuestionBlueprintDraftWorkbookEditorUploadMutationBody =
+  CompleteQuestionBlueprintDraftWorkbookEditorUploadRequest;
+export type CompleteQuestionBlueprintDraftWorkbookEditorUploadMutationError =
+  | BadRequestResponse
+  | UnauthorizedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | ConflictResponse
+  | UpstreamWorkbookResponse;
+
+/**
+ * @summary Complete workbook editor output upload for a draft source
+ */
+export const useCompleteQuestionBlueprintDraftWorkbookEditorUpload = <
+  TError =
+    | BadRequestResponse
+    | UnauthorizedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | ConflictResponse
+    | UpstreamWorkbookResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<typeof completeQuestionBlueprintDraftWorkbookEditorUpload>
+      >,
+      TError,
+      {
+        draftId: string;
+        sourceId: string;
+        uploadId: string;
+        data: CompleteQuestionBlueprintDraftWorkbookEditorUploadRequest;
+      },
+      TContext
+    >;
+    request?: SecondParameter<typeof authedFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<
+    ReturnType<typeof completeQuestionBlueprintDraftWorkbookEditorUpload>
+  >,
+  TError,
+  {
+    draftId: string;
+    sourceId: string;
+    uploadId: string;
+    data: CompleteQuestionBlueprintDraftWorkbookEditorUploadRequest;
+  },
+  TContext
+> => {
+  return useMutation(
+    getCompleteQuestionBlueprintDraftWorkbookEditorUploadMutationOptions(
+      options,
+    ),
     queryClient,
   );
 };

@@ -26,6 +26,8 @@ describe("SourceArtifactValidationService", () => {
       questionsTransaction: {
         transaction: (fn) =>
           fn({
+            // Focused repository fake: implements only source-artifact
+            // validation methods exercised by this service path.
             questionsRepository: repository as unknown as QuestionsRepository,
           }),
       },
@@ -70,6 +72,8 @@ describe("SourceArtifactValidationService", () => {
       questionsTransaction: {
         transaction: (fn) =>
           fn({
+            // Focused repository fake: implements only source-artifact
+            // validation methods exercised by this idempotency path.
             questionsRepository: repository as unknown as QuestionsRepository,
           }),
       },
@@ -136,12 +140,15 @@ class FakeQuestionsRepository {
 function createSourceArtifact(id: string): SourceArtifact {
   return {
     artifactMetadata: {},
+    collectedAt: null,
     createdAt: at,
+    deletedAt: null,
     id: sourceArtifactId(id),
     kind: "workbook",
     ownerUserId,
     processor: "workbook-registration",
     processorVersion: "1",
+    retentionExpiresAt: null,
     sourceRevisionId: sourceRevisionId("019e9315-6a87-715f-9861-8654df090104"),
     status: "pending_validation",
     updatedAt: at,

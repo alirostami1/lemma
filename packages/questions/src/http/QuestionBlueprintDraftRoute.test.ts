@@ -3,12 +3,21 @@ import { describe, it } from "node:test";
 import type { CurrentUser } from "@lemma/identity/application";
 import { Hono } from "hono";
 import {
+  DraftSourceEditorUploadInvalidError,
+  DraftSourceEditorUploadNotFoundError,
+  DraftSourceEditorUploadStorageError,
+  type DraftSourceFilePort,
+  type IdGenerator,
   QuestionBlueprintDraftRevisionConflictError,
   type QuestionBlueprintDraftService,
+  type QuestionBlueprintDraftTransactionPort,
   type QuestionBlueprintService,
   type QuestionGenerationService,
   type QuestionLibraryService,
   type QuestionSetService,
+  type QuestionsRepository,
+  SourceDocumentRevisionConflictError,
+  WorkbookEditorOutputStaleError,
 } from "../application/index.js";
 import { QuestionBlueprintDraftService as RealQuestionBlueprintDraftService } from "../application/QuestionBlueprintDraftService.js";
 import {
@@ -201,6 +210,470 @@ describe("question blueprint draft route", () => {
     assert.equal(response.status, 400);
   });
 
+  it("accepts intent-only workbook editor output for a new source revision", async () => {
+    let received:
+      | {
+          editorOutputFileId: string;
+          expectedRevision: number;
+          sourceId: string;
+        }
+      | undefined;
+    const app = createApp({
+      questionBlueprintDraftService: {
+        async saveQuestionBlueprintDraftWorkbookSourceRevision(input: {
+          editorOutputFileId: string;
+          expectedRevision: number;
+          sourceId: string;
+        }) {
+          received = input;
+          return savedRevisionResult();
+        },
+      } as unknown as QuestionBlueprintDraftService,
+    });
+
+    const response = await app.request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/revisions`,
+      {
+        body: JSON.stringify({
+          expectedRevision: 1,
+          editorOutputFileId: "019e9315-6a87-715f-9861-8654df099006",
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 200);
+    assert.equal(received?.expectedRevision, 1);
+    assert.equal(
+      received?.editorOutputFileId,
+      "019e9315-6a87-715f-9861-8654df099006",
+    );
+    assert.equal(received?.sourceId, "sourceA");
+    const body = (await response.json()) as Record<string, unknown>;
+    assert.deepEqual(Object.keys(body).sort(), [
+      "draft",
+      "sourceArtifact",
+      "sourceRevision",
+    ]);
+  });
+
+  it("creates workbook editor output upload for a draft source", async () => {
+    let received:
+      | {
+          draftId: string;
+          expectedRevision: number;
+          originalName: string;
+          sourceId: string;
+        }
+      | undefined;
+    const app = createApp({
+      questionBlueprintDraftService: {
+        async createQuestionBlueprintDraftWorkbookEditorUpload(input: {
+          draftId: string;
+          expectedRevision: number;
+          originalName: string;
+          sourceId: string;
+        }) {
+          received = input;
+          return editorUploadResult();
+        },
+      } as unknown as QuestionBlueprintDraftService,
+    });
+
+    const response = await app.request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/workbook-editor-uploads`,
+      {
+        body: JSON.stringify(editorUploadBody()),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 201);
+    assert.equal(received?.draftId, draftId);
+    assert.equal(received?.sourceId, "sourceA");
+    assert.equal(received?.expectedRevision, 1);
+    const body = (await response.json()) as Record<string, unknown>;
+    assert.deepEqual(Object.keys(body).sort(), ["upload", "uploadUrl"]);
+    assert.equal((body.upload as { purpose?: string }).purpose, undefined);
+  });
+
+  it("rejects fractional expected revision for workbook editor upload", async () => {
+    const app = createApp();
+
+    const response = await app.request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/workbook-editor-uploads`,
+      {
+        body: JSON.stringify({
+          ...editorUploadBody(),
+          expectedRevision: 1.5,
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 400);
+  });
+
+  it("maps stale workbook editor upload revision to conflict", async () => {
+    const app = createApp({
+      questionBlueprintDraftService: {
+        async createQuestionBlueprintDraftWorkbookEditorUpload() {
+          throw new QuestionBlueprintDraftRevisionConflictError();
+        },
+      } as unknown as QuestionBlueprintDraftService,
+    });
+
+    const response = await app.request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/workbook-editor-uploads`,
+      {
+        body: JSON.stringify(editorUploadBody()),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 409);
+  });
+
+  it("maps invalid workbook editor upload creation to a questions-owned bad request response", async () => {
+    const app = createApp({
+      questionBlueprintDraftService: {
+        async createQuestionBlueprintDraftWorkbookEditorUpload() {
+          throw new DraftSourceEditorUploadInvalidError();
+        },
+      } as unknown as QuestionBlueprintDraftService,
+    });
+
+    const response = await app.request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/workbook-editor-uploads`,
+      {
+        body: JSON.stringify(editorUploadBody()),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 400);
+    const body = (await response.json()) as { error: { code: string } };
+    assert.equal(body.error.code, "DRAFT_SOURCE_EDITOR_UPLOAD_INVALID");
+  });
+
+  it("maps workbook editor upload creation storage failure to a questions-owned upstream response", async () => {
+    const app = createApp({
+      questionBlueprintDraftService: {
+        async createQuestionBlueprintDraftWorkbookEditorUpload() {
+          throw new DraftSourceEditorUploadStorageError();
+        },
+      } as unknown as QuestionBlueprintDraftService,
+    });
+
+    const response = await app.request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/workbook-editor-uploads`,
+      {
+        body: JSON.stringify(editorUploadBody()),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 502);
+    const body = (await response.json()) as { error: { code: string } };
+    assert.equal(body.error.code, "DRAFT_SOURCE_EDITOR_UPLOAD_STORAGE_ERROR");
+  });
+
+  it("completes workbook editor output upload with an editor-specific response", async () => {
+    let received:
+      | {
+          draftId: string;
+          expectedRevision: number;
+          sourceId: string;
+          uploadId: string;
+        }
+      | undefined;
+    const app = createApp({
+      questionBlueprintDraftService: {
+        async completeQuestionBlueprintDraftWorkbookEditorUpload(input: {
+          draftId: string;
+          expectedRevision: number;
+          sourceId: string;
+          uploadId: string;
+        }) {
+          received = input;
+          return editorUploadCompletionResult();
+        },
+      } as unknown as QuestionBlueprintDraftService,
+    });
+
+    const response = await app.request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/workbook-editor-uploads/019e9315-6a87-715f-9861-8654df099080/completions`,
+      {
+        body: JSON.stringify({ expectedRevision: 1 }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 201);
+    assert.equal(received?.draftId, draftId);
+    assert.equal(received?.sourceId, "sourceA");
+    assert.equal(received?.uploadId, "019e9315-6a87-715f-9861-8654df099080");
+    const body = (await response.json()) as Record<string, unknown>;
+    assert.deepEqual(Object.keys(body).sort(), ["editorOutputFile"]);
+    assert.equal(
+      (body.editorOutputFile as { purpose?: string }).purpose,
+      undefined,
+    );
+  });
+
+  it("rejects fractional expected revision for workbook editor upload completion", async () => {
+    const response = await createApp().request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/workbook-editor-uploads/019e9315-6a87-715f-9861-8654df099080/completions`,
+      {
+        body: JSON.stringify({ expectedRevision: 1.5 }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 400);
+  });
+
+  it("maps stale workbook editor upload completion metadata to conflict", async () => {
+    const app = createApp({
+      questionBlueprintDraftService: {
+        async completeQuestionBlueprintDraftWorkbookEditorUpload() {
+          throw new WorkbookEditorOutputStaleError();
+        },
+      } as unknown as QuestionBlueprintDraftService,
+    });
+
+    const response = await app.request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/workbook-editor-uploads/019e9315-6a87-715f-9861-8654df099080/completions`,
+      {
+        body: JSON.stringify({ expectedRevision: 1 }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 409);
+    const body = (await response.json()) as { error: { code: string } };
+    assert.equal(body.error.code, "WORKBOOK_EDITOR_OUTPUT_STALE");
+  });
+
+  it("maps missing workbook editor upload completion to a questions-owned not found response", async () => {
+    const app = createApp({
+      questionBlueprintDraftService: {
+        async completeQuestionBlueprintDraftWorkbookEditorUpload() {
+          throw new DraftSourceEditorUploadNotFoundError();
+        },
+      } as unknown as QuestionBlueprintDraftService,
+    });
+
+    const response = await app.request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/workbook-editor-uploads/019e9315-6a87-715f-9861-8654df099080/completions`,
+      {
+        body: JSON.stringify({ expectedRevision: 1 }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 404);
+    const body = (await response.json()) as { error: { code: string } };
+    assert.equal(body.error.code, "DRAFT_SOURCE_EDITOR_UPLOAD_NOT_FOUND");
+  });
+
+  it("maps invalid workbook editor upload completion to a questions-owned bad request response", async () => {
+    const app = createApp({
+      questionBlueprintDraftService: {
+        async completeQuestionBlueprintDraftWorkbookEditorUpload() {
+          throw new DraftSourceEditorUploadInvalidError();
+        },
+      } as unknown as QuestionBlueprintDraftService,
+    });
+
+    const response = await app.request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/workbook-editor-uploads/019e9315-6a87-715f-9861-8654df099080/completions`,
+      {
+        body: JSON.stringify({ expectedRevision: 1 }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 400);
+    const body = (await response.json()) as { error: { code: string } };
+    assert.equal(body.error.code, "DRAFT_SOURCE_EDITOR_UPLOAD_INVALID");
+  });
+
+  it("maps workbook editor upload completion storage failure to a questions-owned upstream response", async () => {
+    const app = createApp({
+      questionBlueprintDraftService: {
+        async completeQuestionBlueprintDraftWorkbookEditorUpload() {
+          throw new DraftSourceEditorUploadStorageError();
+        },
+      } as unknown as QuestionBlueprintDraftService,
+    });
+
+    const response = await app.request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/workbook-editor-uploads/019e9315-6a87-715f-9861-8654df099080/completions`,
+      {
+        body: JSON.stringify({ expectedRevision: 1 }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 502);
+    const body = (await response.json()) as { error: { code: string } };
+    assert.equal(body.error.code, "DRAFT_SOURCE_EDITOR_UPLOAD_STORAGE_ERROR");
+  });
+
+  it("maps stale workbook editor save metadata to conflict", async () => {
+    const app = createApp({
+      questionBlueprintDraftService: {
+        async saveQuestionBlueprintDraftWorkbookSourceRevision() {
+          throw new WorkbookEditorOutputStaleError();
+        },
+      } as unknown as QuestionBlueprintDraftService,
+    });
+
+    const response = await app.request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/revisions`,
+      {
+        body: JSON.stringify({
+          expectedRevision: 1,
+          editorOutputFileId: "019e9315-6a87-715f-9861-8654df099006",
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 409);
+    const body = (await response.json()) as { error: { code: string } };
+    assert.equal(body.error.code, "WORKBOOK_EDITOR_OUTPUT_STALE");
+  });
+
+  it("maps invalid workbook editor save metadata to a questions-owned bad request response", async () => {
+    const app = createApp({
+      questionBlueprintDraftService: {
+        async saveQuestionBlueprintDraftWorkbookSourceRevision() {
+          throw new DraftSourceEditorUploadInvalidError();
+        },
+      } as unknown as QuestionBlueprintDraftService,
+    });
+
+    const response = await app.request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/revisions`,
+      {
+        body: JSON.stringify({
+          expectedRevision: 1,
+          editorOutputFileId: "019e9315-6a87-715f-9861-8654df099006",
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 400);
+    const body = (await response.json()) as { error: { code: string } };
+    assert.equal(body.error.code, "DRAFT_SOURCE_EDITOR_UPLOAD_INVALID");
+  });
+
+  it("rejects server-owned materialization in workbook revision body", async () => {
+    const app = createApp();
+
+    const response = await app.request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/revisions`,
+      {
+        body: JSON.stringify({
+          expectedRevision: 1,
+          editorOutputFileId: "019e9315-6a87-715f-9861-8654df099006",
+          sourceArtifactId: "019e9315-6a87-715f-9861-8654df099012",
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 400);
+  });
+
+  it("rejects fractional expected revision for workbook revision save", async () => {
+    const response = await createApp().request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/revisions`,
+      {
+        body: JSON.stringify({
+          editorOutputFileId: "019e9315-6a87-715f-9861-8654df099006",
+          expectedRevision: 1.5,
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 400);
+  });
+
+  it("rejects missing workbook revision save body", async () => {
+    const response = await createApp().request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/revisions`,
+      {
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 400);
+  });
+
+  it("rejects fractional expected revision for existing source attach", async () => {
+    const response = await createApp().request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/file`,
+      {
+        body: JSON.stringify({
+          expectedRevision: 1.5,
+          fileId: "019e9315-6a87-715f-9861-8654df099006",
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 400);
+  });
+
+  it("maps stale source document head on workbook revision save to conflict", async () => {
+    const app = createApp({
+      questionBlueprintDraftService: {
+        async saveQuestionBlueprintDraftWorkbookSourceRevision() {
+          throw new SourceDocumentRevisionConflictError();
+        },
+      } as unknown as QuestionBlueprintDraftService,
+    });
+
+    const response = await app.request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/revisions`,
+      {
+        body: JSON.stringify({
+          expectedRevision: 1,
+          editorOutputFileId: "019e9315-6a87-715f-9861-8654df099006",
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 409);
+    const body = (await response.json()) as { error: { code: string } };
+    assert.equal(body.error.code, "SOURCE_DOCUMENT_REVISION_CONFLICT");
+  });
+
   it("does not register direct published blueprint create/update routes", async () => {
     const app = createApp();
 
@@ -315,12 +788,21 @@ function createApp(
             }
             return { draft: createDraft() };
           },
+          async createQuestionBlueprintDraftWorkbookEditorUpload() {
+            return editorUploadResult();
+          },
+          async completeQuestionBlueprintDraftWorkbookEditorUpload() {
+            return editorUploadCompletionResult();
+          },
           async discardQuestionBlueprintDraft(input: {
             expectedRevision: number;
           }) {
             if (input.expectedRevision !== 1) {
               throw new QuestionBlueprintDraftRevisionConflictError();
             }
+          },
+          async saveQuestionBlueprintDraftWorkbookSourceRevision() {
+            return savedRevisionResult();
           },
           async updateQuestionBlueprintDraft() {
             return { draft: createDraft() };
@@ -344,17 +826,11 @@ function createRealQuestionBlueprintDraftService() {
   let draft = createDraft();
   return new RealQuestionBlueprintDraftService({
     clock: { now: () => at },
-    draftSourceFilePort: {} as never,
-    idGenerator: {
-      questionBlueprintDraftId: () => draftId,
-      questionBlueprintId: () => blueprintId,
-      questionBlueprintVersionId: () => versionId,
-    } as never,
-    questionBlueprintDraftTransaction: {
-      async transaction() {
-        throw new Error("not implemented in route test");
-      },
-    } as never,
+    draftSourceFilePort: unusedDraftSourceFilePort(),
+    idGenerator: routeTestIdGenerator(),
+    questionBlueprintDraftTransaction: unusedDraftTransaction(),
+    // This route test exercises only draft update validation; the real service
+    // calls only these repository methods on that path.
     questionsRepository: {
       async findQuestionBlueprintDraftById() {
         return draft;
@@ -370,8 +846,56 @@ function createRealQuestionBlueprintDraftService() {
         draft = input.draft;
         return draft;
       },
-    } as never,
+    } as Pick<
+      QuestionsRepository,
+      | "findQuestionBlueprintDraftById"
+      | "findQuestionBlueprintById"
+      | "updateQuestionBlueprintDraftWithExpectedRevision"
+    > as QuestionsRepository,
   });
+}
+
+function unusedDraftSourceFilePort(): DraftSourceFilePort {
+  return {
+    async createEditorOutputUpload() {
+      throw new Error("unused in route test");
+    },
+    async completeEditorOutputUpload() {
+      throw new Error("unused in route test");
+    },
+    async getFileMetadata() {
+      throw new Error("unused in route test");
+    },
+    async getUploadMetadata() {
+      throw new Error("unused in route test");
+    },
+  };
+}
+
+function unusedDraftTransaction(): QuestionBlueprintDraftTransactionPort {
+  return {
+    async transaction() {
+      throw new Error("unused in route test");
+    },
+  };
+}
+
+function routeTestIdGenerator(): IdGenerator {
+  const unused = () => {
+    throw new Error("unused in route test");
+  };
+  return {
+    eventId: unused,
+    questionBlueprintDraftId: () => draftId,
+    questionBlueprintId: () => blueprintId,
+    questionBlueprintVersionId: () => versionId,
+    questionGenerationRunId: unused,
+    questionId: unused,
+    questionSetId: unused,
+    sourceArtifactId: unused,
+    sourceDocumentId: unused,
+    sourceRevisionId: unused,
+  };
 }
 
 function updateDraftBody(patch: { sources: unknown[] }) {
@@ -381,6 +905,62 @@ function updateDraftBody(patch: { sources: unknown[] }) {
     expectedRevision: 1,
     name: "Draft",
     sources: patch.sources,
+  };
+}
+
+function editorUploadBody() {
+  return {
+    byteSize: 1234,
+    checksumSha256:
+      "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    contentType:
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    expectedRevision: 1,
+    originalName: "source.xlsx",
+  };
+}
+
+function editorUploadResult() {
+  return {
+    upload: {
+      checksumSha256:
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      completedAt: null,
+      contentType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      createdAt: at,
+      createdByUserId: ownerUserId,
+      expectedByteSize: 1234,
+      id: "019e9315-6a87-715f-9861-8654df099080",
+      originalName: "source.xlsx",
+      purpose: "workbook_editor_output",
+      status: "initiated",
+      updatedAt: at,
+      uploadExpiresAt: at,
+    },
+    uploadUrl: {
+      expiresInSeconds: 900,
+      headers: {
+        "Content-Type":
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      },
+      method: "PUT" as const,
+      url: "https://storage.example/upload",
+    },
+  };
+}
+
+function editorUploadCompletionResult() {
+  return {
+    editorOutputFile: {
+      byteSize: 1234,
+      checksumSha256:
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      contentType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      id: "019e9315-6a87-715f-9861-8654df099006",
+      originalName: "source.xlsx",
+    },
   };
 }
 
@@ -433,6 +1013,42 @@ function createDraft() {
     },
     at,
   );
+}
+
+function savedRevisionResult() {
+  return {
+    draft: createDraft(),
+    sourceArtifact: {
+      artifactMetadata: {},
+      createdAt: at,
+      id: "019e9315-6a87-715f-9861-8654df099012",
+      kind: "workbook" as const,
+      ownerUserId,
+      processor: "lemma-workbook",
+      processorVersion: "1",
+      sourceRevisionId: "019e9315-6a87-715f-9861-8654df099011",
+      status: "pending_validation" as const,
+      updatedAt: at,
+      validationError: null,
+      workbookId: "019e9315-6a87-715f-9861-8654df099005",
+    },
+    sourceRevision: {
+      byteSize: 1234,
+      checksumSha256:
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      contentType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      createdAt: at,
+      createdByUserId: ownerUserId,
+      editorMetadata: { origin: "workbook_editor" },
+      fileId: "019e9315-6a87-715f-9861-8654df099006",
+      id: "019e9315-6a87-715f-9861-8654df099011",
+      kind: "workbook" as const,
+      ownerUserId,
+      parentRevisionId: "019e9315-6a87-715f-9861-8654df099010",
+      sourceDocumentId: "019e9315-6a87-715f-9861-8654df099010",
+    },
+  };
 }
 
 function createBlueprint() {

@@ -1,6 +1,7 @@
 import type { JsonValue, OperationLineage } from "@lemma/domain";
 import type { OutboxRepository } from "@lemma/events/application";
 import type { EventId } from "@lemma/events/domain";
+import type { FileReferenceGuardPort } from "@lemma/files/application";
 import type { CurrentUser } from "@lemma/identity/application";
 import type {
   FileId,
@@ -19,6 +20,8 @@ import type {
   WorkbookStatus,
 } from "../domain/index.js";
 import type { WorkbookCalculationSource } from "./workbook-calculation-sources.js";
+
+export type { FileReferenceGuardPort } from "@lemma/files/application";
 
 export type WorkbookCalculationSourceRecord = WorkbookCalculationSource & {
   calculationId: WorkbookCalculationId;
@@ -60,7 +63,11 @@ export interface WorkbookRepository {
     snapshots: readonly WorkbookSnapshot[],
   ): Promise<WorkbookSnapshot[]>;
   findWorkbookById(id: WorkbookId): Promise<Workbook | null>;
-  findWorkbookByOwnerUserIdAndFileId?(input: {
+  findWorkbookByOwnerUserIdAndFileId(input: {
+    ownerUserId: UserId;
+    fileId: FileId;
+  }): Promise<Workbook | null>;
+  findWorkbookByOwnerUserIdAndFileIdForUpdate(input: {
     ownerUserId: UserId;
     fileId: FileId;
   }): Promise<Workbook | null>;
@@ -102,6 +109,7 @@ export interface WorkbookRepository {
     limit: number;
     cursor?: Date;
   }): Promise<Workbook[]>;
+  promoteWorkbookToStandalone(workbook: Workbook): Promise<Workbook | null>;
   updateWorkbook(workbook: Workbook): Promise<Workbook | null>;
   updateWorkbookCalculation(
     calculation: WorkbookCalculation,
@@ -174,6 +182,7 @@ export interface IdGenerator {
 export interface WorkbookTransactionPort {
   transaction<T>(
     fn: (deps: {
+      fileReferenceGuard: FileReferenceGuardPort;
       workbookRepository: WorkbookRepository;
       outboxRepository: OutboxRepository;
     }) => Promise<T>,

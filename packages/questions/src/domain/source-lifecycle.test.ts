@@ -96,12 +96,15 @@ test("rejects reconstituted valid workbook artifact without workbook", () => {
     () =>
       reconstituteSourceArtifact({
         artifactMetadata: {},
+        collectedAt: null,
         createdAt: at,
+        deletedAt: null,
         id: artifactId,
         kind: "workbook",
         ownerUserId,
         processor: "lemma-workbook",
         processorVersion: "1",
+        retentionExpiresAt: null,
         sourceRevisionId: revisionId,
         status: "valid",
         updatedAt: at,
@@ -139,12 +142,15 @@ test("rejects malformed Python artifact reconstitution with disabled materializa
     () =>
       reconstituteSourceArtifact({
         artifactMetadata: {},
+        collectedAt: null,
         createdAt: at,
+        deletedAt: null,
         id: artifactId,
         kind: "python",
         ownerUserId,
         processor: "lemma-python",
         processorVersion: "1",
+        retentionExpiresAt: null,
         sourceRevisionId: revisionId,
         status: "invalid",
         updatedAt: at,
@@ -475,7 +481,10 @@ for (const status of sourceArtifactStatuses) {
       () =>
         reconstituteSourceArtifact({
           ...pythonArtifact(status),
+          collectedAt: null,
           createdAt: at,
+          deletedAt: null,
+          retentionExpiresAt: null,
           updatedAt: at,
         }),
       /python source artifact materialization is disabled/,

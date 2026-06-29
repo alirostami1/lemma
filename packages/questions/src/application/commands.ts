@@ -63,6 +63,28 @@ export type AttachQuestionBlueprintDraftSourceFileCommand =
     fileId: string;
     lineage: OperationLineage;
   };
+export type SaveQuestionBlueprintDraftWorkbookSourceRevisionCommand =
+  QuestionBlueprintDraftByIdCommand & {
+    expectedRevision: number;
+    sourceId: string;
+    editorOutputFileId: string;
+    lineage: OperationLineage;
+  };
+export type CreateQuestionBlueprintDraftWorkbookEditorUploadCommand =
+  QuestionBlueprintDraftByIdCommand & {
+    expectedRevision: number;
+    sourceId: string;
+    originalName: string;
+    contentType: string;
+    byteSize: number;
+    checksumSha256: string;
+  };
+export type CompleteQuestionBlueprintDraftWorkbookEditorUploadCommand =
+  QuestionBlueprintDraftByIdCommand & {
+    expectedRevision: number;
+    sourceId: string;
+    uploadId: string;
+  };
 export type PublishQuestionBlueprintDraftCommand =
   QuestionBlueprintDraftByIdCommand & {
     expectedRevision: number;

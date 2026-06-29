@@ -145,6 +145,35 @@ class FakeFilesRepository implements FilesRepository {
     throw new Error("Not implemented.");
   }
 
+  async countProtectedFileReferences() {
+    return {
+      activeDraftSourceBindings: 0,
+      activeFileAliases: 0,
+      activeSourceDocuments: 0,
+      activeWorkbooks: 0,
+      generatedQuestions: 0,
+      generatedQuestionSetMembershipsConservativelyRetained: 0,
+      generationRunsConservativelyRetained: 0,
+      publishedBlueprintVersionSources: 0,
+      uncollectedSourceArtifacts: 0,
+      sourceRevisionsWithoutArtifactsConservativelyRetained: 0,
+      workbookCalculationsConservativelyRetained: 0,
+      workbookSnapshotsConservativelyRetained: 0,
+    };
+  }
+
+  async findFileByIdForUpdate(): Promise<File | null> {
+    throw new Error("Not implemented.");
+  }
+
+  async updateFileForGarbageCollection(): Promise<File | null> {
+    throw new Error("Not implemented.");
+  }
+
+  async updateFileWithExpectedStatus(): Promise<File | null> {
+    throw new Error("Not implemented.");
+  }
+
   async updateFile(): Promise<File | null> {
     throw new Error("Not implemented.");
   }

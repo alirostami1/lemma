@@ -4,6 +4,7 @@ import type { WorkbookEngineConfig } from "@lemma/workbook-engine/domain";
 import {
   type Clock,
   DraftSourceWorkbookRegistrationService,
+  type FileReferenceGuardPort,
   type IdGenerator,
   mapWorkbookFileProviderErrors,
   WorkbookAccessAdapter,
@@ -29,9 +30,15 @@ export function createWorkbookModule(deps: {
   workbookConfig: WorkbookEngineConfig;
   idGenerator: IdGenerator;
   clock: Clock;
+  createFileReferenceGuardForTransaction: (
+    tx: DatabasePort["executor"],
+  ) => FileReferenceGuardPort;
 }) {
   const workbookRepository = new KyselyWorkbookRepository(deps.db.executor);
-  const workbookTransaction = createKyselyWorkbookTransaction(deps.db);
+  const workbookTransaction = createKyselyWorkbookTransaction(
+    deps.db,
+    deps.createFileReferenceGuardForTransaction,
+  );
   const workbookFileProvider = mapWorkbookFileProviderErrors(deps.fileProvider);
   const workbookCalculator = new EngineWorkbookCalculator(deps.workbookConfig);
 

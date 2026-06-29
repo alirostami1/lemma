@@ -903,23 +903,11 @@ function isActiveTargetedDraftUniqueViolation(error: unknown): boolean {
   );
 }
 
-type TransactionCapable = {
-  transaction(): {
-    execute<T>(fn: (tx: DatabaseExecutor) => Promise<T>): Promise<T>;
-  };
-};
-
-function hasTransaction(
-  db: DatabaseExecutor,
-): db is DatabaseExecutor & TransactionCapable {
-  return "transaction" in db && typeof db.transaction === "function";
-}
-
 function withTransaction<T>(
   db: DatabaseExecutor,
   fn: (tx: DatabaseExecutor) => Promise<T>,
 ): Promise<T> {
-  if (hasTransaction(db)) {
+  if (!db.isTransaction) {
     return db.transaction().execute(fn);
   }
   return fn(db);

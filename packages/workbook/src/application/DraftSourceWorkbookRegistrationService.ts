@@ -44,6 +44,7 @@ export class DraftSourceWorkbookRegistrationService
       id: this.deps.workbookId(),
       name: input.name,
       originalName: input.originalName,
+      origin: "source_artifact",
       ownerUserId: input.ownerUserId,
     });
 

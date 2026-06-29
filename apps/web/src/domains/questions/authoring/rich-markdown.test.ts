@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ComposedRichContent } from "./composed-model";
 import {
   markdownToRichContent,
+  markdownToRichContentForAuthoring,
   richContentToMarkdown,
   toggleMarkdownFormat,
 } from "./rich-markdown";
@@ -95,6 +96,18 @@ describe("rich text markdown conversion", () => {
     expect(markdownToRichContent(richContentToMarkdown(content))).toEqual(
       content,
     );
+  });
+
+  it("keeps reference-like tokens as plain text for normal authoring", () => {
+    expect(markdownToRichContentForAuthoring("{{ .revenue }}")).toEqual({
+      content: [
+        {
+          content: [{ text: "{{ .revenue }}", type: "text" }],
+          type: "paragraph",
+        },
+      ],
+      type: "doc",
+    });
   });
 });
 

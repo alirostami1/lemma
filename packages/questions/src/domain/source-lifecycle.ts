@@ -95,6 +95,7 @@ export type SourceDocument = Timestamped & {
   currentRevisionId: SourceRevisionId | null;
   status: SourceDocumentStatus;
   deletedAt: Date | null;
+  retentionExpiresAt: Date | null;
 };
 
 export type SourceRevision = {
@@ -110,6 +111,8 @@ export type SourceRevision = {
   parentRevisionId: SourceRevisionId | null;
   editorMetadata: JsonObject;
   createdAt: Date;
+  deletedAt: Date | null;
+  retentionExpiresAt: Date | null;
 };
 
 export type SourceArtifact = Timestamped & {
@@ -125,12 +128,19 @@ export type SourceArtifact = Timestamped & {
   workbookId: WorkbookId | null;
   artifactMetadata: JsonObject;
   validationError: JsonObject | null;
+  deletedAt: Date | null;
+  retentionExpiresAt: Date | null;
+  collectedAt: Date | null;
 };
 
 export function createSourceDocument(
   input: Omit<
     SourceDocument,
-    keyof Timestamped | "status" | "deletedAt" | "currentRevisionId"
+    | keyof Timestamped
+    | "status"
+    | "deletedAt"
+    | "retentionExpiresAt"
+    | "currentRevisionId"
   > & { currentRevisionId?: SourceRevisionId | null },
   at: Date,
 ): SourceDocument {
@@ -139,6 +149,7 @@ export function createSourceDocument(
     createdAt: at,
     currentRevisionId: input.currentRevisionId ?? null,
     deletedAt: null,
+    retentionExpiresAt: null,
     kind: sourceKind(input.kind),
     name: sourceDocumentName(input.name),
     status: "active",
@@ -146,7 +157,9 @@ export function createSourceDocument(
   };
 }
 
-export function createSourceRevision(input: SourceRevision): SourceRevision {
+export function createSourceRevision(
+  input: Omit<SourceRevision, "deletedAt" | "retentionExpiresAt">,
+): SourceRevision {
   if (input.parentRevisionId === input.id) {
     throw new InvalidQuestionFieldError("source revision cannot parent itself");
   }
@@ -157,7 +170,9 @@ export function createSourceRevision(input: SourceRevision): SourceRevision {
     byteSize: positiveInteger(input.byteSize, "byteSize"),
     checksumSha256: checksumSha256(input.checksumSha256),
     contentType,
+    deletedAt: null,
     kind,
+    retentionExpiresAt: null,
   };
   if (kind === "python") {
     if (input.contentType !== PYTHON_SOURCE_CONTENT_TYPE) {
@@ -174,7 +189,10 @@ export function createSourceRevision(input: SourceRevision): SourceRevision {
 }
 
 export function createSourceArtifact(
-  input: Omit<SourceArtifact, keyof Timestamped>,
+  input: Omit<
+    SourceArtifact,
+    keyof Timestamped | "deletedAt" | "retentionExpiresAt" | "collectedAt"
+  >,
   at: Date,
 ): SourceArtifact {
   const kind = sourceKind(input.kind);
@@ -182,11 +200,14 @@ export function createSourceArtifact(
   assertSourceArtifactState({ ...input, kind });
   return {
     ...input,
+    collectedAt: null,
     createdAt: at,
+    deletedAt: null,
     kind,
     processor: nonEmpty(input.processor, "processor"),
     processorVersion: nonEmpty(input.processorVersion, "processorVersion"),
     status: sourceArtifactStatus(input.status),
+    retentionExpiresAt: null,
     updatedAt: at,
   };
 }
@@ -201,6 +222,7 @@ export function reconstituteSourceDocument(input: {
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
+  retentionExpiresAt: Date | null;
 }): SourceDocument {
   return {
     createdAt: input.createdAt,
@@ -212,6 +234,7 @@ export function reconstituteSourceDocument(input: {
     kind: sourceKind(input.kind),
     name: sourceDocumentName(input.name),
     ownerUserId: userId(input.ownerUserId),
+    retentionExpiresAt: input.retentionExpiresAt,
     status: sourceDocumentStatus(input.status),
     updatedAt: input.updatedAt,
   };
@@ -230,23 +253,29 @@ export function reconstituteSourceRevision(input: {
   parentRevisionId: string | null;
   editorMetadata: JsonObject;
   createdAt: Date;
+  deletedAt: Date | null;
+  retentionExpiresAt: Date | null;
 }): SourceRevision {
-  return createSourceRevision({
-    byteSize: input.byteSize,
-    checksumSha256: input.checksumSha256,
-    contentType: input.contentType,
-    createdAt: input.createdAt,
-    createdByUserId: userId(input.createdByUserId),
-    editorMetadata: input.editorMetadata,
-    fileId: input.fileId,
-    id: sourceRevisionId(input.id),
-    kind: sourceKind(input.kind),
-    ownerUserId: userId(input.ownerUserId),
-    parentRevisionId: input.parentRevisionId
-      ? sourceRevisionId(input.parentRevisionId)
-      : null,
-    sourceDocumentId: sourceDocumentId(input.sourceDocumentId),
-  });
+  return {
+    ...createSourceRevision({
+      byteSize: input.byteSize,
+      checksumSha256: input.checksumSha256,
+      contentType: input.contentType,
+      createdAt: input.createdAt,
+      createdByUserId: userId(input.createdByUserId),
+      editorMetadata: input.editorMetadata,
+      fileId: input.fileId,
+      id: sourceRevisionId(input.id),
+      kind: sourceKind(input.kind),
+      ownerUserId: userId(input.ownerUserId),
+      parentRevisionId: input.parentRevisionId
+        ? sourceRevisionId(input.parentRevisionId)
+        : null,
+      sourceDocumentId: sourceDocumentId(input.sourceDocumentId),
+    }),
+    deletedAt: input.deletedAt,
+    retentionExpiresAt: input.retentionExpiresAt,
+  };
 }
 
 export function reconstituteSourceArtifact(input: {
@@ -262,17 +291,23 @@ export function reconstituteSourceArtifact(input: {
   validationError: JsonObject | null;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date | null;
+  retentionExpiresAt: Date | null;
+  collectedAt: Date | null;
 }): SourceArtifact {
   const kind = sourceKind(input.kind);
   assertPythonSourceArtifactMaterializationDisabled(kind);
   const artifact = {
     artifactMetadata: input.artifactMetadata,
+    collectedAt: input.collectedAt,
     createdAt: input.createdAt,
     id: sourceArtifactId(input.id),
+    deletedAt: input.deletedAt,
     kind,
     ownerUserId: userId(input.ownerUserId),
     processor: nonEmpty(input.processor, "processor"),
     processorVersion: nonEmpty(input.processorVersion, "processorVersion"),
+    retentionExpiresAt: input.retentionExpiresAt,
     sourceRevisionId: sourceRevisionId(input.sourceRevisionId),
     status: sourceArtifactStatus(input.status),
     updatedAt: input.updatedAt,
@@ -281,6 +316,46 @@ export function reconstituteSourceArtifact(input: {
   };
   assertSourceArtifactState(artifact);
   return artifact;
+}
+
+export function tombstoneSourceDocument(
+  document: SourceDocument,
+  at: Date,
+  retentionExpiresAt: Date,
+): SourceDocument {
+  if (document.status === "deleted") return document;
+  return {
+    ...document,
+    deletedAt: at,
+    retentionExpiresAt,
+    status: "deleted",
+    updatedAt: at,
+  };
+}
+
+export function tombstoneSourceRevision(
+  revision: SourceRevision,
+  at: Date,
+  retentionExpiresAt: Date,
+): SourceRevision {
+  if (revision.deletedAt) return revision;
+  return { ...revision, deletedAt: at, retentionExpiresAt };
+}
+
+export function tombstoneSourceArtifact(
+  artifact: SourceArtifact,
+  at: Date,
+  retentionExpiresAt: Date,
+): SourceArtifact {
+  if (artifact.deletedAt) return artifact;
+  return { ...artifact, deletedAt: at, retentionExpiresAt, updatedAt: at };
+}
+
+export function markSourceArtifactCollected(
+  artifact: SourceArtifact,
+  at: Date,
+): SourceArtifact {
+  return { ...artifact, collectedAt: at, status: "deleted", updatedAt: at };
 }
 
 export function sourceKind(value: unknown): SourceKind {

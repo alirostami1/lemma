@@ -5,7 +5,7 @@ export type FileStatus = "uploaded" | "deleting" | "deleted";
 export type FileContentType =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-export type FileUploadPurpose = "workbook";
+export type FileUploadPurpose = FilePurpose;
 
 export type FileUploadStatus =
   | "initiated"

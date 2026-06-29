@@ -1,27 +1,49 @@
 import { describe, expect, it } from "vitest";
-import { insertReferenceSyntaxAtSelection } from "./reference-insertion-controller";
+import { insertReferenceIntoInlineContent } from "./reference-insertion-controller";
 
 describe("reference insertion controller", () => {
-  it("inserts a reference at the caret with surrounding spaces", () => {
+  it("inserts a structured reference by splitting focused text", () => {
     expect(
-      insertReferenceSyntaxAtSelection({
+      insertReferenceIntoInlineContent({
+        content: [{ text: "Revenue today", type: "text" }],
         referenceId: "revenue",
-        selection: { end: 8, start: 8 },
-        text: "Revenue:",
+        target: { end: 7, index: 0, start: 7, type: "text" },
       }),
-    ).toEqual({
-      selection: { end: 23, start: 23 },
-      text: "Revenue: {{ .revenue }}",
-    });
+    ).toEqual([
+      { text: "Revenue", type: "text" },
+      { referenceId: "revenue", type: "reference" },
+      { text: " today", type: "text" },
+    ]);
   });
 
-  it("replaces selected text", () => {
+  it("preserves existing reference order when appending without a text target", () => {
     expect(
-      insertReferenceSyntaxAtSelection({
-        referenceId: "revenue",
-        selection: { end: 14, start: 8 },
-        text: "Revenue amount today",
-      }).text,
-    ).toBe("Revenue {{ .revenue }} today");
+      insertReferenceIntoInlineContent({
+        content: [
+          { text: "A", type: "text" },
+          { referenceId: "existing", type: "reference" },
+          { text: "B", type: "text" },
+        ],
+        referenceId: "new_value",
+      }),
+    ).toEqual([
+      { text: "A", type: "text" },
+      { referenceId: "existing", type: "reference" },
+      { text: "B ", type: "text" },
+      { referenceId: "new_value", type: "reference" },
+    ]);
+  });
+
+  it("inserts a structured reference into a virtual text slot", () => {
+    expect(
+      insertReferenceIntoInlineContent({
+        content: [{ referenceId: "existing", type: "reference" }],
+        referenceId: "new_value",
+        target: { index: 1, type: "slot" },
+      }),
+    ).toEqual([
+      { referenceId: "existing", type: "reference" },
+      { referenceId: "new_value", type: "reference" },
+    ]);
   });
 });

@@ -1606,6 +1606,230 @@ const attachQuestionBlueprintDraftSourceFileRequestSchema: Schema = {
     type: "object",
   },
 };
+const saveQuestionBlueprintDraftWorkbookSourceRevisionRequestSchema: Schema = {
+  name: "SaveQuestionBlueprintDraftWorkbookSourceRevisionRequest",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      editorOutputFileId: uuid,
+      expectedRevision: { minimum: 1, type: "integer" },
+    },
+    required: ["editorOutputFileId", "expectedRevision"],
+    type: "object",
+  },
+};
+const createQuestionBlueprintDraftWorkbookEditorUploadRequestSchema: Schema = {
+  name: "CreateQuestionBlueprintDraftWorkbookEditorUploadRequest",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      byteSize: { exclusiveMinimum: 0, type: "integer" },
+      checksumSha256: { pattern: "^[A-Fa-f0-9]{64}$", type: "string" },
+      contentType: {
+        enum: [
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        ],
+        type: "string",
+      },
+      expectedRevision: { minimum: 1, type: "integer" },
+      originalName: { maxLength: 500, minLength: 1, type: "string" },
+    },
+    required: [
+      "expectedRevision",
+      "originalName",
+      "byteSize",
+      "checksumSha256",
+      "contentType",
+    ],
+    type: "object",
+  },
+};
+const workbookEditorUploadSchema: Schema = {
+  name: "WorkbookEditorUpload",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      checksumSha256: { pattern: "^[a-f0-9]{64}$", type: "string" },
+      completedAt: { format: "date-time", type: ["string", "null"] },
+      contentType: { minLength: 1, type: "string" },
+      createdAt: dateTime,
+      createdByUserId: uuid,
+      expectedByteSize: { exclusiveMinimum: 0, type: "integer" },
+      id: uuid,
+      originalName: { minLength: 1, type: "string" },
+      status: {
+        enum: ["initiated", "verified", "failed", "expired", "cancelled"],
+        type: "string",
+      },
+      updatedAt: dateTime,
+      uploadExpiresAt: dateTime,
+    },
+    required: [
+      "id",
+      "createdByUserId",
+      "originalName",
+      "contentType",
+      "expectedByteSize",
+      "checksumSha256",
+      "status",
+      "uploadExpiresAt",
+      "completedAt",
+      "createdAt",
+      "updatedAt",
+    ],
+    type: "object",
+  },
+};
+const workbookEditorUploadUrlSchema: Schema = {
+  name: "WorkbookEditorUploadUrl",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      expiresInSeconds: { exclusiveMinimum: 0, type: "integer" },
+      headers: {
+        additionalProperties: { type: "string" },
+        type: "object",
+      },
+      method: { enum: ["PUT"], type: "string" },
+      url: { format: "uri", type: "string" },
+    },
+    required: ["url", "method", "expiresInSeconds", "headers"],
+    type: "object",
+  },
+};
+const createQuestionBlueprintDraftWorkbookEditorUploadResponseSchema: Schema = {
+  name: "CreateQuestionBlueprintDraftWorkbookEditorUploadResponse",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      upload: schemaRef(workbookEditorUploadSchema),
+      uploadUrl: schemaRef(workbookEditorUploadUrlSchema),
+    },
+    required: ["upload", "uploadUrl"],
+    type: "object",
+  },
+};
+const completeQuestionBlueprintDraftWorkbookEditorUploadRequestSchema: Schema =
+  {
+    name: "CompleteQuestionBlueprintDraftWorkbookEditorUploadRequest",
+    schema: {
+      additionalProperties: false,
+      properties: {
+        expectedRevision: { minimum: 1, type: "integer" },
+      },
+      required: ["expectedRevision"],
+      type: "object",
+    },
+  };
+const workbookEditorOutputFileSchema: Schema = {
+  name: "WorkbookEditorOutputFile",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      byteSize: { exclusiveMinimum: 0, type: "integer" },
+      checksumSha256: { pattern: "^[a-f0-9]{64}$", type: "string" },
+      contentType: { minLength: 1, type: "string" },
+      id: uuid,
+      originalName: { minLength: 1, type: "string" },
+    },
+    required: [
+      "id",
+      "originalName",
+      "contentType",
+      "byteSize",
+      "checksumSha256",
+    ],
+    type: "object",
+  },
+};
+const completeQuestionBlueprintDraftWorkbookEditorUploadResponseSchema: Schema =
+  {
+    name: "CompleteQuestionBlueprintDraftWorkbookEditorUploadResponse",
+    schema: {
+      additionalProperties: false,
+      properties: {
+        editorOutputFile: schemaRef(workbookEditorOutputFileSchema),
+      },
+      required: ["editorOutputFile"],
+      type: "object",
+    },
+  };
+const workbookSourceRevisionSchema: Schema = {
+  name: "WorkbookSourceRevision",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      byteSize: { minimum: 1, type: "integer" },
+      checksumSha256: { pattern: "^[a-f0-9]{64}$", type: "string" },
+      contentType: { minLength: 1, type: "string" },
+      createdAt: dateTime,
+      createdByUserId: uuid,
+      id: uuid,
+      kind: { enum: ["workbook"], type: "string" },
+      parentRevisionId: nullableUuid,
+      sourceDocumentId: uuid,
+    },
+    required: [
+      "id",
+      "sourceDocumentId",
+      "parentRevisionId",
+      "kind",
+      "checksumSha256",
+      "byteSize",
+      "contentType",
+      "createdAt",
+      "createdByUserId",
+    ],
+    type: "object",
+  },
+};
+const workbookSourceArtifactSchema: Schema = {
+  name: "WorkbookSourceArtifact",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      createdAt: dateTime,
+      id: uuid,
+      kind: { enum: ["workbook"], type: "string" },
+      processor: { minLength: 1, type: "string" },
+      processorVersion: { minLength: 1, type: "string" },
+      sourceRevisionId: uuid,
+      status: {
+        enum: ["pending_validation", "valid", "invalid", "archived", "deleted"],
+        type: "string",
+      },
+      updatedAt: dateTime,
+      validationError: { additionalProperties: true, type: ["object", "null"] },
+      workbookId: nullableUuid,
+    },
+    required: [
+      "id",
+      "sourceRevisionId",
+      "kind",
+      "processor",
+      "processorVersion",
+      "status",
+      "workbookId",
+      "validationError",
+      "createdAt",
+      "updatedAt",
+    ],
+    type: "object",
+  },
+};
+const saveQuestionBlueprintDraftWorkbookSourceRevisionResponseSchema: Schema = {
+  name: "SaveQuestionBlueprintDraftWorkbookSourceRevisionResponse",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      draft: schemaRef(questionBlueprintDraftSchema),
+      sourceArtifact: schemaRef(workbookSourceArtifactSchema),
+      sourceRevision: schemaRef(workbookSourceRevisionSchema),
+    },
+    required: ["draft", "sourceRevision", "sourceArtifact"],
+    type: "object",
+  },
+};
 const gradeQuestionRequestSchema: Schema = {
   name: "GradeQuestionRequest",
   schema: {
@@ -1677,6 +1901,15 @@ const questionBlueprintDraftSourceParam: Param = {
     name: "sourceId",
     required: true,
     schema: { pattern: "^[A-Za-z][A-Za-z0-9_-]*$", type: "string" },
+  },
+};
+const workbookEditorUploadParam: Param = {
+  name: "WorkbookEditorUploadIdParam",
+  schema: {
+    in: "path",
+    name: "uploadId",
+    required: true,
+    schema: uuid,
   },
 };
 const questionParam: Param = {
@@ -1779,6 +2012,17 @@ export const schemas = Object.freeze([
   publishQuestionBlueprintDraftRequestSchema,
   discardQuestionBlueprintDraftRequestSchema,
   attachQuestionBlueprintDraftSourceFileRequestSchema,
+  saveQuestionBlueprintDraftWorkbookSourceRevisionRequestSchema,
+  createQuestionBlueprintDraftWorkbookEditorUploadRequestSchema,
+  workbookEditorUploadSchema,
+  workbookEditorUploadUrlSchema,
+  createQuestionBlueprintDraftWorkbookEditorUploadResponseSchema,
+  completeQuestionBlueprintDraftWorkbookEditorUploadRequestSchema,
+  workbookEditorOutputFileSchema,
+  completeQuestionBlueprintDraftWorkbookEditorUploadResponseSchema,
+  workbookSourceRevisionSchema,
+  workbookSourceArtifactSchema,
+  saveQuestionBlueprintDraftWorkbookSourceRevisionResponseSchema,
   gradeQuestionRequestSchema,
   createQuestionGenerationRunRequestSchema,
 ]);
@@ -1794,6 +2038,7 @@ export const params = Object.freeze([
   questionBlueprintParam,
   questionBlueprintDraftParam,
   questionBlueprintDraftSourceParam,
+  workbookEditorUploadParam,
   questionParam,
   questionGenerationRunParam,
 ]);
@@ -2017,6 +2262,128 @@ export const paths: Paths = {
       tags: [tagRef(questionTag)],
     },
   },
+  "/question-blueprint-drafts/{draftId}/sources/{sourceId}/revisions": {
+    parameters: [
+      paramRef(questionBlueprintDraftParam),
+      paramRef(questionBlueprintDraftSourceParam),
+    ],
+    post: {
+      operationId: "saveQuestionBlueprintDraftWorkbookSourceRevision",
+      requestBody: {
+        content: {
+          "application/json": {
+            schema: schemaRef(
+              saveQuestionBlueprintDraftWorkbookSourceRevisionRequestSchema,
+            ),
+          },
+        },
+        required: true,
+      },
+      responses: {
+        "200": {
+          content: {
+            "application/json": {
+              schema: schemaRef(
+                saveQuestionBlueprintDraftWorkbookSourceRevisionResponseSchema,
+              ),
+            },
+          },
+          description: "Workbook editor output saved as a new source revision.",
+        },
+        "400": responseRef(badRequestResponse),
+        "401": responseRef(unauthorizedResponse),
+        "403": responseRef(forbiddenResponse),
+        "404": responseRef(notFoundResponse),
+        "409": responseRef(conflictResponse),
+      },
+      security: [keycloakSecurityRequirement],
+      summary: "Save workbook editor output as a new source revision",
+      tags: [tagRef(questionTag)],
+    },
+  },
+  "/question-blueprint-drafts/{draftId}/sources/{sourceId}/workbook-editor-uploads":
+    {
+      parameters: [
+        paramRef(questionBlueprintDraftParam),
+        paramRef(questionBlueprintDraftSourceParam),
+      ],
+      post: {
+        operationId: "createQuestionBlueprintDraftWorkbookEditorUpload",
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: schemaRef(
+                createQuestionBlueprintDraftWorkbookEditorUploadRequestSchema,
+              ),
+            },
+          },
+          required: true,
+        },
+        responses: {
+          "201": {
+            content: {
+              "application/json": {
+                schema: schemaRef(
+                  createQuestionBlueprintDraftWorkbookEditorUploadResponseSchema,
+                ),
+              },
+            },
+            description: "Workbook editor output upload initiated.",
+          },
+          "400": responseRef(badRequestResponse),
+          "401": responseRef(unauthorizedResponse),
+          "403": responseRef(forbiddenResponse),
+          "404": responseRef(notFoundResponse),
+          "409": responseRef(conflictResponse),
+          "502": responseRef(upstreamWorkbookResponse),
+        },
+        security: [keycloakSecurityRequirement],
+        summary: "Create workbook editor output upload for a draft source",
+        tags: [tagRef(questionTag)],
+      },
+    },
+  "/question-blueprint-drafts/{draftId}/sources/{sourceId}/workbook-editor-uploads/{uploadId}/completions":
+    {
+      parameters: [
+        paramRef(questionBlueprintDraftParam),
+        paramRef(questionBlueprintDraftSourceParam),
+        paramRef(workbookEditorUploadParam),
+      ],
+      post: {
+        operationId: "completeQuestionBlueprintDraftWorkbookEditorUpload",
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: schemaRef(
+                completeQuestionBlueprintDraftWorkbookEditorUploadRequestSchema,
+              ),
+            },
+          },
+          required: true,
+        },
+        responses: {
+          "201": {
+            content: {
+              "application/json": {
+                schema: schemaRef(
+                  completeQuestionBlueprintDraftWorkbookEditorUploadResponseSchema,
+                ),
+              },
+            },
+            description: "Workbook editor output upload completed.",
+          },
+          "400": responseRef(badRequestResponse),
+          "401": responseRef(unauthorizedResponse),
+          "403": responseRef(forbiddenResponse),
+          "404": responseRef(notFoundResponse),
+          "409": responseRef(conflictResponse),
+          "502": responseRef(upstreamWorkbookResponse),
+        },
+        security: [keycloakSecurityRequirement],
+        summary: "Complete workbook editor output upload for a draft source",
+        tags: [tagRef(questionTag)],
+      },
+    },
   "/question-blueprints": {
     get: {
       operationId: "listQuestionBlueprints",

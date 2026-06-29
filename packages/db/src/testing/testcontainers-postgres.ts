@@ -1,16 +1,16 @@
 import {
-  closeDatabase,
-  createDatabase,
-  type DatabasePort,
-  migrateDatabaseToLatest,
-  sql,
-} from "@lemma/db";
-import type { DB } from "@lemma/db/tables";
-import {
   PostgreSqlContainer,
   type StartedPostgreSqlContainer,
 } from "@testcontainers/postgresql";
 import type { Kysely } from "kysely";
+import {
+  closeDatabase,
+  createDatabase,
+  createDatabaseMigrator,
+  type DatabasePort,
+  sql,
+} from "../index.js";
+import type { DB } from "../types.js";
 
 // Lemma migrations use uuidv7() defaults. Keep this aligned with the repo's
 // dev/runtime image so tests exercise the same database contract.
@@ -24,9 +24,13 @@ export type TestDatabase = {
   stop(): Promise<void>;
 };
 
-export async function startTestDatabase(): Promise<TestDatabase> {
+export async function startTestDatabase(input?: {
+  context?: string;
+  migrateTo?: string;
+}): Promise<TestDatabase> {
   let container: StartedPostgreSqlContainer | null = null;
   let db: Kysely<DB> | null = null;
+  const context = input?.context ?? "persistence integration tests";
 
   try {
     container = await new PostgreSqlContainer(lemmaPostgresImage)
@@ -36,7 +40,7 @@ export async function startTestDatabase(): Promise<TestDatabase> {
       .start();
   } catch (error) {
     throw new Error(
-      "Question persistence integration tests require Docker/Testcontainers. Start Docker and rerun pnpm --filter @lemma/questions test.",
+      `${context} require Docker/Testcontainers. Start Docker and rerun the package test command.`,
       { cause: error },
     );
   }
@@ -45,7 +49,10 @@ export async function startTestDatabase(): Promise<TestDatabase> {
     const connectionString = container.getConnectionUri();
     ({ db } = createDatabase(connectionString, { max: 4 }));
 
-    const migrationResult = await migrateDatabaseToLatest(db);
+    const migrator = createDatabaseMigrator(db);
+    const migrationResult = input?.migrateTo
+      ? await migrator.migrateTo(input.migrateTo)
+      : await migrator.migrateToLatest();
     if (migrationResult.error) {
       throw migrationResult.error;
     }
@@ -74,12 +81,12 @@ export async function startTestDatabase(): Promise<TestDatabase> {
       await cleanupStartedTestDatabase({ container, db });
     } catch (cleanupError) {
       console.error(
-        "Question persistence integration database cleanup also failed after setup failed.",
+        `${context} database cleanup also failed after setup failed.`,
         cleanupError,
       );
     }
     throw new Error(
-      "Question persistence integration database setup failed after the Testcontainers Postgres container started. Check Lemma migrations, the Postgres image, and uuidv7() support.",
+      `${context} database setup failed after the Testcontainers Postgres container started. Check Lemma migrations, the Postgres image, and uuidv7() support.`,
       { cause: error },
     );
   }
@@ -113,9 +120,6 @@ async function truncatePublicTables(db: Kysely<DB>): Promise<void> {
     return;
   }
 
-  // This reset intentionally leaves only Kysely migration metadata. Tests must
-  // seed every domain row they require.
-  //
   // Test-only raw SQL: Kysely does not provide simple schema-wide truncate. The
   // table names come from pg_tables, then identifiers are quoted defensively.
   const identifiers = rows.rows.map(

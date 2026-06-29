@@ -26,15 +26,26 @@ import {
   userId,
   workbookId,
 } from "../domain/index.js";
-import { QuestionBlueprintDraftRevisionConflictError } from "./errors.js";
+import {
+  DraftSourceEditorUploadInvalidError,
+  DraftSourceEditorUploadNotFoundError,
+  DraftSourceEditorUploadStorageError,
+  DraftSourceFileInvalidError,
+  QuestionBlueprintDraftRevisionConflictError,
+} from "./errors.js";
 import type {
   DraftSourceFileMetadata,
   DraftSourceFilePort,
+  DraftSourceUploadMetadata,
   DraftSourceWorkbookMaterialization,
   DraftSourceWorkbookRegistrationPort,
   IdGenerator,
   QuestionBlueprintDraftTransactionPort,
   QuestionsRepository,
+} from "./ports.js";
+import {
+  WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_TYPE,
+  WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_VERSION,
 } from "./ports.js";
 import { QuestionBlueprintDraftService } from "./QuestionBlueprintDraftService.js";
 
@@ -369,6 +380,143 @@ describe("QuestionBlueprintDraftService", () => {
     );
   });
 
+  it("creates an editor-scoped workbook upload after draft source checks", async () => {
+    let received:
+      | Parameters<DraftSourceFilePort["createEditorOutputUpload"]>[0]
+      | undefined;
+    const service = createService({
+      draft: createTargetedDraftWithWorkbook(),
+      onCreateEditorOutputUpload: (input) => {
+        received = input;
+      },
+    });
+
+    const result =
+      await service.createQuestionBlueprintDraftWorkbookEditorUpload({
+        byteSize: 1234,
+        checksumSha256:
+          "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        contentType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        currentUser: currentUser(),
+        draftId,
+        expectedRevision: 1,
+        originalName: "source.xlsx",
+        sourceId: "sourceA",
+      });
+
+    assert.equal(result.upload.id, "019e9315-6a87-715f-9861-8654df099080");
+    assert.deepEqual(received, {
+      byteSize: 1234,
+      checksumSha256:
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      contentType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      currentUser: currentUser(),
+      draftId,
+      draftRevision: 1,
+      originalName: "source.xlsx",
+      sourceArtifactId: testSourceArtifactId,
+      sourceDocumentId: testSourceDocumentId,
+      sourceId: "sourceA",
+      sourceRevisionId: testSourceRevisionId,
+    });
+  });
+
+  it("rejects editor-scoped workbook upload with a stale draft revision", async () => {
+    const service = createService({
+      draft: createTargetedDraftWithWorkbook(),
+    });
+
+    await assert.rejects(
+      () =>
+        service.createQuestionBlueprintDraftWorkbookEditorUpload({
+          byteSize: 1234,
+          checksumSha256:
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          contentType:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 2,
+          originalName: "source.xlsx",
+          sourceId: "sourceA",
+        }),
+      QuestionBlueprintDraftRevisionConflictError,
+    );
+  });
+
+  it("returns a questions-owned error when editor upload creation fails expected validation", async () => {
+    const service = createService({
+      createEditorOutputUploadError: new DraftSourceEditorUploadInvalidError(),
+      draft: createTargetedDraftWithWorkbook(),
+    });
+
+    await assert.rejects(
+      () =>
+        service.createQuestionBlueprintDraftWorkbookEditorUpload({
+          byteSize: 1234,
+          checksumSha256:
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          contentType:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 1,
+          originalName: "source.xlsx",
+          sourceId: "sourceA",
+        }),
+      DraftSourceEditorUploadInvalidError,
+    );
+  });
+
+  it("returns a questions-owned error when editor upload creation has storage failure", async () => {
+    const service = createService({
+      createEditorOutputUploadError: new DraftSourceEditorUploadStorageError(),
+      draft: createTargetedDraftWithWorkbook(),
+    });
+
+    await assert.rejects(
+      () =>
+        service.createQuestionBlueprintDraftWorkbookEditorUpload({
+          byteSize: 1234,
+          checksumSha256:
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          contentType:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 1,
+          originalName: "source.xlsx",
+          sourceId: "sourceA",
+        }),
+      DraftSourceEditorUploadStorageError,
+    );
+  });
+
+  it("rejects editor-scoped workbook upload for a local source without an existing revision", async () => {
+    const service = createService({
+      draft: createTargetedDraftWithLocalSource(),
+    });
+
+    await assert.rejects(
+      () =>
+        service.createQuestionBlueprintDraftWorkbookEditorUpload({
+          byteSize: 1234,
+          checksumSha256:
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          contentType:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 1,
+          originalName: "source.xlsx",
+          sourceId: "sourceA",
+        }),
+      /requires an existing source revision/,
+    );
+  });
+
   it("attaches source files with the expected draft revision", async () => {
     const service = createService({
       draft: createTargetedDraftWithLocalSource(),
@@ -437,6 +585,410 @@ describe("QuestionBlueprintDraftService", () => {
     assert.equal(
       materialization.sourceRevision?.parentRevisionId,
       testSourceRevisionId,
+    );
+  });
+
+  it("saves editor output as a new revision and moves only the draft binding", async () => {
+    const materializations: DraftSourceWorkbookMaterialization[] = [];
+    const originalDraft = createTargetedDraftWithWorkbook();
+    const originalSource = originalDraft.sources[0];
+    const service = createService({
+      draft: originalDraft,
+      fileMetadata: createEditorOutputFileMetadata(),
+      generatedSourceArtifactId: nextSourceArtifactId,
+      generatedSourceRevisionId: nextSourceRevisionId,
+      onMaterialization: (prepared) => {
+        materializations.push(prepared);
+      },
+    });
+
+    const result =
+      await service.saveQuestionBlueprintDraftWorkbookSourceRevision({
+        currentUser: currentUser(),
+        draftId,
+        expectedRevision: 1,
+        editorOutputFileId: "019e9315-6a87-715f-9861-8654df099006",
+        lineage: testLineage(),
+        sourceId: "sourceA",
+      });
+
+    const materialization = materializations[0];
+    assert.ok(materialization);
+    assert.equal(materialization.sourceDocument, null);
+    assert.equal(materialization.sourceDocumentId, testSourceDocumentId);
+    assert.equal(materialization.sourceRevision.id, nextSourceRevisionId);
+    assert.equal(
+      materialization.sourceRevision.parentRevisionId,
+      testSourceRevisionId,
+    );
+    assert.deepEqual(materialization.sourceRevision.editorMetadata, {
+      origin: "workbook_editor",
+    });
+    assert.equal(materialization.sourceArtifact.id, nextSourceArtifactId);
+    assert.equal(result.sourceRevision.id, nextSourceRevisionId);
+    assert.equal(result.sourceArtifact.id, nextSourceArtifactId);
+    assert.equal(
+      result.draft.sources[0]?.sourceRevisionId,
+      nextSourceRevisionId,
+    );
+    assert.equal(
+      result.draft.sources[0]?.sourceArtifactId,
+      nextSourceArtifactId,
+    );
+    assert.equal(originalSource?.sourceRevisionId, testSourceRevisionId);
+    assert.equal(originalSource?.sourceArtifactId, testSourceArtifactId);
+  });
+
+  it("rejects editor output for a source without an existing revision", async () => {
+    const service = createService({
+      draft: createTargetedDraftWithLocalSource(),
+      fileMetadata: createFileMetadata(),
+    });
+
+    await assert.rejects(
+      () =>
+        service.saveQuestionBlueprintDraftWorkbookSourceRevision({
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 1,
+          editorOutputFileId: "019e9315-6a87-715f-9861-8654df099006",
+          lineage: testLineage(),
+          sourceId: "sourceA",
+        }),
+      /requires an existing source revision/,
+    );
+  });
+
+  it("rejects a normal workbook upload as workbook editor output", async () => {
+    const service = createService({
+      draft: createTargetedDraftWithWorkbook(),
+      fileMetadata: createFileMetadata({ purpose: "workbook" }),
+    });
+
+    await assert.rejects(
+      () =>
+        service.saveQuestionBlueprintDraftWorkbookSourceRevision({
+          currentUser: currentUser(),
+          draftId,
+          editorOutputFileId: "019e9315-6a87-715f-9861-8654df099006",
+          expectedRevision: 1,
+          lineage: testLineage(),
+          sourceId: "sourceA",
+        }),
+      /Workbook editor output file is invalid/,
+    );
+  });
+
+  it("rejects workbook editor output as a normal source attachment", async () => {
+    const service = createService({
+      draft: createTargetedDraftWithLocalSource(),
+      fileMetadata: createEditorOutputFileMetadata(),
+    });
+
+    await assert.rejects(
+      () =>
+        service.attachQuestionBlueprintDraftSourceFile({
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 1,
+          fileId: "019e9315-6a87-715f-9861-8654df099006",
+          lineage: testLineage(),
+          sourceId: "sourceA",
+        }),
+      /Draft source file must be an xlsx workbook/,
+    );
+  });
+
+  it("rejects editor output scoped to another draft source", async () => {
+    const service = createService({
+      draft: createTargetedDraftWithWorkbook(),
+      fileMetadata: createEditorOutputFileMetadata({
+        metadata: {
+          ...editorOutputFileMetadata(),
+          sourceId: "otherSource",
+        },
+      }),
+    });
+
+    await assert.rejects(
+      () =>
+        service.saveQuestionBlueprintDraftWorkbookSourceRevision({
+          currentUser: currentUser(),
+          draftId,
+          editorOutputFileId: "019e9315-6a87-715f-9861-8654df099006",
+          expectedRevision: 1,
+          lineage: testLineage(),
+          sourceId: "sourceA",
+        }),
+      DraftSourceEditorUploadInvalidError,
+    );
+  });
+
+  for (const [name, metadata, expectedError] of [
+    [
+      "missing metadata type",
+      (() => {
+        const { type: _type, ...rest } = editorOutputFileMetadata();
+        return rest;
+      })(),
+      DraftSourceEditorUploadInvalidError,
+    ],
+    [
+      "wrong metadata type",
+      { ...editorOutputFileMetadata(), type: "other" },
+      DraftSourceEditorUploadInvalidError,
+    ],
+    [
+      "wrong metadata version",
+      { ...editorOutputFileMetadata(), version: 2 },
+      DraftSourceEditorUploadInvalidError,
+    ],
+    [
+      "wrong metadata owner",
+      {
+        ...editorOutputFileMetadata(),
+        ownerUserId: "019e9315-6a87-715f-9861-8654df099099",
+      },
+      DraftSourceEditorUploadInvalidError,
+    ],
+    [
+      "wrong metadata draft",
+      {
+        ...editorOutputFileMetadata(),
+        draftId: "019e9315-6a87-715f-9861-8654df099099",
+      },
+      DraftSourceEditorUploadInvalidError,
+    ],
+    [
+      "wrong metadata source",
+      { ...editorOutputFileMetadata(), sourceId: "otherSource" },
+      DraftSourceEditorUploadInvalidError,
+    ],
+    [
+      "wrong metadata draft revision",
+      { ...editorOutputFileMetadata(), draftRevision: 2 },
+      /workbook editor output is stale/,
+    ],
+    [
+      "wrong metadata source document",
+      {
+        ...editorOutputFileMetadata(),
+        sourceDocumentId: "019e9315-6a87-715f-9861-8654df099099",
+      },
+      /workbook editor output is stale/,
+    ],
+    [
+      "wrong metadata source artifact",
+      {
+        ...editorOutputFileMetadata(),
+        sourceArtifactId: "019e9315-6a87-715f-9861-8654df099099",
+      },
+      /workbook editor output is stale/,
+    ],
+  ] as const) {
+    it(`rejects editor output with ${name}`, async () => {
+      const materializations: DraftSourceWorkbookMaterialization[] = [];
+      const service = createService({
+        draft: createTargetedDraftWithWorkbook(),
+        fileMetadata: createEditorOutputFileMetadata({ metadata }),
+        onMaterialization: (materialization) => {
+          materializations.push(materialization);
+        },
+      });
+
+      await assert.rejects(
+        () =>
+          service.saveQuestionBlueprintDraftWorkbookSourceRevision({
+            currentUser: currentUser(),
+            draftId,
+            editorOutputFileId: "019e9315-6a87-715f-9861-8654df099006",
+            expectedRevision: 1,
+            lineage: testLineage(),
+            sourceId: "sourceA",
+          }),
+        expectedError,
+      );
+
+      assert.deepEqual(materializations, []);
+    });
+  }
+
+  it("rejects stale editor output created for an older source revision without persisting a new revision", async () => {
+    const staleSourceRevisionId = sourceRevisionId(
+      "019e9315-6a87-715f-9861-8654df099081",
+    );
+    const sourceRevisionIds: string[] = [];
+    const sourceArtifactIds: string[] = [];
+    const service = createService({
+      draft: createTargetedDraftWithWorkbook(),
+      fileMetadata: createEditorOutputFileMetadata({
+        metadata: {
+          ...editorOutputFileMetadata(),
+          sourceRevisionId: staleSourceRevisionId,
+        },
+      }),
+      onMaterialization: (materialization) => {
+        sourceRevisionIds.push(materialization.sourceRevisionId);
+        sourceArtifactIds.push(materialization.sourceArtifactId);
+      },
+    });
+
+    await assert.rejects(
+      () =>
+        service.saveQuestionBlueprintDraftWorkbookSourceRevision({
+          currentUser: currentUser(),
+          draftId,
+          editorOutputFileId: "019e9315-6a87-715f-9861-8654df099006",
+          expectedRevision: 1,
+          lineage: testLineage(),
+          sourceId: "sourceA",
+        }),
+      /workbook editor output is stale/,
+    );
+
+    assert.deepEqual(sourceRevisionIds, []);
+    assert.deepEqual(sourceArtifactIds, []);
+    const readback = await service.getQuestionBlueprintDraft({
+      currentUser: currentUser(),
+      draftId,
+    });
+    assert.equal(
+      readback.draft.sources[0]?.sourceRevisionId,
+      testSourceRevisionId,
+    );
+    assert.equal(
+      readback.draft.sources[0]?.sourceArtifactId,
+      testSourceArtifactId,
+    );
+  });
+
+  it("completes an editor-scoped upload only when metadata matches the current source state", async () => {
+    const service = createService({
+      draft: createTargetedDraftWithWorkbook(),
+      fileMetadata: createEditorOutputFileMetadata(),
+      uploadMetadata: createEditorOutputUploadMetadata(),
+    });
+
+    const result =
+      await service.completeQuestionBlueprintDraftWorkbookEditorUpload({
+        currentUser: currentUser(),
+        draftId,
+        expectedRevision: 1,
+        sourceId: "sourceA",
+        uploadId: "019e9315-6a87-715f-9861-8654df099080",
+      });
+
+    assert.equal(
+      result.editorOutputFile.id,
+      "019e9315-6a87-715f-9861-8654df099006",
+    );
+  });
+
+  it("rejects editor-scoped upload completion when metadata has the wrong source revision", async () => {
+    const service = createService({
+      draft: createTargetedDraftWithWorkbook(),
+      uploadMetadata: createEditorOutputUploadMetadata({
+        metadata: {
+          ...editorOutputFileMetadata(),
+          sourceRevisionId: sourceRevisionId(
+            "019e9315-6a87-715f-9861-8654df099081",
+          ),
+        },
+      }),
+    });
+
+    await assert.rejects(
+      () =>
+        service.completeQuestionBlueprintDraftWorkbookEditorUpload({
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 1,
+          sourceId: "sourceA",
+          uploadId: "019e9315-6a87-715f-9861-8654df099080",
+        }),
+      /workbook editor output is stale/,
+    );
+  });
+
+  it("returns a questions-owned error when editor upload metadata is not found", async () => {
+    const service = createService({
+      draft: createTargetedDraftWithWorkbook(),
+      getUploadMetadataError: new DraftSourceEditorUploadNotFoundError(),
+    });
+
+    await assert.rejects(
+      () =>
+        service.completeQuestionBlueprintDraftWorkbookEditorUpload({
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 1,
+          sourceId: "sourceA",
+          uploadId: "019e9315-6a87-715f-9861-8654df099080",
+        }),
+      DraftSourceEditorUploadNotFoundError,
+    );
+  });
+
+  it("returns a questions-owned error when editor upload completion fails expected validation", async () => {
+    const service = createService({
+      completeEditorOutputUploadError:
+        new DraftSourceEditorUploadInvalidError(),
+      draft: createTargetedDraftWithWorkbook(),
+      uploadMetadata: createEditorOutputUploadMetadata(),
+    });
+
+    await assert.rejects(
+      () =>
+        service.completeQuestionBlueprintDraftWorkbookEditorUpload({
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 1,
+          sourceId: "sourceA",
+          uploadId: "019e9315-6a87-715f-9861-8654df099080",
+        }),
+      DraftSourceEditorUploadInvalidError,
+    );
+  });
+
+  it("does not normalize unexpected editor upload completion errors", async () => {
+    const unexpected = new Error("programmer error");
+    const service = createService({
+      completeEditorOutputUploadError: unexpected,
+      draft: createTargetedDraftWithWorkbook(),
+      uploadMetadata: createEditorOutputUploadMetadata(),
+    });
+
+    await assert.rejects(
+      () =>
+        service.completeQuestionBlueprintDraftWorkbookEditorUpload({
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 1,
+          sourceId: "sourceA",
+          uploadId: "019e9315-6a87-715f-9861-8654df099080",
+        }),
+      (error: unknown) => error === unexpected,
+    );
+  });
+
+  it("does not normalize unexpected file metadata errors", async () => {
+    const unexpected = new Error("programmer error");
+    const service = createService({
+      draft: createTargetedDraftWithLocalSource(),
+      fileMetadataError: unexpected,
+    });
+
+    await assert.rejects(
+      () =>
+        service.attachQuestionBlueprintDraftSourceFile({
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 1,
+          fileId: "019e9315-6a87-715f-9861-8654df099006",
+          lineage: testLineage(),
+          sourceId: "sourceA",
+        }),
+      (error: unknown) => error === unexpected,
     );
   });
 
@@ -626,6 +1178,89 @@ describe("QuestionBlueprintDraftService", () => {
           sourceId: "sourceA",
         }),
       /Draft source file must be an xlsx workbook/,
+    );
+  });
+
+  it("maps unavailable source file metadata lookup to draft source invalid", async () => {
+    const service = createService({
+      draft: createTargetedDraftWithLocalSource(),
+    });
+
+    await assert.rejects(
+      () =>
+        service.attachQuestionBlueprintDraftSourceFile({
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 1,
+          fileId: "019e9315-6a87-715f-9861-8654df099006",
+          lineage: testLineage(),
+          sourceId: "sourceA",
+        }),
+      /Draft source file is unavailable/,
+    );
+  });
+
+  it("rethrows unexpected source file metadata lookup errors", async () => {
+    const unexpected = new Error("database unavailable");
+    const service = createService({
+      draft: createTargetedDraftWithLocalSource(),
+      fileMetadataUnexpectedError: unexpected,
+    });
+
+    await assert.rejects(
+      () =>
+        service.attachQuestionBlueprintDraftSourceFile({
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 1,
+          fileId: "019e9315-6a87-715f-9861-8654df099006",
+          lineage: testLineage(),
+          sourceId: "sourceA",
+        }),
+      unexpected,
+    );
+  });
+
+  it("rejects source files that become unavailable under the file guard lock", async () => {
+    const service = createService({
+      draft: createTargetedDraftWithLocalSource(),
+      fileMetadata: createFileMetadata(),
+      fileReferenceUnavailable: true,
+    });
+
+    await assert.rejects(
+      () =>
+        service.attachQuestionBlueprintDraftSourceFile({
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 1,
+          fileId: "019e9315-6a87-715f-9861-8654df099006",
+          lineage: testLineage(),
+          sourceId: "sourceA",
+        }),
+      /Draft source file is unavailable/,
+    );
+  });
+
+  it("rethrows unexpected file guard errors", async () => {
+    const unexpected = new Error("database unavailable");
+    const service = createService({
+      draft: createTargetedDraftWithLocalSource(),
+      fileMetadata: createFileMetadata(),
+      fileReferenceUnexpectedError: unexpected,
+    });
+
+    await assert.rejects(
+      () =>
+        service.attachQuestionBlueprintDraftSourceFile({
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 1,
+          fileId: "019e9315-6a87-715f-9861-8654df099006",
+          lineage: testLineage(),
+          sourceId: "sourceA",
+        }),
+      unexpected,
     );
   });
 
@@ -892,13 +1527,24 @@ function createService(
     activeDraft?: QuestionBlueprintDraft | null;
     activeDraftAfterCreateRace?: QuestionBlueprintDraft;
     attachRaceBeforeMaterialization?: boolean;
+    createEditorOutputUploadError?: Error;
     draft?: QuestionBlueprintDraft | null;
+    completeEditorOutputUploadError?: Error;
+    fileMetadataError?: Error;
     fileMetadata?: DraftSourceFileMetadata;
+    fileMetadataUnexpectedError?: Error;
+    fileReferenceUnavailable?: boolean;
+    fileReferenceUnexpectedError?: Error;
+    getUploadMetadataError?: Error;
+    uploadMetadata?: DraftSourceUploadMetadata;
     generatedSourceArtifactId?: typeof testSourceArtifactId;
     generatedSourceRevisionId?: typeof testSourceRevisionId;
     onListQuestionBlueprintDrafts?: (input: {
       statuses?: readonly QuestionBlueprintDraftStatus[];
     }) => void;
+    onCreateEditorOutputUpload?: (
+      input: Parameters<DraftSourceFilePort["createEditorOutputUpload"]>[0],
+    ) => void;
     onMaterialization?: (input: DraftSourceWorkbookMaterialization) => void;
     onPublish?: (input: unknown) => void;
     onRegisterWorkbook?: (input: unknown) => void;
@@ -1014,12 +1660,14 @@ function createService(
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         createdAt: at,
         createdByUserId: ownerUserId,
+        deletedAt: null,
         editorMetadata: {},
         fileId: "019e9315-6a87-715f-9861-8654df099006",
         id,
         kind: "workbook" as const,
         ownerUserId,
         parentRevisionId: null,
+        retentionExpiresAt: null,
         sourceDocumentId:
           options.previousRevisionSourceDocumentId ?? testSourceDocumentId,
       };
@@ -1062,6 +1710,7 @@ function createService(
           kind: "workbook" as const,
           name: "Source A",
           ownerUserId,
+          retentionExpiresAt: null,
           status: "active" as const,
           updatedAt: at,
         }
@@ -1130,7 +1779,21 @@ function createService(
           },
         };
         return fn({
+          fileReferenceGuard: {
+            async assertFileAliasReferenceableForUpdate() {
+              if (options.fileReferenceUnexpectedError) {
+                throw options.fileReferenceUnexpectedError;
+              }
+              if (options.fileReferenceUnavailable) {
+                throw new DraftSourceFileInvalidError(
+                  "Draft source file is unavailable.",
+                );
+              }
+            },
+          },
           questionsRepository:
+            // This focused transaction fake implements only methods exercised
+            // by the draft-source attach workflow under test.
             transactionQuestionsRepository as unknown as QuestionsRepository,
           workbookRegistrationPort,
         });
@@ -1140,11 +1803,50 @@ function createService(
   return new QuestionBlueprintDraftService({
     clock: { now: () => at },
     draftSourceFilePort: {
+      async createEditorOutputUpload(input) {
+        options.onCreateEditorOutputUpload?.(input);
+        if (options.createEditorOutputUploadError) {
+          throw options.createEditorOutputUploadError;
+        }
+        return createEditorOutputUploadResult();
+      },
+      async completeEditorOutputUpload() {
+        if (options.completeEditorOutputUploadError) {
+          throw options.completeEditorOutputUploadError;
+        }
+        const file = options.fileMetadata ?? createEditorOutputFileMetadata();
+        return {
+          file: {
+            byteSize: file.byteSize,
+            checksumSha256: file.checksumSha256,
+            contentType: file.contentType,
+            id: file.fileId,
+            metadata: file.metadata,
+            originalName: file.originalName,
+            ownerUserId: file.ownerUserId,
+            purpose: file.purpose,
+          },
+        };
+      },
       async getFileMetadata() {
-        if (!options.fileMetadata) throw new Error("file missing");
+        if (options.fileMetadataUnexpectedError) {
+          throw options.fileMetadataUnexpectedError;
+        }
+        if (options.fileMetadataError) throw options.fileMetadataError;
+        if (!options.fileMetadata) {
+          throw new DraftSourceFileInvalidError(
+            "Draft source file is unavailable.",
+          );
+        }
         return options.fileMetadata;
       },
-    } as DraftSourceFilePort,
+      async getUploadMetadata() {
+        if (options.getUploadMetadataError) {
+          throw options.getUploadMetadataError;
+        }
+        return options.uploadMetadata ?? createEditorOutputUploadMetadata();
+      },
+    } satisfies DraftSourceFilePort,
     idGenerator: {
       questionBlueprintDraftId: () => draftId,
       questionBlueprintId: () => blueprintId,
@@ -1156,6 +1858,8 @@ function createService(
         options.generatedSourceRevisionId ?? testSourceRevisionId,
     } as IdGenerator,
     questionBlueprintDraftTransaction,
+    // This focused repository fake implements only methods exercised by these
+    // application service tests.
     questionsRepository: questionsRepository as unknown as QuestionsRepository,
   });
 }
@@ -1372,10 +2076,77 @@ function createFileMetadata(
     contentType:
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     fileId: "019e9315-6a87-715f-9861-8654df099006",
+    metadata: {},
     originalName: "source.xlsx",
     ownerUserId,
     purpose: "workbook",
     ...patch,
+  };
+}
+
+function createEditorOutputFileMetadata(
+  patch: Partial<DraftSourceFileMetadata> = {},
+): DraftSourceFileMetadata {
+  return createFileMetadata({
+    metadata: editorOutputFileMetadata(),
+    purpose: "workbook_editor_output",
+    ...patch,
+  });
+}
+
+function createEditorOutputUploadMetadata(
+  patch: Partial<DraftSourceUploadMetadata> = {},
+): DraftSourceUploadMetadata {
+  return {
+    metadata: editorOutputFileMetadata(),
+    ownerUserId,
+    purpose: "workbook_editor_output",
+    uploadId: "019e9315-6a87-715f-9861-8654df099080",
+    ...patch,
+  };
+}
+
+function editorOutputFileMetadata() {
+  return {
+    draftId,
+    draftRevision: 1,
+    ownerUserId,
+    sourceArtifactId: testSourceArtifactId,
+    sourceDocumentId: testSourceDocumentId,
+    sourceId: "sourceA",
+    sourceRevisionId: testSourceRevisionId,
+    type: WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_TYPE,
+    version: WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_VERSION,
+  };
+}
+
+function createEditorOutputUploadResult() {
+  return {
+    upload: {
+      checksumSha256:
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      completedAt: null,
+      contentType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      createdAt: at,
+      createdByUserId: ownerUserId,
+      expectedByteSize: 1234,
+      id: "019e9315-6a87-715f-9861-8654df099080",
+      originalName: "source.xlsx",
+      purpose: "workbook_editor_output",
+      status: "initiated" as const,
+      updatedAt: at,
+      uploadExpiresAt: at,
+    },
+    uploadUrl: {
+      expiresInSeconds: 900,
+      headers: {
+        "Content-Type":
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      },
+      method: "PUT" as const,
+      url: "https://storage.example/upload",
+    },
   };
 }
 
@@ -1408,12 +2179,14 @@ function revisionFixture() {
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     createdAt: at,
     createdByUserId: ownerUserId,
+    deletedAt: null,
     editorMetadata: {},
     fileId: "019e9315-6a87-715f-9861-8654df099006",
     id: testSourceRevisionId,
     kind: "workbook" as const,
     ownerUserId,
     parentRevisionId: null,
+    retentionExpiresAt: null,
     sourceDocumentId: testSourceDocumentId,
   };
 }
@@ -1455,6 +2228,8 @@ function currentUser(): CurrentUser {
     isAdmin: false,
     roles: [],
     user: { id: ownerUserId },
+    // CurrentUser has additional auth-derived fields irrelevant to these
+    // application tests.
   } as unknown as CurrentUser;
 }
 

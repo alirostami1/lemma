@@ -2,6 +2,11 @@ import type { DatabasePort } from "@lemma/db";
 import { createFilesModule } from "@lemma/files/module";
 import { createNotificationsModule } from "@lemma/notifications/module";
 import { createOpsModule } from "@lemma/ops/module";
+import {
+  DraftSourceFileInvalidError,
+  WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_TYPE,
+  WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_VERSION,
+} from "@lemma/questions/application";
 import { workbookId as toQuestionWorkbookId } from "@lemma/questions/domain";
 import { KyselyQuestionsRepository } from "@lemma/questions/infrastructure";
 import { createQuestionsModule } from "@lemma/questions/module";
@@ -11,6 +16,8 @@ import { Hono } from "hono";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { createClock } from "./composition/clock.js";
+import { isExpectedDraftSourceFileUnavailableError } from "./composition/draft-source-file-error-mapping.js";
+import { mapDraftSourceFilePortError } from "./composition/draft-source-file-port-errors.js";
 import { createIdGenerators } from "./composition/id-generators.js";
 import { createIdentityAuth } from "./composition/identity-auth.js";
 import { createRealtimeChannelAccess } from "./composition/realtime-channel-access.js";
@@ -41,7 +48,7 @@ export function newApp({ database, config = defaultConfig }: NewAppDeps) {
   });
 
   const filesModule = createFilesModule({
-    db: database.executor,
+    db: database,
     requireIdentity,
     idGenerator: idGenerators.files,
     clock,
@@ -54,12 +61,14 @@ export function newApp({ database, config = defaultConfig }: NewAppDeps) {
   });
 
   const workbookModule = createWorkbookModule({
-    db: database,
-    requireIdentity,
-    fileProvider: createWorkbookFileProvider(filesModule.fileContentReaderPort),
-    workbookConfig: config.workbook,
-    idGenerator: idGenerators.workbook,
     clock,
+    createFileReferenceGuardForTransaction:
+      filesModule.createFileReferenceGuardForTransaction,
+    db: database,
+    fileProvider: createWorkbookFileProvider(filesModule.fileContentReaderPort),
+    idGenerator: idGenerators.workbook,
+    requireIdentity,
+    workbookConfig: config.workbook,
   });
 
   const questionsModule = createQuestionsModule({
@@ -69,20 +78,106 @@ export function newApp({ database, config = defaultConfig }: NewAppDeps) {
     clock,
     workbookAccessPort: workbookModule.workbookAccessPort,
     draftSourceFilePort: {
+      createEditorOutputUpload: async ({
+        byteSize,
+        checksumSha256,
+        contentType,
+        currentUser,
+        draftId,
+        draftRevision,
+        originalName,
+        sourceArtifactId,
+        sourceDocumentId,
+        sourceId,
+        sourceRevisionId,
+      }) => {
+        try {
+          return await filesModule.filesService.createInternalFileUpload({
+            byteSize,
+            checksumSha256,
+            contentType,
+            currentUser,
+            metadata: {
+              draftId,
+              draftRevision,
+              ownerUserId: currentUser.user.id,
+              sourceArtifactId,
+              sourceDocumentId,
+              sourceId,
+              sourceRevisionId,
+              type: WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_TYPE,
+              version: WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_VERSION,
+            },
+            originalName,
+            purpose: "workbook_editor_output",
+          });
+        } catch (error) {
+          throw mapDraftSourceFilePortError(error, "editorUploadCreation");
+        }
+      },
+      completeEditorOutputUpload: async ({ currentUser, uploadId }) => {
+        try {
+          const { file } =
+            await filesModule.filesService.completeInternalFileUpload({
+              currentUser,
+              purpose: "workbook_editor_output",
+              uploadId,
+            });
+          return {
+            file: {
+              byteSize: file.byteSize,
+              checksumSha256: file.checksumSha256,
+              contentType: file.contentType,
+              id: file.id,
+              metadata: file.metadata,
+              originalName: file.originalName,
+              ownerUserId: file.ownerUserId,
+              purpose: file.purpose,
+            },
+          };
+        } catch (error) {
+          throw mapDraftSourceFilePortError(error, "editorUploadCompletion");
+        }
+      },
       getFileMetadata: async ({ currentUser, fileId }) => {
-        const { file } = await filesModule.filesService.getFile({
-          currentUser,
-          fileId,
-        });
-        return {
-          fileId: file.id,
-          ownerUserId: file.ownerUserId,
-          originalName: file.originalName,
-          contentType: file.contentType,
-          byteSize: file.byteSize,
-          checksumSha256: file.checksumSha256,
-          purpose: file.purpose,
-        };
+        try {
+          const { file } =
+            await filesModule.filesService.getInternalFileForOwnerUserId({
+              allowedPurposes: ["workbook", "workbook_editor_output"],
+              ownerUserId: currentUser.user.id,
+              fileId,
+            });
+          return {
+            fileId: file.id,
+            ownerUserId: file.ownerUserId,
+            originalName: file.originalName,
+            contentType: file.contentType,
+            byteSize: file.byteSize,
+            checksumSha256: file.checksumSha256,
+            metadata: file.metadata,
+            purpose: file.purpose,
+          };
+        } catch (error) {
+          throw mapDraftSourceFilePortError(error, "editorFileLookup");
+        }
+      },
+      getUploadMetadata: async ({ currentUser, uploadId }) => {
+        try {
+          const { upload } =
+            await filesModule.filesService.getFileUploadForOwnerUserId({
+              ownerUserId: currentUser.user.id,
+              purpose: "workbook_editor_output",
+              uploadId,
+            });
+          return {
+            metadata: upload.metadata,
+            ownerUserId: upload.createdByUserId,
+            purpose: upload.purpose,
+            uploadId: upload.id,
+          };
+        } catch (error) {
+          throw mapDraftSourceFilePortError(error, "editorUploadLookup");
+        }
       },
     },
     questionBlueprintDraftTransaction: {
@@ -92,7 +187,25 @@ export function newApp({ database, config = defaultConfig }: NewAppDeps) {
             workbookModule.createDraftSourceWorkbookRegistrationPortForTransaction(
               tx,
             );
+          const fileReferenceGuard =
+            filesModule.createFileReferenceGuardForTransaction(tx);
           return fn({
+            fileReferenceGuard: {
+              async assertFileAliasReferenceableForUpdate(fileId) {
+                try {
+                  await fileReferenceGuard.assertFileAliasReferenceableForUpdate(
+                    fileId,
+                  );
+                } catch (error) {
+                  if (isExpectedDraftSourceFileUnavailableError(error)) {
+                    throw new DraftSourceFileInvalidError(
+                      "Draft source file is unavailable.",
+                    );
+                  }
+                  throw error;
+                }
+              },
+            },
             questionsRepository: new KyselyQuestionsRepository(tx),
             workbookRegistrationPort: {
               async registerWorkbookFromFile(input) {

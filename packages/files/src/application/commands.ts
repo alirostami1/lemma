@@ -18,6 +18,16 @@ export type CreateFileUploadCommand = {
   purpose: string;
 };
 
+export type CreateInternalFileUploadCommand = {
+  currentUser: CurrentUser;
+  originalName: string;
+  contentType: string;
+  byteSize: number;
+  checksumSha256: string;
+  purpose: "workbook_editor_output";
+  metadata: Record<string, unknown>;
+};
+
 export type GetFileCommand = {
   currentUser: CurrentUser;
   fileId: string;
@@ -33,13 +43,16 @@ export type UpdateFileCommand = {
   fileId: string;
   patch: {
     originalName?: string;
-    purpose?: string;
   };
 };
 
 export type CompleteFileUploadCommand = {
   currentUser: CurrentUser;
   uploadId: string;
+};
+
+export type CompleteInternalFileUploadCommand = CompleteFileUploadCommand & {
+  purpose: "workbook_editor_output";
 };
 
 export type DeleteFileCommand = {
@@ -52,7 +65,8 @@ export type CreateDownloadUrlCommand = {
   fileId: string;
 };
 
-export type HandleFileDeletionCommand = {
+export type CollectDeletedFileContentCommand = {
+  claimToken: string;
   fileId: string;
 };
 

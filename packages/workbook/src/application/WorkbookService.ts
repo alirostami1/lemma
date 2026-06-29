@@ -1,9 +1,11 @@
+import { FileAliasUnavailableError } from "@lemma/files/application";
 import { instrumentService } from "@lemma/observability";
 import {
   assertWorkbookFileMetadata,
   deleteWorkbook as deleteWorkbookDomain,
   markWorkbookInvalid,
   markWorkbookValid,
+  promoteWorkbookToStandalone,
   requestWorkbookValidation,
   fileId as toFileId,
   workbookId as toWorkbookId,
@@ -23,6 +25,7 @@ import { createWorkbookForFile } from "./createWorkbookForFile.js";
 import type { WorkbookResult, WorkbooksResult } from "./dto.js";
 import {
   ForbiddenWorkbookActionError,
+  WorkbookFileUnavailableError,
   WorkbookNotFoundError,
 } from "./errors.js";
 import {
@@ -109,16 +112,6 @@ export class WorkbookService {
         },
       );
       assertWorkbookFileMetadata(file);
-      const existing =
-        await this.deps.workbookRepository.findWorkbookByOwnerUserIdAndFileId?.(
-          {
-            fileId: file.fileId,
-            ownerUserId: command.currentUser.user.id,
-          },
-        );
-      if (existing) {
-        return { workbook: existing };
-      }
       const workbook = createWorkbookForFile({
         at: this.deps.clock.now(),
         byteSize: file.byteSize,
@@ -133,7 +126,48 @@ export class WorkbookService {
         ownerUserId: command.currentUser.user.id,
       });
       const created = await this.deps.workbookTransaction.transaction(
-        async ({ workbookRepository, outboxRepository }) => {
+        async ({
+          fileReferenceGuard,
+          workbookRepository,
+          outboxRepository,
+        }) => {
+          try {
+            await fileReferenceGuard.assertFileAliasReferenceableForUpdate(
+              file.fileId,
+            );
+          } catch (error) {
+            if (error instanceof FileAliasUnavailableError) {
+              throw new WorkbookFileUnavailableError();
+            }
+            throw error;
+          }
+          const existing =
+            await workbookRepository.findWorkbookByOwnerUserIdAndFileIdForUpdate(
+              {
+                fileId: file.fileId,
+                ownerUserId: command.currentUser.user.id,
+              },
+            );
+          if (existing?.status === "deleted") {
+            throw new WorkbookFileUnavailableError(
+              "workbook file is unavailable because its existing workbook is deleted",
+            );
+          }
+          if (existing?.origin === "standalone") {
+            return existing;
+          }
+          if (existing?.origin === "source_artifact") {
+            const promoted =
+              await workbookRepository.promoteWorkbookToStandalone(
+                promoteWorkbookToStandalone(existing, this.deps.clock.now()),
+              );
+            if (!promoted) {
+              throw new WorkbookFileUnavailableError(
+                "workbook could not be promoted to standalone",
+              );
+            }
+            return promoted;
+          }
           const persisted = await workbookRepository.createWorkbook(workbook);
           await outboxRepository.appendEvents([
             workbookValidationRequestedEvent({

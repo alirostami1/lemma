@@ -1,16 +1,13 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
 import { InspectorPanel } from "./inspector-panel";
 
 describe("InspectorPanel", () => {
   afterEach(() => cleanup());
 
-  it("renders tabs and opens the reference picker from the References tab", async () => {
-    const user = userEvent.setup();
-    const onSelectionChange = vi.fn();
+  it("does not render persistent reference management", () => {
     const model: ComposedEditorModel = {
       blocks: [
         {
@@ -33,7 +30,7 @@ describe("InspectorPanel", () => {
       <InspectorPanel
         model={model}
         onModelChange={() => {}}
-        onSelectionChange={onSelectionChange}
+        onSelectionChange={() => {}}
         referencePreviewCache={{}}
         selection={{ type: "document" }}
         sources={[]}
@@ -42,16 +39,12 @@ describe("InspectorPanel", () => {
       />,
     );
 
-    expect(screen.getByRole("tab", { name: "References" })).toBeTruthy();
-    expect(screen.getByRole("tab", { name: "Element" })).toBeTruthy();
-
-    await user.click(screen.getByRole("tab", { name: "References" }));
-
-    await user.click(screen.getByRole("button", { name: /reference_1/ }));
-    expect(screen.getByText("Selected reference")).toBeTruthy();
-
-    await user.click(screen.getByRole("button", { name: "Add reference" }));
-    expect(screen.getByLabelText("Reference id")).toBeTruthy();
+    expect(screen.queryByRole("tab", { name: "References" })).toBeNull();
+    expect(screen.queryByText("Selected reference")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Add reference" })).toBeNull();
+    expect(
+      screen.getByRole("complementary", { name: "Element settings" }),
+    ).toBeTruthy();
   });
 
   it("shows contextual element settings without block action duplicates", () => {
@@ -111,7 +104,7 @@ describe("InspectorPanel", () => {
     );
 
     const panel = screen.getByRole("complementary", {
-      name: "Element and reference settings",
+      name: "Element settings",
     });
 
     expect(panel.style.getPropertyValue("--inspector-sticky-offset")).toBe(

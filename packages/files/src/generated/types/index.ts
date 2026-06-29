@@ -36,5 +36,4 @@ export * from "./listFilesStatus.js";
 export * from "./notFoundResponse.js";
 export * from "./unauthorizedResponse.js";
 export * from "./updateFileRequest.js";
-export * from "./updateFileRequestPurpose.js";
 export * from "./upstreamStorageResponse.js";

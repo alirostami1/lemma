@@ -57,6 +57,15 @@ export class KyselyWorkbookRepository implements WorkbookRepository {
     );
   }
 
+  findWorkbookByOwnerUserIdAndFileIdForUpdate(input: {
+    ownerUserId: UserId;
+    fileId: FileId;
+  }): Promise<Workbook | null> {
+    return this.withRepositoryError(() =>
+      this.catalog.findWorkbookByOwnerUserIdAndFileIdForUpdate(input),
+    );
+  }
+
   createWorkbook(workbook: Workbook): Promise<Workbook> {
     return this.withRepositoryError(() =>
       this.catalog.createWorkbook(workbook),
@@ -69,6 +78,12 @@ export class KyselyWorkbookRepository implements WorkbookRepository {
   }> {
     return this.withRepositoryError(() =>
       this.catalog.createWorkbookIfAbsentByOwnerAndFile(input),
+    );
+  }
+
+  promoteWorkbookToStandalone(workbook: Workbook): Promise<Workbook | null> {
+    return this.withRepositoryError(() =>
+      this.catalog.promoteWorkbookToStandalone(workbook),
     );
   }
 

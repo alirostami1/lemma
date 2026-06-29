@@ -11,6 +11,8 @@ import type {
 import type { QuestionsHandlerMap } from "../generated/hono/index.js";
 import { handleQuestionsError } from "./errors.js";
 import {
+  presentCompletedQuestionBlueprintDraftWorkbookEditorUpload,
+  presentCreatedQuestionBlueprintDraftWorkbookEditorUpload,
   presentGrade,
   presentPublishedQuestionBlueprintDraft,
   presentQuestion,
@@ -25,6 +27,7 @@ import {
   presentQuestionSet,
   presentQuestionSets,
   presentQuestions,
+  presentSavedQuestionBlueprintDraftWorkbookSourceRevision,
 } from "./presenters.js";
 
 export type QuestionsHandlersDeps = {
@@ -62,6 +65,41 @@ export function createQuestionsHandlers(
             ),
           ),
           200,
+        ),
+    ),
+    createQuestionBlueprintDraftWorkbookEditorUpload: questionsHandler(
+      "createQuestionBlueprintDraftWorkbookEditorUpload",
+      async (c) =>
+        c.json(
+          presentCreatedQuestionBlueprintDraftWorkbookEditorUpload(
+            await deps.questionBlueprintDraftService.createQuestionBlueprintDraftWorkbookEditorUpload(
+              {
+                currentUser: c.var.identity,
+                draftId: c.req.valid("param").draftId,
+                sourceId: c.req.valid("param").sourceId,
+                ...c.req.valid("json"),
+              },
+            ),
+          ),
+          201,
+        ),
+    ),
+    completeQuestionBlueprintDraftWorkbookEditorUpload: questionsHandler(
+      "completeQuestionBlueprintDraftWorkbookEditorUpload",
+      async (c) =>
+        c.json(
+          presentCompletedQuestionBlueprintDraftWorkbookEditorUpload(
+            await deps.questionBlueprintDraftService.completeQuestionBlueprintDraftWorkbookEditorUpload(
+              {
+                currentUser: c.var.identity,
+                draftId: c.req.valid("param").draftId,
+                expectedRevision: c.req.valid("json").expectedRevision,
+                sourceId: c.req.valid("param").sourceId,
+                uploadId: c.req.valid("param").uploadId,
+              },
+            ),
+          ),
+          201,
         ),
     ),
     cancelQuestionGenerationRun: questionsHandler(
@@ -410,6 +448,24 @@ export function createQuestionsHandlers(
           201,
         );
       },
+    ),
+    saveQuestionBlueprintDraftWorkbookSourceRevision: questionsHandler(
+      "saveQuestionBlueprintDraftWorkbookSourceRevision",
+      async (c) =>
+        c.json(
+          presentSavedQuestionBlueprintDraftWorkbookSourceRevision(
+            await deps.questionBlueprintDraftService.saveQuestionBlueprintDraftWorkbookSourceRevision(
+              {
+                currentUser: c.var.identity,
+                draftId: c.req.valid("param").draftId,
+                lineage: rootOperationLineage(c.var.requestId),
+                sourceId: c.req.valid("param").sourceId,
+                ...c.req.valid("json"),
+              },
+            ),
+          ),
+          200,
+        ),
     ),
     updateQuestionBlueprintDraft: questionsHandler(
       "updateQuestionBlueprintDraft",

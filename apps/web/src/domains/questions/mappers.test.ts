@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { mapQuestionBlueprintDraftSummary } from "./mappers";
+import {
+  mapCompleteQuestionBlueprintDraftWorkbookEditorUploadResponse,
+  mapCreateQuestionBlueprintDraftWorkbookEditorUploadResponse,
+  mapQuestionBlueprintDraftSummary,
+  mapSaveQuestionBlueprintDraftWorkbookSourceRevisionResponse,
+} from "./mappers";
 
 describe("mapQuestionBlueprintDraftSummary", () => {
   it("maps status and required/nullable fields", () => {
@@ -52,3 +57,131 @@ describe("mapQuestionBlueprintDraftSummary", () => {
     });
   });
 });
+
+describe("mapCreateQuestionBlueprintDraftWorkbookEditorUploadResponse", () => {
+  it("maps upload timestamps", () => {
+    const result = mapCreateQuestionBlueprintDraftWorkbookEditorUploadResponse({
+      upload: {
+        checksumSha256: "b".repeat(64),
+        completedAt: null,
+        contentType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        createdAt: "2026-06-23T00:00:00.000Z",
+        createdByUserId: "owner-1",
+        expectedByteSize: 1234,
+        id: "upload-1",
+        originalName: "source.xlsx",
+        status: "initiated",
+        updatedAt: "2026-06-23T00:00:00.000Z",
+        uploadExpiresAt: "2026-06-24T00:00:00.000Z",
+      },
+      uploadUrl: {
+        expiresInSeconds: 900,
+        headers: {},
+        method: "PUT",
+        url: "https://storage.example/upload",
+      },
+    });
+
+    expect(result.upload.createdAt).toEqual(
+      new Date("2026-06-23T00:00:00.000Z"),
+    );
+    expect(result.upload.uploadExpiresAt).toEqual(
+      new Date("2026-06-24T00:00:00.000Z"),
+    );
+  });
+});
+
+describe("mapCompleteQuestionBlueprintDraftWorkbookEditorUploadResponse", () => {
+  it("maps the editor output file without public file purpose fields", () => {
+    const result =
+      mapCompleteQuestionBlueprintDraftWorkbookEditorUploadResponse({
+        editorOutputFile: {
+          byteSize: 1234,
+          checksumSha256: "b".repeat(64),
+          contentType:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          id: "editor-file-1",
+          originalName: "source.xlsx",
+        },
+      });
+
+    expect(result.editorOutputFile).toEqual({
+      byteSize: 1234,
+      checksumSha256: "b".repeat(64),
+      contentType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      id: "editor-file-1",
+      originalName: "source.xlsx",
+    });
+  });
+});
+
+describe("mapSaveQuestionBlueprintDraftWorkbookSourceRevisionResponse", () => {
+  it("maps draft and lifecycle timestamps", () => {
+    const result = mapSaveQuestionBlueprintDraftWorkbookSourceRevisionResponse({
+      draft: draftDto(),
+      sourceArtifact: {
+        createdAt: "2026-06-23T00:00:00.000Z",
+        id: "artifact-2",
+        kind: "workbook",
+        processor: "lemma-workbook",
+        processorVersion: "1",
+        sourceRevisionId: "revision-2",
+        status: "pending_validation",
+        updatedAt: "2026-06-23T00:00:00.000Z",
+        validationError: null,
+        workbookId: "workbook-2",
+      },
+      sourceRevision: {
+        byteSize: 2048,
+        checksumSha256: "a".repeat(64),
+        contentType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        createdAt: "2026-06-23T00:00:00.000Z",
+        createdByUserId: "owner-1",
+        id: "revision-2",
+        kind: "workbook",
+        parentRevisionId: "revision-1",
+        sourceDocumentId: "document-1",
+      },
+    });
+
+    expect(result.draft.updatedAt).toEqual(
+      new Date("2026-06-22T00:00:00.000Z"),
+    );
+    expect(result.sourceRevision.createdAt).toEqual(
+      new Date("2026-06-23T00:00:00.000Z"),
+    );
+    expect(result.sourceArtifact.updatedAt).toEqual(
+      new Date("2026-06-23T00:00:00.000Z"),
+    );
+  });
+});
+
+function draftDto() {
+  return {
+    baseVersionId: null,
+    blueprintId: null,
+    createdAt: "2026-06-20T00:00:00.000Z",
+    createdByUserId: "owner-1",
+    description: null,
+    discardedAt: null,
+    document: {
+      blocks: [],
+      references: [],
+      responseFields: [],
+      schemaVersion: 1 as const,
+    },
+    id: "draft-1",
+    lastSavedAt: "2026-06-22T00:00:00.000Z",
+    name: "Draft",
+    ownerUserId: "owner-1",
+    publishedAt: null,
+    publishedVersionId: null,
+    revision: 2,
+    sources: [],
+    status: "draft" as const,
+    updatedAt: "2026-06-22T00:00:00.000Z",
+  };
+}

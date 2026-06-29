@@ -152,7 +152,7 @@ describe("useStudioDraftSaveController", () => {
           issues: [
             {
               id: "source_not_ready",
-              message: "Attach a source before saving.",
+              message: "Add a workbook before saving.",
               severity: "error",
             },
           ],
@@ -167,7 +167,7 @@ describe("useStudioDraftSaveController", () => {
 
     await waitFor(() => {
       expect(result.current.commandBarSave.saveError).toBe(
-        "Attach a source before saving.",
+        "Add a workbook before saving.",
       );
     });
     expect(questionDraftMocks.updateServerDraft).not.toHaveBeenCalled();

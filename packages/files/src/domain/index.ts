@@ -1,4 +1,5 @@
 export {
+  FileAliasUnavailableError,
   FileNotFoundError,
   FileNotVisibleError,
   FileStorageObjectMismatchError,
@@ -10,12 +11,15 @@ export {
   InvalidFileDataError,
   InvalidFileStateError,
 } from "./errors.js";
-export type { File } from "./file.js";
+export type { File, FileGarbageCollectionClaimToken } from "./file.js";
 export {
   assertFileCanBeDownloaded,
   assertFileIsOwnedBy,
   assertFileIsVisible,
+  claimFileGarbageCollection,
   createFileFromUpload,
+  DELETED_FILE_RETENTION_DAYS,
+  fileGarbageCollectionClaimToken,
   markFileDeleted,
   markFileDeleting,
   reconstituteFile,
@@ -39,6 +43,7 @@ export type {
   FileStatus,
   FileUploadStatus,
   OriginalFileName,
+  PublicFilePurpose,
 } from "./file-values.js";
 export {
   ACTIVE_FILE_STATUSES,
@@ -59,6 +64,7 @@ export {
   MAX_FILE_BYTE_SIZE,
   MAX_ORIGINAL_FILE_NAME_LENGTH,
   originalFileName,
+  PUBLIC_FILE_PURPOSE_ACCEPTED_VALUES,
   UPLOAD_EXPIRES_IN_MILLISECONDS,
   uploadExpiresAt,
   VISIBLE_FILE_STATUSES,

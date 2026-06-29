@@ -8,6 +8,10 @@ import {
 } from "../domain/index.js";
 import { canCreateFileDownloadUrl } from "./policies.js";
 import type {
+  FileContent,
+  FileContentMetadata,
+  FileContentMetadataForOwnerQuery,
+  FileContentMetadataQuery,
   FileContentReaderPort,
   FileStorage,
   FilesRepository,
@@ -24,8 +28,8 @@ export class FileContentReader implements FileContentReaderPort {
   ) {}
 
   async getFileContentMetadata(
-    input: Parameters<FileContentReaderPort["getFileContentMetadata"]>[0],
-  ): ReturnType<FileContentReaderPort["getFileContentMetadata"]> {
+    input: FileContentMetadataQuery,
+  ): Promise<FileContentMetadata> {
     return this.operation("get_file_content_metadata", async () => {
       const file = await this.findFileByIdOrThrow(input.fileId);
 
@@ -38,10 +42,8 @@ export class FileContentReader implements FileContentReaderPort {
   }
 
   async getFileContentMetadataForOwnerUserId(
-    input: Parameters<
-      FileContentReaderPort["getFileContentMetadataForOwnerUserId"]
-    >[0],
-  ): ReturnType<FileContentReaderPort["getFileContentMetadataForOwnerUserId"]> {
+    input: FileContentMetadataForOwnerQuery,
+  ): Promise<FileContentMetadata> {
     return this.operation(
       "get_file_content_metadata_for_owner_user_id",
       async () => {
@@ -56,9 +58,7 @@ export class FileContentReader implements FileContentReaderPort {
     );
   }
 
-  async readFileContent(
-    input: Parameters<FileContentReaderPort["readFileContent"]>[0],
-  ): ReturnType<FileContentReaderPort["readFileContent"]> {
+  async readFileContent(input: FileContentMetadataQuery): Promise<FileContent> {
     return this.operation("read_file_content", async () => {
       const file = await this.findFileByIdOrThrow(input.fileId);
 
@@ -71,10 +71,8 @@ export class FileContentReader implements FileContentReaderPort {
   }
 
   async readFileContentForOwnerUserId(
-    input: Parameters<
-      FileContentReaderPort["readFileContentForOwnerUserId"]
-    >[0],
-  ): ReturnType<FileContentReaderPort["readFileContentForOwnerUserId"]> {
+    input: FileContentMetadataForOwnerQuery,
+  ): Promise<FileContent> {
     return this.operation("read_file_content_for_owner_user_id", async () => {
       const file = await this.findFileByIdOrThrow(input.fileId);
 
@@ -104,8 +102,10 @@ export class FileContentReader implements FileContentReaderPort {
       checksumSha256: file.checksumSha256,
       contentType: file.contentType,
       fileId: file.id,
+      metadata: file.metadata,
       originalName: file.originalName,
       ownerUserId: file.ownerUserId,
+      purpose: file.purpose,
     };
   }
 

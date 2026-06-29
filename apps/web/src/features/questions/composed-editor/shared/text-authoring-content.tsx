@@ -6,21 +6,19 @@ import {
   ContextMenuTrigger,
 } from "@lemma/ui/components/context-menu";
 import { FieldGroup } from "@lemma/ui/components/field";
-import { Textarea } from "@lemma/ui/components/textarea";
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type {
   ComposedEditorModel,
   ComposedInlineContent,
 } from "#/domains/questions/authoring";
-import {
-  formatInlineBlueprint,
-  parseInlineBlueprint,
-} from "#/domains/questions/authoring";
 import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
-import { InlineContentRenderer } from "../inline-content-renderer";
 import { ReferencePickerPopover } from "../inspector/reference-picker-popover";
-import { insertReferenceSyntaxAtSelection } from "../reference-insertion-controller";
+import {
+  type InlineInsertionTarget,
+  insertReferenceIntoInlineContent,
+} from "../reference-insertion-controller";
+import { InlineAuthoringEditor } from "./inline-authoring-editor";
 
 type TextAuthoringContentProps = {
   content: ComposedInlineContent[];
@@ -53,52 +51,23 @@ export function TextAuthoringContent({
   onSelectReference,
   onCreatedReference,
 }: TextAuthoringContentProps) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const ignoreNextPickerCloseRef = useRef(false);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [selection, setSelection] = useState({ end: 0, start: 0 });
-  const textValue = useMemo(() => formatInlineBlueprint(content), [content]);
-
-  function updateSelection() {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    setSelection({
-      end: textarea.selectionEnd,
-      start: textarea.selectionStart,
-    });
-  }
-
-  function restoreSelection(nextSelection: { start: number; end: number }) {
-    window.requestAnimationFrame(() => {
-      textareaRef.current?.focus();
-      textareaRef.current?.setSelectionRange(
-        nextSelection.start,
-        nextSelection.end,
-      );
-      updateSelection();
-    });
-  }
+  const [insertionTarget, setInsertionTarget] =
+    useState<InlineInsertionTarget | null>(null);
 
   function insertReference(
     referenceId: string,
     options: { emitChange?: boolean } = {},
   ) {
-    const textarea = textareaRef.current;
-    const result = insertReferenceSyntaxAtSelection({
+    const nextContent = insertReferenceIntoInlineContent({
+      content,
       referenceId,
-      selection: textarea
-        ? {
-            end: textarea.selectionEnd,
-            start: textarea.selectionStart,
-          }
-        : selection,
-      text: textValue,
+      target: insertionTarget,
     });
-    const nextContent = parseInlineBlueprint(result.text);
     if (options.emitChange !== false) {
       onChange(nextContent);
     }
-    restoreSelection(result.selection);
     return nextContent;
   }
 
@@ -121,21 +90,17 @@ export function TextAuthoringContent({
     <FieldGroup>
       <ContextMenu>
         <ContextMenuTrigger asChild disabled={disabled}>
-          <Textarea
-            className="min-h-28 resize-y"
-            disabled={disabled}
-            onBlur={updateSelection}
-            onChange={(event) =>
-              onChange(parseInlineBlueprint(event.currentTarget.value))
-            }
-            onClick={updateSelection}
-            onContextMenu={updateSelection}
-            onKeyUp={updateSelection}
-            onSelect={updateSelection}
-            placeholder="Write text..."
-            ref={textareaRef}
-            value={textValue}
-          />
+          <div>
+            <InlineAuthoringEditor
+              content={content}
+              disabled={disabled}
+              onChange={onChange}
+              onInsertionTargetChange={setInsertionTarget}
+              onSelectReference={onSelectReference}
+              referencePreviewCache={referencePreviewCache}
+              references={model.references}
+            />
+          </div>
         </ContextMenuTrigger>
         <ContextMenuContent>
           <ContextMenuItem
@@ -144,7 +109,7 @@ export function TextAuthoringContent({
               openPickerFromContextMenu();
             }}
           >
-            Insert reference
+            Add reference
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
@@ -180,25 +145,16 @@ export function TextAuthoringContent({
               disabled={disabled}
               onMouseDown={(event) => {
                 event.preventDefault();
-                updateSelection();
               }}
               size="sm"
               type="button"
               variant="outline"
             >
-              Insert reference
+              Add reference
             </Button>
           }
           workbookEnabled={workbookEnabled}
           workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
-        />
-      </div>
-      <div className="rounded-md border bg-muted/20 p-3 text-sm">
-        <InlineContentRenderer
-          content={content}
-          mode="editing"
-          onSelectReference={onSelectReference}
-          referencePreviewValues={referencePreviewCache}
         />
       </div>
     </FieldGroup>

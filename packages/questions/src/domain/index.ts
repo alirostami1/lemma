@@ -265,6 +265,14 @@ export {
   parseWorkbookReferenceKey,
 } from "./reference-key.js";
 export type {
+  ProtectedSourceReferenceCounts,
+  SourceGarbageCollectionEligibility,
+} from "./source-garbage-collection.js";
+export {
+  evaluateSourceGarbageCollection,
+  SOURCE_LIFECYCLE_RETENTION_DEFAULTS,
+} from "./source-garbage-collection.js";
+export type {
   PythonSourceArtifactMetadata,
   PythonSourceRevisionMetadata,
   SourceArtifact,
@@ -278,6 +286,7 @@ export {
   createSourceArtifact,
   createSourceDocument,
   createSourceRevision,
+  markSourceArtifactCollected,
   pythonSourceArtifactMetadata,
   pythonSourceRevisionMetadata,
   reconstituteSourceArtifact,
@@ -285,4 +294,7 @@ export {
   reconstituteSourceRevision,
   sourceArtifactStatus,
   sourceKind,
+  tombstoneSourceArtifact,
+  tombstoneSourceDocument,
+  tombstoneSourceRevision,
 } from "./source-lifecycle.js";

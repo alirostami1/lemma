@@ -105,6 +105,88 @@ export type AttachQuestionBlueprintDraftSourceFileInput = {
   sourceId: string;
   fileId: string;
 };
+export type SaveQuestionBlueprintDraftWorkbookSourceRevisionInput = {
+  draftId: string;
+  editorOutputFileId: string;
+  expectedRevision: number;
+  sourceId: string;
+};
+export type SourceRevision = {
+  byteSize: number;
+  checksumSha256: string;
+  contentType: string;
+  createdAt: Date;
+  createdByUserId: string;
+  id: string;
+  kind: "workbook";
+  parentRevisionId: string | null;
+  sourceDocumentId: string;
+};
+export type SourceArtifact = {
+  createdAt: Date;
+  id: string;
+  kind: "workbook";
+  processor: string;
+  processorVersion: string;
+  sourceRevisionId: string;
+  status: "pending_validation" | "valid" | "invalid" | "archived" | "deleted";
+  updatedAt: Date;
+  validationError: Record<string, unknown> | null;
+  workbookId: string | null;
+};
+export type SaveQuestionBlueprintDraftWorkbookSourceRevisionResult = {
+  draft: QuestionBlueprintDraft;
+  sourceArtifact: SourceArtifact;
+  sourceRevision: SourceRevision;
+};
+export type CreateQuestionBlueprintDraftWorkbookEditorUploadInput = {
+  byteSize: number;
+  checksumSha256: string;
+  contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  draftId: string;
+  expectedRevision: number;
+  originalName: string;
+  sourceId: string;
+};
+export type WorkbookEditorUpload = {
+  checksumSha256: string;
+  completedAt: Date | null;
+  contentType: string;
+  createdAt: Date;
+  createdByUserId: string;
+  expectedByteSize: number;
+  id: string;
+  originalName: string;
+  status: "initiated" | "verified" | "failed" | "expired" | "cancelled";
+  updatedAt: Date;
+  uploadExpiresAt: Date;
+};
+export type WorkbookEditorUploadUrl = {
+  expiresInSeconds: number;
+  headers: Record<string, string>;
+  method: "PUT";
+  url: string;
+};
+export type CreateQuestionBlueprintDraftWorkbookEditorUploadResult = {
+  upload: WorkbookEditorUpload;
+  uploadUrl: WorkbookEditorUploadUrl;
+};
+export type CompleteQuestionBlueprintDraftWorkbookEditorUploadInput = {
+  draftId: string;
+  expectedRevision: number;
+  sourceId: string;
+  uploadId: string;
+};
+export type WorkbookEditorOutputFile = {
+  byteSize: number;
+  checksumSha256: string;
+  contentType: string;
+  id: string;
+  originalName: string;
+};
+export type CompleteQuestionBlueprintDraftWorkbookEditorUploadResult = {
+  editorOutputFile: WorkbookEditorOutputFile;
+};
 export type QuestionBlueprintDraftResult = { draft: QuestionBlueprintDraft };
 export type CreateQuestionBlueprintEditDraftInput = {
   questionBlueprintId: string;

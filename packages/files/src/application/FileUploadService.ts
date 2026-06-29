@@ -14,8 +14,10 @@ import {
 } from "../domain/index.js";
 import type {
   CompleteFileUploadCommand,
+  CompleteInternalFileUploadCommand,
   CreateFileUploadCommand,
   CreateFileUploadResult,
+  CreateInternalFileUploadCommand,
   FileResult,
 } from "./commands.js";
 import { canCompleteFileUpload, canCreateFileUpload } from "./policies.js";
@@ -43,6 +45,20 @@ export class FileUploadService {
   async createFileUpload(
     command: CreateFileUploadCommand,
   ): Promise<CreateFileUploadResult> {
+    return this.createFileUploadSession(command);
+  }
+
+  async createInternalFileUpload(
+    command: CreateInternalFileUploadCommand,
+  ): Promise<CreateFileUploadResult> {
+    return this.createFileUploadSession(command);
+  }
+
+  private async createFileUploadSession(
+    command: (CreateFileUploadCommand | CreateInternalFileUploadCommand) & {
+      metadata?: Record<string, unknown>;
+    },
+  ): Promise<CreateFileUploadResult> {
     return this.operation("create_file_upload", async () => {
       this.assertAuthorized(
         canCreateFileUpload(command.currentUser),
@@ -61,6 +77,7 @@ export class FileUploadService {
           createdByUserId: ownerUserId,
           expectedByteSize: command.byteSize,
           id: uploadId,
+          metadata: command.metadata,
           objectKey: createUploadObjectKey({
             originalName: command.originalName,
             ownerUserId,
@@ -98,6 +115,19 @@ export class FileUploadService {
   async completeFileUpload(
     command: CompleteFileUploadCommand,
   ): Promise<FileResult> {
+    return this.completeFileUploadForPurpose(command, ["workbook"]);
+  }
+
+  async completeInternalFileUpload(
+    command: CompleteInternalFileUploadCommand,
+  ): Promise<FileResult> {
+    return this.completeFileUploadForPurpose(command, [command.purpose]);
+  }
+
+  private async completeFileUploadForPurpose(
+    command: CompleteFileUploadCommand,
+    allowedPurposes: readonly string[],
+  ): Promise<FileResult> {
     return this.operation("complete_file_upload", async () => {
       const upload = await this.deps.filesRepository.findFileUploadById(
         toFileUploadId(command.uploadId),
@@ -111,6 +141,10 @@ export class FileUploadService {
         canCompleteFileUpload(command.currentUser, upload),
         "You cannot complete this upload.",
       );
+
+      if (!allowedPurposes.includes(upload.purpose)) {
+        throw new FileUploadNotFoundError();
+      }
 
       const at = this.deps.clock.now();
 
