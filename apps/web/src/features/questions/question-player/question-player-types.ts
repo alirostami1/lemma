@@ -53,6 +53,5 @@ export type QuestionPlayerProps = {
   mode: QuestionPlayerMode;
   feedback?: QuestionGrade | null;
   referencePreviewCache?: ReferencePreviewCache;
-  onSelectReference?(referenceId: string): void;
   onAnswerChange(answer: QuestionAnswer): void;
 };

@@ -17,6 +17,7 @@ export function RichTextQuestionBlock({
     <div className="grid gap-2 text-sm leading-6">
       <RichContentPreview
         content={content}
+        mode="preview"
         referencePreviewCache={referencePreviewCache}
       />
     </div>

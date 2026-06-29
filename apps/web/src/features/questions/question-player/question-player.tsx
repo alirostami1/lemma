@@ -13,7 +13,6 @@ export function QuestionPlayer({
   mode,
   feedback,
   referencePreviewCache = {},
-  onSelectReference,
   onAnswerChange,
 }: QuestionPlayerProps) {
   const disabled = mode === "authoring-preview" || mode === "review";
@@ -27,7 +26,6 @@ export function QuestionPlayer({
           disabled={disabled}
           key={block.id}
           onAnswerChange={onAnswerChange}
-          onSelectReference={onSelectReference}
           question={question}
           referencePreviewCache={referencePreviewCache}
         />
@@ -50,7 +48,6 @@ function QuestionBlock({
   answer,
   disabled,
   referencePreviewCache,
-  onSelectReference,
   onAnswerChange,
 }: {
   block: PresentableQuestionBlock;
@@ -60,7 +57,6 @@ function QuestionBlock({
   referencePreviewCache: NonNullable<
     QuestionPlayerProps["referencePreviewCache"]
   >;
-  onSelectReference: QuestionPlayerProps["onSelectReference"];
   onAnswerChange: QuestionPlayerProps["onAnswerChange"];
 }) {
   switch (block.type) {
@@ -68,7 +64,6 @@ function QuestionBlock({
       return (
         <TextQuestionBlock
           content={block.content}
-          onSelectReference={onSelectReference}
           referencePreviewCache={referencePreviewCache}
         />
       );

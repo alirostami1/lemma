@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
+  type ComposedReferenceDraft,
   type ComposedRichContent,
   type ComposedRichContentNode,
   getMarkdownFormatAtPosition,
@@ -30,13 +31,17 @@ import { RichContentPreview } from "../editor-shared/rich-content-preview";
 export function RichTextEditor({
   value,
   referencePreviewCache,
+  references = [],
   disabled,
   onChange,
+  onSelectReference,
 }: {
   value: ComposedRichContent;
   referencePreviewCache: ReferencePreviewCache;
+  references?: readonly ComposedReferenceDraft[];
   disabled?: boolean;
   onChange(value: ComposedRichContent): void;
+  onSelectReference?: (referenceId: string) => void;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const hasReferences = useMemo(() => hasRichReferences(value), [value]);
@@ -101,7 +106,10 @@ export function RichTextEditor({
       <div className="space-y-3">
         <RichContentPreview
           content={value}
+          mode="editing"
+          onSelectReference={disabled ? undefined : onSelectReference}
           referencePreviewCache={referencePreviewCache}
+          references={references}
         />
         <p className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
           Rich text with added values is read-only in Studio for now. Use text,

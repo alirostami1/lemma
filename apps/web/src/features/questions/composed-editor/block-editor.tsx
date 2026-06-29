@@ -84,7 +84,9 @@ export function BlockEditor({
               ) as ComposedEditorBlock[],
             })
           }
+          onSelectReference={onSelectReference}
           referencePreviewCache={referencePreviewCache}
+          references={model.references}
           value={block.content}
         />
       </div>

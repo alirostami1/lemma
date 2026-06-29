@@ -4,7 +4,6 @@ import type { QuestionPlayerProps } from "../question-player-types";
 export function TextQuestionBlock({
   content,
   referencePreviewCache,
-  onSelectReference,
 }: {
   content: Extract<
     QuestionPlayerProps["question"]["blocks"][number],
@@ -13,14 +12,12 @@ export function TextQuestionBlock({
   referencePreviewCache: NonNullable<
     QuestionPlayerProps["referencePreviewCache"]
   >;
-  onSelectReference: QuestionPlayerProps["onSelectReference"];
 }) {
   return (
     <p className="whitespace-pre-wrap text-sm leading-6">
       <InlineContentRenderer
         content={content}
         mode="preview"
-        onSelectReference={onSelectReference}
         referencePreviewValues={referencePreviewCache}
       />
     </p>

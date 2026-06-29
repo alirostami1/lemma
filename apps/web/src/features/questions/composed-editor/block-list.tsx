@@ -133,7 +133,6 @@ export function BlockList({
                 ) : (
                   <BlockPreview
                     block={block}
-                    onSelectReference={onSelectReference}
                     referencePreviewCache={referencePreviewCache}
                   />
                 )}

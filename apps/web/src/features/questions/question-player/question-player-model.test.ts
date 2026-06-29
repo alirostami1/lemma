@@ -15,6 +15,38 @@ describe("question player model", () => {
     ]);
     expect(presentable.responseFields).toEqual([]);
   });
+
+  it("adapts generated rich text heading values without reference syntax", () => {
+    const presentable = questionToPresentableQuestion(
+      generatedRichHeadingQuestion(),
+    );
+
+    expect(presentable.blocks).toEqual([
+      {
+        content: {
+          content: [
+            {
+              content: [{ text: "Revenue 1200", type: "text" }],
+              level: 1,
+              type: "heading",
+            },
+            {
+              content: [{ text: "Margin 0.32", type: "text" }],
+              level: 2,
+              type: "heading",
+            },
+          ],
+          type: "doc",
+        },
+        id: "rich",
+        type: "rich_text",
+      },
+    ]);
+    expect(JSON.stringify(presentable)).not.toContain("{{");
+    expect(JSON.stringify(presentable)).not.toContain("revenue");
+    expect(JSON.stringify(presentable)).not.toContain("margin");
+    expect(JSON.stringify(presentable)).not.toContain("reference_1");
+  });
 });
 
 function question(): Question {
@@ -43,5 +75,37 @@ function question(): Question {
     },
     status: "active",
     updatedAt: timestamp,
+  };
+}
+
+function generatedRichHeadingQuestion(): Question {
+  const base = question();
+  return {
+    ...base,
+    body: {
+      blocks: [
+        {
+          content: {
+            content: [
+              {
+                attrs: { level: 1 },
+                content: [{ text: "Revenue 1200", type: "text" }],
+                type: "heading",
+              },
+              {
+                attrs: { level: 2 },
+                content: [{ text: "Margin 0.32", type: "text" }],
+                type: "heading",
+              },
+            ],
+            type: "doc",
+          },
+          id: "rich",
+          type: "rich_text",
+        },
+      ],
+      responseFields: [],
+      schemaVersion: 1,
+    },
   };
 }

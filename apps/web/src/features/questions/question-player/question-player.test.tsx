@@ -3,8 +3,9 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createEmptyQuestionAnswer } from "#/domains/questions";
+import { createEmptyQuestionAnswer, type Question } from "#/domains/questions";
 import { QuestionPlayer } from "./question-player";
+import { questionToPresentableQuestion } from "./question-player-model";
 import type {
   PresentableQuestion,
   QuestionPlayerMode,
@@ -130,6 +131,28 @@ describe("QuestionPlayer", () => {
     expect(screen.getByRole("status").textContent).toContain("Score: 1 / 1");
     expect(onAnswerChange).not.toHaveBeenCalled();
   });
+
+  it("renders generated rich text heading values through the presentable adapter", () => {
+    const presentable = questionToPresentableQuestion(
+      generatedRichHeadingQuestion(),
+    );
+    const { container } = render(
+      <QuestionPlayer
+        answer={createEmptyQuestionAnswer()}
+        mode="authoring-preview"
+        onAnswerChange={() => {}}
+        question={presentable}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { level: 1, name: "Revenue 1200" }));
+    expect(screen.getByRole("heading", { level: 2, name: "Margin 0.32" }));
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.queryByText(/\{\{\s*\./u)).toBeNull();
+    expect(container.textContent).not.toContain("revenue");
+    expect(container.textContent).not.toContain("margin");
+    expect(container.textContent).not.toContain("reference_1");
+  });
 });
 
 function Harness({
@@ -151,4 +174,47 @@ function Harness({
       <output data-testid="answer-json">{JSON.stringify(answer)}</output>
     </>
   );
+}
+
+function generatedRichHeadingQuestion(): Question {
+  const timestamp = new Date("2026-06-14T00:00:00Z");
+  return {
+    blueprintId: "blueprint-1",
+    body: {
+      blocks: [
+        {
+          content: {
+            content: [
+              {
+                attrs: { level: 1 },
+                content: [{ text: "Revenue 1200", type: "text" }],
+                type: "heading",
+              },
+              {
+                attrs: { level: 2 },
+                content: [{ text: "Margin 0.32", type: "text" }],
+                type: "heading",
+              },
+            ],
+            type: "doc",
+          },
+          id: "rich",
+          type: "rich_text",
+        },
+      ],
+      responseFields: [],
+      schemaVersion: 1,
+    },
+    createdAt: timestamp,
+    createdByUserId: "creator",
+    generationRunId: "run-1",
+    id: "question-1",
+    ownerUserId: "owner",
+    producer: {
+      compiler: "test",
+      schemaVersion: 1,
+    },
+    status: "active",
+    updatedAt: timestamp,
+  };
 }
