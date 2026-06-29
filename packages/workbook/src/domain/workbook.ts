@@ -8,6 +8,7 @@ import {
   type WorkbookEngineName,
   type WorkbookInspection,
   type WorkbookName,
+  type WorkbookOrigin,
   type WorkbookStatus,
   workbookName,
 } from "./workbook-values.js";
@@ -21,6 +22,7 @@ export type Workbook = {
   checksumSha256: string;
   originalName: string;
   engine: WorkbookEngineName;
+  origin: WorkbookOrigin;
   engineVersion: string | null;
   status: WorkbookStatus;
   inspection: WorkbookInspection | null;
@@ -40,6 +42,7 @@ export type CreateWorkbookFromFileInput = {
   byteSize: number;
   contentType: string;
   engine: WorkbookEngineName;
+  origin?: WorkbookOrigin;
 };
 
 export function createWorkbook(
@@ -52,6 +55,7 @@ export function createWorkbook(
     checksumSha256: string;
     originalName: string;
     engine: WorkbookEngineName;
+    origin?: WorkbookOrigin;
   },
   at: Date,
 ): Workbook {
@@ -66,6 +70,7 @@ export function createWorkbook(
     inspection: null,
     name: workbookName(input.name),
     originalName: input.originalName,
+    origin: input.origin ?? "standalone",
     ownerUserId: input.ownerUserId,
     status: "pending_validation",
     updatedAt: at,
@@ -161,6 +166,15 @@ export function deleteWorkbook(workbook: Workbook, at: Date): Workbook {
     return workbook;
   }
   return { ...workbook, status: "deleted", updatedAt: at };
+}
+
+export function promoteWorkbookToStandalone(
+  workbook: Workbook,
+  at: Date,
+): Workbook {
+  assertWorkbookCanBeModified(workbook);
+  if (workbook.origin === "standalone") return workbook;
+  return { ...workbook, origin: "standalone", updatedAt: at };
 }
 
 export function assertWorkbookIsUsable(workbook: Workbook): void {

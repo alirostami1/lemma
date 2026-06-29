@@ -20,6 +20,14 @@ export class FileUploadNotFoundError extends DomainError {
   }
 }
 
+export class FileAliasUnavailableError extends DomainError {
+  readonly domainCode = "FILE_ALIAS_UNAVAILABLE";
+
+  constructor(message = "file alias is unavailable") {
+    super(message);
+  }
+}
+
 export class FileNotVisibleError extends DomainError {
   readonly domainCode = "FILE_NOT_VISIBLE";
 

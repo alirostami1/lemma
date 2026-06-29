@@ -13,6 +13,12 @@
     },
     "./tables": {
       "types": "./src/types.d.ts"
+    },
+    "./testing": {
+      "types": "./src/testing/testcontainers-postgres.ts",
+      "source": "./src/testing/testcontainers-postgres.ts",
+      "import": "./dist/testing/testcontainers-postgres.js",
+      "default": "./dist/testing/testcontainers-postgres.js"
     }
   },
   "scripts": {
@@ -28,7 +34,8 @@
     "migrate:down": "node --conditions=source --env-file=.env --import tsx src/migrate.ts down",
     "migrate:latest": "node --conditions=source --env-file=.env --import tsx src/migrate.ts latest",
     "migrate:up": "node --conditions=source --env-file=.env --import tsx src/migrate.ts up",
-    "seed:dev": "node --conditions=source --env-file=.env --import tsx src/seed-dev.ts"
+    "seed:dev": "node --conditions=source --env-file=.env --import tsx src/seed-dev.ts",
+    "test": "node --conditions=source --import tsx --test src/**/*.test.ts"
   },
   "dependencies": {
     "@lemma/config": "workspace:*",
@@ -38,6 +45,7 @@
   "devDependencies": {
     "@biomejs/biome": "catalog:",
     "@lemma/typescript-config": "workspace:*",
+    "@testcontainers/postgresql": "^12.0.3",
     "@types/node": "catalog:",
     "@types/pg": "catalog:",
     "kysely-codegen": "^0.20.0",

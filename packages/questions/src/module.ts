@@ -13,6 +13,7 @@ import {
   QuestionLibraryService,
   QuestionSetService,
   SourceArtifactValidationService,
+  SourceGarbageCollectionService,
   type WorkbookAccessPort,
 } from "./application/index.js";
 import type { RequireIdentity } from "./http/index.js";
@@ -84,6 +85,15 @@ export function createQuestionsModule(deps: {
         ),
     },
   });
+  const sourceGarbageCollectionService = new SourceGarbageCollectionService({
+    clock: deps.clock,
+    questionsTransaction: {
+      transaction: (fn) =>
+        deps.db.transaction((tx) =>
+          fn({ questionsRepository: new KyselyQuestionsRepository(tx) }),
+        ),
+    },
+  });
 
   const routes = questionsRoutes({
     questionBlueprintDraftService,
@@ -101,6 +111,7 @@ export function createQuestionsModule(deps: {
     questionLibraryService,
     questionSetService,
     sourceArtifactValidationService,
+    sourceGarbageCollectionService,
     routes,
   };
 }

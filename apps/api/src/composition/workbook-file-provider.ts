@@ -1,17 +1,13 @@
-import type { FileContentReaderPort } from "@lemma/files/application";
+import type {
+  FileContent,
+  FileContentMetadata,
+  FileContentReaderPort,
+} from "@lemma/files/application";
 import type {
   WorkbookFileContent,
   WorkbookFileMetadata,
   WorkbookFileProviderPort,
 } from "@lemma/workbook/application";
-
-type ReadFileMetadata = Awaited<
-  ReturnType<FileContentReaderPort["getFileContentMetadata"]>
->;
-
-type ReadFileContent = Awaited<
-  ReturnType<FileContentReaderPort["readFileContent"]>
->;
 
 export function createWorkbookFileProvider(
   fileContentReader: FileContentReaderPort,
@@ -34,7 +30,9 @@ export function createWorkbookFileProvider(
   };
 }
 
-function toWorkbookFileMetadata(file: ReadFileMetadata): WorkbookFileMetadata {
+function toWorkbookFileMetadata(
+  file: FileContentMetadata,
+): WorkbookFileMetadata {
   return {
     fileId: file.fileId,
     originalName: file.originalName,
@@ -44,7 +42,7 @@ function toWorkbookFileMetadata(file: ReadFileMetadata): WorkbookFileMetadata {
   };
 }
 
-function toWorkbookFileContent(file: ReadFileContent): WorkbookFileContent {
+function toWorkbookFileContent(file: FileContent): WorkbookFileContent {
   return {
     ...toWorkbookFileMetadata(file),
     bytes: file.bytes,

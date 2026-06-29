@@ -52,7 +52,8 @@ export type CreateDownloadUrlCommand = {
   fileId: string;
 };
 
-export type HandleFileDeletionCommand = {
+export type CollectDeletedFileContentCommand = {
+  claimToken: string;
   fileId: string;
 };
 

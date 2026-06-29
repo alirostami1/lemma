@@ -17,6 +17,7 @@ import {
   VISIBLE_FILE_STATUSES,
 } from "../domain/index.js";
 import type {
+  CollectDeletedFileContentCommand,
   CompleteFileUploadCommand,
   CreateDownloadUrlCommand,
   CreateFileUploadCommand,
@@ -27,12 +28,14 @@ import type {
   FilesResult,
   GetFileCommand,
   GetFileForOwnerUserIdCommand,
-  HandleFileDeletionCommand,
   HandleFileUploadExpirationCommand,
   ListFilesCommand,
   UpdateFileCommand,
 } from "./commands.js";
-import { FileLifecycleService } from "./FileLifecycleService.js";
+import {
+  type FileCollectionResult,
+  FileLifecycleService,
+} from "./FileLifecycleService.js";
 import { FileUploadService } from "./FileUploadService.js";
 import {
   canCreateFileDownloadUrl,
@@ -43,6 +46,7 @@ import {
 } from "./policies.js";
 import type {
   Clock,
+  FileGarbageCollectionTransactionPort,
   FileStorage,
   FilesRepository,
   FilesServiceConfig,
@@ -62,6 +66,7 @@ export class FilesService {
       idGenerator: IdGenerator;
       clock: Clock;
       config: FilesServiceConfig;
+      garbageCollectionTransaction: FileGarbageCollectionTransactionPort;
     },
   ) {
     this.fileUploadService = new FileUploadService(deps);
@@ -69,6 +74,7 @@ export class FilesService {
       clock: deps.clock,
       fileStorage: deps.fileStorage,
       filesRepository: deps.filesRepository,
+      garbageCollectionTransaction: deps.garbageCollectionTransaction,
     });
   }
 
@@ -175,11 +181,20 @@ export class FilesService {
       canDeleteFile(command.currentUser, file),
       "You cannot delete this file.",
     );
-    assertFileIsVisible(file);
-
-    await this.persistExistingFile(
-      markFileDeleting(file, this.deps.clock.now()),
-    );
+    if (file.status === "deleted") return;
+    const tombstoned = markFileDeleting(file, this.deps.clock.now());
+    if (tombstoned === file) return;
+    const persisted =
+      await this.deps.filesRepository.updateFileWithExpectedStatus({
+        expectedStatus: file.status,
+        file: tombstoned,
+      });
+    if (persisted) return;
+    const concurrent = await this.deps.filesRepository.findFileById(file.id);
+    if (concurrent?.status === "deleting" || concurrent?.status === "deleted") {
+      return;
+    }
+    throw new FileNotFoundError();
   }
 
   async createDownloadUrl(
@@ -207,8 +222,10 @@ export class FilesService {
     });
   }
 
-  async handleFileDeletion(command: HandleFileDeletionCommand): Promise<void> {
-    await this.fileLifecycleService.handleFileDeletion(command);
+  async collectDeletedFileContent(
+    command: CollectDeletedFileContentCommand,
+  ): Promise<FileCollectionResult> {
+    return this.fileLifecycleService.collectDeletedFileContent(command);
   }
 
   async handleFileUploadExpiration(

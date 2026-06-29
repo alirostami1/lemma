@@ -1,11 +1,19 @@
 import assert from "node:assert/strict";
 import { after, before, beforeEach, describe, it } from "node:test";
 import { sql } from "@lemma/db";
+import { startTestDatabase, type TestDatabase } from "@lemma/db/testing";
+import {
+  FileLifecycleService,
+  type FileStorage,
+} from "@lemma/files/application";
+import { fileId as toFileFileId } from "@lemma/files/domain";
+import { KyselyFilesRepository } from "@lemma/files/infrastructure";
 import type { CurrentUser } from "@lemma/identity/application";
 import type { RawBuilder } from "kysely";
 import {
   QuestionBlueprintDraftService,
   SourceArtifactValidationService,
+  SourceGarbageCollectionService,
 } from "../application/index.js";
 import {
   questionBlueprintDescription,
@@ -14,13 +22,10 @@ import {
   questionBlueprintId,
   questionBlueprintName,
   questionBlueprintVisibility,
+  sourceArtifactId as toSourceArtifactId,
   userId,
   workbookId,
 } from "../domain/index.js";
-import {
-  startTestDatabase,
-  type TestDatabase,
-} from "../testing/testcontainers-postgres.js";
 import { KyselyQuestionsRepository } from "./KyselyQuestionsRepository.js";
 
 const at = new Date("2026-06-27T00:00:00.000Z");
@@ -58,7 +63,9 @@ let testDatabase: TestDatabase | null = null;
 
 describe("KyselyQuestion persistence integration", () => {
   before(async () => {
-    testDatabase = await startTestDatabase();
+    testDatabase = await startTestDatabase({
+      context: "Question persistence integration tests",
+    });
   });
 
   after(async () => {
@@ -70,6 +77,389 @@ describe("KyselyQuestion persistence integration", () => {
   beforeEach(async () => {
     await testDatabase?.reset();
   });
+
+  integrationDbIt(
+    "keeps a tombstoned shared source artifact protected by published versions",
+    async (db) => {
+      await insertUser(db, ownerUserId);
+      await insertFile(db, workbookFileId, ownerUserId, "source.xlsx");
+      await insertWorkbook(db, workbookSourceWorkbookId, workbookFileId);
+      await insertSourceDocument(db, sourceDocumentId);
+      await insertSourceRevision(db, sourceRevisionId, sourceDocumentId);
+      await insertSourceArtifact(
+        db,
+        sourceArtifactId,
+        sourceRevisionId,
+        workbookSourceWorkbookId,
+        "valid",
+      );
+      await insertBlueprintWithVersion(db, blueprintIdValue, versionIdValue);
+      await insertVersionSourceRow(db, "sourceA");
+      const repository = new KyselyQuestionsRepository(db);
+
+      const before = await repository.countProtectedSourceArtifactReferences(
+        toSourceArtifactId(sourceArtifactId),
+      );
+      assert.equal(before.publishedBlueprintVersionSources, 1);
+
+      await db
+        .updateTable("sourceDocuments")
+        .set({
+          deletedAt: at,
+          retentionExpiresAt: new Date("2026-09-25T00:00:00.000Z"),
+          status: "deleted",
+        })
+        .where("id", "=", sourceDocumentId)
+        .execute();
+      await db
+        .updateTable("sourceArtifacts")
+        .set({
+          deletedAt: at,
+          retentionExpiresAt: new Date("2026-09-25T00:00:00.000Z"),
+        })
+        .where("id", "=", sourceArtifactId)
+        .execute();
+
+      const after = await repository.countProtectedSourceArtifactReferences(
+        toSourceArtifactId(sourceArtifactId),
+      );
+      assert.equal(after.activeSourceDocuments, 0);
+      assert.equal(after.publishedBlueprintVersionSources, 1);
+    },
+  );
+
+  integrationDbIt(
+    "keeps a shared source artifact protected until every published version root is gone",
+    async (db) => {
+      const secondBlueprintId = "019e9315-6a87-715f-9861-8654df081901";
+      const secondVersionId = "019e9315-6a87-715f-9861-8654df081902";
+      await insertUser(db, ownerUserId);
+      await insertFile(db, workbookFileId, ownerUserId, "source.xlsx");
+      await insertWorkbook(db, workbookSourceWorkbookId, workbookFileId, {
+        origin: "source_artifact",
+      });
+      await insertSourceDocument(db, sourceDocumentId);
+      await insertSourceRevision(db, sourceRevisionId, sourceDocumentId);
+      await insertSourceArtifact(
+        db,
+        sourceArtifactId,
+        sourceRevisionId,
+        workbookSourceWorkbookId,
+        "valid",
+      );
+      await insertBlueprintWithVersion(db, blueprintIdValue, versionIdValue);
+      await insertBlueprintWithVersion(db, secondBlueprintId, secondVersionId, {
+        name: "Blueprint Two",
+      });
+      await insertVersionSourceRow(db, "sourceA", {
+        blueprintVersionId: versionIdValue,
+      });
+      await insertVersionSourceRow(db, "sourceA", {
+        blueprintVersionId: secondVersionId,
+      });
+      await tombstoneSourceGraph(db);
+      const repository = new KyselyQuestionsRepository(db);
+
+      const bothRoots = await repository.countProtectedSourceArtifactReferences(
+        toSourceArtifactId(sourceArtifactId),
+      );
+      assert.equal(bothRoots.publishedBlueprintVersionSources, 2);
+
+      await db
+        .deleteFrom("questionBlueprintVersionSources")
+        .where("blueprintVersionId", "=", versionIdValue)
+        .execute();
+      const oneRoot = await repository.countProtectedSourceArtifactReferences(
+        toSourceArtifactId(sourceArtifactId),
+      );
+      assert.equal(oneRoot.publishedBlueprintVersionSources, 1);
+
+      await db
+        .deleteFrom("questionBlueprintVersionSources")
+        .where("blueprintVersionId", "=", secondVersionId)
+        .execute();
+      const noRoots = await repository.countProtectedSourceArtifactReferences(
+        toSourceArtifactId(sourceArtifactId),
+      );
+      assert.equal(noRoots.publishedBlueprintVersionSources, 0);
+    },
+  );
+
+  integrationDbIt(
+    "counts active generated question-set memberships conservatively after question deletion",
+    async (db) => {
+      const runId = "019e9315-6a87-715f-9861-8654df081910";
+      const setId = "019e9315-6a87-715f-9861-8654df081911";
+      const questionId = "019e9315-6a87-715f-9861-8654df081912";
+      await insertUser(db, ownerUserId);
+      await insertFile(db, workbookFileId, ownerUserId, "source.xlsx");
+      await insertWorkbook(db, workbookSourceWorkbookId, workbookFileId, {
+        origin: "source_artifact",
+      });
+      await insertSourceDocument(db, sourceDocumentId);
+      await insertSourceRevision(db, sourceRevisionId, sourceDocumentId);
+      await insertSourceArtifact(
+        db,
+        sourceArtifactId,
+        sourceRevisionId,
+        workbookSourceWorkbookId,
+        "valid",
+      );
+      await insertBlueprintWithVersion(db, blueprintIdValue, versionIdValue);
+      await insertVersionSourceRow(db, "sourceA");
+      await db
+        .insertInto("questionSets")
+        .values({
+          createdByUserId: ownerUserId,
+          id: setId,
+          name: "Generated set",
+          ownerUserId,
+          status: "active",
+        })
+        .execute();
+      await db
+        .insertInto("questionGenerationRuns")
+        .values({
+          blueprintId: blueprintIdValue,
+          blueprintSnapshot: {
+            blueprintId: blueprintIdValue,
+            blueprintVersionId: versionIdValue,
+            capturedAt: at.toISOString(),
+            description: null,
+            document: emptyDocument(),
+            documentHash: "hash",
+            name: "Blueprint",
+            schemaVersion: 1,
+            sources: [],
+          },
+          blueprintVersionId: versionIdValue,
+          createdByUserId: ownerUserId,
+          id: runId,
+          ownerUserId,
+          requestedCount: 1,
+          status: "succeeded",
+          targetQuestionSetId: setId,
+        })
+        .execute();
+      await db
+        .insertInto("questions")
+        .values({
+          blueprintId: blueprintIdValue,
+          body: emptyDocument(),
+          createdByUserId: ownerUserId,
+          generationRunId: runId,
+          id: questionId,
+          ownerUserId,
+          producer: { schemaVersion: 1 },
+          solution: { schemaVersion: 1 },
+          sourceEvidence: { schemaVersion: 1, sources: [] },
+          sourcePlan: { schemaVersion: 1 },
+          status: "deleted",
+        })
+        .execute();
+      await db
+        .insertInto("questionSetQuestions")
+        .values({
+          addedByUserId: ownerUserId,
+          position: 0,
+          questionId,
+          questionSetId: setId,
+        })
+        .execute();
+
+      const counts = await new KyselyQuestionsRepository(
+        db,
+      ).countProtectedSourceArtifactReferences(
+        toSourceArtifactId(sourceArtifactId),
+      );
+
+      assert.equal(counts.generatedQuestions, 0);
+      assert.equal(
+        counts.generatedQuestionSetMembershipsConservativelyRetained,
+        1,
+      );
+    },
+  );
+
+  integrationDbIt(
+    "source artifact collection retires only source-owned backing workbooks",
+    async (db) => {
+      await insertUser(db, ownerUserId);
+      await insertFile(db, workbookFileId, ownerUserId, "source.xlsx");
+      await markFileDeleting(db, workbookFileId);
+      await insertWorkbook(db, workbookSourceWorkbookId, workbookFileId, {
+        origin: "source_artifact",
+      });
+      await insertSourceDocument(db, sourceDocumentId);
+      await insertSourceRevision(db, sourceRevisionId, sourceDocumentId);
+      await insertSourceArtifact(
+        db,
+        sourceArtifactId,
+        sourceRevisionId,
+        workbookSourceWorkbookId,
+        "valid",
+      );
+      await tombstoneSourceGraph(db);
+
+      assert.deepEqual(
+        await createSourceGarbageCollectionService(db).collectSourceArtifact({
+          sourceArtifactId,
+        }),
+        { status: "collected" },
+      );
+
+      const sourceOwnedWorkbook = await db
+        .selectFrom("workbooks")
+        .select(["origin", "status"])
+        .where("id", "=", workbookSourceWorkbookId)
+        .executeTakeFirstOrThrow();
+      assert.deepEqual(sourceOwnedWorkbook, {
+        origin: "source_artifact",
+        status: "deleted",
+      });
+
+      await testDatabase?.reset();
+      await insertUser(db, ownerUserId);
+      await insertFile(db, workbookFileId, ownerUserId, "source.xlsx");
+      await markFileDeleting(db, workbookFileId);
+      await insertWorkbook(db, workbookSourceWorkbookId, workbookFileId, {
+        origin: "standalone",
+      });
+      await insertSourceDocument(db, sourceDocumentId);
+      await insertSourceRevision(db, sourceRevisionId, sourceDocumentId);
+      await insertSourceArtifact(
+        db,
+        sourceArtifactId,
+        sourceRevisionId,
+        workbookSourceWorkbookId,
+        "valid",
+      );
+      await tombstoneSourceGraph(db);
+
+      assert.deepEqual(
+        await createSourceGarbageCollectionService(db).collectSourceArtifact({
+          sourceArtifactId,
+        }),
+        { status: "collected" },
+      );
+      const standaloneWorkbook = await db
+        .selectFrom("workbooks")
+        .select(["origin", "status"])
+        .where("id", "=", workbookSourceWorkbookId)
+        .executeTakeFirstOrThrow();
+      assert.deepEqual(standaloneWorkbook, {
+        origin: "standalone",
+        status: "valid",
+      });
+    },
+  );
+
+  integrationDbIt(
+    "file content becomes collectible after source artifact collection retires its source-owned workbook",
+    async (db) => {
+      const storage = new FakeFileStorage();
+      await insertUser(db, ownerUserId);
+      await insertFile(db, workbookFileId, ownerUserId, "source.xlsx");
+      await db
+        .updateTable("files")
+        .set({
+          deletedAt: new Date("2026-05-01T00:00:00.000Z"),
+          retentionExpiresAt: new Date("2026-05-31T00:00:00.000Z"),
+          status: "deleting",
+        })
+        .where("id", "=", workbookFileId)
+        .execute();
+      await insertWorkbook(db, workbookSourceWorkbookId, workbookFileId, {
+        origin: "source_artifact",
+      });
+      await insertSourceDocument(db, sourceDocumentId);
+      await insertSourceRevision(db, sourceRevisionId, sourceDocumentId);
+      await insertSourceArtifact(
+        db,
+        sourceArtifactId,
+        sourceRevisionId,
+        workbookSourceWorkbookId,
+        "valid",
+      );
+      await insertBlueprintWithVersion(db, blueprintIdValue, versionIdValue);
+      await insertVersionSourceRow(db, "sourceA");
+      await tombstoneSourceGraph(db);
+      const sourceGc = createSourceGarbageCollectionService(db);
+      const fileGc = createFileLifecycleService(db, storage);
+
+      assert.equal(
+        (
+          await sourceGc.collectSourceArtifact({
+            sourceArtifactId,
+          })
+        ).status,
+        "skipped",
+      );
+
+      await db.deleteFrom("questionBlueprintVersionSources").execute();
+      assert.deepEqual(
+        await sourceGc.collectSourceArtifact({ sourceArtifactId }),
+        { status: "collected" },
+      );
+
+      assert.deepEqual(
+        await fileGc.collectDeletedFileContent({
+          claimToken: "worker-1:019e9315-6a87-715f-9861-8654df081903",
+          fileId: toFileFileId(workbookFileId),
+        }),
+        { status: "collected" },
+      );
+      assert.deepEqual(storage.deletedObjects, [
+        { bucket: "bucket", key: `${workbookFileId}.xlsx` },
+      ]);
+    },
+  );
+
+  integrationDbIt(
+    "promoted standalone workbooks survive source artifact collection and keep file content protected",
+    async (db) => {
+      const storage = new FakeFileStorage();
+      await insertUser(db, ownerUserId);
+      await insertFile(db, workbookFileId, ownerUserId, "source.xlsx");
+      await markFileDeleting(db, workbookFileId);
+      await insertWorkbook(db, workbookSourceWorkbookId, workbookFileId, {
+        origin: "standalone",
+      });
+      await insertSourceDocument(db, sourceDocumentId);
+      await insertSourceRevision(db, sourceRevisionId, sourceDocumentId);
+      await insertSourceArtifact(
+        db,
+        sourceArtifactId,
+        sourceRevisionId,
+        workbookSourceWorkbookId,
+        "valid",
+      );
+      await tombstoneSourceGraph(db);
+      const sourceGc = createSourceGarbageCollectionService(db);
+      const fileGc = createFileLifecycleService(db, storage);
+
+      assert.deepEqual(
+        await sourceGc.collectSourceArtifact({ sourceArtifactId }),
+        { status: "collected" },
+      );
+      const workbook = await db
+        .selectFrom("workbooks")
+        .select(["origin", "status"])
+        .where("id", "=", workbookSourceWorkbookId)
+        .executeTakeFirstOrThrow();
+      assert.deepEqual(workbook, { origin: "standalone", status: "valid" });
+
+      const result = await fileGc.collectDeletedFileContent({
+        claimToken: "worker-1:019e9315-6a87-715f-9861-8654df081904",
+        fileId: toFileFileId(workbookFileId),
+      });
+      assert.deepEqual(result, {
+        eligibility: { eligible: false, reason: "protected_reference" },
+        status: "skipped",
+      });
+      assert.deepEqual(storage.deletedObjects, []);
+    },
+  );
 
   integrationDbIt(
     "enforces draft source materialization completeness by status",
@@ -543,6 +933,35 @@ function createValidationService(db: QuestionsTestDatabase) {
   });
 }
 
+function createSourceGarbageCollectionService(db: QuestionsTestDatabase) {
+  return new SourceGarbageCollectionService({
+    clock: { now: () => new Date("2026-10-01T00:00:00.000Z") },
+    questionsTransaction: {
+      transaction: (fn) =>
+        db.transaction().execute((tx) =>
+          fn({
+            questionsRepository: new KyselyQuestionsRepository(tx),
+          }),
+        ),
+    },
+  });
+}
+
+function createFileLifecycleService(
+  db: QuestionsTestDatabase,
+  fileStorage: FileStorage,
+) {
+  return new FileLifecycleService({
+    clock: { now: () => new Date("2026-10-01T00:00:00.000Z") },
+    fileStorage,
+    filesRepository: new KyselyFilesRepository(db),
+    garbageCollectionTransaction: {
+      transaction: (fn) =>
+        db.transaction().execute((tx) => fn(new KyselyFilesRepository(tx))),
+    },
+  });
+}
+
 async function assertPostgresRejects(input: {
   run(): Promise<unknown>;
   constraint?: string;
@@ -709,11 +1128,27 @@ async function insertFile(
     .execute();
 }
 
+async function markFileDeleting(
+  db: QuestionsTestDatabase,
+  id: string,
+): Promise<void> {
+  await db
+    .updateTable("files")
+    .set({
+      deletedAt: new Date("2026-05-01T00:00:00.000Z"),
+      retentionExpiresAt: new Date("2026-05-31T00:00:00.000Z"),
+      status: "deleting",
+    })
+    .where("id", "=", id)
+    .execute();
+}
+
 async function insertWorkbook(
   db: QuestionsTestDatabase,
   id: string,
   fileIdValue: string,
   input?: Partial<{
+    origin: "standalone" | "source_artifact";
     ownerUserId: string;
     originalName: string;
   }>,
@@ -728,6 +1163,7 @@ async function insertWorkbook(
       id,
       name: "Workbook A",
       originalName: input?.originalName ?? "source.xlsx",
+      origin: input?.origin ?? "standalone",
       ownerUserId: input?.ownerUserId ?? ownerUserId,
       status: "valid",
     })
@@ -797,6 +1233,34 @@ async function insertSourceArtifact(
       validationError: null,
       workbookId: workbookValue,
     })
+    .execute();
+}
+
+async function tombstoneSourceGraph(db: QuestionsTestDatabase): Promise<void> {
+  await db
+    .updateTable("sourceDocuments")
+    .set({
+      deletedAt: new Date("2026-06-01T00:00:00.000Z"),
+      retentionExpiresAt: new Date("2026-08-30T00:00:00.000Z"),
+      status: "deleted",
+    })
+    .where("id", "=", sourceDocumentId)
+    .execute();
+  await db
+    .updateTable("sourceRevisions")
+    .set({
+      deletedAt: new Date("2026-06-01T00:00:00.000Z"),
+      retentionExpiresAt: new Date("2026-08-30T00:00:00.000Z"),
+    })
+    .where("id", "=", sourceRevisionId)
+    .execute();
+  await db
+    .updateTable("sourceArtifacts")
+    .set({
+      deletedAt: new Date("2026-06-01T00:00:00.000Z"),
+      retentionExpiresAt: new Date("2026-08-30T00:00:00.000Z"),
+    })
+    .where("id", "=", sourceArtifactId)
     .execute();
 }
 
@@ -896,7 +1360,11 @@ async function insertBlueprintWithVersion(
   db: QuestionsTestDatabase,
   blueprintValue: string,
   versionValue: string,
+  input?: Partial<{
+    name: string;
+  }>,
 ): Promise<void> {
+  const name = input?.name ?? "Blueprint";
   await db.transaction().execute(async (tx) => {
     await tx
       .insertInto("questionBlueprints")
@@ -907,7 +1375,7 @@ async function insertBlueprintWithVersion(
         description: questionBlueprintDescription(null),
         document: emptyDocument(),
         id: blueprintValue,
-        name: questionBlueprintName("Blueprint"),
+        name: questionBlueprintName(name),
         ownerUserId,
         status: "active",
         visibility: questionBlueprintVisibility("private"),
@@ -921,7 +1389,7 @@ async function insertBlueprintWithVersion(
         description: null,
         document: emptyDocument(),
         id: versionValue,
-        name: "Blueprint",
+        name,
         ownerUserId,
         parentVersionId: null,
         publishedAt: at,
@@ -934,8 +1402,12 @@ async function insertBlueprintWithVersion(
 async function insertVersionSourceRow(
   db: QuestionsTestDatabase,
   sourceIdValue: string,
+  input: Partial<{
+    blueprintVersionId: string;
+  }> = {},
 ): Promise<void> {
   await insertVersionSourceMaterializationRow(db, {
+    blueprintVersionId: input.blueprintVersionId,
     originalName: "published.xlsx",
     sourceId: sourceIdValue,
   });
@@ -949,6 +1421,7 @@ async function insertVersionSourceMaterializationRow(
     fileId: string | null;
     originalName: string | null;
     sourceArtifactId: string | null;
+    blueprintVersionId: string;
     sourceDocumentId: string | null;
     sourceId: string;
     sourceRevisionId: string | null;
@@ -958,7 +1431,7 @@ async function insertVersionSourceMaterializationRow(
   await db
     .insertInto("questionBlueprintVersionSources")
     .values({
-      blueprintVersionId: versionIdValue,
+      blueprintVersionId: input.blueprintVersionId ?? versionIdValue,
       byteSize: nullableValue(input.byteSize, 1234),
       checksumSha256: nullableValue(input.checksumSha256, checksum),
       fileId: nullableValue(input.fileId, workbookFileId),
@@ -1018,6 +1491,8 @@ function currentUser(): CurrentUser {
     isAdmin: false,
     roles: [],
     user: { id: userId(ownerUserId) },
+    // Focused integration-test user: auth-derived fields outside repository
+    // persistence behavior are intentionally omitted.
   } as unknown as CurrentUser;
 }
 
@@ -1028,4 +1503,28 @@ function emptyDocument() {
     responseFields: [],
     schemaVersion: 1,
   });
+}
+
+class FakeFileStorage implements FileStorage {
+  readonly deletedObjects: { bucket: string; key: string }[] = [];
+
+  async deleteObject(input: { bucket: string; key: string }): Promise<void> {
+    this.deletedObjects.push(input);
+  }
+
+  async createDownloadUrl(): Promise<never> {
+    throw new Error("Not implemented.");
+  }
+
+  async createUploadUrl(): Promise<never> {
+    throw new Error("Not implemented.");
+  }
+
+  async getObjectBytes(): Promise<never> {
+    throw new Error("Not implemented.");
+  }
+
+  async getObjectMetadata(): Promise<never> {
+    throw new Error("Not implemented.");
+  }
 }

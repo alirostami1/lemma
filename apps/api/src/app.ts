@@ -1,4 +1,5 @@
 import type { DatabasePort } from "@lemma/db";
+import type { FileResult } from "@lemma/files/application";
 import { createFilesModule } from "@lemma/files/module";
 import { createNotificationsModule } from "@lemma/notifications/module";
 import { createOpsModule } from "@lemma/ops/module";
@@ -11,6 +12,7 @@ import { Hono } from "hono";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { createClock } from "./composition/clock.js";
+import { isExpectedDraftSourceFileUnavailableError } from "./composition/draft-source-file-error-mapping.js";
 import { createIdGenerators } from "./composition/id-generators.js";
 import { createIdentityAuth } from "./composition/identity-auth.js";
 import { createRealtimeChannelAccess } from "./composition/realtime-channel-access.js";
@@ -41,7 +43,7 @@ export function newApp({ database, config = defaultConfig }: NewAppDeps) {
   });
 
   const filesModule = createFilesModule({
-    db: database.executor,
+    db: database,
     requireIdentity,
     idGenerator: idGenerators.files,
     clock,
@@ -54,12 +56,14 @@ export function newApp({ database, config = defaultConfig }: NewAppDeps) {
   });
 
   const workbookModule = createWorkbookModule({
-    db: database,
-    requireIdentity,
-    fileProvider: createWorkbookFileProvider(filesModule.fileContentReaderPort),
-    workbookConfig: config.workbook,
-    idGenerator: idGenerators.workbook,
     clock,
+    createFileReferenceGuardForTransaction:
+      filesModule.createFileReferenceGuardForTransaction,
+    db: database,
+    fileProvider: createWorkbookFileProvider(filesModule.fileContentReaderPort),
+    idGenerator: idGenerators.workbook,
+    requireIdentity,
+    workbookConfig: config.workbook,
   });
 
   const questionsModule = createQuestionsModule({
@@ -70,18 +74,30 @@ export function newApp({ database, config = defaultConfig }: NewAppDeps) {
     workbookAccessPort: workbookModule.workbookAccessPort,
     draftSourceFilePort: {
       getFileMetadata: async ({ currentUser, fileId }) => {
-        const { file } = await filesModule.filesService.getFile({
-          currentUser,
-          fileId,
-        });
+        let result: FileResult;
+        try {
+          result = await filesModule.filesService.getFile({
+            currentUser,
+            fileId,
+          });
+        } catch (error) {
+          if (isExpectedDraftSourceFileUnavailableError(error)) {
+            return { status: "unavailable" };
+          }
+          throw error;
+        }
+        const { file } = result;
         return {
-          fileId: file.id,
-          ownerUserId: file.ownerUserId,
-          originalName: file.originalName,
-          contentType: file.contentType,
-          byteSize: file.byteSize,
-          checksumSha256: file.checksumSha256,
-          purpose: file.purpose,
+          file: {
+            byteSize: file.byteSize,
+            checksumSha256: file.checksumSha256,
+            contentType: file.contentType,
+            fileId: file.id,
+            originalName: file.originalName,
+            ownerUserId: file.ownerUserId,
+            purpose: file.purpose,
+          },
+          status: "available",
         };
       },
     },
@@ -93,6 +109,8 @@ export function newApp({ database, config = defaultConfig }: NewAppDeps) {
               tx,
             );
           return fn({
+            fileReferenceGuard:
+              filesModule.createFileReferenceGuardForTransaction(tx),
             questionsRepository: new KyselyQuestionsRepository(tx),
             workbookRegistrationPort: {
               async registerWorkbookFromFile(input) {

@@ -1,7 +1,8 @@
-import type { DatabaseExecutor } from "@lemma/db";
+import type { DatabasePort } from "@lemma/db";
 import {
   type Clock,
   FileContentReader,
+  FileReferenceGuard,
   FilesService,
   type FilesServiceConfig,
   type IdGenerator,
@@ -15,14 +16,14 @@ import {
 } from "./infrastructure/index.js";
 
 export function createFilesModule(deps: {
-  db: DatabaseExecutor;
+  db: DatabasePort;
   requireIdentity: RequireIdentity;
   idGenerator: IdGenerator;
   clock: Clock;
   config: FilesServiceConfig;
   storageConfig: S3FileStorageConfig;
 }) {
-  const filesRepository = new KyselyFilesRepository(deps.db);
+  const filesRepository = new KyselyFilesRepository(deps.db.executor);
 
   const storage = new S3FileStorage(deps.storageConfig);
 
@@ -31,6 +32,10 @@ export function createFilesModule(deps: {
     config: deps.config,
     fileStorage: storage,
     filesRepository,
+    garbageCollectionTransaction: {
+      transaction: (fn) =>
+        deps.db.transaction((tx) => fn(new KyselyFilesRepository(tx))),
+    },
     idGenerator: deps.idGenerator,
   });
   const fileContentReaderPort = new FileContentReader({
@@ -43,5 +48,12 @@ export function createFilesModule(deps: {
     requireIdentity: deps.requireIdentity,
   });
 
-  return { fileContentReaderPort, filesService, routes };
+  return {
+    createFileReferenceGuardForTransaction(tx: DatabasePort["executor"]) {
+      return new FileReferenceGuard(new KyselyFilesRepository(tx));
+    },
+    fileContentReaderPort,
+    filesService,
+    routes,
+  };
 }

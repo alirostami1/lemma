@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { rootOperationLineage } from "@lemma/domain";
+import { FileAliasUnavailableError } from "@lemma/files/application";
 import type { CurrentUser } from "@lemma/identity/application";
 import {
   createQuestionBlueprintDraft as createDraft,
@@ -629,6 +630,89 @@ describe("QuestionBlueprintDraftService", () => {
     );
   });
 
+  it("maps unavailable source file metadata lookup to draft source invalid", async () => {
+    const service = createService({
+      draft: createTargetedDraftWithLocalSource(),
+    });
+
+    await assert.rejects(
+      () =>
+        service.attachQuestionBlueprintDraftSourceFile({
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 1,
+          fileId: "019e9315-6a87-715f-9861-8654df099006",
+          lineage: testLineage(),
+          sourceId: "sourceA",
+        }),
+      /Draft source file is unavailable/,
+    );
+  });
+
+  it("rethrows unexpected source file metadata lookup errors", async () => {
+    const unexpected = new Error("database unavailable");
+    const service = createService({
+      draft: createTargetedDraftWithLocalSource(),
+      fileMetadataUnexpectedError: unexpected,
+    });
+
+    await assert.rejects(
+      () =>
+        service.attachQuestionBlueprintDraftSourceFile({
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 1,
+          fileId: "019e9315-6a87-715f-9861-8654df099006",
+          lineage: testLineage(),
+          sourceId: "sourceA",
+        }),
+      unexpected,
+    );
+  });
+
+  it("rejects source files that become unavailable under the file guard lock", async () => {
+    const service = createService({
+      draft: createTargetedDraftWithLocalSource(),
+      fileMetadata: createFileMetadata(),
+      fileReferenceUnavailable: true,
+    });
+
+    await assert.rejects(
+      () =>
+        service.attachQuestionBlueprintDraftSourceFile({
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 1,
+          fileId: "019e9315-6a87-715f-9861-8654df099006",
+          lineage: testLineage(),
+          sourceId: "sourceA",
+        }),
+      /Draft source file is unavailable/,
+    );
+  });
+
+  it("rethrows unexpected file guard errors", async () => {
+    const unexpected = new Error("database unavailable");
+    const service = createService({
+      draft: createTargetedDraftWithLocalSource(),
+      fileMetadata: createFileMetadata(),
+      fileReferenceUnexpectedError: unexpected,
+    });
+
+    await assert.rejects(
+      () =>
+        service.attachQuestionBlueprintDraftSourceFile({
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 1,
+          fileId: "019e9315-6a87-715f-9861-8654df099006",
+          lineage: testLineage(),
+          sourceId: "sourceA",
+        }),
+      unexpected,
+    );
+  });
+
   it("optimistically locks draft discard by expected revision", async () => {
     const service = createService({ draft: createTargetedDraft() });
 
@@ -894,6 +978,9 @@ function createService(
     attachRaceBeforeMaterialization?: boolean;
     draft?: QuestionBlueprintDraft | null;
     fileMetadata?: DraftSourceFileMetadata;
+    fileMetadataUnexpectedError?: Error;
+    fileReferenceUnavailable?: boolean;
+    fileReferenceUnexpectedError?: Error;
     generatedSourceArtifactId?: typeof testSourceArtifactId;
     generatedSourceRevisionId?: typeof testSourceRevisionId;
     onListQuestionBlueprintDrafts?: (input: {
@@ -1014,12 +1101,14 @@ function createService(
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         createdAt: at,
         createdByUserId: ownerUserId,
+        deletedAt: null,
         editorMetadata: {},
         fileId: "019e9315-6a87-715f-9861-8654df099006",
         id,
         kind: "workbook" as const,
         ownerUserId,
         parentRevisionId: null,
+        retentionExpiresAt: null,
         sourceDocumentId:
           options.previousRevisionSourceDocumentId ?? testSourceDocumentId,
       };
@@ -1062,6 +1151,7 @@ function createService(
           kind: "workbook" as const,
           name: "Source A",
           ownerUserId,
+          retentionExpiresAt: null,
           status: "active" as const,
           updatedAt: at,
         }
@@ -1130,7 +1220,19 @@ function createService(
           },
         };
         return fn({
+          fileReferenceGuard: {
+            async assertFileAliasReferenceableForUpdate() {
+              if (options.fileReferenceUnexpectedError) {
+                throw options.fileReferenceUnexpectedError;
+              }
+              if (options.fileReferenceUnavailable) {
+                throw new FileAliasUnavailableError();
+              }
+            },
+          },
           questionsRepository:
+            // This focused transaction fake implements only methods exercised
+            // by the draft-source attach workflow under test.
             transactionQuestionsRepository as unknown as QuestionsRepository,
           workbookRegistrationPort,
         });
@@ -1141,8 +1243,11 @@ function createService(
     clock: { now: () => at },
     draftSourceFilePort: {
       async getFileMetadata() {
-        if (!options.fileMetadata) throw new Error("file missing");
-        return options.fileMetadata;
+        if (options.fileMetadataUnexpectedError) {
+          throw options.fileMetadataUnexpectedError;
+        }
+        if (!options.fileMetadata) return { status: "unavailable" };
+        return { file: options.fileMetadata, status: "available" };
       },
     } as DraftSourceFilePort,
     idGenerator: {
@@ -1156,6 +1261,8 @@ function createService(
         options.generatedSourceRevisionId ?? testSourceRevisionId,
     } as IdGenerator,
     questionBlueprintDraftTransaction,
+    // This focused repository fake implements only methods exercised by these
+    // application service tests.
     questionsRepository: questionsRepository as unknown as QuestionsRepository,
   });
 }
@@ -1408,12 +1515,14 @@ function revisionFixture() {
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     createdAt: at,
     createdByUserId: ownerUserId,
+    deletedAt: null,
     editorMetadata: {},
     fileId: "019e9315-6a87-715f-9861-8654df099006",
     id: testSourceRevisionId,
     kind: "workbook" as const,
     ownerUserId,
     parentRevisionId: null,
+    retentionExpiresAt: null,
     sourceDocumentId: testSourceDocumentId,
   };
 }
@@ -1455,6 +1564,8 @@ function currentUser(): CurrentUser {
     isAdmin: false,
     roles: [],
     user: { id: ownerUserId },
+    // CurrentUser has additional auth-derived fields irrelevant to these
+    // application tests.
   } as unknown as CurrentUser;
 }
 

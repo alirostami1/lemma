@@ -56,6 +56,7 @@ describe("DraftSourceWorkbookRegistrationService", () => {
     assert.equal(result.status, "pending_validation");
     assert.equal(outboxRepository.events.length, 1);
     assert.equal(workbookRepository.calls.length, 1);
+    assert.equal(workbookRepository.calls[0]?.origin, "source_artifact");
   });
 
   it("returns existing workbook state without appending a new event", async () => {

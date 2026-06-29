@@ -90,7 +90,7 @@ export function createWorkerRuntime(
       downloadUrlExpiresInSeconds: config.s3.downloadUrlExpiresInSeconds,
       uploadUrlExpiresInSeconds: config.s3.uploadUrlExpiresInSeconds,
     },
-    db: database.executor,
+    db: database,
     idGenerator: {
       fileId: () => toFileId(uuidv7()),
       fileUploadId: () => toFileUploadId(uuidv7()),
@@ -100,6 +100,8 @@ export function createWorkerRuntime(
   });
   const workbookModule = createWorkbookModule({
     clock,
+    createFileReferenceGuardForTransaction:
+      filesModule.createFileReferenceGuardForTransaction,
     db: database,
     fileProvider: {
       getWorkbookFileMetadata: async (input) => {

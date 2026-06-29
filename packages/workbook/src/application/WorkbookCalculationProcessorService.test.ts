@@ -279,11 +279,17 @@ class FakeWorkbookTransaction implements WorkbookTransactionPort {
 
   async transaction<T>(
     fn: (deps: {
+      fileReferenceGuard: {
+        assertFileAliasReferenceableForUpdate(fileId: string): Promise<void>;
+      };
       workbookRepository: WorkbookRepository;
       outboxRepository: OutboxRepository;
     }) => Promise<T>,
   ): Promise<T> {
     return fn({
+      fileReferenceGuard: {
+        async assertFileAliasReferenceableForUpdate() {},
+      },
       outboxRepository: new FakeOutboxRepository(this.outboxEvents),
       workbookRepository: this.repository,
     });
@@ -356,6 +362,18 @@ class FakeWorkbookRepository implements WorkbookRepository {
     workbook: Workbook;
     created: boolean;
   }> {
+    throw new Error("Not implemented.");
+  }
+
+  async findWorkbookByOwnerUserIdAndFileId(): Promise<Workbook | null> {
+    throw new Error("Not implemented.");
+  }
+
+  async findWorkbookByOwnerUserIdAndFileIdForUpdate(): Promise<Workbook | null> {
+    throw new Error("Not implemented.");
+  }
+
+  async promoteWorkbookToStandalone(): Promise<Workbook | null> {
     throw new Error("Not implemented.");
   }
 
