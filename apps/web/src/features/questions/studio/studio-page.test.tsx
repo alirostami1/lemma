@@ -6,10 +6,12 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createReadyStudioControllerFixture } from "./studio-controller-test-fixtures";
 import { StudioPage } from "./studio-page";
 import type { StudioContinueCardViewModel } from "./unfinished-work-view-model";
 
@@ -414,9 +416,9 @@ describe("StudioPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("does not render persistent source controls in the workbench", async () => {
+  it("opens source attachment from Add Reference without persistent source controls", async () => {
     const user = userEvent.setup();
-    const addSource = vi.fn();
+    const onOpenChange = vi.fn();
     draftQueryMock.mockReturnValue({
       data: {
         draft: {
@@ -430,10 +432,16 @@ describe("StudioPage", () => {
       refetch: vi.fn(),
     });
     studioControllerMock.mockReturnValue(
-      createReadyStudioController({ addSource }),
+      createReadyStudioControllerFixture({
+        source: { actions: { addSource: () => onOpenChange(true) } },
+        sourcePicker: {
+          onOpenChange,
+          open: false,
+        },
+      }),
     );
 
-    render(<StudioPage draftId="draft-1" />);
+    const { rerender } = render(<StudioPage draftId="draft-1" />);
 
     expect(screen.getByText("Block editor")).toBeInTheDocument();
     expect(
@@ -450,108 +458,177 @@ describe("StudioPage", () => {
     await user.click(screen.getByRole("button", { name: "Workbook" }));
     await user.click(screen.getByRole("button", { name: "Upload a new file" }));
 
-    expect(addSource).toHaveBeenCalledOnce();
+    expect(onOpenChange).toHaveBeenCalledWith(true);
+    studioControllerMock.mockReturnValue(
+      createReadyStudioControllerFixture({
+        source: { actions: { addSource: () => onOpenChange(true) } },
+        sourcePicker: {
+          onOpenChange,
+          open: true,
+        },
+      }),
+    );
+    rerender(<StudioPage draftId="draft-1" />);
+
+    expect(
+      screen.getByRole("dialog", { name: "Upload a new file" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Add a workbook to this blueprint. It stays local until you save.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("loaded editor lets the user save and publish using product copy", async () => {
+    const user = userEvent.setup();
+    const onOpenPublishDialog = vi.fn();
+    const onPublish = vi.fn();
+    const onSaveDraft = vi.fn();
+    draftQueryMock.mockReturnValue({
+      data: {
+        draft: {
+          blueprintId: null,
+          name: "Current work",
+          status: "draft",
+        },
+      },
+      isError: false,
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+    studioControllerMock.mockReturnValue(
+      createReadyStudioControllerFixture({
+        commandBar: {
+          onOpenPublishDialog,
+          onSaveDraft,
+          saveState: "unsaved",
+        },
+        publishDialog: {
+          onPublish,
+          open: false,
+          state: {
+            currentName: "Current work",
+            validationIssue: null,
+          },
+        },
+      }),
+    );
+
+    const { rerender } = render(<StudioPage draftId="draft-1" />);
+
+    expect(screen.getByRole("textbox", { name: "Blueprint name" })).toHaveValue(
+      "Current work",
+    );
+    expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
+    expect(
+      screen.queryByRole("button", { name: "Save draft" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Publish draft" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(onSaveDraft).toHaveBeenCalledOnce();
+
+    await user.click(screen.getByRole("button", { name: "Publish" }));
+    expect(onOpenPublishDialog).toHaveBeenCalledOnce();
+
+    studioControllerMock.mockReturnValue(
+      createReadyStudioControllerFixture({
+        commandBar: {
+          onOpenPublishDialog,
+          onSaveDraft,
+          saveState: "unsaved",
+        },
+        publishDialog: {
+          onPublish,
+          open: true,
+          state: {
+            currentName: "Current work",
+            validationIssue: null,
+          },
+        },
+      }),
+    );
+    rerender(<StudioPage draftId="draft-1" />);
+
+    const publishDialog = screen.getByRole("dialog", { name: "Publish" });
+    expect(
+      within(publishDialog).getByText(
+        "This saves your changes and publishes the blueprint.",
+      ),
+    ).toBeInTheDocument();
+
+    await user.click(
+      within(publishDialog).getByRole("button", { name: "Publish" }),
+    );
+    expect(onPublish).toHaveBeenCalledOnce();
+  });
+
+  it("shows editor saving state without failed copy", () => {
+    draftQueryMock.mockReturnValue({
+      data: {
+        draft: {
+          blueprintId: null,
+          name: "Current work",
+          status: "draft",
+        },
+      },
+      isError: false,
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+    studioControllerMock.mockReturnValue(
+      createReadyStudioControllerFixture({
+        commandBar: {
+          isSaving: true,
+          saveError: null,
+          saveState: "saving",
+        },
+      }),
+    );
+
+    render(<StudioPage draftId="draft-1" />);
+
+    expect(screen.getByText("Saving changes")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Saving..." })).toBeDisabled();
+    expect(screen.queryByText("Save failed")).not.toBeInTheDocument();
+  });
+
+  it("shows editor save failure with product copy", () => {
+    draftQueryMock.mockReturnValue({
+      data: {
+        draft: {
+          blueprintId: null,
+          name: "Current work",
+          status: "draft",
+        },
+      },
+      isError: false,
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+    studioControllerMock.mockReturnValue(
+      createReadyStudioControllerFixture({
+        commandBar: {
+          isSaving: false,
+          saveError: "This work could not be saved.",
+          saveState: "failed",
+        },
+      }),
+    );
+
+    render(<StudioPage draftId="draft-1" />);
+
+    expect(screen.getByText("Save failed")).toBeInTheDocument();
+    expect(
+      screen.getByText("This work could not be saved."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
+    expect(screen.queryByText(/save draft/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/draft could not/i)).not.toBeInTheDocument();
   });
 });
-
-function createReadyStudioController({
-  addSource,
-}: {
-  addSource?: () => void;
-} = {}) {
-  const noop = vi.fn();
-  return {
-    commandBar: {
-      blueprintDescription: "",
-      blueprintName: "Current work",
-      canGenerate: false,
-      canRedo: false,
-      canUndo: false,
-      generateDisabledReason: null,
-      isPublishing: false,
-      isSaving: false,
-      onBlueprintDescriptionChange: noop,
-      onBlueprintNameChange: noop,
-      onOpenPublishDialog: noop,
-      onOpenSavedBlueprints: noop,
-      onRedo: noop,
-      onReloadLatestDraft: noop,
-      onReset: noop,
-      onSaveDraft: noop,
-      onUndo: noop,
-      routeSearch: { draftId: "draft-1" },
-      saveConflict: null,
-      saveError: null,
-      saveState: "saved",
-    },
-    draftLoadState: { status: "ready" },
-    draftRecovery: {
-      onDiscard: noop,
-      onKeepCurrent: noop,
-      onRestore: noop,
-      open: false,
-      snapshot: null,
-    },
-    editor: {
-      authoringModel: {
-        blocks: [],
-        references: [],
-        responseFields: [],
-        schemaVersion: 1,
-      },
-      onAuthoringModelChange: noop,
-      referencePreviewCache: {},
-      sources: [],
-      workbookSheetNamesBySourceId: {},
-    },
-    publishDialog: {
-      isPublishing: false,
-      isSavingBeforePublish: false,
-      onOpenChange: noop,
-      onPublish: noop,
-      open: false,
-      state: { currentName: "Current work", validationIssue: null },
-    },
-    resetConfirmation: { onCancel: noop, onConfirm: noop, open: false },
-    savedBlueprints: {
-      blueprintAction: { onEditAsDraft: noop },
-      blueprints: [],
-      draftLoadMoreErrorMessage: null,
-      drafts: [],
-      draftsErrorMessage: null,
-      errorMessage: null,
-      hasMoreBlueprints: false,
-      hasMoreDrafts: false,
-      isDraftsInitialLoading: false,
-      isInitialLoading: false,
-      isLoadingBlueprintsMore: false,
-      isLoadingDraftsMore: false,
-      loadMoreErrorMessage: null,
-      onLoadMoreBlueprints: noop,
-      onLoadMoreDrafts: noop,
-      onOpenChange: noop,
-      onOpenDraft: noop,
-      onRetry: noop,
-      open: false,
-    },
-    source: {
-      actions: { addSource: addSource ?? noop, createSource: noop },
-      sources: [],
-    },
-    sourcePicker: { onOpenChange: noop, open: false },
-    workbookPicker: {
-      fileName: "",
-      hasMoreWorkbookSheets: false,
-      isLoadingMoreWorkbookSheets: false,
-      localWorkbook: null,
-      onLoadMoreWorkbookSheets: noop,
-      onOpenChange: noop,
-      onSelect: noop,
-      open: false,
-      openWorkbookPicker: noop,
-      request: null,
-      workbookSheets: [],
-      workbookSnapshotId: null,
-    },
-  };
-}
