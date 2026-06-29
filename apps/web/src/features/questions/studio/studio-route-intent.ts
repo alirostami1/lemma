@@ -1,7 +1,7 @@
 export type StudioRouteSearch = {
   blueprintId?: string;
   draftId?: string;
-  new?: string;
+  new?: "1";
 };
 
 export type StudioRouteIntent =
@@ -22,7 +22,7 @@ export function parseStudioRouteSearch(
   return {
     blueprintId: toRouteParam(search.blueprintId),
     draftId: toRouteParam(search.draftId),
-    new: toRouteParam(search.new),
+    new: toNewRouteParam(search.new),
   };
 }
 
@@ -97,4 +97,12 @@ function toRouteParam(value: unknown): string | undefined {
 
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function toNewRouteParam(value: unknown): "1" | undefined {
+  if (value === "1" || value === 1) {
+    return "1";
+  }
+
+  return undefined;
 }

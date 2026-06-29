@@ -280,7 +280,7 @@ describe("useBlueprintDraftController draft loading", () => {
       data: {
         draft: {
           ...draftTemplate("draft_malformed", "Malformed draft"),
-          document: null as unknown as QuestionBlueprintDraftDto["document"],
+          document: null,
         },
       },
       isError: false,
@@ -627,7 +627,7 @@ type QuestionBlueprintDraftDto = {
     blocks: unknown[];
     responseFields: unknown[];
     references: unknown[];
-  };
+  } | null;
   sources: unknown[];
   status: "draft" | "publishing" | "published" | "discarded";
   lastSavedAt: string;

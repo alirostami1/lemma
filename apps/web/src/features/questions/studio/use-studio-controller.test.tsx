@@ -5,6 +5,7 @@ import { fireEvent, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
+import type { StudioRouteSearch } from "./studio-route-intent";
 import type { StudioDraftRecoveryState } from "./use-blueprint-draft-controller";
 import { useStudioController } from "./use-studio-controller";
 import type { UseStudioDraftSaveControllerInput } from "./use-studio-draft-save-controller";
@@ -187,9 +188,7 @@ function createControllerWrapper() {
   );
 }
 
-function renderStudioController(
-  input: { blueprintId?: string; draftId?: string; new?: string } = {},
-) {
+function renderStudioController(input: StudioRouteSearch = {}) {
   return renderHook(() => useStudioController(input), {
     wrapper: createControllerWrapper(),
   });
