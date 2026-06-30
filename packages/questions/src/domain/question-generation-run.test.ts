@@ -131,7 +131,7 @@ function snapshot() {
       blocks: [],
       references: [],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     }),
     name: questionBlueprintName("Blueprint"),
     sources: [],

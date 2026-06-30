@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   createInitialQuestionGenerationRun,
   createQuestion,
+  createQuestionBlueprint,
   createQuestionBlueprintSnapshot,
   questionBlueprintDescription,
   questionBlueprintDocument,
@@ -19,7 +20,11 @@ import {
   questionSourcePlan,
   userId,
 } from "../domain/index.js";
-import { presentQuestion, presentQuestionGenerationRun } from "./presenters.js";
+import {
+  presentQuestion,
+  presentQuestionBlueprint,
+  presentQuestionGenerationRun,
+} from "./presenters.js";
 
 const ownerUserId = userId("019e9315-6a87-715f-9861-8654df075001");
 const createdAt = new Date("2026-06-18T00:00:00.000Z");
@@ -39,7 +44,7 @@ describe("question presenters", () => {
           body: questionBody({
             blocks: [],
             responseFields: [],
-            schemaVersion: 1,
+            schemaVersion: 2,
           }),
           createdByUserId: ownerUserId,
           generationRunId: questionGenerationRunId(
@@ -85,7 +90,7 @@ describe("question presenters", () => {
               blocks: [],
               references: [],
               responseFields: [],
-              schemaVersion: 1,
+              schemaVersion: 2,
             }),
             name: questionBlueprintName("Blueprint"),
             sources: [],
@@ -107,4 +112,80 @@ describe("question presenters", () => {
       blueprintVersionId,
     );
   });
+
+  it("strips private input fields from public blueprint presentation recursively", () => {
+    const response = presentQuestionBlueprint({
+      questionBlueprint: createQuestionBlueprint(
+        {
+          createdByUserId: ownerUserId,
+          currentVersionId: blueprintVersionId,
+          description: questionBlueprintDescription(null),
+          document: questionBlueprintDocument({
+            blocks: [
+              privateInputBlock("top_level_input", "top_answer"),
+              {
+                blocks: [privateInputBlock("container_input", "nested_answer")],
+                id: "step_1",
+                kind: "container",
+                title: "Step one",
+                type: "step",
+              },
+              {
+                cells: [
+                  {
+                    blocks: [privateInputBlock("table_input", "table_answer")],
+                    columnId: "column_1",
+                    id: "cell_1",
+                    rowId: "row_1",
+                  },
+                ],
+                columns: [{ id: "column_1", label: "Column" }],
+                id: "table_1",
+                kind: "complex",
+                rows: [{ id: "row_1", label: "Row" }],
+                showColumnNames: true,
+                showRowNames: true,
+                type: "table",
+              },
+            ],
+            references: [],
+            responseFields: [
+              { id: "top_answer", type: "text" },
+              { id: "nested_answer", type: "text" },
+              { id: "table_answer", type: "text" },
+            ],
+            schemaVersion: 2,
+          }),
+          id: blueprintId,
+          name: questionBlueprintName("Blueprint"),
+          ownerUserId,
+          sources: [],
+          visibility: "private",
+        },
+        createdAt,
+      ),
+    });
+
+    const publicOutput = JSON.stringify(response.questionBlueprint.document);
+
+    assert.equal(publicOutput.includes("correctValueSource"), false);
+    assert.equal(publicOutput.includes("grading"), false);
+    assert.equal(publicOutput.includes("points"), false);
+    assert.equal(publicOutput.includes("top_level_input"), true);
+    assert.equal(publicOutput.includes("container_input"), true);
+    assert.equal(publicOutput.includes("table_input"), true);
+  });
 });
+
+function privateInputBlock(id: string, responseFieldId: string) {
+  return {
+    correctValueSource: { schemaVersion: 1, type: "literal", value: "42" },
+    grading: { mode: "exact" },
+    id,
+    kind: "primitive" as const,
+    label: "Answer",
+    points: 1,
+    responseFieldId,
+    type: "input" as const,
+  };
+}

@@ -319,7 +319,7 @@ function savedRevisionResult(): SaveQuestionBlueprintDraftWorkbookSourceRevision
       blocks: [],
       references: [],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     },
     id: "draft-1",
     lastSavedAt: at,

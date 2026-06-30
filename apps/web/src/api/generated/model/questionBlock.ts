@@ -4,15 +4,17 @@
  * Lemma API
  * OpenAPI spec version: 0.1.0
  */
-import type { QuestionResponseBlock } from "./questionResponseBlock.ts";
-import type { QuestionRichTextBlock } from "./questionRichTextBlock.ts";
-import type { QuestionSeparatorBlock } from "./questionSeparatorBlock.ts";
+import type { QuestionPrimitiveBlock } from "./questionPrimitiveBlock.ts";
 import type { QuestionTableBlock } from "./questionTableBlock.ts";
-import type { QuestionTextBlock } from "./questionTextBlock.ts";
 
 export type QuestionBlock =
-  | QuestionTextBlock
-  | QuestionRichTextBlock
-  | QuestionSeparatorBlock
-  | QuestionResponseBlock
+  | QuestionPrimitiveBlock
+  | {
+      blocks: QuestionBlock[];
+      /** @minLength 1 */
+      id: string;
+      kind: "container";
+      title?: string;
+      type: "page" | "step";
+    }
   | QuestionTableBlock;

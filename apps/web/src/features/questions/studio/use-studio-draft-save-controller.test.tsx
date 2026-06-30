@@ -1199,7 +1199,7 @@ function createModel(): ComposedEditorModel {
     blocks: [],
     references: [],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 
@@ -1245,7 +1245,7 @@ function createDocument() {
     blocks: [],
     references: [],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 

@@ -40,11 +40,16 @@ function createContentModel(): TableEditorModel {
   return {
     cells: [
       {
+        blocks: [
+          {
+            content: [{ text: "42", type: "text" }],
+            id: "text_1",
+            type: "text",
+          },
+        ],
         columnId: "column_1",
-        content: [{ text: "42", type: "text" }],
         id: "cell_1",
         rowId: "row_1",
-        type: "content",
       },
     ],
     columns: [{ id: "column_1", label: "Column 1" }],
@@ -61,16 +66,21 @@ function createAnswerModel(): TableEditorModel {
     ...createContentModel(),
     cells: [
       {
+        blocks: [
+          {
+            correctValueSource: { type: "literal", value: 7 },
+            grading: { mode: "exact" },
+            id: "input_1",
+            label: "Answer",
+            placeholder: "Student answer",
+            points: 1,
+            responseFieldId: "answer_1",
+            type: "input",
+          },
+        ],
         columnId: "column_1",
-        correctValueSource: { type: "literal", value: 7 },
-        grading: { mode: "exact" },
         id: "cell_1",
-        label: "Answer",
-        placeholder: "Student answer",
-        points: 1,
-        responseFieldId: "answer_1",
         rowId: "row_1",
-        type: "response",
       },
     ],
     responseFields: [

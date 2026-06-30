@@ -4,6 +4,7 @@
  * Lemma API
  * OpenAPI spec version: 0.1.0
  */
+import type { QuestionRichTextBlockKind } from "./questionRichTextBlockKind.ts";
 import type { QuestionRichTextBlockType } from "./questionRichTextBlockType.ts";
 import type { RichContent } from "./richContent.ts";
 
@@ -11,5 +12,6 @@ export interface QuestionRichTextBlock {
   content: RichContent;
   /** @minLength 1 */
   id: string;
+  kind: QuestionRichTextBlockKind;
   type: QuestionRichTextBlockType;
 }

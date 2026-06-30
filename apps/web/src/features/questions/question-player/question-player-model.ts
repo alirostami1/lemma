@@ -66,5 +66,14 @@ function editorBlockToPresentableBlock(
       type: "response",
     };
   }
+  if (block.type === "container") {
+    return {
+      blocks: block.blocks.map(editorBlockToPresentableBlock),
+      containerType: block.containerType,
+      id: block.id,
+      title: block.title,
+      type: "container",
+    };
+  }
   return block;
 }

@@ -4,11 +4,14 @@ import type {
   ComposedResponseField,
 } from "#/domains/questions/authoring";
 import {
+  cloneComposedBlockWithFreshIds,
   createResponseBlock,
   createRichTextBlock,
   createSeparatorBlock,
   createTableBlock,
   createTextBlock,
+  findComposedBlockById,
+  insertComposedBlockAfterId,
   moveComposedBlock,
   nextAvailableComposedBlockId,
   nextAvailableResponseFieldId,
@@ -156,26 +159,17 @@ export function duplicateComposedBlock(
   model: ComposedEditorModel,
   blockId: string,
 ): EditorOperationResult {
-  const blockIndex = model.blocks.findIndex((block) => block.id === blockId);
-  if (blockIndex < 0) {
+  const sourceBlock = findComposedBlockById(model.blocks, blockId);
+  if (!sourceBlock) {
     return { model, selection: { type: "document" } };
   }
 
-  const block = model.blocks[blockIndex];
-  const nextBlock = cloneBlockWithFreshIds(model, block);
-  const blocks = [...model.blocks];
-  blocks.splice(blockIndex + 1, 0, nextBlock.block);
-
-  const nextModel = nextBlock.responseField
-    ? {
-        ...model,
-        blocks,
-        responseFields: [...model.responseFields, nextBlock.responseField],
-      }
-    : {
-        ...model,
-        blocks,
-      };
+  const nextBlock = cloneComposedBlockWithFreshIds(model, sourceBlock);
+  const nextModel = {
+    ...model,
+    blocks: insertComposedBlockAfterId(model.blocks, blockId, nextBlock.block),
+    responseFields: [...model.responseFields, ...nextBlock.responseFields],
+  };
 
   return {
     model: nextModel,
@@ -187,8 +181,8 @@ export function deleteComposedBlock(
   model: ComposedEditorModel,
   blockId: string,
 ): EditorOperationResult {
-  const blockIndex = model.blocks.findIndex((block) => block.id === blockId);
-  if (blockIndex < 0) {
+  const topLevelIndex = model.blocks.findIndex((block) => block.id === blockId);
+  if (!findComposedBlockById(model.blocks, blockId)) {
     return {
       model,
       selection: selectFirstBlockOrDocument(model),
@@ -196,25 +190,16 @@ export function deleteComposedBlock(
   }
 
   const nextModel = removeComposedBlock(model, blockId);
-  const nextBlock = nextModel.blocks[blockIndex];
-  if (nextBlock) {
-    return {
-      model: nextModel,
-      selection: selectBlockInComposedEditor(nextModel, nextBlock.id),
-    };
-  }
-
-  const previousBlock = nextModel.blocks[blockIndex - 1];
-  if (previousBlock) {
-    return {
-      model: nextModel,
-      selection: selectBlockInComposedEditor(nextModel, previousBlock.id),
-    };
-  }
-
+  const adjacentTopLevelBlock =
+    topLevelIndex < 0
+      ? undefined
+      : (nextModel.blocks[topLevelIndex] ??
+        nextModel.blocks[topLevelIndex - 1]);
   return {
     model: nextModel,
-    selection: { type: "document" },
+    selection: adjacentTopLevelBlock
+      ? selectBlockInComposedEditor(nextModel, adjacentTopLevelBlock.id)
+      : selectFirstBlockOrDocument(nextModel),
   };
 }
 
@@ -293,64 +278,6 @@ function createBlockForInsert(
   }
 }
 
-function cloneBlockWithFreshIds(
-  model: ComposedEditorModel,
-  block: ComposedEditorBlock,
-): {
-  block: ComposedEditorBlock;
-  responseField?: ComposedResponseField;
-} {
-  switch (block.type) {
-    case "text":
-      return {
-        block: {
-          ...block,
-          content: block.content.map((part) => ({ ...part })),
-          id: nextAvailableComposedBlockId(model, "text"),
-        },
-      };
-    case "rich_text":
-      return {
-        block: {
-          ...block,
-          content: structuredClone(block.content),
-          id: nextAvailableComposedBlockId(model, "rich_text"),
-        },
-      };
-    case "response": {
-      const responseFieldId = nextAvailableResponseFieldId(model);
-      const responseField = model.responseFields.find(
-        (field) => field.id === block.responseFieldId,
-      );
-      return {
-        block: {
-          ...block,
-          id: nextAvailableComposedBlockId(model, "response"),
-          responseFieldId,
-        },
-        responseField: responseField
-          ? { ...responseField, id: responseFieldId }
-          : createResponseField(responseFieldId),
-      };
-    }
-    case "separator":
-      return {
-        block: createSeparatorBlock(
-          nextAvailableComposedBlockId(model, "separator"),
-        ),
-      };
-    case "table":
-      return {
-        block: createTableBlock(
-          nextAvailableComposedBlockId(model, "table"),
-          structuredClone(block.table),
-        ),
-      };
-    default:
-      return assertNever(block);
-  }
-}
-
 function insertBlockAfter(
   blocks: ComposedEditorBlock[],
   block: ComposedEditorBlock,
@@ -383,7 +310,7 @@ function findBlock(
   model: ComposedEditorModel,
   blockId: string,
 ): ComposedEditorBlock | null {
-  return model.blocks.find((block) => block.id === blockId) ?? null;
+  return findComposedBlockById(model.blocks, blockId);
 }
 
 function assertNever(value: never): never {

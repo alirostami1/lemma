@@ -1,0 +1,21 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "Recursive fixture", "version": "1.0.0" },
+  "paths": {},
+  "components": {
+    "schemas": {
+      "Node": {
+        "additionalProperties": false,
+        "properties": {
+          "children": {
+            "items": { "$ref": "#/components/schemas/Node" },
+            "type": "array"
+          },
+          "kind": { "const": "node", "type": "string" }
+        },
+        "required": ["kind", "children"],
+        "type": "object"
+      }
+    }
+  }
+}

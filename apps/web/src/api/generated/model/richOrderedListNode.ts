@@ -5,9 +5,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { RichListItemNode } from "./richListItemNode.ts";
-import type { RichOrderedListNodeType } from "./richOrderedListNodeType.ts";
 
 export interface RichOrderedListNode {
   content: RichListItemNode[];
-  type: RichOrderedListNodeType;
+  type: "ordered_list";
 }

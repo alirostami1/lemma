@@ -594,6 +594,6 @@ function createModel(
     blocks: input?.blocks ?? [],
     references: input?.references ?? [],
     responseFields: input?.responseFields ?? [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }

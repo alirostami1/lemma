@@ -10,35 +10,43 @@ import {
 const baseModel: TableEditorModel = {
   cells: [
     {
+      blocks: [
+        { content: [{ text: "A", type: "text" }], id: "text_1", type: "text" },
+      ],
       columnId: "column_1",
-      content: [{ text: "A", type: "text" }],
       id: "cell_1",
       rowId: "row_1",
-      type: "content",
     },
     {
+      blocks: [
+        {
+          correctValueSource: { type: "literal", value: "B" },
+          grading: { mode: "exact" },
+          id: "input_1",
+          points: 1,
+          responseFieldId: "answer_1",
+          type: "input",
+        },
+      ],
       columnId: "column_2",
-      correctValueSource: { type: "literal", value: "B" },
-      grading: { mode: "exact" },
       id: "cell_2",
-      points: 1,
-      responseFieldId: "answer_1",
       rowId: "row_1",
-      type: "response",
     },
     {
+      blocks: [
+        { content: [{ text: "C", type: "text" }], id: "text_2", type: "text" },
+      ],
       columnId: "column_1",
-      content: [{ text: "C", type: "text" }],
       id: "cell_3",
       rowId: "row_2",
-      type: "content",
     },
     {
+      blocks: [
+        { content: [{ text: "D", type: "text" }], id: "text_3", type: "text" },
+      ],
       columnId: "column_2",
-      content: [{ text: "D", type: "text" }],
       id: "cell_4",
       rowId: "row_2",
-      type: "content",
     },
   ],
   columns: [

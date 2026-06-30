@@ -168,7 +168,7 @@ test("creates immutable blueprint version snapshot", () => {
         blocks: [],
         references: [],
         responseFields: [],
-        schemaVersion: 1,
+        schemaVersion: 2,
       }),
       id: questionBlueprintVersionId("0197a666-6666-7666-8666-666666666666"),
       name: questionBlueprintName("Versioned"),
@@ -594,6 +594,6 @@ function documentUsing(sourceId: string) {
       },
     ],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   });
 }

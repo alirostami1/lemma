@@ -4,6 +4,7 @@
  * Lemma API
  * OpenAPI spec version: 0.1.0
  */
+import type { UuidV7 } from "./uuidV7.ts";
 import type { WorkbookEditorUploadStatus } from "./workbookEditorUploadStatus.ts";
 
 export interface WorkbookEditorUpload {
@@ -14,12 +15,10 @@ export interface WorkbookEditorUpload {
   /** @minLength 1 */
   contentType: string;
   createdAt: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  createdByUserId: string;
+  createdByUserId: UuidV7;
   /** @exclusiveMinimum 0 */
   expectedByteSize: number;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  id: string;
+  id: UuidV7;
   /** @minLength 1 */
   originalName: string;
   status: WorkbookEditorUploadStatus;

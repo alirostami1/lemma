@@ -80,7 +80,7 @@ function createBlueprint(
     document: {
       blocks: [],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     },
     id: "blueprint_1",
     name: "Saved blueprint",

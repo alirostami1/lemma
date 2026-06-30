@@ -7,6 +7,7 @@ import type {
   ComposedEditorModel,
   TableEditorModel,
 } from "#/domains/questions/authoring";
+import { getPrimaryTableInputBlock } from "#/domains/questions/authoring/table-model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import { TableCellInspector } from "./table-cell-inspector";
 
@@ -15,8 +16,8 @@ describe("TableCellInspector", () => {
 
   it("creates a matching answer field when switching a content cell to answer", async () => {
     const user = userEvent.setup();
-    const onModelChange = vi.fn();
-    const onEditorModelChange = vi.fn();
+    const onModelChange = vi.fn<(model: TableEditorModel) => void>();
+    const onEditorModelChange = vi.fn<(model: ComposedEditorModel) => void>();
     const referencePreviewCache: ReferencePreviewCache = {};
 
     renderTableCellInspector({
@@ -30,12 +31,18 @@ describe("TableCellInspector", () => {
     await user.click(screen.getByRole("combobox", { name: "Type" }));
     await user.click(await screen.findByRole("option", { name: "Answer" }));
 
-    const nextModel = onModelChange.mock.calls.at(-1)?.[0] as TableEditorModel;
+    const nextModel = onModelChange.mock.calls.at(-1)?.[0];
+    if (!nextModel) {
+      throw new Error("Expected updated table model.");
+    }
     const responseCell = nextModel.cells.find((cell) => cell.id === "cell_1");
+    const inputBlock = responseCell
+      ? getPrimaryTableInputBlock(responseCell)
+      : null;
 
-    expect(responseCell).toMatchObject({
+    expect(inputBlock).toMatchObject({
       responseFieldId: "answer_1",
-      type: "response",
+      type: "input",
     });
     expect(nextModel.responseFields).toEqual([
       expect.objectContaining({
@@ -60,7 +67,7 @@ describe("TableCellInspector", () => {
 
   it("updates the answer cell label", async () => {
     const user = userEvent.setup();
-    const onModelChange = vi.fn();
+    const onModelChange = vi.fn<(model: TableEditorModel) => void>();
 
     renderTableCellInspector({
       model: createAnswerModel(),
@@ -73,16 +80,23 @@ describe("TableCellInspector", () => {
     await user.clear(labelInput);
     await user.type(labelInput, "Score");
 
-    const nextModel = onModelChange.mock.calls.at(-1)?.[0] as TableEditorModel;
-    expect(nextModel.cells[0]).toMatchObject({
+    const nextModel = onModelChange.mock.calls.at(-1)?.[0];
+    if (!nextModel) {
+      throw new Error("Expected updated table model.");
+    }
+    const cell = nextModel.cells[0];
+    if (!cell) {
+      throw new Error("Expected updated cell.");
+    }
+    expect(getPrimaryTableInputBlock(cell)).toMatchObject({
       label: "Score",
-      type: "response",
+      type: "input",
     });
   });
 
   it("updates the correct answer source", async () => {
     const user = userEvent.setup();
-    const onModelChange = vi.fn();
+    const onModelChange = vi.fn<(model: TableEditorModel) => void>();
 
     renderTableCellInspector({
       model: createAnswerModel(),
@@ -94,11 +108,47 @@ describe("TableCellInspector", () => {
     await user.clear(screen.getByLabelText("Value"));
     await user.type(screen.getByLabelText("Value"), "42");
 
-    const nextModel = onModelChange.mock.calls.at(-1)?.[0] as TableEditorModel;
-    expect(nextModel.cells[0]).toMatchObject({
+    const nextModel = onModelChange.mock.calls.at(-1)?.[0];
+    if (!nextModel) {
+      throw new Error("Expected updated table model.");
+    }
+    const cell = nextModel.cells[0];
+    if (!cell) {
+      throw new Error("Expected updated cell.");
+    }
+    expect(getPrimaryTableInputBlock(cell)).toMatchObject({
       correctValueSource: { type: "literal", value: 42 },
-      type: "response",
+      type: "input",
     });
+  });
+
+  it("shows a correct-answer repair path for non-manual input missing a source", () => {
+    renderTableCellInspector({
+      model: {
+        ...createAnswerModel(),
+        cells: [
+          {
+            blocks: [
+              {
+                grading: { mode: "exact" },
+                id: "cell_1_input",
+                points: 1,
+                responseFieldId: "answer_1",
+                type: "input",
+              },
+            ],
+            columnId: "column_1",
+            id: "cell_1",
+            rowId: "row_1",
+          },
+        ],
+      },
+      referencePreviewCache: {},
+      workbookEnabled: false,
+    });
+
+    expect(screen.getByText("Correct answer")).toBeTruthy();
+    expect(screen.getByLabelText("Value")).toBeTruthy();
   });
 });
 
@@ -162,7 +212,7 @@ function createEditorModelWithTable(
     ],
     references: [],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 
@@ -170,11 +220,16 @@ function createContentModel(): TableEditorModel {
   return {
     cells: [
       {
+        blocks: [
+          {
+            content: [{ text: "42", type: "text" }],
+            id: "text_1",
+            type: "text",
+          },
+        ],
         columnId: "column_1",
-        content: [{ text: "42", type: "text" }],
         id: "cell_1",
         rowId: "row_1",
-        type: "content",
       },
     ],
     columns: [{ id: "column_1", label: "Column 1" }],
@@ -191,16 +246,21 @@ function createAnswerModel(): TableEditorModel {
     ...createContentModel(),
     cells: [
       {
+        blocks: [
+          {
+            correctValueSource: { type: "literal", value: 7 },
+            grading: { mode: "exact" },
+            id: "cell_1_input",
+            label: "Answer",
+            placeholder: "Student answer",
+            points: 1,
+            responseFieldId: "answer_1",
+            type: "input",
+          },
+        ],
         columnId: "column_1",
-        correctValueSource: { type: "literal", value: 7 },
-        grading: { mode: "exact" },
         id: "cell_1",
-        label: "Answer",
-        placeholder: "Student answer",
-        points: 1,
-        responseFieldId: "answer_1",
         rowId: "row_1",
-        type: "response",
       },
     ],
     responseFields: [

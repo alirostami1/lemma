@@ -18,6 +18,8 @@ export type ReferenceRecoveryItem = {
   usage: ReferenceUsage;
 };
 
+type ReferenceRecoveryPanelTone = "checking" | "mixed" | "unavailable";
+
 export function ReferenceRecoveryPanel({
   disabled,
   items = [],
@@ -120,7 +122,9 @@ export function ReferenceRecoveryPanel({
   );
 }
 
-function getPanelTone(items: readonly ReferenceRecoveryItem[]) {
+function getPanelTone(
+  items: readonly ReferenceRecoveryItem[],
+): ReferenceRecoveryPanelTone {
   const hasChecking = items.some((item) => item.status === "checking");
   const hasUnavailable = items.some((item) => item.status === "unavailable");
 
@@ -133,7 +137,7 @@ function getPanelTone(items: readonly ReferenceRecoveryItem[]) {
   return "unavailable";
 }
 
-function getPanelHeader(tone: ReturnType<typeof getPanelTone>) {
+function getPanelHeader(tone: ReferenceRecoveryPanelTone) {
   if (tone === "checking") {
     return {
       description:

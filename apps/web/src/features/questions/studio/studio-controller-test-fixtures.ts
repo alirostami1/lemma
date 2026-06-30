@@ -69,7 +69,7 @@ export function createReadyStudioControllerFixture(
         blocks: [],
         references: [],
         responseFields: [],
-        schemaVersion: 1,
+        schemaVersion: 2,
       },
       canUseWorkbookTools: true,
       documentIssues: [],

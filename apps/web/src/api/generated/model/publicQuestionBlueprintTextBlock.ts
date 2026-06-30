@@ -5,11 +5,13 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { BlueprintInlineText } from "./blueprintInlineText.ts";
+import type { PublicQuestionBlueprintTextBlockKind } from "./publicQuestionBlueprintTextBlockKind.ts";
 import type { PublicQuestionBlueprintTextBlockType } from "./publicQuestionBlueprintTextBlockType.ts";
 
 export interface PublicQuestionBlueprintTextBlock {
   content: BlueprintInlineText[];
   /** @minLength 1 */
   id: string;
+  kind: PublicQuestionBlueprintTextBlockKind;
   type: PublicQuestionBlueprintTextBlockType;
 }

@@ -7,20 +7,16 @@
 import type { QuestionBody } from "./questionBody.ts";
 import type { QuestionProducer } from "./questionProducer.ts";
 import type { QuestionStatus } from "./questionStatus.ts";
+import type { UuidV7 } from "./uuidV7.ts";
 
 export interface Question {
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  blueprintId: string;
+  blueprintId: UuidV7;
   body: QuestionBody;
   createdAt: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  createdByUserId: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  generationRunId: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  id: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  ownerUserId: string;
+  createdByUserId: UuidV7;
+  generationRunId: UuidV7;
+  id: UuidV7;
+  ownerUserId: UuidV7;
   producer: QuestionProducer;
   status: QuestionStatus;
   updatedAt: string;

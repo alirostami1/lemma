@@ -39,7 +39,7 @@ function createBaseModel(blocks: ComposedEditorBlock[]): ComposedEditorModel {
       },
     ],
     responseFields: sharedResponseFields.map((field) => ({ ...field })),
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 
@@ -154,7 +154,7 @@ describe("composed editor operations", () => {
     );
 
     if (block?.type !== "response") {
-      throw new Error("Expected response block.");
+      throw new Error("Expected answer input block.");
     }
 
     expect(block.responseFieldId).toBe("answer_2");
@@ -330,6 +330,205 @@ describe("composed editor operations", () => {
     expect(result.selection).toEqual({ blockId: "table_2", type: "table" });
   });
 
+  it("duplicates nested containers with fresh descendant and answer ids", () => {
+    const model = createBaseModel([
+      {
+        blocks: [
+          {
+            blocks: [
+              createTextBlock("text_1", "Prompt"),
+              createResponseBlock("response_1", "answer_1"),
+            ],
+            containerType: "step",
+            id: "step_1",
+            type: "container",
+          },
+        ],
+        containerType: "page",
+        id: "page_1",
+        type: "container",
+      },
+    ]);
+
+    const result = duplicateComposedBlock(model, "page_1");
+    const duplicated = result.model.blocks[1];
+    if (duplicated?.type !== "container") {
+      throw new Error("Expected duplicated page container.");
+    }
+    const duplicatedStep = duplicated.blocks[0];
+    if (duplicatedStep?.type !== "container") {
+      throw new Error("Expected duplicated step container.");
+    }
+    const duplicatedInput = duplicatedStep.blocks.find(
+      (block) => block.type === "response",
+    );
+    if (duplicatedInput?.type !== "response") {
+      throw new Error("Expected duplicated input block.");
+    }
+
+    expect([duplicated.id, duplicatedStep.id]).not.toContain("page_1");
+    expect(duplicatedStep.blocks.map((block) => block.id)).not.toContain(
+      "text_1",
+    );
+    expect(duplicatedStep.blocks.map((block) => block.id)).not.toContain(
+      "response_1",
+    );
+    expect(duplicatedInput.responseFieldId).toBe("answer_2");
+  });
+
+  it("duplicates container table primitives and table response fields", () => {
+    const table = createTableBlock("table_1", {
+      blockId: "table_1",
+      cells: [
+        {
+          blocks: [
+            {
+              grading: { mode: "manual" },
+              id: "table_input_1",
+              points: 1,
+              responseFieldId: "table_answer_1",
+              type: "input",
+            },
+          ],
+          columnId: "column_1",
+          id: "cell_1",
+          rowId: "row_1",
+        },
+      ],
+      columns: [{ id: "column_1", label: "Column" }],
+      prompt: "",
+      responseFields: [{ id: "table_answer_1", type: "text" }],
+      rows: [{ id: "row_1", label: "Row" }],
+      showColumnNames: true,
+      showRowNames: true,
+    });
+    const model = createBaseModel([
+      {
+        blocks: [table],
+        containerType: "page",
+        id: "page_1",
+        type: "container",
+      },
+    ]);
+
+    const result = duplicateComposedBlock(model, "page_1");
+    const duplicated = result.model.blocks[1];
+    if (duplicated?.type !== "container") {
+      throw new Error("Expected duplicated page container.");
+    }
+    const duplicatedTable = duplicated.blocks[0];
+    if (duplicatedTable?.type !== "table") {
+      throw new Error("Expected duplicated table block.");
+    }
+    const duplicatedPrimitive = duplicatedTable.table.cells[0]?.blocks[0];
+
+    expect(duplicatedTable.id).not.toBe(table.id);
+    expect(duplicatedPrimitive?.id).not.toBe("table_input_1");
+    expect(duplicatedTable.table.responseFields[0]?.id).not.toBe(
+      "table_answer_1",
+    );
+    expect(
+      duplicatedPrimitive?.type === "input"
+        ? duplicatedPrimitive.responseFieldId
+        : null,
+    ).toBe(duplicatedTable.table.responseFields[0]?.id);
+  });
+
+  it("duplicates every table input with fresh response field ids", () => {
+    const table = createTableBlock("table_1", {
+      blockId: "table_1",
+      cells: [
+        {
+          blocks: [
+            {
+              correctValueSource: { type: "literal", value: "A" },
+              grading: { mode: "exact" },
+              id: "table_input_1",
+              points: 1,
+              responseFieldId: "table_answer_1",
+              type: "input",
+            },
+            {
+              correctValueSource: { type: "literal", value: "B" },
+              grading: { mode: "exact" },
+              id: "table_input_2",
+              points: 1,
+              responseFieldId: "table_answer_2",
+              type: "input",
+            },
+          ],
+          columnId: "column_1",
+          id: "cell_1",
+          rowId: "row_1",
+        },
+      ],
+      columns: [{ id: "column_1", label: "Column" }],
+      prompt: "",
+      responseFields: [
+        { id: "table_answer_1", type: "text" },
+        { id: "table_answer_2", type: "text" },
+      ],
+      rows: [{ id: "row_1", label: "Row" }],
+      showColumnNames: true,
+      showRowNames: true,
+    });
+    const model = createBaseModel([table]);
+
+    const result = duplicateComposedBlock(model, "table_1");
+    const duplicatedTable = result.model.blocks[1];
+    if (duplicatedTable?.type !== "table") {
+      throw new Error("Expected duplicated table block.");
+    }
+
+    const duplicatedInputs = duplicatedTable.table.cells[0]?.blocks.filter(
+      (block) => block.type === "input",
+    );
+    expect(duplicatedInputs).toHaveLength(2);
+    expect(duplicatedInputs?.map((block) => block.id)).not.toContain(
+      "table_input_1",
+    );
+    expect(duplicatedInputs?.map((block) => block.responseFieldId)).toEqual(
+      duplicatedTable.table.responseFields.map((field) => field.id),
+    );
+    expect(
+      duplicatedTable.table.responseFields.map((field) => field.id),
+    ).not.toContain("table_answer_1");
+  });
+
+  it("rejects table duplication when an input references a missing response field", () => {
+    const table = createTableBlock("table_1", {
+      blockId: "table_1",
+      cells: [
+        {
+          blocks: [
+            {
+              grading: { mode: "manual" },
+              id: "table_input_1",
+              points: 1,
+              responseFieldId: "missing_answer",
+              type: "input",
+            },
+          ],
+          columnId: "column_1",
+          id: "cell_1",
+          rowId: "row_1",
+        },
+      ],
+      columns: [{ id: "column_1", label: "Column" }],
+      prompt: "",
+      responseFields: [],
+      rows: [{ id: "row_1", label: "Row" }],
+      showColumnNames: true,
+      showRowNames: true,
+    });
+
+    expect(() =>
+      duplicateComposedBlock(createBaseModel([table]), "table_1"),
+    ).toThrow(
+      "Input block table_input_1 in cell cell_1 references missing response field missing_answer.",
+    );
+  });
+
   it("duplicates an answer block with a fresh response field id", () => {
     const model = createBaseModel([
       createTextBlock("text_1", "Prompt"),
@@ -344,7 +543,7 @@ describe("composed editor operations", () => {
     );
 
     if (duplicatedBlock?.type !== "response") {
-      throw new Error("Expected duplicated response block.");
+      throw new Error("Expected duplicated answer input block.");
     }
 
     expect(duplicatedBlock.responseFieldId).toBe("answer_2");
@@ -356,6 +555,21 @@ describe("composed editor operations", () => {
       createResponseBlock("response_1", "answer_1", {
         placeholder: "Answer",
       }),
+    );
+  });
+
+  it("rejects answer block duplication when its response field is missing", () => {
+    const model: ComposedEditorModel = {
+      ...createBaseModel([
+        createResponseBlock("response_1", "missing_answer", {
+          placeholder: "Answer",
+        }),
+      ]),
+      responseFields: [],
+    };
+
+    expect(() => duplicateComposedBlock(model, "response_1")).toThrow(
+      "Cannot duplicate input block response_1: missing response field missing_answer.",
     );
   });
 

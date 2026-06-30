@@ -20,7 +20,7 @@ describe("StudioDraftRecoveryDialog", () => {
             blocks: [],
             references: [],
             responseFields: [],
-            schemaVersion: 1,
+            schemaVersion: 2,
           },
           blueprintDescription: "",
           blueprintName: "Blueprint",

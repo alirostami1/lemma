@@ -4,10 +4,12 @@
  * Lemma API
  * OpenAPI spec version: 0.1.0
  */
+import type { QuestionSeparatorBlockKind } from "./questionSeparatorBlockKind.ts";
 import type { QuestionSeparatorBlockType } from "./questionSeparatorBlockType.ts";
 
 export interface QuestionSeparatorBlock {
   /** @minLength 1 */
   id: string;
+  kind: QuestionSeparatorBlockKind;
   type: QuestionSeparatorBlockType;
 }

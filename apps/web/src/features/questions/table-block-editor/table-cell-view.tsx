@@ -1,10 +1,13 @@
 import { cn } from "@lemma/ui/lib/utils";
 import type {
   TableEditorCell,
+  TableEditorPrimitiveBlock,
   TableResponseField,
 } from "#/domains/questions/authoring";
+import { getTableCellPrimitiveBlocks } from "#/domains/questions/authoring";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import { InlineContentRenderer } from "#/features/questions/editor-shared";
+import { RichTextBlockRenderer } from "#/features/questions/presentation/rich-text-block-renderer";
 
 export function TableCellView({
   cell,
@@ -41,14 +44,11 @@ export function TableCellView({
       type="button"
     >
       {cell ? (
-        cell.type === "response" ? (
-          <AnswerCellContent cell={cell} responseField={responseField} />
-        ) : (
-          <CellContent
-            cell={cell}
-            referencePreviewCache={referencePreviewCache ?? {}}
-          />
-        )
+        <CellContent
+          cell={cell}
+          referencePreviewCache={referencePreviewCache ?? {}}
+          responseField={responseField}
+        />
       ) : (
         <span className="text-muted-foreground">Empty</span>
       )}
@@ -59,16 +59,46 @@ export function TableCellView({
 function CellContent({
   cell,
   referencePreviewCache,
+  responseField,
 }: {
   cell: TableEditorCell;
   referencePreviewCache: ReferencePreviewCache;
+  responseField?: TableResponseField;
 }) {
-  if (cell.type === "content") {
+  const blocks = getTableCellPrimitiveBlocks(cell);
+  if (blocks.length === 0) {
+    return <span className="text-muted-foreground">Empty</span>;
+  }
+
+  return (
+    <div className="grid gap-2">
+      {blocks.map((block) => (
+        <PrimitiveCellContent
+          block={block}
+          key={block.id}
+          referencePreviewCache={referencePreviewCache}
+          responseField={responseField}
+        />
+      ))}
+    </div>
+  );
+}
+
+function PrimitiveCellContent({
+  block,
+  responseField,
+  referencePreviewCache,
+}: {
+  block: TableEditorPrimitiveBlock;
+  responseField?: TableResponseField;
+  referencePreviewCache: ReferencePreviewCache;
+}) {
+  if (block.type === "text") {
     return (
       <div className="whitespace-pre-wrap">
-        {cell.content.length > 0 ? (
+        {block.content.length > 0 ? (
           <InlineContentRenderer
-            content={cell.content}
+            content={block.content}
             mode="preview"
             referencePreviewValues={referencePreviewCache}
           />
@@ -78,17 +108,17 @@ function CellContent({
       </div>
     );
   }
-
-  return null;
-}
-
-function AnswerCellContent({
-  cell,
-  responseField,
-}: {
-  cell: Extract<TableEditorCell, { type: "response" }>;
-  responseField?: TableResponseField;
-}) {
+  if (block.type === "rich_text") {
+    return (
+      <RichTextBlockRenderer
+        content={block.content}
+        referencePreviewCache={referencePreviewCache}
+      />
+    );
+  }
+  if (block.type === "separator") {
+    return <hr className="border-border" />;
+  }
   const fieldLabel = responseField?.label ?? "Answer";
   return (
     <div className="grid gap-1">
@@ -101,9 +131,9 @@ function AnswerCellContent({
         </span>
       </div>
       <div className="min-h-8 rounded-md border border-dashed bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
-        {cell.label ?? fieldLabel}
-        {cell.placeholder ? (
-          <span className="ml-2 opacity-70">{cell.placeholder}</span>
+        {block.label ?? fieldLabel}
+        {block.placeholder ? (
+          <span className="ml-2 opacity-70">{block.placeholder}</span>
         ) : null}
       </div>
     </div>

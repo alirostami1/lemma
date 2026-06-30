@@ -32,6 +32,7 @@
     "@lemma/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "hono": "catalog:",
+    "orval": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"

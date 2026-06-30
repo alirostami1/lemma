@@ -9,6 +9,8 @@ export {
   toHonoRoutePath,
   writeHonoRoutesSource,
 } from "./generator.js";
+export type { ReusableZodSchemaOptions } from "./orval.js";
+export { reusableZodSchemaOptions } from "./orval.js";
 export type {
   GenerateHonoRoutesOptions,
   HonoRouteOperation,

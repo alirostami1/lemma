@@ -4,8 +4,10 @@ import {
   type ComposedRichContent,
   extractUsedReferenceIdsFromComposedEditorModel,
   getReferenceUsage,
+  getTableCellPrimitiveBlocks,
   type ReferenceSourceDraft,
   type ReferenceUsage,
+  updateComposedBlock,
 } from "./authoring";
 import type {
   ComposedRichContentNode,
@@ -58,6 +60,12 @@ export type InlineReferenceUsage = Extract<
   ReferenceUsage,
   { type: "text_block" | "rich_text_block" | "table_content_cell" }
 >;
+
+type RichReferenceUsage =
+  | Extract<ReferenceUsage, { type: "rich_text_block" }>
+  | (Extract<ReferenceUsage, { type: "table_content_cell" }> & {
+      richNodePath: readonly number[];
+    });
 
 export function getUsedComposedReferenceIds(
   model: ComposedEditorModel,
@@ -172,88 +180,119 @@ export function removeReferenceUsageFromComposedEditorModel(input: {
 }): ComposedEditorModel {
   const usage = input.usage;
 
-  return {
-    ...input.model,
-    blocks: input.model.blocks.map((block) => {
-      switch (usage.type) {
-        case "text_block":
-          return block.id === usage.blockId && block.type === "text"
-            ? {
-                ...block,
-                content: removeInlineReferenceUsage({
-                  content: block.content,
-                  referenceId: input.referenceId,
-                  usage,
-                }),
-              }
-            : block;
-        case "rich_text_block":
-          return block.id === usage.blockId && block.type === "rich_text"
-            ? {
-                ...block,
-                content: removeRichReferenceUsage({
-                  content: block.content,
-                  referenceId: input.referenceId,
-                  usage,
-                }),
-              }
-            : block;
-        case "response_answer":
-          return block.id === usage.blockId &&
-            block.type === "response" &&
-            block.correctValueSource.type === "reference" &&
-            block.correctValueSource.referenceId === input.referenceId
-            ? {
-                ...block,
-                correctValueSource: { type: "literal", value: "" },
-              }
-            : block;
-        case "table_content_cell":
-          return block.id === usage.blockId && block.type === "table"
-            ? {
-                ...block,
-                table: {
-                  ...block.table,
-                  cells: block.table.cells.map((cell) =>
-                    cell.id === usage.cellId && cell.type === "content"
-                      ? {
-                          ...cell,
-                          content: removeInlineReferenceUsage({
-                            content: cell.content,
-                            referenceId: input.referenceId,
-                            usage,
-                          }),
-                        }
-                      : cell,
-                  ),
-                },
-              }
-            : block;
-        case "table_answer_cell":
-          return block.id === usage.blockId && block.type === "table"
-            ? {
-                ...block,
-                table: {
-                  ...block.table,
-                  cells: block.table.cells.map((cell) =>
-                    cell.id === usage.cellId &&
-                    cell.type === "response" &&
-                    cell.correctValueSource.type === "reference" &&
-                    cell.correctValueSource.referenceId === input.referenceId
-                      ? {
-                          ...cell,
-                          correctValueSource: { type: "literal", value: "" },
-                        }
-                      : cell,
-                  ),
-                },
-              }
-            : block;
-        default:
-          return assertNever(usage);
-      }
-    }),
-  };
+  return updateComposedBlock(input.model, usage.blockId, (block) => {
+    switch (usage.type) {
+      case "text_block":
+        return block.type === "text"
+          ? {
+              ...block,
+              content: removeInlineReferenceUsage({
+                content: block.content,
+                referenceId: input.referenceId,
+                usage,
+              }),
+            }
+          : block;
+      case "rich_text_block":
+        return block.type === "rich_text"
+          ? {
+              ...block,
+              content: removeRichReferenceUsage({
+                content: block.content,
+                referenceId: input.referenceId,
+                usage,
+              }),
+            }
+          : block;
+      case "response_answer":
+        return block.type === "response" &&
+          block.correctValueSource?.type === "reference" &&
+          block.correctValueSource.referenceId === input.referenceId
+          ? {
+              ...block,
+              correctValueSource: { type: "literal", value: "" },
+            }
+          : block;
+      case "table_content_cell":
+        return block.type === "table"
+          ? {
+              ...block,
+              table: {
+                ...block.table,
+                cells: block.table.cells.map((cell) =>
+                  cell.id === usage.cellId
+                    ? {
+                        blocks: getTableCellPrimitiveBlocks(cell).map(
+                          (cellBlock) =>
+                            cellBlock.id !== usage.cellBlockId
+                              ? cellBlock
+                              : cellBlock.type === "text"
+                                ? {
+                                    ...cellBlock,
+                                    content: removeInlineReferenceUsage({
+                                      content: cellBlock.content,
+                                      referenceId: input.referenceId,
+                                      usage,
+                                    }),
+                                  }
+                                : cellBlock.type === "rich_text" &&
+                                    usage.richNodePath
+                                  ? {
+                                      ...cellBlock,
+                                      content: removeRichReferenceUsage({
+                                        content: cellBlock.content,
+                                        referenceId: input.referenceId,
+                                        usage,
+                                      }),
+                                    }
+                                  : cellBlock,
+                        ),
+                        columnId: cell.columnId,
+                        id: cell.id,
+                        rowId: cell.rowId,
+                      }
+                    : cell,
+                ),
+              },
+            }
+          : block;
+      case "table_answer_cell":
+        return block.type === "table"
+          ? {
+              ...block,
+              table: {
+                ...block.table,
+                cells: block.table.cells.map((cell) =>
+                  cell.id === usage.cellId
+                    ? {
+                        ...cell,
+                        blocks: getTableCellPrimitiveBlocks(cell).map(
+                          (cellBlock) =>
+                            cellBlock.type === "input" &&
+                            cellBlock.id === usage.cellBlockId &&
+                            cellBlock.correctValueSource?.type ===
+                              "reference" &&
+                            cellBlock.correctValueSource.referenceId ===
+                              input.referenceId
+                              ? {
+                                  ...cellBlock,
+                                  correctValueSource: {
+                                    type: "literal",
+                                    value: "",
+                                  },
+                                }
+                              : cellBlock,
+                        ),
+                      }
+                    : cell,
+                ),
+              },
+            }
+          : block;
+      default:
+        return assertNever(usage);
+    }
+  });
 }
 
 export function removeInlineReferenceUsageFromComposedEditorModel(input: {
@@ -384,7 +423,7 @@ function removeRichReferenceUsage(input: {
   referenceId: string;
   usage: ReferenceUsage;
 }): ComposedRichContent {
-  if (input.usage.type !== "rich_text_block") {
+  if (!isRichReferenceUsage(input.usage)) {
     return input.content;
   }
   const usage = input.usage;
@@ -404,11 +443,20 @@ function removeRichReferenceUsage(input: {
   };
 }
 
+function isRichReferenceUsage(
+  usage: ReferenceUsage,
+): usage is RichReferenceUsage {
+  return (
+    usage.type === "rich_text_block" ||
+    (usage.type === "table_content_cell" && usage.richNodePath !== undefined)
+  );
+}
+
 function removeRichNodeReferenceUsageAtPath(input: {
   node: ComposedRichContentNode;
   path: readonly number[];
   referenceId: string;
-  usage: Extract<ReferenceUsage, { type: "rich_text_block" }>;
+  usage: RichReferenceUsage;
 }): ComposedRichContentNode {
   const { node, path, referenceId, usage } = input;
 
@@ -456,7 +504,7 @@ function removeRichListItemChildReferenceUsageAtPath(input: {
   node: ComposedRichListItem["content"][number];
   path: readonly number[];
   referenceId: string;
-  usage: Extract<ReferenceUsage, { type: "rich_text_block" }>;
+  usage: RichReferenceUsage;
 }): ComposedRichListItem["content"][number] {
   const { node, path, referenceId, usage } = input;
 

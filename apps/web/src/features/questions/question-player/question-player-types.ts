@@ -40,6 +40,13 @@ export type PresentableQuestionBlock =
       id: string;
       type: "table";
       table: TableBlockPreviewModel;
+    }
+  | {
+      id: string;
+      type: "container";
+      containerType: "page" | "step";
+      title?: string;
+      blocks: PresentableQuestionBlock[];
     };
 
 export type PresentableQuestion = {

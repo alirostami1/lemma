@@ -2954,7 +2954,7 @@ function documentUsing(sourceId: string) {
       },
     ],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   });
 }
 
@@ -2967,6 +2967,7 @@ function documentWithInsertedWorkbookCellReference(input: {
       {
         content: [{ referenceId: input.id, type: "reference" }],
         id: "block_1",
+        kind: "primitive",
         type: "text",
       },
     ],
@@ -2982,7 +2983,7 @@ function documentWithInsertedWorkbookCellReference(input: {
       },
     ],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   });
 }
 
@@ -2991,6 +2992,6 @@ function emptyDocument() {
     blocks: [],
     references: [],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   });
 }

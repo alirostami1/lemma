@@ -46,9 +46,9 @@ export function isReferenceSourceDraftType(
 }
 
 export function extractReferenceIdsFromValueExpression(
-  value: ValueExpression,
+  value: ValueExpression | undefined,
 ): string[] {
-  return value.type === "reference" ? [value.referenceId] : [];
+  return value?.type === "reference" ? [value.referenceId] : [];
 }
 
 export function isValidWorkbookReferenceSource(

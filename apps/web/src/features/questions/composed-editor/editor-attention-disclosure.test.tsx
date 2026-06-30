@@ -89,6 +89,7 @@ describe("EditorAttentionDisclosure", () => {
           usage: {
             blockId: "table_1",
             cellId: "cell_1",
+            cellBlockId: "input_1",
             responseFieldId: "answer_1",
             type: "table_answer_cell",
           },
@@ -249,7 +250,7 @@ function createInlineRecoveryModel(occurrences = 1): ComposedEditorModel {
     ],
     references: [workbookReference()],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 
@@ -269,7 +270,7 @@ function createResponseRecoveryModel(): ComposedEditorModel {
     responseFields: [
       { id: "answer_1", label: "Answer", required: true, type: "number" },
     ],
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 
@@ -281,14 +282,19 @@ function createTableAnswerRecoveryModel(): ComposedEditorModel {
         table: {
           cells: [
             {
+              blocks: [
+                {
+                  correctValueSource: { referenceId, type: "reference" },
+                  grading: { mode: "exact" },
+                  id: "input_1",
+                  points: 1,
+                  responseFieldId: "answer_1",
+                  type: "input",
+                },
+              ],
               columnId: "column_1",
-              correctValueSource: { referenceId, type: "reference" },
-              grading: { mode: "exact" },
               id: "cell_1",
-              points: 1,
-              responseFieldId: "answer_1",
               rowId: "row_1",
-              type: "response",
             },
           ],
           columns: [{ id: "column_1", label: "Column 1" }],
@@ -310,7 +316,7 @@ function createTableAnswerRecoveryModel(): ComposedEditorModel {
     ],
     references: [workbookReference()],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 

@@ -5,8 +5,11 @@ import {
   extractReferenceIdsFromValueExpression,
   extractRichReferenceIds,
   extractUsedReferenceIdsFromComposedEditorModel,
+  flattenComposedBlocks,
+  getTableCellPrimitiveBlocks,
   isValidReferenceId,
   isValidWorkbookReferenceSource,
+  requiresCorrectValueSource,
 } from "#/domains/questions/authoring";
 import type { QuestionBlueprintWorkbookSource } from "./model";
 import { getBlueprintSourceRequirement } from "./source-requirements";
@@ -95,14 +98,29 @@ export function getBlueprintReadinessIssues(input: {
   return issues;
 }
 
-function hasAnyAnswer(model: ComposedEditorModel) {
+function hasAnyAnswer(model: ComposedEditorModel): boolean {
   return model.blocks.some((block) => {
     if (block.type === "response") {
       return true;
     }
 
     if (block.type === "table") {
-      return block.table.cells.some((cell) => cell.type === "response");
+      return block.table.cells.some((cell) =>
+        getTableCellPrimitiveBlocks(cell).some(
+          (cellBlock) => cellBlock.type === "input",
+        ),
+      );
+    }
+
+    if (block.type === "container") {
+      return block.blocks.some((childBlock) =>
+        hasAnyAnswer({
+          blocks: [childBlock],
+          references: [],
+          responseFields: [],
+          schemaVersion: model.schemaVersion,
+        }),
+      );
     }
 
     return false;
@@ -146,7 +164,7 @@ function getReferenceIssues(
     }
   }
 
-  for (const block of model.blocks) {
+  for (const block of flattenComposedBlocks(model.blocks)) {
     if (block.type === "text") {
       for (const referenceId of extractInlineReferenceIds(block.content)) {
         if (!referenceIds.has(referenceId)) {
@@ -183,11 +201,20 @@ function getBlockIssues(model: ComposedEditorModel): BlueprintReadinessIssue[] {
     model.references.map((reference) => reference.id),
   );
 
-  for (const block of model.blocks) {
+  for (const block of flattenComposedBlocks(model.blocks)) {
     if (block.type === "response") {
       if (!responseFieldIds.has(block.responseFieldId)) {
         issues.push({
           code: "missing_response_field",
+          target: { blockId: block.id },
+        });
+      }
+      if (
+        requiresCorrectValueSource(block.grading) &&
+        block.correctValueSource === undefined
+      ) {
+        issues.push({
+          code: "missing_response_source",
           target: { blockId: block.id },
         });
       }
@@ -222,33 +249,61 @@ function getTableIssues(
   );
 
   for (const cell of block.table.cells) {
-    if (cell.type === "content") {
-      for (const referenceId of extractInlineReferenceIds(cell.content)) {
+    for (const cellBlock of getTableCellPrimitiveBlocks(cell)) {
+      if (cellBlock.type === "text") {
+        for (const referenceId of extractInlineReferenceIds(
+          cellBlock.content,
+        )) {
+          if (!referenceIds.has(referenceId)) {
+            issues.push({
+              code: "missing_text_reference",
+              target: { blockId: block.id, cellId: cell.id, referenceId },
+            });
+          }
+        }
+      }
+
+      if (cellBlock.type === "rich_text") {
+        for (const referenceId of extractRichReferenceIds(cellBlock.content)) {
+          if (!referenceIds.has(referenceId)) {
+            issues.push({
+              code: "missing_rich_text_reference",
+              target: { blockId: block.id, cellId: cell.id, referenceId },
+            });
+          }
+        }
+      }
+
+      if (cellBlock.type !== "input") {
+        continue;
+      }
+
+      if (!responseFieldIds.has(cellBlock.responseFieldId)) {
+        issues.push({
+          code: "missing_table_response_field",
+          target: { blockId: block.id, cellId: cell.id },
+        });
+      }
+
+      if (
+        requiresCorrectValueSource(cellBlock.grading) &&
+        cellBlock.correctValueSource === undefined
+      ) {
+        issues.push({
+          code: "missing_table_response_source",
+          target: { blockId: block.id, cellId: cell.id },
+        });
+      }
+
+      for (const referenceId of extractReferenceIdsFromValueExpression(
+        cellBlock.correctValueSource,
+      )) {
         if (!referenceIds.has(referenceId)) {
           issues.push({
-            code: "missing_text_reference",
+            code: "missing_table_response_source",
             target: { blockId: block.id, cellId: cell.id, referenceId },
           });
         }
-      }
-      continue;
-    }
-
-    if (!responseFieldIds.has(cell.responseFieldId)) {
-      issues.push({
-        code: "missing_table_response_field",
-        target: { blockId: block.id, cellId: cell.id },
-      });
-    }
-
-    for (const referenceId of extractReferenceIdsFromValueExpression(
-      cell.correctValueSource,
-    )) {
-      if (!referenceIds.has(referenceId)) {
-        issues.push({
-          code: "missing_table_response_source",
-          target: { blockId: block.id, cellId: cell.id, referenceId },
-        });
       }
     }
   }

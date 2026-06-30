@@ -4,10 +4,9 @@
  * Lemma API
  * OpenAPI spec version: 0.1.0
  */
-import type { RichBulletListNodeType } from "./richBulletListNodeType.ts";
 import type { RichListItemNode } from "./richListItemNode.ts";
 
 export interface RichBulletListNode {
   content: RichListItemNode[];
-  type: RichBulletListNodeType;
+  type: "bullet_list";
 }

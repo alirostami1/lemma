@@ -9,5 +9,5 @@ export type QuestionBodySchemaVersion =
   (typeof QuestionBodySchemaVersion)[keyof typeof QuestionBodySchemaVersion];
 
 export const QuestionBodySchemaVersion = {
-  NUMBER_1: 1,
+  NUMBER_2: 2,
 } as const;

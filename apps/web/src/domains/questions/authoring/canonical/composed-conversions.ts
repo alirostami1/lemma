@@ -6,10 +6,12 @@ import type {
   QuestionResponseField,
 } from "#/api/generated/model";
 import type {
+  ComposedEditorBlock,
   ComposedEditorModel,
   ComposedResponseField,
 } from "../composed-model";
 import {
+  COMPOSED_AUTHORING_SCHEMA_VERSION,
   createDefaultComposedEditorModel,
   stripUnusedComposedReferences,
 } from "../composed-model";
@@ -58,7 +60,6 @@ export function composedEditorModelToQuestionBlueprintDocument(
   const responseFieldIds = new Set<string>();
   const references: QuestionReference[] = [];
   const referenceIds = new Set<string>();
-  const blocks: QuestionBlueprintBlock[] = [];
 
   for (const reference of modelForSave.references) {
     pushUniqueReference(references, referenceIds, {
@@ -68,11 +69,33 @@ export function composedEditorModelToQuestionBlueprintDocument(
     });
   }
 
-  for (const block of modelForSave.blocks) {
+  return {
+    blocks: composedBlocksToQuestionBlueprintBlocks({
+      blocks: modelForSave.blocks,
+      modelResponseFields: modelForSave.responseFields,
+      responseFieldIds,
+      responseFields,
+    }),
+    references,
+    responseFields,
+    schemaVersion: COMPOSED_AUTHORING_SCHEMA_VERSION,
+  };
+}
+
+function composedBlocksToQuestionBlueprintBlocks(input: {
+  blocks: ComposedEditorBlock[];
+  modelResponseFields: ComposedResponseField[];
+  responseFields: QuestionResponseField[];
+  responseFieldIds: Set<string>;
+}): QuestionBlueprintBlock[] {
+  const blocks: QuestionBlueprintBlock[] = [];
+
+  for (const block of input.blocks) {
     if (block.type === "text") {
       blocks.push({
         content: block.content,
         id: block.id,
+        kind: "primitive",
         type: "text",
       });
       continue;
@@ -82,6 +105,7 @@ export function composedEditorModelToQuestionBlueprintDocument(
       blocks.push({
         content: composedRichContentToCanonicalRichContent(block.content),
         id: block.id,
+        kind: "primitive",
         type: "rich_text",
       });
       continue;
@@ -90,13 +114,14 @@ export function composedEditorModelToQuestionBlueprintDocument(
     if (block.type === "separator") {
       blocks.push({
         id: block.id,
+        kind: "primitive",
         type: "separator",
       });
       continue;
     }
 
     if (block.type === "response") {
-      const responseField = modelForSave.responseFields.find(
+      const responseField = input.modelResponseFields.find(
         (field) => field.id === block.responseFieldId,
       );
       if (!responseField) {
@@ -104,16 +129,43 @@ export function composedEditorModelToQuestionBlueprintDocument(
           `Response block ${block.id} references missing response field ${block.responseFieldId}.`,
         );
       }
-      pushUniqueResponseField(responseFields, responseFieldIds, responseField);
+      pushUniqueResponseField(
+        input.responseFields,
+        input.responseFieldIds,
+        responseField,
+      );
       blocks.push({
-        correctValueSource: toQuestionValueExpression(block.correctValueSource),
         grading: block.grading,
         id: block.id,
+        kind: "primitive",
         label: block.label,
         placeholder: block.placeholder,
         points: block.points,
         responseFieldId: block.responseFieldId,
-        type: "response",
+        type: "input",
+        ...(block.correctValueSource === undefined
+          ? {}
+          : {
+              correctValueSource: toQuestionValueExpression(
+                block.correctValueSource,
+              ),
+            }),
+      });
+      continue;
+    }
+
+    if (block.type === "container") {
+      blocks.push({
+        blocks: composedBlocksToQuestionBlueprintBlocks({
+          blocks: block.blocks,
+          modelResponseFields: input.modelResponseFields,
+          responseFieldIds: input.responseFieldIds,
+          responseFields: input.responseFields,
+        }),
+        id: block.id,
+        kind: "container",
+        ...(block.title === undefined ? {} : { title: block.title }),
+        type: block.containerType,
       });
       continue;
     }
@@ -123,6 +175,7 @@ export function composedEditorModelToQuestionBlueprintDocument(
       blocks.push({
         content: plainTextToInlineContent(block.table.prompt),
         id: `${block.id}_prompt`,
+        kind: "primitive",
         type: "text",
       });
     }
@@ -131,7 +184,11 @@ export function composedEditorModelToQuestionBlueprintDocument(
       block.id,
     );
     for (const responseField of tableResponseFields) {
-      pushUniqueResponseField(responseFields, responseFieldIds, responseField);
+      pushUniqueResponseField(
+        input.responseFields,
+        input.responseFieldIds,
+        responseField,
+      );
     }
     blocks.push(
       tableEditorModelToQuestionBlueprintTableBlock(block.table, block.id, {
@@ -140,35 +197,60 @@ export function composedEditorModelToQuestionBlueprintDocument(
     );
   }
 
-  return {
-    blocks,
-    references,
-    responseFields,
-    schemaVersion: 1,
-  };
+  return blocks;
 }
 
 export function questionBlueprintDocumentToComposedEditorModel(
   blueprint: QuestionBlueprintDocument,
 ): ComposedEditorModel {
-  const blocks: ComposedEditorModel["blocks"] = [];
   const responseFields: ComposedResponseField[] = [];
   const responseFieldIds = new Set<string>();
   const references = blueprint.references.map(
     questionReferenceToComposedReferenceDraft,
   );
-  for (const responseField of blueprint.responseFields) {
+  validateSupportedResponseFields(blueprint.responseFields);
+
+  return {
+    blocks: questionBlueprintBlocksToComposedEditorBlocks({
+      blueprintBlocks: blueprint.blocks,
+      blueprintResponseFields: blueprint.responseFields,
+      responseFieldIds,
+      responseFields,
+    }),
+    references,
+    responseFields,
+    schemaVersion: COMPOSED_AUTHORING_SCHEMA_VERSION,
+  };
+}
+
+function validateSupportedResponseFields(
+  responseFields: QuestionResponseField[],
+): void {
+  for (const responseField of responseFields) {
     questionResponseFieldToComposed(responseField);
   }
+}
 
+function questionBlueprintBlocksToComposedEditorBlocks(input: {
+  blueprintBlocks: QuestionBlueprintBlock[];
+  blueprintResponseFields: QuestionResponseField[];
+  responseFields: ComposedResponseField[];
+  responseFieldIds: Set<string>;
+}): ComposedEditorBlock[] {
+  const blocks: ComposedEditorBlock[] = [];
   const tablePromptById = new Map<string, string>();
 
-  for (let index = 0; index < blueprint.blocks.length; index += 1) {
-    const block = blueprint.blocks[index];
-    if (block.type === "text" && block.id.endsWith("_prompt")) {
-      const nextBlock = blueprint.blocks[index + 1];
+  for (let index = 0; index < input.blueprintBlocks.length; index += 1) {
+    const block = input.blueprintBlocks[index];
+    if (
+      block.kind === "primitive" &&
+      block.type === "text" &&
+      block.id.endsWith("_prompt")
+    ) {
+      const nextBlock = input.blueprintBlocks[index + 1];
       if (
-        nextBlock?.type === "table" &&
+        nextBlock?.kind === "complex" &&
+        nextBlock.type === "table" &&
         block.id.replace(/_prompt$/u, "") === nextBlock.id
       ) {
         tablePromptById.set(
@@ -179,7 +261,7 @@ export function questionBlueprintDocumentToComposedEditorModel(
       }
     }
 
-    if (block.type === "text") {
+    if (block.kind === "primitive" && block.type === "text") {
       blocks.push({
         content: block.content,
         id: block.id,
@@ -188,7 +270,7 @@ export function questionBlueprintDocumentToComposedEditorModel(
       continue;
     }
 
-    if (block.type === "rich_text") {
+    if (block.kind === "primitive" && block.type === "rich_text") {
       blocks.push({
         content: canonicalRichContentToComposed(block.content),
         id: block.id,
@@ -197,7 +279,7 @@ export function questionBlueprintDocumentToComposedEditorModel(
       continue;
     }
 
-    if (block.type === "separator") {
+    if (block.kind === "primitive" && block.type === "separator") {
       blocks.push({
         id: block.id,
         type: "separator",
@@ -205,17 +287,13 @@ export function questionBlueprintDocumentToComposedEditorModel(
       continue;
     }
 
-    if (block.type === "response") {
-      if (
-        block.correctValueSource === undefined ||
-        block.points === undefined ||
-        block.grading === undefined
-      ) {
+    if (block.kind === "primitive" && block.type === "input") {
+      if (block.points === undefined || block.grading === undefined) {
         throw new Error(
           "Unsupported question blueprint document for composed editor.",
         );
       }
-      const responseField = blueprint.responseFields.find(
+      const responseField = input.blueprintResponseFields.find(
         (field) => field.id === block.responseFieldId,
       );
       if (!responseField) {
@@ -223,12 +301,13 @@ export function questionBlueprintDocumentToComposedEditorModel(
           "Unsupported question blueprint document for composed editor.",
         );
       }
-      if (!responseFieldIds.has(responseField.id)) {
-        responseFieldIds.add(responseField.id);
-        responseFields.push(questionResponseFieldToComposed(responseField));
+      if (!input.responseFieldIds.has(responseField.id)) {
+        input.responseFieldIds.add(responseField.id);
+        input.responseFields.push(
+          questionResponseFieldToComposed(responseField),
+        );
       }
       blocks.push({
-        correctValueSource: toValueExpression(block.correctValueSource),
         grading: block.grading,
         id: block.id,
         label: block.label,
@@ -236,33 +315,42 @@ export function questionBlueprintDocumentToComposedEditorModel(
         points: block.points,
         responseFieldId: block.responseFieldId,
         type: "response",
+        ...(block.correctValueSource === undefined
+          ? {}
+          : {
+              correctValueSource: toValueExpression(block.correctValueSource),
+            }),
       });
       continue;
     }
 
-    if (block.type === "table") {
-      const table = questionBlueprintTableBlockToTableEditorModel(
-        block,
-        blueprint.responseFields,
-        tablePromptById.get(block.id),
-      );
+    if (block.kind === "container") {
       blocks.push({
+        blocks: questionBlueprintBlocksToComposedEditorBlocks({
+          blueprintBlocks: block.blocks,
+          blueprintResponseFields: input.blueprintResponseFields,
+          responseFieldIds: input.responseFieldIds,
+          responseFields: input.responseFields,
+        }),
+        containerType: block.type,
         id: block.id,
-        table,
-        type: "table",
+        title: block.title,
+        type: "container",
       });
       continue;
     }
 
-    throw new Error(
-      "Unsupported question blueprint document for composed editor.",
+    const table = questionBlueprintTableBlockToTableEditorModel(
+      block,
+      input.blueprintResponseFields,
+      tablePromptById.get(block.id),
     );
+    blocks.push({
+      id: block.id,
+      table,
+      type: "table",
+    });
   }
 
-  return {
-    blocks,
-    references,
-    responseFields,
-    schemaVersion: 1,
-  };
+  return blocks;
 }

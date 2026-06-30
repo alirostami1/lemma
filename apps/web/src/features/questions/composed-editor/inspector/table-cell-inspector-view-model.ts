@@ -3,6 +3,10 @@ import type {
   TableEditorModel,
   TableResponseField,
 } from "#/domains/questions/authoring";
+import {
+  getPrimaryTableInputBlock,
+  getTableCellEditingKind,
+} from "#/domains/questions/authoring";
 import { getTableCell } from "#/features/questions/table-block-editor";
 
 export type TableCellInspectorViewModel =
@@ -12,6 +16,7 @@ export type TableCellInspectorViewModel =
   | {
       status: "selected";
       cell: TableEditorCell;
+      kind: "content" | "response";
       title: string;
       context: string;
       responseField: TableResponseField | null;
@@ -30,21 +35,22 @@ export function getTableCellInspectorViewModel(
   const column = model.columns.find(
     (candidate) => candidate.id === cell.columnId,
   );
+  const inputBlock = getPrimaryTableInputBlock(cell);
+  const kind = getTableCellEditingKind(cell);
   const responseField =
-    cell.type === "response"
+    inputBlock !== null
       ? (model.responseFields.find(
-          (field) => field.id === cell.responseFieldId,
+          (field) => field.id === inputBlock.responseFieldId,
         ) ?? null)
       : null;
 
   return {
     cell,
     context: [row?.label, column?.label].filter(Boolean).join(" | "),
+    kind,
     responseField,
     status: "selected",
     title:
-      cell.type === "response"
-        ? "Selected answer cell"
-        : "Selected content cell",
+      kind === "response" ? "Selected answer cell" : "Selected content cell",
   };
 }

@@ -206,7 +206,7 @@ export async function up(db: MigrationDb): Promise<void> {
     )
     .addCheckConstraint(
       "questions_body_schema_check",
-      sql`body @> '{"schemaVersion":1}'::jsonb`,
+      sql`body @> '{"schemaVersion":2}'::jsonb`,
     )
     .addCheckConstraint(
       "questions_body_blocks_check",

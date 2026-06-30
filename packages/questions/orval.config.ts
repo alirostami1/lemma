@@ -1,9 +1,10 @@
 import { execFile } from "node:child_process";
-import { readdir, readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
 import { promisify } from "node:util";
 import {
   prepareOpenApiDocumentForCodegen,
+  reusableZodSchemaOptions,
   writeHonoRoutesSource,
 } from "@lemma/openapi-hono-generator";
 import { defineConfig } from "orval";
@@ -24,13 +25,33 @@ async function addNodeNextImportExtensions(directory: string) {
     }
 
     const source = await readFile(path, "utf8");
-    const updated = source.replace(
-      /(from\s+['"]\.\/[^'".]+)(['"])/g,
-      "$1.js$2",
+    const matches = Array.from(
+      source.matchAll(/(from\s+['"])(\.\.?\/[^'"]+)(['"])/g),
     );
+    let updated = source;
+    for (const match of matches.reverse()) {
+      const specifier = match[2];
+      const matchIndex = match.index;
+      if (!specifier || matchIndex === undefined || specifier.endsWith(".js")) {
+        continue;
+      }
+      const suffix = (await isDirectory(resolve(dirname(path), specifier)))
+        ? "/index.js"
+        : ".js";
+      const specifierIndex = matchIndex + (match[1]?.length ?? 0);
+      updated = `${updated.slice(0, specifierIndex)}${specifier}${suffix}${updated.slice(specifierIndex + specifier.length)}`;
+    }
     if (updated !== source) {
       await writeFile(path, updated);
     }
+  }
+}
+
+async function isDirectory(path: string) {
+  try {
+    return (await stat(path)).isDirectory();
+  } catch {
+    return false;
   }
 }
 
@@ -49,7 +70,7 @@ export default defineConfig({
   questions: {
     hooks: {
       afterAllFilesWrite: async () => {
-        await addNodeNextImportExtensions("./src/generated/types");
+        await addNodeNextImportExtensions("./src/generated");
         await writeHonoRoutesSource({
           envType: "QuestionsAppEnv",
           envTypeImport: "@lemma/questions/http",
@@ -74,6 +95,7 @@ export default defineConfig({
       formatter: "biome",
       override: {
         zod: {
+          ...reusableZodSchemaOptions(),
           coerce: {
             query: ["number"],
           },
@@ -90,6 +112,12 @@ export default defineConfig({
       },
       schemas: "./src/generated/types",
       target: "./src/generated/zod/index.ts",
+      tsconfig: {
+        compilerOptions: {
+          module: "nodenext",
+          moduleResolution: "nodenext",
+        },
+      },
     },
   },
 });

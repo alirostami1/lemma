@@ -89,6 +89,9 @@ export function duplicateTableRow(
   };
 
   const usedCellIds = new Set(model.cells.map((cell) => cell.id));
+  const usedPrimitiveBlockIds = new Set(
+    model.cells.flatMap((cell) => cell.blocks.map((block) => block.id)),
+  );
   const responseFields = [...model.responseFields];
 
   const duplicatedCells = model.cells
@@ -99,6 +102,7 @@ export function duplicateTableRow(
         responseFields,
         rowId: nextRow.id,
         usedCellIds,
+        usedPrimitiveBlockIds,
       }),
     );
 
@@ -134,6 +138,9 @@ export function duplicateTableColumn(
   };
 
   const usedCellIds = new Set(model.cells.map((cell) => cell.id));
+  const usedPrimitiveBlockIds = new Set(
+    model.cells.flatMap((cell) => cell.blocks.map((block) => block.id)),
+  );
   const responseFields = [...model.responseFields];
 
   const duplicatedCells = model.cells
@@ -144,6 +151,7 @@ export function duplicateTableColumn(
         columnId: nextColumn.id,
         responseFields,
         usedCellIds,
+        usedPrimitiveBlockIds,
       }),
     );
 

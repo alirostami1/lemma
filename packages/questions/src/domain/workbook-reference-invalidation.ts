@@ -186,39 +186,72 @@ function workbookReferencesUsedByDocument(
   };
 
   for (const block of document.blocks) {
-    if (block.type === "text") {
-      collectInlineReferences(block.content, "text_inline", collect);
-      continue;
-    }
-    if (block.type === "rich_text") {
-      collectRichTextReferences(block.content, collect);
-      continue;
-    }
-    if (block.type === "response") {
-      if (block.correctValueSource?.type === "reference") {
-        collect(block.correctValueSource.referenceId, "response_correct_value");
-      }
-      continue;
-    }
-    if (block.type === "table") {
-      for (const cell of block.cells) {
-        if (cell.type === "content") {
-          collectInlineReferences(
-            cell.content,
-            "table_content_inline",
-            collect,
-          );
-        } else if (cell.correctValueSource?.type === "reference") {
-          collect(
-            cell.correctValueSource.referenceId,
-            "table_response_correct_value",
-          );
-        }
-      }
-    }
+    collectBlockReferences(block, collect);
   }
 
   return used;
+}
+
+function collectBlockReferences(
+  block: QuestionBlueprintDocument["blocks"][number],
+  collect: (
+    referenceId: string,
+    location: UsedWorkbookReferenceUsage["location"],
+    rangeCell?: RangeCellOffset,
+  ) => void,
+): void {
+  if (block.kind === "container") {
+    for (const childBlock of block.blocks) {
+      collectBlockReferences(childBlock, collect);
+    }
+    return;
+  }
+  if (block.kind === "complex") {
+    for (const cell of block.cells) {
+      for (const cellBlock of cell.blocks) {
+        collectPrimitiveBlockReferences(cellBlock, collect, true);
+      }
+    }
+    return;
+  }
+  collectPrimitiveBlockReferences(block, collect, false);
+}
+
+function collectPrimitiveBlockReferences(
+  block: Extract<
+    QuestionBlueprintDocument["blocks"][number],
+    { kind: "primitive" }
+  >,
+  collect: (
+    referenceId: string,
+    location: UsedWorkbookReferenceUsage["location"],
+    rangeCell?: RangeCellOffset,
+  ) => void,
+  isTableCellBlock: boolean,
+): void {
+  if (block.type === "text") {
+    collectInlineReferences(
+      block.content,
+      isTableCellBlock ? "table_content_inline" : "text_inline",
+      collect,
+    );
+    return;
+  }
+  if (block.type === "rich_text") {
+    collectRichTextReferences(block.content, collect);
+    return;
+  }
+  if (
+    block.type === "input" &&
+    block.correctValueSource?.type === "reference"
+  ) {
+    collect(
+      block.correctValueSource.referenceId,
+      isTableCellBlock
+        ? "table_response_correct_value"
+        : "response_correct_value",
+    );
+  }
 }
 
 function collectRichTextReferences(

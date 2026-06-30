@@ -339,7 +339,7 @@ function document(label: string) {
       },
     ],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   });
 }
 

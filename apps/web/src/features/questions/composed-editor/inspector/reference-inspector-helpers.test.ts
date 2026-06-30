@@ -11,7 +11,7 @@ describe("reference inspector helpers", () => {
       blocks: [],
       references: [],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     const reference = createUniqueReferenceDraft(model);

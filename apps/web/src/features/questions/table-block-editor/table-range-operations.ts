@@ -1,7 +1,7 @@
 import type {
   ComposedEditorModel,
   ComposedReferenceDraft,
-  TableEditorContentCell,
+  TableEditorCell,
   TableEditorModel,
 } from "#/domains/questions/authoring";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
@@ -45,42 +45,46 @@ export function createTableFromWorkbookRangeReference(input: {
     label: `Column ${index + 1}`,
   }));
 
-  const cells: TableEditorContentCell[] = input.values.flatMap(
-    (rowValues, rowIndex) =>
-      rowValues.map((value, columnIndex) => {
-        if (
-          !getWorkbookCellRefAtOffset({
-            columnOffset: columnIndex,
-            rangeRef: input.rangeReference.source.ref,
-            rowOffset: rowIndex,
-          })
-        ) {
-          throw new Error("Selected range reference is invalid.");
-        }
-        const row = rows[rowIndex];
-        const column = columns[columnIndex];
-        if (!row || !column) {
-          throw new Error("Selected range reference is invalid.");
-        }
+  const cells: TableEditorCell[] = input.values.flatMap((rowValues, rowIndex) =>
+    rowValues.map((value, columnIndex) => {
+      if (
+        !getWorkbookCellRefAtOffset({
+          columnOffset: columnIndex,
+          rangeRef: input.rangeReference.source.ref,
+          rowOffset: rowIndex,
+        })
+      ) {
+        throw new Error("Selected range reference is invalid.");
+      }
+      const row = rows[rowIndex];
+      const column = columns[columnIndex];
+      if (!row || !column) {
+        throw new Error("Selected range reference is invalid.");
+      }
 
-        return {
-          columnId: column.id,
-          content: [
-            {
-              fallbackText: value,
-              rangeCell: {
-                columnOffset: columnIndex,
-                rowOffset: rowIndex,
+      return {
+        blocks: [
+          {
+            content: [
+              {
+                fallbackText: value,
+                rangeCell: {
+                  columnOffset: columnIndex,
+                  rowOffset: rowIndex,
+                },
+                referenceId: input.rangeReference.id,
+                type: "reference",
               },
-              referenceId: input.rangeReference.id,
-              type: "reference",
-            },
-          ],
-          id: `cell_${rowIndex + 1}_${columnIndex + 1}`,
-          rowId: row.id,
-          type: "content",
-        };
-      }),
+            ],
+            id: `${input.currentModel.blockId ?? "table"}_cell_${rowIndex + 1}_${columnIndex + 1}_text`,
+            type: "text",
+          },
+        ],
+        columnId: column.id,
+        id: `cell_${rowIndex + 1}_${columnIndex + 1}`,
+        rowId: row.id,
+      };
+    }),
   );
 
   return {

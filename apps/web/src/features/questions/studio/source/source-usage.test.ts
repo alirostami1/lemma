@@ -43,7 +43,7 @@ describe("source-usage", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     });
 
     expect([...used]).toEqual(["source_1", "source_2"]);

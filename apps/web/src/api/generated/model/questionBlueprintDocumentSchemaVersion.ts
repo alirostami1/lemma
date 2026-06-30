@@ -9,5 +9,5 @@ export type QuestionBlueprintDocumentSchemaVersion =
   (typeof QuestionBlueprintDocumentSchemaVersion)[keyof typeof QuestionBlueprintDocumentSchemaVersion];
 
 export const QuestionBlueprintDocumentSchemaVersion = {
-  NUMBER_1: 1,
+  NUMBER_2: 2,
 } as const;

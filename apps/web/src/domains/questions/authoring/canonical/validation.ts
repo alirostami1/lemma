@@ -8,7 +8,15 @@ import {
   isValidReferenceId,
 } from "#/domains/questions/authoring/inline-content";
 import { extractRichReferenceIds } from "#/domains/questions/authoring/rich-content";
-import type { ComposedEditorModel } from "../composed-model";
+import {
+  type ComposedEditorModel,
+  flattenComposedBlocks,
+} from "../composed-model";
+import {
+  getTableCellPrimitiveBlocks,
+  requiresCorrectValueSource,
+  type TableEditorInputBlock,
+} from "../table-model";
 import {
   extractReferenceIdsFromValueExpression,
   isValidWorkbookReferenceSource,
@@ -99,18 +107,39 @@ export function validateResponseFieldReferences(
   }
 
   for (const block of blueprint.blocks) {
-    if (block.type === "response" && !fieldIds.has(block.responseFieldId)) {
+    validateBlockResponseFieldReferences(block, fieldIds);
+  }
+}
+
+function validateBlockResponseFieldReferences(
+  block: QuestionBlueprintBlock,
+  fieldIds: ReadonlySet<string>,
+): void {
+  if (block.kind === "container") {
+    for (const childBlock of block.blocks) {
+      validateBlockResponseFieldReferences(childBlock, fieldIds);
+    }
+    return;
+  }
+  if (block.kind === "primitive" && block.type === "input") {
+    if (!fieldIds.has(block.responseFieldId)) {
       throw new Error(
-        `Response block ${block.id} references missing response field ${block.responseFieldId}.`,
+        `Input block ${block.id} references missing response field ${block.responseFieldId}.`,
       );
     }
-    if (block.type !== "table") {
-      continue;
-    }
-    for (const cell of block.cells) {
-      if (cell.type === "response" && !fieldIds.has(cell.responseFieldId)) {
+    return;
+  }
+  if (block.kind !== "complex") {
+    return;
+  }
+  for (const cell of block.cells) {
+    for (const cellBlock of cell.blocks) {
+      if (
+        cellBlock.type === "input" &&
+        !fieldIds.has(cellBlock.responseFieldId)
+      ) {
         throw new Error(
-          `Response cell ${cell.id} references missing response field ${cell.responseFieldId}.`,
+          `Input cell block ${cellBlock.id} references missing response field ${cellBlock.responseFieldId}.`,
         );
       }
     }
@@ -134,7 +163,7 @@ export function validateComposedEditorModel(model: ComposedEditorModel) {
     }
   }
 
-  for (const block of model.blocks) {
+  for (const block of flattenComposedBlocks(model.blocks)) {
     if (block.type === "text") {
       validateReferenceIds(
         extractInlineReferenceIds(block.content),
@@ -148,6 +177,14 @@ export function validateComposedEditorModel(model: ComposedEditorModel) {
       continue;
     }
     if (block.type === "response") {
+      if (
+        requiresCorrectValueSource(block.grading) &&
+        block.correctValueSource === undefined
+      ) {
+        throw new Error(
+          `Input block ${block.id} is missing correct value source for ${block.grading.mode} grading.`,
+        );
+      }
       validateReferenceIds(
         extractReferenceIdsFromValueExpression(block.correctValueSource),
         referenceIds,
@@ -158,13 +195,34 @@ export function validateComposedEditorModel(model: ComposedEditorModel) {
       continue;
     }
     for (const cell of block.table.cells) {
-      const source =
-        cell.type === "content"
-          ? extractInlineReferenceIds(cell.content)
-          : extractReferenceIdsFromValueExpression(cell.correctValueSource);
-      validateReferenceIds(source, referenceIds);
+      for (const cellBlock of getTableCellPrimitiveBlocks(cell)) {
+        const source =
+          cellBlock.type === "text"
+            ? extractInlineReferenceIds(cellBlock.content)
+            : cellBlock.type === "rich_text"
+              ? extractRichReferenceIds(cellBlock.content)
+              : cellBlock.type === "input"
+                ? extractTableInputReferenceIds(cellBlock, cell.id)
+                : [];
+        validateReferenceIds(source, referenceIds);
+      }
     }
   }
+}
+
+function extractTableInputReferenceIds(
+  block: TableEditorInputBlock,
+  cellId: string,
+): string[] {
+  if (
+    requiresCorrectValueSource(block.grading) &&
+    block.correctValueSource === undefined
+  ) {
+    throw new Error(
+      `Input block ${block.id} in cell ${cellId} is missing correct value source for ${block.grading.mode} grading.`,
+    );
+  }
+  return extractReferenceIdsFromValueExpression(block.correctValueSource);
 }
 
 function validateReferenceIds(
