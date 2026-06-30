@@ -26,6 +26,7 @@ import {
   ChevronDown,
   Cloud,
   FolderOpen,
+  ListChecks,
   LoaderCircle,
   MoreHorizontal,
   Redo2,
@@ -34,6 +35,7 @@ import {
   Sparkles,
   Undo2,
 } from "lucide-react";
+import { ContextualHelpPopover } from "../shared/contextual-help-popover";
 import type { StudioGenerationAction } from "./studio-controller-types";
 import type { DraftSaveConflict } from "./use-studio-draft-save-controller";
 
@@ -50,6 +52,7 @@ export type StudioCommandBarProps = {
   saveConflict: DraftSaveConflict | null;
   onBlueprintDescriptionChange(description: string): void;
   onBlueprintNameChange(name: string): void;
+  onOpenGuide?: () => void;
   onOpenPublishDialog(): void;
   onReloadLatestDraft(): void;
   onSaveDraft(): void;
@@ -72,6 +75,7 @@ export function StudioCommandBar({
   saveConflict,
   onBlueprintDescriptionChange,
   onBlueprintNameChange,
+  onOpenGuide,
   onOpenPublishDialog,
   onReloadLatestDraft,
   onSaveDraft,
@@ -143,10 +147,19 @@ export function StudioCommandBar({
                   <Send />
                   {publishButtonLabel}
                 </Button>
+                <ContextualHelpPopover
+                  label="Help for saving and publishing"
+                  title="Save and publish"
+                >
+                  Save keeps your current work available later. Publish makes
+                  the blueprint available for use after you review the name,
+                  blocks, and added values.
+                </ContextualHelpPopover>
                 <SecondaryActionsMenu
                   canRedo={canRedo}
                   canUndo={canUndo}
                   generationAction={generationAction}
+                  onOpenGuide={onOpenGuide}
                   onOpenSavedBlueprints={onOpenSavedBlueprints}
                   onRedo={onRedo}
                   onReset={onReset}
@@ -216,6 +229,7 @@ function SecondaryActionsMenu({
   canRedo,
   canUndo,
   generationAction,
+  onOpenGuide,
   onOpenSavedBlueprints,
   onReset,
   onRedo,
@@ -224,6 +238,7 @@ function SecondaryActionsMenu({
   canRedo: boolean;
   canUndo: boolean;
   generationAction: StudioGenerationAction;
+  onOpenGuide?: () => void;
   onOpenSavedBlueprints(): void;
   onReset(): void;
   onRedo(): void;
@@ -257,6 +272,12 @@ function SecondaryActionsMenu({
           <FolderOpen className="size-4" />
           Saved blueprints
         </DropdownMenuItem>
+        {onOpenGuide ? (
+          <DropdownMenuItem className="gap-2" onSelect={onOpenGuide}>
+            <ListChecks className="size-4" />
+            Guided creation
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="gap-2"

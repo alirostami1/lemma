@@ -98,6 +98,11 @@ describe("StudioLandingPage", () => {
       0,
     );
     expect(screen.getAllByText("Start a new blueprint")).not.toHaveLength(0);
+    expect(
+      screen.queryByText(
+        "Continue where you left off or start a new blueprint.",
+      ),
+    ).not.toBeInTheDocument();
 
     const pageText = document.body.textContent ?? "";
     expect(pageText).not.toMatch(/\bdraft\b/i);

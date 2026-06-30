@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { parseLocalWorkbookFile } from "#/domains/workbooks/local-xlsx";
+import { ContextualHelpPopover } from "../../shared/contextual-help-popover";
 import type { StudioWorkbookSource } from "./studio-source-model";
 
 type SourceProviderDefinition = {
@@ -111,10 +112,19 @@ export function StudioSourcePickerDialog({
       >
         <div className="grid gap-4">
           <DialogHeader>
-            <DialogTitle>Upload a new file</DialogTitle>
-            <DialogDescription>
-              Add a workbook to this blueprint. It stays local until you save.
-            </DialogDescription>
+            <div className="flex items-start justify-between gap-3">
+              <div className="grid gap-1">
+                <DialogTitle>Upload a new file</DialogTitle>
+                <DialogDescription>Add a workbook.</DialogDescription>
+              </div>
+              <ContextualHelpPopover
+                label="Help for workbook upload"
+                title="Workbook upload"
+              >
+                Upload a workbook from Add reference when a block needs a cell
+                or range value. Values are read before saving.
+              </ContextualHelpPopover>
+            </div>
           </DialogHeader>
 
           <div className="rounded-xl border bg-muted/20 p-3">

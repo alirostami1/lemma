@@ -16,6 +16,7 @@ import type {
 } from "#/domains/questions/authoring";
 import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
+import { ContextualHelpPopover } from "../../shared/contextual-help-popover";
 import { useAddReferenceActions } from "./add-reference-actions";
 import {
   ReferenceCreateForm,
@@ -93,7 +94,7 @@ export function ReferencePickerPopover({
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent
         align="end"
-        className="w-[min(56vw,34rem)]"
+        className="w-[min(calc(100vw-2rem),34rem)]"
         onFocusOutside={(event) => {
           if (isWorkbookPickerInteraction(event.target)) {
             event.preventDefault();
@@ -107,10 +108,21 @@ export function ReferencePickerPopover({
       >
         <div className="grid gap-4">
           <PopoverHeader>
-            <PopoverTitle>Add reference</PopoverTitle>
-            <PopoverDescription>
-              Add a workbook selection or a static value to this block.
-            </PopoverDescription>
+            <div className="flex items-start justify-between gap-3">
+              <div className="grid gap-1">
+                <PopoverTitle>Add reference</PopoverTitle>
+                <PopoverDescription>
+                  Add a workbook selection or a fixed value.
+                </PopoverDescription>
+              </div>
+              <ContextualHelpPopover
+                label="Help for Add reference"
+                title="Add reference"
+              >
+                Use this when a block needs a value from a workbook or a fixed
+                value you can reuse.
+              </ContextualHelpPopover>
+            </div>
           </PopoverHeader>
 
           <AddReferenceFlow
@@ -204,7 +216,15 @@ function AddReferenceFlow({
 
     return (
       <div className="grid gap-3">
-        <p className="text-sm font-medium">What would you like to add?</p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-medium">What would you like to add?</p>
+          <ContextualHelpPopover
+            label="Help for reference types"
+            title="Reference types"
+          >
+            Choose a workbook cell or range, or add a fixed value you can reuse.
+          </ContextualHelpPopover>
+        </div>
         <div className="grid gap-2 sm:grid-cols-3">
           <ReferenceTypeButton
             description="Select a cell or range"

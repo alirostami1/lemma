@@ -90,6 +90,47 @@ describe("ReferencePickerPopover", () => {
     expect(screen.queryByLabelText("Name")).toBeNull();
   });
 
+  it("opens contextual help in the Add reference popover", async () => {
+    const user = userEvent.setup();
+
+    renderReferencePicker(
+      <ReferencePickerPopover
+        model={createModel()}
+        onModelChange={() => {}}
+        onSelectReference={() => {}}
+        referencePreviewCache={createReferencePreviewCache()}
+        sources={createSources()}
+        trigger={<button type="button">Add reference</button>}
+        workbookEnabled={true}
+        workbookSheetNamesBySourceId={{}}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Add reference" }));
+    expect(screen.getByRole("dialog")).toHaveClass(
+      "w-[min(calc(100vw-2rem),34rem)]",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Help for Add reference" }),
+    );
+
+    expect(
+      screen.getByText(/value from a workbook or a fixed value/i),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Help for reference types" }),
+    );
+    const referenceTypeHelp = screen.getByText(
+      "Choose a workbook cell or range, or add a fixed value you can reuse.",
+    );
+
+    expect(referenceTypeHelp).toBeInTheDocument();
+    expect(referenceTypeHelp.textContent).not.toMatch(
+      /\bPython\b|reserved for later|\bLiteral\b/i,
+    );
+  });
+
   it("offers workbook upload only inside the add reference flow", async () => {
     const user = userEvent.setup();
     const onUploadWorkbook = vi.fn();

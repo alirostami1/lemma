@@ -3,6 +3,7 @@ import { reorderComposedBlocks } from "#/domains/questions/authoring";
 import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import type { TableEditorSelection } from "#/features/questions/table-block-editor";
+import { ContextualHelpPopover } from "../shared/contextual-help-popover";
 import { BlockEditor } from "./block-editor";
 import { getComposedBlockLabel } from "./block-labels";
 import { BlockPreview } from "./block-preview";
@@ -71,7 +72,13 @@ export function BlockList({
         <div className="grid min-h-52 place-items-center rounded-lg border border-dashed bg-muted/20 p-6 text-center">
           <div className="grid gap-3">
             <div className="grid gap-1">
-              <p className="text-sm font-medium">Start with a block</p>
+              <div className="flex items-center justify-center gap-2">
+                <p className="text-sm font-medium">Start with a block</p>
+                <ContextualHelpPopover label="Help for blocks" title="Blocks">
+                  Blocks are the parts of the blueprint. Add text, answers,
+                  tables, or dividers, then edit each block inline.
+                </ContextualHelpPopover>
+              </div>
               <p className="text-xs text-muted-foreground">
                 Add text, an answer, a table, or a divider.
               </p>
