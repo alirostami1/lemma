@@ -135,6 +135,7 @@ describe("StudioPage", () => {
   });
 
   beforeEach(() => {
+    window.localStorage.clear();
     navigateMock.mockReset();
     draftQueryMock.mockReset();
     draftQueryMock.mockReturnValue({
@@ -155,7 +156,7 @@ describe("StudioPage", () => {
     render(<StudioPage />);
 
     expect(
-      screen.getByRole("heading", { name: "Pick up your blueprint work." }),
+      screen.getByRole("heading", { name: "Blueprint Studio" }),
     ).toBeInTheDocument();
     expect(studioControllerMock).not.toHaveBeenCalled();
     expect(entryRouteMock).not.toHaveBeenCalled();
@@ -473,11 +474,7 @@ describe("StudioPage", () => {
     expect(
       screen.getByRole("dialog", { name: "Upload a new file" }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Add a workbook to this blueprint. It stays local until you save.",
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Add a workbook.")).toBeInTheDocument();
   });
 
   it("loaded editor lets the user save and publish using product copy", async () => {
@@ -557,15 +554,213 @@ describe("StudioPage", () => {
 
     const publishDialog = screen.getByRole("dialog", { name: "Publish" });
     expect(
-      within(publishDialog).getByText(
-        "This saves your changes and publishes the blueprint.",
-      ),
+      within(publishDialog).getByText("Review and publish this blueprint."),
     ).toBeInTheDocument();
 
     await user.click(
       within(publishDialog).getByRole("button", { name: "Publish" }),
     );
     expect(onPublish).toHaveBeenCalledOnce();
+  });
+
+  it("shows compact first-use guidance and lets experienced users dismiss it", async () => {
+    const user = userEvent.setup();
+    draftQueryMock.mockReturnValue({
+      data: {
+        draft: {
+          blueprintId: null,
+          name: "Current work",
+          status: "draft",
+        },
+      },
+      isError: false,
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+    studioControllerMock.mockReturnValue(
+      createReadyStudioControllerFixture({
+        readiness: {
+          canGenerate: false,
+          canSave: false,
+          issues: [
+            {
+              id: "missing_blocks",
+              message: "Add at least one block.",
+              severity: "error",
+            },
+          ],
+        },
+      }),
+    );
+
+    render(<StudioPage draftId="draft-1" />);
+
+    const guide = await screen.findByRole("region", {
+      name: "Guided creation",
+    });
+    expect(within(guide).getByText("Next: Blocks")).toBeInTheDocument();
+    expect(
+      within(guide).getByRole("button", { name: "View guide" }),
+    ).toBeInTheDocument();
+    expect(within(guide).queryByRole("listitem")).not.toBeInTheDocument();
+
+    await user.click(
+      within(guide).getByRole("button", {
+        name: "Dismiss guided creation",
+      }),
+    );
+
+    expect(
+      screen.queryByRole("region", { name: "Guided creation" }),
+    ).not.toBeInTheDocument();
+    expect(
+      window.localStorage.getItem("lemma.studio.guidedCreation.dismissed"),
+    ).toBe("1");
+  });
+
+  it("opens the full guide with accessible step status", async () => {
+    const user = userEvent.setup();
+    draftQueryMock.mockReturnValue({
+      data: {
+        draft: {
+          blueprintId: null,
+          name: "Current work",
+          status: "draft",
+        },
+      },
+      isError: false,
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+    studioControllerMock.mockReturnValue(
+      createReadyStudioControllerFixture({
+        readiness: {
+          canGenerate: false,
+          canSave: false,
+          issues: [
+            {
+              id: "missing_blocks",
+              message: "Add at least one block.",
+              severity: "error",
+            },
+          ],
+        },
+      }),
+    );
+
+    render(<StudioPage draftId="draft-1" />);
+
+    const callout = await screen.findByRole("region", {
+      name: "Guided creation",
+    });
+    await user.click(
+      within(callout).getByRole("button", { name: "View guide" }),
+    );
+
+    const guide = screen.getByRole("region", { name: "Guided creation" });
+    const currentStep = within(guide).getByText("Blocks").closest("li");
+
+    expect(currentStep).toBeInstanceOf(HTMLElement);
+    if (!(currentStep instanceof HTMLElement)) {
+      throw new Error("Expected current guide step to render as a list item.");
+    }
+
+    expect(currentStep).toHaveAttribute("aria-current", "step");
+    expect(within(currentStep).getByText("Current step")).toBeInTheDocument();
+    expect(currentStep?.querySelector("svg")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
+    const optionalStep = within(guide).getByText("Add reference").closest("li");
+    expect(optionalStep).toBeInstanceOf(HTMLElement);
+    if (!(optionalStep instanceof HTMLElement)) {
+      throw new Error("Expected optional guide step to render as a list item.");
+    }
+    expect(within(optionalStep).getByText("Optional")).toBeInTheDocument();
+    expect(within(guide).getByText("Save")).toBeInTheDocument();
+    expect(
+      within(guide).queryByText(/Save and publish/i),
+    ).not.toBeInTheDocument();
+    expect(guide.querySelectorAll('[aria-current="step"]')).toHaveLength(1);
+  });
+
+  it("reopens the full guide from the workspace actions menu", async () => {
+    const user = userEvent.setup();
+    window.localStorage.setItem("lemma.studio.guidedCreation.dismissed", "1");
+    draftQueryMock.mockReturnValue({
+      data: {
+        draft: {
+          blueprintId: null,
+          name: "Current work",
+          status: "draft",
+        },
+      },
+      isError: false,
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+    studioControllerMock.mockReturnValue(createReadyStudioControllerFixture());
+
+    render(<StudioPage draftId="draft-1" />);
+
+    expect(
+      screen.queryByRole("region", { name: "Guided creation" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "More workspace actions" }),
+    );
+    await user.click(screen.getByRole("menuitem", { name: "Guided creation" }));
+
+    const guide = screen.getByRole("region", { name: "Guided creation" });
+    expect(within(guide).getAllByRole("listitem")).toHaveLength(5);
+  });
+
+  it("opens contextual help from the keyboard and dismisses it with Escape", async () => {
+    const user = userEvent.setup();
+    draftQueryMock.mockReturnValue({
+      data: {
+        draft: {
+          blueprintId: null,
+          name: "Current work",
+          status: "draft",
+        },
+      },
+      isError: false,
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+    studioControllerMock.mockReturnValue(createReadyStudioControllerFixture());
+
+    render(<StudioPage draftId="draft-1" />);
+
+    const helpButton = screen.getByRole("button", {
+      name: "Help for saving and publishing",
+    });
+    expect(helpButton.querySelector("svg")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
+    helpButton.focus();
+    await user.keyboard("{Enter}");
+
+    const helpText = await screen.findByText(
+      /Publish makes the blueprint available for use/i,
+    );
+    expect(helpText.closest("[data-slot='popover-content']")).toHaveClass(
+      "w-[min(calc(100vw-2rem),18rem)]",
+    );
+    expect(
+      screen.getByRole("button", { name: "Close help" }).querySelector("svg"),
+    ).toHaveAttribute("aria-hidden", "true");
+
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText(/Publish makes the blueprint available for use/i),
+      ).not.toBeInTheDocument();
+    });
   });
 
   it("keeps Studio editor controls non-sticky on mobile", () => {

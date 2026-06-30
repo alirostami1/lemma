@@ -17,6 +17,12 @@ import {
   StudioDraftRecoveryDialog,
   StudioResetConfirmationDialog,
 } from "./studio-draft-recovery-dialog";
+import {
+  createStudioGuidedCreationViewModel,
+  StudioGuidedCreationCallout,
+  StudioGuidedCreationPanel,
+  useStudioGuidedCreationState,
+} from "./studio-guided-creation";
 import { StudioLandingPage } from "./studio-landing-page";
 import {
   isStudioRouteNormalized,
@@ -333,6 +339,13 @@ function StudioEntryRouteView({
 }
 
 function StudioEditorWorkbench({ studio }: { studio: StudioController }) {
+  const guide = useStudioGuidedCreationState();
+  const guideViewModel = createStudioGuidedCreationViewModel({
+    model: studio.editor.authoringModel,
+    readiness: studio.readiness,
+    saveState: studio.commandBar.saveState,
+  });
+
   return (
     <WorkbookPickerProvider
       value={{ openWorkbookPicker: studio.workbookPicker.openWorkbookPicker }}
@@ -345,8 +358,26 @@ function StudioEditorWorkbench({ studio }: { studio: StudioController }) {
             className="grid gap-2 bg-background py-2 xl:sticky xl:top-0 xl:z-30 xl:bg-background/95 xl:backdrop-blur xl:supports-[backdrop-filter]:bg-background/80"
             data-testid="studio-editor-controls"
           >
-            <StudioCommandBar {...studio.commandBar} />
+            <StudioCommandBar
+              {...studio.commandBar}
+              onOpenGuide={guide.onOpen}
+            />
           </div>
+
+          {guide.mode === "callout" ? (
+            <StudioGuidedCreationCallout
+              onDismiss={guide.onDismiss}
+              onViewGuide={guide.onOpen}
+              viewModel={guideViewModel}
+            />
+          ) : null}
+
+          {guide.mode === "guide" ? (
+            <StudioGuidedCreationPanel
+              onDismiss={guide.onDismiss}
+              viewModel={guideViewModel}
+            />
+          ) : null}
 
           <section className="rounded-lg border bg-background p-3 shadow-sm sm:p-4">
             <div className="max-w-none">

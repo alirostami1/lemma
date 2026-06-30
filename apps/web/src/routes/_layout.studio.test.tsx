@@ -185,7 +185,7 @@ describe("studio route use cases", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: "Pick up your blueprint work.",
+        name: "Blueprint Studio",
       }),
     ).toBeInTheDocument();
 
@@ -326,7 +326,7 @@ describe("studio route use cases", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: "Pick up your blueprint work.",
+        name: "Blueprint Studio",
       }),
     ).toBeInTheDocument();
     expect(draftMutations.createDraft).not.toHaveBeenCalled();

@@ -27,7 +27,7 @@ describe("PublishDraftDialog", () => {
       screen.getByRole("heading", { name: "Publish" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("This saves your changes and publishes the blueprint."),
+      screen.getByText("Review and publish this blueprint."),
     ).toBeInTheDocument();
     expect(
       screen.getByText('"Cell structure quiz" will be saved and published.'),

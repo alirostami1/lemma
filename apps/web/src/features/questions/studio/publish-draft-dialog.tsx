@@ -10,6 +10,7 @@ import {
 } from "@lemma/ui/components/dialog";
 import { Send } from "lucide-react";
 import { useMemo } from "react";
+import { ContextualHelpPopover } from "../shared/contextual-help-popover";
 
 export type PublishDraftDialogState = {
   currentName: string;
@@ -72,8 +73,19 @@ export function PublishDraftDialog({
           }}
         >
           <DialogHeader>
-            <DialogTitle>Publish</DialogTitle>
-            <DialogDescription>{viewModel.description}</DialogDescription>
+            <div className="flex items-start justify-between gap-3">
+              <div className="grid gap-1">
+                <DialogTitle>Publish</DialogTitle>
+                <DialogDescription>{viewModel.description}</DialogDescription>
+              </div>
+              <ContextualHelpPopover
+                label="Help for publishing"
+                title="Publishing"
+              >
+                Review the blueprint name, blocks, and added values before
+                publishing. Saving happens first.
+              </ContextualHelpPopover>
+            </div>
           </DialogHeader>
 
           <p className="rounded-lg border bg-muted/20 p-3 text-sm text-muted-foreground">
@@ -109,7 +121,7 @@ export function createPublishDraftDialogViewModel(
   isSavingBeforePublish = false,
 ): PublishDraftDialogViewModel {
   return {
-    description: "This saves your changes and publishes the blueprint.",
+    description: "Review and publish this blueprint.",
     disabledIssue: state.validationIssue,
     isPublishDisabled:
       isPublishing || isSavingBeforePublish || state.validationIssue !== null,

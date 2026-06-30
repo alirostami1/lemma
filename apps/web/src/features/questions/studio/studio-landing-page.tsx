@@ -37,15 +37,9 @@ export function StudioLandingPage() {
     <PageContainer className="pb-8" variant="workbench">
       <section className="grid gap-6 rounded-2xl border bg-gradient-to-br from-background via-muted/40 to-background p-6 shadow-sm sm:p-8">
         <div className="grid gap-2">
-          <p className="text-sm font-medium text-muted-foreground">
-            Blueprint Studio
-          </p>
           <h1 className="text-3xl font-semibold tracking-tight">
-            Pick up your blueprint work.
+            Blueprint Studio
           </h1>
-          <p className="max-w-2xl text-muted-foreground">
-            Continue where you left off or start a new blueprint.
-          </p>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
@@ -58,9 +52,7 @@ export function StudioLandingPage() {
                 <CardTitle className="text-xl">
                   Continue where you left off
                 </CardTitle>
-                <CardDescription>
-                  Open your latest unfinished work right away.
-                </CardDescription>
+                <CardDescription>Open your latest work.</CardDescription>
               </div>
             </CardHeader>
             <CardContent className="grid gap-4">
@@ -150,9 +142,6 @@ export function StudioLandingPage() {
               </div>
             </CardHeader>
             <CardContent className="grid gap-4">
-              <p className="text-sm text-muted-foreground">
-                Start with a blank blueprint and keep working from there.
-              </p>
               <Button
                 className="sm:w-fit"
                 onClick={() =>

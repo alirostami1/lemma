@@ -5,7 +5,9 @@ const noop = () => {};
 export type StudioControllerFixtureOverrides = {
   draftId?: string;
   commandBar?: Partial<StudioController["commandBar"]>;
+  editor?: Partial<StudioController["editor"]>;
   publishDialog?: Partial<StudioController["publishDialog"]>;
+  readiness?: Partial<StudioController["readiness"]>;
   savedBlueprints?: Partial<StudioController["savedBlueprints"]>;
   source?: Partial<Omit<StudioController["source"], "actions">> & {
     actions?: Partial<StudioController["source"]["actions"]>;
@@ -161,9 +163,17 @@ export function createReadyStudioControllerFixture(
       ...controller.commandBar,
       ...overrides.commandBar,
     },
+    editor: {
+      ...controller.editor,
+      ...overrides.editor,
+    },
     publishDialog: {
       ...controller.publishDialog,
       ...overrides.publishDialog,
+    },
+    readiness: {
+      ...controller.readiness,
+      ...overrides.readiness,
     },
     savedBlueprints: {
       ...controller.savedBlueprints,
