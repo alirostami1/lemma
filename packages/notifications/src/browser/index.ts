@@ -3,4 +3,4 @@ export {
   questionSetNotificationChannel,
   userNotificationChannel,
   workbookCalculationNotificationChannel,
-} from "../domain/notification-channel.js";
+} from "./notification-channel.js";

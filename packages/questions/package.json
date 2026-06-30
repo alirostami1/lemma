@@ -25,9 +25,10 @@
     },
     "./inline-blueprint": {
       "types": "./src/domain/blueprint-document/index.ts",
+      "browser": "./src/domain/blueprint-document/index.ts",
       "source": "./src/domain/blueprint-document/index.ts",
-      "import": "./dist/domain/blueprint-document/index.js",
-      "default": "./dist/domain/blueprint-document/index.js"
+      "import": "./src/domain/blueprint-document/index.ts",
+      "default": "./src/domain/blueprint-document/index.ts"
     },
     "./infrastructure": {
       "types": "./src/infrastructure/index.ts",

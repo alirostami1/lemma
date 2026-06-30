@@ -25,11 +25,22 @@ Rules:
 
 - apps may compose packages
 - packages may import other packages through public exports
+- browser apps may import only public package exports
 - packages must not import another package's `src/*`
 - packages must not import another package's `dist/*`
 - relative imports must not cross workspace package source roots
 - each workspace package must declare imported package dependencies
 - new public entry points must be added to `package.json` exports intentionally
+- browser-safe package surfaces must expose source through explicit `browser`
+  export conditions
+- browser-only package subpaths should resolve to source for `browser`,
+  `source`, `import`, and `default`
+- browser-only package subpaths such as `@lemma/*/browser` must not be imported
+  from server or runtime code
+- shared browser/server package logic lives behind environment-specific wrappers,
+  not duplicated implementations
+- browser Vite apps must not set global `resolve.conditions: ["source"]`
+- runtime and server `import`/`default` exports should keep pointing at `dist/*`
 - generated files are regenerated, not hand edited
 
 ## Runtime Services

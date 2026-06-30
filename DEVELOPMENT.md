@@ -371,17 +371,43 @@ Generated-output rules and commands live in
 ## Package Boundaries
 
 Packages must use public exports. Do not import from another package's `src/*`.
-The architecture check enforces this.
+Browser apps must also use public exports; do not import package internals from
+`apps/web`, `apps/admin`, or future browser Vite apps. The architecture check
+enforces this.
 
 Source-time Node/tsx scripts may use `--conditions=source` so workspace imports
 resolve to source exports.
 
-Browser Vite apps must not set global `resolve.conditions: ["source"]`.
-
-Browser-safe workspace packages should expose browser-safe source through public
+Browser Vite apps must not set global `resolve.conditions: ["source"]`. That
+would make every package resolve through source and blur browser/server package
+boundaries. Browser app resolution must work through explicit public package
 exports.
 
-Runtime and server packages should keep runtime exports pointing to `dist/*`.
+Browser-safe workspace package surfaces must expose source through explicit
+`browser` conditions in package exports. Clean web dev and build must not depend
+on prebuilding browser-safe shared packages.
+
+Runtime and server `import`/`default` exports should keep pointing to `dist/*`
+unless a package or subpath is explicitly source-only or browser-only.
+Browser-only subpaths such as `./browser` should point `browser`, `source`,
+`import`, and `default` at browser-safe source so Vite client and SSR builds both
+work from a clean checkout.
+Browser-only package subpaths such as `@lemma/*/browser` must not be imported
+from server or runtime code.
+
+Export condition order should be intentional:
+
+1. `types`
+2. `browser` when the export is browser-safe
+3. `source` when source-time Node/tsx execution is supported
+4. `import` and `default` for runtime
+5. `default` last
+
+If a browser entry uses another workspace package, that dependency must also
+expose a browser-safe public export.
+Shared browser/server package logic should live in a package-local core module
+with environment-specific wrappers, not duplicated browser/server
+implementations.
 
 ## Migrations
 

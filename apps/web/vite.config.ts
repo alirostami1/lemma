@@ -22,17 +22,7 @@ const config = defineConfig({
     babel({ presets: [reactCompilerPreset()] }),
   ],
   resolve: {
-    // Intentional #129 experiment: web resolves workspace package source exports
-    // through the "source" condition. Architecture checks restrict web's
-    // @lemma/questions imports to @lemma/questions/inline-blueprint and forbid
-    // server/node package surfaces.
-    conditions: ["source"],
     tsconfigPaths: true,
-  },
-  ssr: {
-    resolve: {
-      conditions: ["source"],
-    },
   },
 });
 

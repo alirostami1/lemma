@@ -567,6 +567,32 @@ describe("StudioPage", () => {
     expect(onPublish).toHaveBeenCalledOnce();
   });
 
+  it("keeps Studio editor controls non-sticky on mobile", () => {
+    draftQueryMock.mockReturnValue({
+      data: {
+        draft: {
+          blueprintId: null,
+          name: "Current work",
+          status: "draft",
+        },
+      },
+      isError: false,
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+    studioControllerMock.mockReturnValue(createReadyStudioControllerFixture());
+
+    render(<StudioPage draftId="draft-1" />);
+
+    const commandBarRegion = screen.getByTestId("studio-editor-controls");
+
+    expect(commandBarRegion).toHaveClass("grid");
+    expect(commandBarRegion).not.toHaveClass("sticky");
+    expect(commandBarRegion).not.toHaveClass("top-0");
+    expect(commandBarRegion).toHaveClass("xl:sticky");
+    expect(commandBarRegion).toHaveClass("xl:top-0");
+  });
+
   it("shows editor saving state without failed copy", () => {
     draftQueryMock.mockReturnValue({
       data: {

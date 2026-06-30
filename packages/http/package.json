@@ -13,6 +13,7 @@
     },
     "./browser": {
       "types": "./src/browser.ts",
+      "browser": "./src/browser.ts",
       "source": "./src/browser.ts",
       "import": "./src/browser.ts",
       "default": "./src/browser.ts"
