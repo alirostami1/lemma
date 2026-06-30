@@ -27,6 +27,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@lemma/http": "workspace:*",
     "@lemma/notifications": "workspace:*",
+    "@lemma/questions": "workspace:*",
     "@lemma/ui": "workspace:*",
     "@t3-oss/env-core": "^0.13.10",
     "@tailwindcss/vite": "^4.1.18",

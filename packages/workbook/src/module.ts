@@ -101,6 +101,18 @@ export function createWorkbookModule(deps: {
   });
 
   return {
+    createDraftSourceWorkbookInspectionPort() {
+      return new DraftSourceWorkbookRegistrationService({
+        clock: deps.clock,
+        eventId: () => deps.idGenerator.eventId(),
+        outboxRepository: createKyselyOutboxRepository(deps.db.executor),
+        workbookCalculator,
+        workbookEngine: deps.workbookConfig.engine,
+        workbookFileProvider,
+        workbookId: () => deps.idGenerator.workbookId(),
+        workbookRepository,
+      });
+    },
     createDraftSourceWorkbookRegistrationPortForTransaction(
       tx: DatabasePort["executor"],
     ) {
@@ -108,7 +120,9 @@ export function createWorkbookModule(deps: {
         clock: deps.clock,
         eventId: () => deps.idGenerator.eventId(),
         outboxRepository: createKyselyOutboxRepository(tx),
+        workbookCalculator,
         workbookEngine: deps.workbookConfig.engine,
+        workbookFileProvider,
         workbookId: () => deps.idGenerator.workbookId(),
         workbookRepository: new KyselyWorkbookRepository(tx),
       });

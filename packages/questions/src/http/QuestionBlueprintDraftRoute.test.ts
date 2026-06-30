@@ -18,6 +18,7 @@ import {
   type QuestionsRepository,
   SourceDocumentRevisionConflictError,
   WorkbookEditorOutputStaleError,
+  WorkbookSourceEditInvalidatesReferencesError,
 } from "../application/index.js";
 import { QuestionBlueprintDraftService as RealQuestionBlueprintDraftService } from "../application/QuestionBlueprintDraftService.js";
 import {
@@ -559,6 +560,106 @@ describe("question blueprint draft route", () => {
     assert.equal(body.error.code, "WORKBOOK_EDITOR_OUTPUT_STALE");
   });
 
+  it("maps reference-breaking workbook editor save to conflict with user-facing details", async () => {
+    const app = createApp({
+      questionBlueprintDraftService: {
+        async saveQuestionBlueprintDraftWorkbookSourceRevision() {
+          throw new WorkbookSourceEditInvalidatesReferencesError([
+            {
+              label: "Inserted value from Sheet1 A1",
+              problem: "The referenced cell is no longer available.",
+            },
+          ]);
+        },
+      } as unknown as QuestionBlueprintDraftService,
+    });
+
+    const response = await app.request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/revisions`,
+      {
+        body: JSON.stringify({
+          expectedRevision: 1,
+          editorOutputFileId: "019e9315-6a87-715f-9861-8654df099006",
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 409);
+    const body = (await response.json()) as {
+      error: { code: string; details: unknown };
+    };
+    assert.equal(
+      body.error.code,
+      "WORKBOOK_SOURCE_EDIT_INVALIDATES_REFERENCES",
+    );
+    assert.deepEqual(body.error.details, {
+      affectedInsertedValues: [
+        {
+          label: "Inserted value from Sheet1 A1",
+          problem: "The referenced cell is no longer available.",
+        },
+      ],
+      recoveryAction:
+        "Remove or replace the affected inserted values before saving this workbook.",
+      summary: "Some inserted values need attention.",
+    });
+    const details = JSON.stringify(body.error.details);
+    assert.equal(details.includes("sourceA"), false);
+    assert.equal(details.includes("workbook:"), false);
+  });
+
+  it("maps reference-breaking source attach to conflict with typed recovery details", async () => {
+    const app = createApp({
+      questionBlueprintDraftService: {
+        async attachQuestionBlueprintDraftSourceFile() {
+          throw new WorkbookSourceEditInvalidatesReferencesError([
+            {
+              label: "Revenue total",
+              problem: "The referenced cell is no longer available.",
+            },
+          ]);
+        },
+      } as unknown as QuestionBlueprintDraftService,
+    });
+
+    const response = await app.request(
+      `/question-blueprint-drafts/${draftId}/sources/sourceA/file`,
+      {
+        body: JSON.stringify({
+          expectedRevision: 1,
+          fileId: "019e9315-6a87-715f-9861-8654df099006",
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+
+    assert.equal(response.status, 409);
+    const body = (await response.json()) as {
+      error: { code: string; details: unknown };
+    };
+    assert.equal(
+      body.error.code,
+      "WORKBOOK_SOURCE_EDIT_INVALIDATES_REFERENCES",
+    );
+    assert.deepEqual(body.error.details, {
+      affectedInsertedValues: [
+        {
+          label: "Revenue total",
+          problem: "The referenced cell is no longer available.",
+        },
+      ],
+      recoveryAction:
+        "Remove or replace the affected inserted values before saving this workbook.",
+      summary: "Some inserted values need attention.",
+    });
+    const details = JSON.stringify(body.error.details);
+    assert.equal(details.includes("sourceA"), false);
+    assert.equal(details.includes("workbook:"), false);
+  });
+
   it("maps invalid workbook editor save metadata to a questions-owned bad request response", async () => {
     const app = createApp({
       questionBlueprintDraftService: {
@@ -827,6 +928,11 @@ function createRealQuestionBlueprintDraftService() {
   return new RealQuestionBlueprintDraftService({
     clock: { now: () => at },
     draftSourceFilePort: unusedDraftSourceFilePort(),
+    draftSourceWorkbookInspectionPort: {
+      inspectWorkbookSourceFile: async () => {
+        throw new Error("unused in route draft update validation");
+      },
+    },
     idGenerator: routeTestIdGenerator(),
     questionBlueprintDraftTransaction: unusedDraftTransaction(),
     // This route test exercises only draft update validation; the real service

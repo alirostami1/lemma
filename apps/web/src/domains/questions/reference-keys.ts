@@ -1,3 +1,7 @@
+import {
+  formatInlineBlueprintReferenceToken,
+  isSimpleInlineBlueprintReferenceId,
+} from "@lemma/questions/inline-blueprint";
 import type { ReferenceSourceDraft } from "./authoring";
 import { type ParsedWorkbookRef, parseWorkbookRef } from "./workbook-reference";
 
@@ -37,7 +41,6 @@ type NormalizedWorkbookSource =
       ref: string;
     };
 
-const SIMPLE_REFERENCE_IDENTIFIER_PATTERN = /^[A-Za-z][A-Za-z0-9_-]*$/u;
 const SIMPLE_CELL_PATTERN = /^\$?[A-Za-z]{1,3}\$?[1-9][0-9]*$/u;
 
 export function formatWorkbookReferenceKey(
@@ -281,19 +284,11 @@ export function formatReferenceToken(
   referenceId: string,
   rangeCell?: { rowOffset: number; columnOffset: number },
 ): string {
-  const rangeSuffix = rangeCell
-    ? `[${rangeCell.rowOffset},${rangeCell.columnOffset}]`
-    : "";
-
-  if (isSimpleReferenceIdentifier(referenceId)) {
-    return `{{ .${referenceId}${rangeSuffix} }}`;
-  }
-
-  return `{{ .[${JSON.stringify(referenceId)}]${rangeSuffix} }}`;
+  return formatInlineBlueprintReferenceToken(referenceId, rangeCell);
 }
 
 export function isSimpleReferenceIdentifier(referenceId: string): boolean {
-  return SIMPLE_REFERENCE_IDENTIFIER_PATTERN.test(referenceId);
+  return isSimpleInlineBlueprintReferenceId(referenceId);
 }
 
 function parseWorkbookRefWithDefaultSheet(input: {
@@ -415,7 +410,7 @@ function normalizeRangePositions(
 
 function normalizeSourceId(sourceId: string): string {
   const normalizedSourceId = sourceId.trim();
-  if (!SIMPLE_REFERENCE_IDENTIFIER_PATTERN.test(normalizedSourceId)) {
+  if (!isSimpleInlineBlueprintReferenceId(normalizedSourceId)) {
     throw new Error(
       "Source id must start with a letter and use letters, numbers, underscores, or hyphens.",
     );

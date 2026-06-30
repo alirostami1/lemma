@@ -396,6 +396,9 @@ importers:
       '@lemma/notifications':
         specifier: workspace:*
         version: link:../../packages/notifications
+      '@lemma/questions':
+        specifier: workspace:*
+        version: link:../../packages/questions
       '@lemma/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -1301,6 +1304,9 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+      xlsx:
+        specifier: 'catalog:'
+        version: 0.18.5
 
   packages/workbook-engine:
     dependencies:

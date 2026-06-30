@@ -54,6 +54,7 @@ import type {
   PublishQuestionBlueprintDraftResponse,
   QuestionBlueprintAuthoringResponse,
   QuestionBlueprintDraftResponse,
+  QuestionBlueprintDraftSourceConflictResponse,
   QuestionBlueprintEditDraftResponse,
   QuestionBlueprintResponse,
   QuestionGenerationRunResponse,
@@ -968,7 +969,7 @@ export const getAttachQuestionBlueprintDraftSourceFileMutationOptions = <
     | UnauthorizedResponse
     | ForbiddenResponse
     | NotFoundResponse
-    | ConflictResponse,
+    | QuestionBlueprintDraftSourceConflictResponse,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -1032,7 +1033,7 @@ export type AttachQuestionBlueprintDraftSourceFileMutationError =
   | UnauthorizedResponse
   | ForbiddenResponse
   | NotFoundResponse
-  | ConflictResponse;
+  | QuestionBlueprintDraftSourceConflictResponse;
 
 /**
  * @summary Attach source file to question blueprint draft
@@ -1043,7 +1044,7 @@ export const useAttachQuestionBlueprintDraftSourceFile = <
     | UnauthorizedResponse
     | ForbiddenResponse
     | NotFoundResponse
-    | ConflictResponse,
+    | QuestionBlueprintDraftSourceConflictResponse,
   TContext = unknown,
 >(
   options?: {
@@ -1111,7 +1112,7 @@ export const getSaveQuestionBlueprintDraftWorkbookSourceRevisionMutationOptions 
       | UnauthorizedResponse
       | ForbiddenResponse
       | NotFoundResponse
-      | ConflictResponse,
+      | QuestionBlueprintDraftSourceConflictResponse,
     TContext = unknown,
   >(options?: {
     mutation?: UseMutationOptions<
@@ -1182,7 +1183,7 @@ export type SaveQuestionBlueprintDraftWorkbookSourceRevisionMutationError =
   | UnauthorizedResponse
   | ForbiddenResponse
   | NotFoundResponse
-  | ConflictResponse;
+  | QuestionBlueprintDraftSourceConflictResponse;
 
 /**
  * @summary Save workbook editor output as a new source revision
@@ -1193,7 +1194,7 @@ export const useSaveQuestionBlueprintDraftWorkbookSourceRevision = <
     | UnauthorizedResponse
     | ForbiddenResponse
     | NotFoundResponse
-    | ConflictResponse,
+    | QuestionBlueprintDraftSourceConflictResponse,
   TContext = unknown,
 >(
   options?: {

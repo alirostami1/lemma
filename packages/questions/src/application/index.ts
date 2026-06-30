@@ -66,6 +66,7 @@ export {
   UnsupportedQuestionValueExpressionError,
   WorkbookEditorOutputStaleError,
   WorkbookQuestionReferenceError,
+  WorkbookSourceEditInvalidatesReferencesError,
 } from "./errors.js";
 export {
   decodeListCursor,
@@ -93,7 +94,10 @@ export type {
   DraftSourceFileMetadata,
   DraftSourceFilePort,
   DraftSourceUploadMetadata,
+  DraftSourceWorkbookFileInspection,
+  DraftSourceWorkbookInspectionPort,
   DraftSourceWorkbookMaterialization,
+  DraftSourceWorkbookRegistrationInput,
   DraftSourceWorkbookRegistrationPort,
   DraftSourceWorkbookRegistrationResult,
   IdGenerator,

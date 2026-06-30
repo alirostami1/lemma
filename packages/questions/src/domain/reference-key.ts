@@ -184,11 +184,36 @@ export function assertReferenceIdMatchesStructuredSource(input: {
   }
 }
 
+export type ParsedStructuredWorkbookReference =
+  | { kind: "cell"; sheetName: string; startCell: string }
+  | { kind: "range"; sheetName: string; startCell: string; endCell: string };
+
+export type ParseStructuredWorkbookReferenceResult =
+  | { status: "parsed"; parts: ParsedStructuredWorkbookReference }
+  | { status: "invalid"; reason: string };
+
+export function parseQuestionReferenceSourceWorkbookRef(
+  source: StructuredWorkbookReferenceSource,
+): ParseStructuredWorkbookReferenceResult {
+  try {
+    return {
+      parts: parseStructuredWorkbookReference(source),
+      status: "parsed",
+    };
+  } catch (error) {
+    return {
+      reason:
+        error instanceof Error
+          ? error.message
+          : "workbook reference source is invalid",
+      status: "invalid",
+    };
+  }
+}
+
 function parseStructuredWorkbookReference(
   source: StructuredWorkbookReferenceSource,
-):
-  | { kind: "cell"; sheetName: string; startCell: string }
-  | { kind: "range"; sheetName: string; startCell: string; endCell: string } {
+): ParsedStructuredWorkbookReference {
   const split = splitWorkbookRef(source.ref);
   if (!split) {
     throw new InvalidQuestionFieldError(

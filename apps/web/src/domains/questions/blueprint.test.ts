@@ -156,6 +156,20 @@ describe("composed blueprint conversions", () => {
     ).toBe("Revenue: {{ .range[1,2] }}");
   });
 
+  it("formats non-simple inline references with the shared bracket grammar", () => {
+    const content = [
+      {
+        referenceId: "workbook:source_1:cell:Sheet1:A1",
+        type: "reference" as const,
+      },
+    ];
+
+    const formatted = formatInlineBlueprint(content);
+
+    expect(formatted).toBe('{{ .["workbook:source_1:cell:Sheet1:A1"] }}');
+    expect(parseInlineBlueprint(formatted)).toEqual(content);
+  });
+
   it("creates range-backed table cells without generated cell references", () => {
     const currentModel: TableEditorModel = {
       cells: [],

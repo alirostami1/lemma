@@ -1,4 +1,16 @@
 export {
+  extractInlineBlueprintReferences,
+  formatInlineBlueprintReference,
+  formatInlineBlueprintReferenceToken,
+  formatInlineBlueprintText,
+  type InlineBlueprintContent,
+  type InlineBlueprintRangeCellOffset,
+  type InlineBlueprintReference,
+  type InlineBlueprintText,
+  isSimpleInlineBlueprintReferenceId,
+  parseInlineBlueprintText,
+} from "./blueprint-document/index.js";
+export {
   InvalidQuestionAnswerError,
   InvalidQuestionBlueprintDocumentError,
   InvalidQuestionBodyError,
@@ -298,3 +310,20 @@ export {
   tombstoneSourceDocument,
   tombstoneSourceRevision,
 } from "./source-lifecycle.js";
+export type {
+  AffectedInsertedValue,
+  UsedWorkbookReferenceUsage,
+  WorkbookReferenceInvalidationResult,
+} from "./workbook-reference-invalidation.js";
+export { checkWorkbookReferenceInvalidation } from "./workbook-reference-invalidation.js";
+export type {
+  QuestionWorkbookReferenceTargetAvailability,
+  QuestionWorkbookReferenceTargetSheet,
+  QuestionWorkbookReferenceTargets,
+  QuestionWorkbookSourceFileInspection,
+} from "./workbook-reference-targets.js";
+export type { WorkbookSourceArtifactMetadata } from "./workbook-source-artifact-metadata.js";
+export {
+  workbookSourceArtifactMetadata,
+  workbookSourceArtifactMetadataFromJson,
+} from "./workbook-source-artifact-metadata.js";

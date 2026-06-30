@@ -12,6 +12,7 @@ import { KyselyFilesRepository } from "@lemma/files/infrastructure";
 import type { CurrentUser } from "@lemma/identity/application";
 import type { RawBuilder } from "kysely";
 import {
+  type DraftSourceWorkbookFileInspection,
   QuestionBlueprintDraftService,
   SourceArtifactValidationService,
   SourceDocumentRevisionConflictError,
@@ -21,6 +22,7 @@ import {
 } from "../application/index.js";
 import {
   type QuestionBlueprintDocument,
+  type QuestionWorkbookReferenceTargetAvailability,
   questionBlueprintDescription,
   questionBlueprintDocument,
   questionBlueprintDraftId,
@@ -865,6 +867,11 @@ describe("KyselyQuestion persistence integration", () => {
             throw new Error("unused in edit draft creation");
           },
         },
+        draftSourceWorkbookInspectionPort: {
+          inspectWorkbookSourceFile: async () => {
+            throw new Error("unused in edit draft creation");
+          },
+        },
         idGenerator: {
           eventId: () => {
             throw new Error("unused in edit draft creation");
@@ -952,12 +959,26 @@ describe("KyselyQuestion persistence integration", () => {
         saved.draft.sources[0]?.sourceRevisionId,
         editorSourceRevisionId,
       );
+      const sourceDocumentAfterDraftEdit = await db
+        .selectFrom("sourceDocuments")
+        .select(["currentRevisionId"])
+        .where("id", "=", sourceDocumentId)
+        .executeTakeFirstOrThrow();
+      assert.deepEqual(sourceDocumentAfterDraftEdit, {
+        currentRevisionId: editorSourceRevisionId,
+      });
       const oldVersionBeforeValidation = await db
         .selectFrom("questionBlueprintVersionSources")
-        .select(["sourceRevisionId", "sourceArtifactId", "workbookId"])
+        .select([
+          "sourceDocumentId",
+          "sourceRevisionId",
+          "sourceArtifactId",
+          "workbookId",
+        ])
         .where("blueprintVersionId", "=", versionIdValue)
         .executeTakeFirstOrThrow();
       assert.deepEqual(oldVersionBeforeValidation, {
+        sourceDocumentId,
         sourceArtifactId,
         sourceRevisionId,
         workbookId: workbookSourceWorkbookId,
@@ -983,6 +1004,7 @@ describe("KyselyQuestion persistence integration", () => {
         .selectFrom("questionBlueprintVersionSources")
         .select([
           "blueprintVersionId",
+          "sourceDocumentId",
           "sourceRevisionId",
           "sourceArtifactId",
           "workbookId",
@@ -992,18 +1014,21 @@ describe("KyselyQuestion persistence integration", () => {
       assert.deepEqual(versionBindings, [
         {
           blueprintVersionId: versionIdValue,
+          sourceDocumentId,
           sourceArtifactId,
           sourceRevisionId,
           workbookId: workbookSourceWorkbookId,
         },
         {
           blueprintVersionId: editorVersionIdValue,
+          sourceDocumentId,
           sourceArtifactId: secondSourceArtifactId,
           sourceRevisionId: editorSourceRevisionId,
           workbookId: otherWorkbookId,
         },
         {
           blueprintVersionId: sharedVersionIdValue,
+          sourceDocumentId,
           sourceArtifactId,
           sourceRevisionId,
           workbookId: workbookSourceWorkbookId,
@@ -1210,6 +1235,29 @@ async function createEditorRevisionService(db: QuestionsTestDatabase) {
         throw new Error("unused in editor save integration");
       },
     },
+    draftSourceWorkbookInspectionPort: {
+      inspectWorkbookSourceFile: async () =>
+        draftSourceWorkbookFileInspection({
+          byteSize: 2345,
+          checksumSha256: checksum,
+          contentType:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          fileId: secondWorkbookFileId,
+          referenceTargetAvailability: {
+            status: "available",
+            targets: {
+              schemaVersion: 1,
+              sheets: [
+                {
+                  dimensions: { columnCount: 1, rowCount: 1 },
+                  name: "Sheet1",
+                  valueCells: ["A1"],
+                },
+              ],
+            },
+          },
+        }),
+    },
     // This integration path creates only a new version, source revision, and
     // source artifact; unused ID methods are intentionally omitted.
     idGenerator: {
@@ -1229,8 +1277,10 @@ async function createEditorRevisionService(db: QuestionsTestDatabase) {
             },
             questionsRepository: new KyselyQuestionsRepository(tx),
             workbookRegistrationPort: {
-              registerWorkbookFromFile: async () => ({
+              registerInspectedWorkbookFromFile: async (input) => ({
+                inspection: input.inspection,
                 status: "pending_validation",
+                validationError: null,
                 workbookId: workbookId(otherWorkbookId),
               }),
             },
@@ -1239,6 +1289,33 @@ async function createEditorRevisionService(db: QuestionsTestDatabase) {
     },
     questionsRepository: new KyselyQuestionsRepository(db),
   });
+}
+
+function draftSourceWorkbookFileInspection(input: {
+  byteSize: number;
+  checksumSha256: string;
+  contentType: string;
+  fileId: string;
+  referenceTargetAvailability: QuestionWorkbookReferenceTargetAvailability;
+  validation?: DraftSourceWorkbookFileInspection["validation"];
+}): DraftSourceWorkbookFileInspection {
+  return {
+    byteSize: input.byteSize,
+    checksumSha256: input.checksumSha256,
+    contentType: input.contentType,
+    fileId: input.fileId,
+    referenceTargetAvailability: input.referenceTargetAvailability,
+    referenceTargets:
+      input.referenceTargetAvailability.status === "available"
+        ? input.referenceTargetAvailability.targets
+        : null,
+    schemaVersion: 1,
+    validation:
+      input.validation ??
+      (input.referenceTargetAvailability.status === "available"
+        ? { status: "valid" }
+        : { status: "pending_validation" }),
+  };
 }
 
 function integrationDbIt(

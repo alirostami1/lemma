@@ -4,6 +4,7 @@ import {
   type Clock,
   type CustomQuestionGraderPort,
   type DraftSourceFilePort,
+  type DraftSourceWorkbookInspectionPort,
   type IdGenerator,
   QuestionBlueprintDraftService,
   type QuestionBlueprintDraftTransactionPort,
@@ -31,6 +32,7 @@ export function createQuestionsModule(deps: {
   customQuestionGraderPort?: CustomQuestionGraderPort;
   workbookAccessPort?: WorkbookAccessPort;
   draftSourceFilePort: DraftSourceFilePort;
+  draftSourceWorkbookInspectionPort: DraftSourceWorkbookInspectionPort;
   questionBlueprintDraftTransaction: QuestionBlueprintDraftTransactionPort;
 }) {
   const questionsRepository = new KyselyQuestionsRepository(deps.db.executor);
@@ -50,6 +52,7 @@ export function createQuestionsModule(deps: {
   const questionBlueprintDraftService = new QuestionBlueprintDraftService({
     clock: deps.clock,
     draftSourceFilePort: deps.draftSourceFilePort,
+    draftSourceWorkbookInspectionPort: deps.draftSourceWorkbookInspectionPort,
     idGenerator: deps.idGenerator,
     questionBlueprintDraftTransaction: deps.questionBlueprintDraftTransaction,
     questionsRepository,

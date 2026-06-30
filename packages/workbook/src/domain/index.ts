@@ -68,6 +68,19 @@ export {
   WORKBOOK_VALIDATION_SUCCEEDED_EVENT,
 } from "./workbook-events.js";
 export type {
+  WorkbookReferenceTargetAvailability,
+  WorkbookReferenceTargetSheet,
+  WorkbookReferenceTargets,
+  WorkbookSourceFileInspection,
+} from "./workbook-reference-targets.js";
+export {
+  workbookReferenceTargetAvailability,
+  workbookReferenceTargets,
+  workbookReferenceTargetsFromJson,
+  workbookReferenceTargetsFromSparseValues,
+  workbookSourceFileInspection,
+} from "./workbook-reference-targets.js";
+export type {
   WorkbookSnapshot,
   WorkbookSnapshotCells,
   WorkbookSnapshotMetadata,
