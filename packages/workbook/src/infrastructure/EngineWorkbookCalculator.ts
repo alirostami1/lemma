@@ -7,6 +7,7 @@ import {
 import {
   getWorkbookEngineHealth,
   inspectWorkbook,
+  readCachedWorkbookValues,
   recalculateWorkbook,
   recalculateWorkbookBatch,
 } from "@lemma/workbook-engine/runtime";
@@ -15,7 +16,11 @@ import type {
   WorkbookCalculator,
   WorkbookCalculatorOptions,
 } from "../application/ports.js";
-import type { WorkbookInspection } from "../domain/index.js";
+import {
+  type WorkbookInspection,
+  type WorkbookReferenceTargetAvailability,
+  workbookReferenceTargetsFromSparseValues,
+} from "../domain/index.js";
 
 const instrumentation = instrumentExternal("workbook", "engine");
 
@@ -49,6 +54,43 @@ export class EngineWorkbookCalculator implements WorkbookCalculator {
         recalculateWorkbook(path, this.config, workbookEngineOptions(options)),
       ),
     );
+  }
+
+  async referenceTargets(
+    path: string,
+    options?: WorkbookCalculatorOptions,
+  ): Promise<WorkbookReferenceTargetAvailability> {
+    return this.engineOperation("reference_targets", {}, options, async () => {
+      try {
+        const values = await readCachedWorkbookValues(
+          path,
+          this.config,
+          workbookEngineOptions(options),
+        );
+        return {
+          status: "available" as const,
+          targets: workbookReferenceTargetsFromSparseValues(values),
+        };
+      } catch (error) {
+        if (error instanceof WorkbookEngineError) {
+          const reason =
+            error.code === "engine_unavailable" ||
+            error.code === "engine_timeout" ||
+            error.code === "engine_response_invalid" ||
+            error.code === "engine_response_too_large"
+              ? "inspection_unavailable"
+              : "invalid_workbook";
+          return {
+            reason,
+            status: "unavailable" as const,
+          };
+        }
+        return {
+          reason: "inspection_unavailable" as const,
+          status: "unavailable" as const,
+        };
+      }
+    });
   }
 
   async calculateBatch(

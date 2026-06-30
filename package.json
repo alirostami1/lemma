@@ -10,7 +10,7 @@
     "check": "turbo run check",
     "check:write": "turbo run check:write",
     "check:types": "turbo run check:types",
-    "check:architecture": "depcruise --config dependency-cruiser.config.cjs apps packages scripts",
+    "check:architecture": "depcruise --config dependency-cruiser.config.cjs apps packages scripts && node scripts/check-web-import-boundaries.cjs && node --test scripts/check-web-import-boundaries.test.cjs",
     "check:docs": "markdownlint-cli2",
     "test": "turbo run test",
     "hooks:install": "lefthook install",

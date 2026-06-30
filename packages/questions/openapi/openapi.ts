@@ -1866,6 +1866,68 @@ const upstreamWorkbookResponse: Response = {
     description: "UPSTREAM_WORKBOOK",
   },
 };
+const workbookSourceEditInvalidatesReferencesErrorResponseSchema: Schema = {
+  name: "WorkbookSourceEditInvalidatesReferencesErrorResponse",
+  schema: {
+    properties: {
+      error: {
+        properties: {
+          code: {
+            enum: ["WORKBOOK_SOURCE_EDIT_INVALIDATES_REFERENCES"],
+            type: "string",
+          },
+          details: {
+            additionalProperties: false,
+            properties: {
+              affectedInsertedValues: {
+                items: {
+                  additionalProperties: false,
+                  properties: {
+                    label: { type: "string" },
+                    problem: { type: "string" },
+                  },
+                  required: ["label", "problem"],
+                  type: "object",
+                },
+                type: "array",
+              },
+              recoveryAction: { type: "string" },
+              summary: { type: "string" },
+            },
+            required: ["summary", "affectedInsertedValues", "recoveryAction"],
+            type: "object",
+          },
+          message: { type: "string" },
+          requestId: { type: "string" },
+        },
+        required: ["code", "message", "details"],
+        type: "object",
+      },
+    },
+    required: ["error"],
+    type: "object",
+  },
+};
+const questionBlueprintDraftSourceConflictResponseSchema: Schema = {
+  name: "QuestionBlueprintDraftSourceConflictResponse",
+  schema: {
+    anyOf: [
+      schemaRef(errorResponseSchema),
+      schemaRef(workbookSourceEditInvalidatesReferencesErrorResponseSchema),
+    ],
+  },
+};
+const questionBlueprintDraftSourceConflictResponse: Response = {
+  name: "QuestionBlueprintDraftSourceConflict",
+  schema: {
+    content: {
+      "application/json": {
+        schema: schemaRef(questionBlueprintDraftSourceConflictResponseSchema),
+      },
+    },
+    description: "Question blueprint draft source conflict.",
+  },
+};
 
 const questionSetParam: Param = {
   name: "QuestionSetIdParam",
@@ -2023,6 +2085,8 @@ export const schemas = Object.freeze([
   workbookSourceRevisionSchema,
   workbookSourceArtifactSchema,
   saveQuestionBlueprintDraftWorkbookSourceRevisionResponseSchema,
+  workbookSourceEditInvalidatesReferencesErrorResponseSchema,
+  questionBlueprintDraftSourceConflictResponseSchema,
   gradeQuestionRequestSchema,
   createQuestionGenerationRunRequestSchema,
 ]);
@@ -2031,6 +2095,7 @@ export const responses = Object.freeze([
   forbiddenResponse,
   notFoundResponse,
   conflictResponse,
+  questionBlueprintDraftSourceConflictResponse,
   upstreamWorkbookResponse,
 ]);
 export const params = Object.freeze([
@@ -2255,7 +2320,7 @@ export const paths: Paths = {
         "401": responseRef(unauthorizedResponse),
         "403": responseRef(forbiddenResponse),
         "404": responseRef(notFoundResponse),
-        "409": responseRef(conflictResponse),
+        "409": responseRef(questionBlueprintDraftSourceConflictResponse),
       },
       security: [keycloakSecurityRequirement],
       summary: "Attach source file to question blueprint draft",
@@ -2294,7 +2359,7 @@ export const paths: Paths = {
         "401": responseRef(unauthorizedResponse),
         "403": responseRef(forbiddenResponse),
         "404": responseRef(notFoundResponse),
-        "409": responseRef(conflictResponse),
+        "409": responseRef(questionBlueprintDraftSourceConflictResponse),
       },
       security: [keycloakSecurityRequirement],
       summary: "Save workbook editor output as a new source revision",

@@ -2,6 +2,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { AppApiError } from "#/api/errors";
+import { getWorkbookSourceEditRecoveryMessage } from "#/lib/errors/api-error";
 import {
   useCompleteQuestionBlueprintDraftWorkbookEditorUpload,
   useCreateQuestionBlueprintDraftWorkbookEditorUpload,
@@ -238,7 +240,71 @@ describe("useSaveQuestionBlueprintDraftWorkbookSourceRevision", () => {
     ).toEqual({ draft: response.draft });
     expect(queryClient.getQueryState(listKey)?.isInvalidated).toBe(true);
   });
+
+  it("surfaces workbook editor save recovery details without internal ids", async () => {
+    const recoveryError = createWorkbookSourceEditRecoveryError();
+    mocks.saveQuestionBlueprintDraftWorkbookSourceRevision.mockRejectedValue(
+      recoveryError,
+    );
+    const queryClient = new QueryClient({
+      defaultOptions: { mutations: { retry: false } },
+    });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(
+      () => useSaveQuestionBlueprintDraftWorkbookSourceRevision(),
+      { wrapper },
+    );
+
+    await expect(
+      act(() =>
+        result.current.mutateAsync({
+          draftId: "draft-1",
+          editorOutputFileId: "editor-file-2",
+          expectedRevision: 1,
+          sourceId: "source_1",
+        }),
+      ),
+    ).rejects.toBe(recoveryError);
+
+    const message = getWorkbookSourceEditRecoveryMessage(recoveryError);
+    expect(message).toContain("Some inserted values need attention.");
+    expect(message).toContain(
+      "Revenue total: The referenced cell is no longer available.",
+    );
+    expect(message).toContain(
+      "Remove or replace the affected inserted values before saving this workbook.",
+    );
+    expect(message).not.toMatch(
+      /workbook:|sourceDocumentId|sourceRevisionId|sourceArtifactId|workbookId|referenceId|019e9315/,
+    );
+  });
 });
+
+function createWorkbookSourceEditRecoveryError() {
+  return new AppApiError({
+    body: null,
+    headers: new Headers(),
+    payload: {
+      code: "WORKBOOK_SOURCE_EDIT_INVALIDATES_REFERENCES",
+      details: {
+        affectedInsertedValues: [
+          {
+            label: "Revenue total",
+            problem: "The referenced cell is no longer available.",
+          },
+        ],
+        recoveryAction:
+          "Remove or replace the affected inserted values before saving this workbook.",
+        summary: "Some inserted values need attention.",
+      },
+      message: "Some inserted values need attention.",
+      requestId: "request-1",
+    },
+    status: 409,
+  });
+}
 
 function savedRevisionResult(): SaveQuestionBlueprintDraftWorkbookSourceRevisionResult {
   const at = new Date("2026-06-23T00:00:00.000Z");

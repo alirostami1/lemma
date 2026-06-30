@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   attachDraftSourceFile,
+  checkWorkbookReferenceInvalidation,
   createQuestionBlueprintDraft,
   createSourceArtifact,
   createSourceDocument,
@@ -26,6 +27,7 @@ import {
   updateQuestionBlueprintDraft,
   userId,
   workbookId,
+  workbookSourceArtifactMetadata,
 } from "../domain/index.js";
 import type {
   AttachQuestionBlueprintDraftSourceFileCommand,
@@ -63,6 +65,7 @@ import {
   QuestionBlueprintDraftRevisionConflictError,
   QuestionBlueprintNotFoundError,
   WorkbookEditorOutputStaleError,
+  WorkbookSourceEditInvalidatesReferencesError,
 } from "./errors.js";
 import {
   decodeListCursor,
@@ -75,6 +78,8 @@ import type {
   DraftSourceFileMetadata,
   DraftSourceFilePort,
   DraftSourceUploadMetadata,
+  DraftSourceWorkbookFileInspection,
+  DraftSourceWorkbookInspectionPort,
   DraftSourceWorkbookMaterialization,
   DraftSourceWorkbookRegistrationPort,
   IdGenerator,
@@ -120,6 +125,7 @@ export class QuestionBlueprintDraftService {
     private readonly deps: {
       questionsRepository: QuestionsRepository;
       draftSourceFilePort: DraftSourceFilePort;
+      draftSourceWorkbookInspectionPort: DraftSourceWorkbookInspectionPort;
       questionBlueprintDraftTransaction: QuestionBlueprintDraftTransactionPort;
       idGenerator: IdGenerator;
       clock: Clock;
@@ -398,6 +404,14 @@ export class QuestionBlueprintDraftService {
         source,
       });
     }
+    const inspection =
+      await this.deps.draftSourceWorkbookInspectionPort.inspectWorkbookSourceFile(
+        {
+          fileId: file.fileId,
+          lineage: command.lineage,
+          ownerUserId: draft.ownerUserId,
+        },
+      );
     const persisted =
       await this.deps.questionBlueprintDraftTransaction.transaction(
         async ({
@@ -443,11 +457,24 @@ export class QuestionBlueprintDraftService {
           await fileReferenceGuard.assertFileAliasReferenceableForUpdate(
             file.fileId,
           );
+          assertWorkbookSourceInspectionMatchesFile({ file, inspection });
+          const existingSourceEdit = hasExistingSourceBinding(lockedSource);
+          if (existingSourceEdit) {
+            assertCompleteExistingSourceBinding(lockedSource);
+          }
+          if (existingSourceEdit) {
+            assertWorkbookSourceEditPreservesUsedReferences({
+              draft: lockedDraft,
+              inspection,
+              sourceId: command.sourceId,
+            });
+          }
           const materialization = await this.materializeWorkbookSource({
             command,
             draft: lockedDraft,
             editorMetadata: input.editorMetadata,
             file,
+            inspection,
             questionsRepository,
             source: lockedSource,
             workbookRegistrationPort,
@@ -664,18 +691,20 @@ export class QuestionBlueprintDraftService {
     draft: QuestionBlueprintDraft;
     editorMetadata: { origin: "file_upload" | "workbook_editor" };
     file: DraftSourceFileMetadata;
+    inspection: DraftSourceWorkbookFileInspection;
     questionsRepository: QuestionsRepository;
     source: QuestionBlueprintDraftSource;
     workbookRegistrationPort: DraftSourceWorkbookRegistrationPort;
   }): Promise<DraftSourceWorkbookMaterialization> {
     const at = this.deps.clock.now();
     const registered =
-      await input.workbookRegistrationPort.registerWorkbookFromFile({
+      await input.workbookRegistrationPort.registerInspectedWorkbookFromFile({
         byteSize: input.file.byteSize,
         checksumSha256: input.file.checksumSha256,
         contentType: input.file.contentType,
         createdByUserId: userId(input.command.currentUser.user.id),
         fileId: input.file.fileId,
+        inspection: input.inspection,
         lineage: input.command.lineage,
         name: input.source.name,
         originalName: input.file.originalName,
@@ -727,7 +756,10 @@ export class QuestionBlueprintDraftService {
     });
     const sourceArtifact = createSourceArtifact(
       {
-        artifactMetadata: { originalName: input.file.originalName },
+        artifactMetadata: workbookSourceArtifactMetadata({
+          inspection: input.inspection,
+          originalName: input.file.originalName,
+        }),
         id: sourceArtifactId,
         kind: "workbook",
         ownerUserId: input.draft.ownerUserId,
@@ -749,6 +781,8 @@ export class QuestionBlueprintDraftService {
     return {
       advanceDocumentHead: true,
       draftSourceStatus,
+      inspection: input.inspection,
+      registeredStatus: registered.status,
       sourceArtifact,
       sourceArtifactId,
       attachedAt: at,
@@ -759,6 +793,63 @@ export class QuestionBlueprintDraftService {
       workbookId: registeredWorkbookId,
     };
   }
+}
+
+function assertWorkbookSourceInspectionMatchesFile(input: {
+  file: DraftSourceFileMetadata;
+  inspection: DraftSourceWorkbookFileInspection;
+}): void {
+  const { file, inspection } = input;
+  if (
+    inspection.fileId !== file.fileId ||
+    inspection.byteSize !== file.byteSize ||
+    inspection.checksumSha256 !== file.checksumSha256 ||
+    inspection.contentType !== file.contentType
+  ) {
+    throw new DraftSourceFileInvalidError(
+      "Draft source file inspection is stale.",
+    );
+  }
+}
+
+function assertWorkbookSourceEditPreservesUsedReferences(input: {
+  draft: QuestionBlueprintDraft;
+  sourceId: string;
+  inspection: DraftSourceWorkbookFileInspection;
+}): void {
+  const invalidation = checkWorkbookReferenceInvalidation({
+    document: input.draft.document,
+    sourceId: input.sourceId,
+    targetAvailability: input.inspection.referenceTargetAvailability,
+  });
+  if (invalidation.status === "invalid") {
+    throw new WorkbookSourceEditInvalidatesReferencesError(
+      invalidation.affectedInsertedValues,
+    );
+  }
+}
+
+function hasExistingSourceBinding(
+  source: QuestionBlueprintDraftSource,
+): boolean {
+  return Boolean(
+    source.sourceDocumentId ||
+      source.sourceRevisionId ||
+      source.sourceArtifactId,
+  );
+}
+
+function assertCompleteExistingSourceBinding(
+  source: QuestionBlueprintDraftSource,
+): void {
+  if (
+    source.sourceDocumentId &&
+    source.sourceRevisionId &&
+    source.sourceArtifactId
+  ) {
+    return;
+  }
+  throw new DraftSourceNotReadyError("Workbook source is not validated.");
 }
 
 function toSourceArtifactStatus(

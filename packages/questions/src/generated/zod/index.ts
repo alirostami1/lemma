@@ -4646,7 +4646,7 @@ export const AttachQuestionBlueprintDraftSourceFile404Response =
     }),
   });
 
-export const AttachQuestionBlueprintDraftSourceFile409Response =
+export const AttachQuestionBlueprintDraftSourceFile409Response = zod.union([
   zod.strictObject({
     error: zod.strictObject({
       code: zod.string(),
@@ -4654,7 +4654,25 @@ export const AttachQuestionBlueprintDraftSourceFile409Response =
       message: zod.string(),
       requestId: zod.string().optional(),
     }),
-  });
+  }),
+  zod.strictObject({
+    error: zod.strictObject({
+      code: zod.enum(["WORKBOOK_SOURCE_EDIT_INVALIDATES_REFERENCES"]),
+      details: zod.strictObject({
+        affectedInsertedValues: zod.array(
+          zod.strictObject({
+            label: zod.string(),
+            problem: zod.string(),
+          }),
+        ),
+        recoveryAction: zod.string(),
+        summary: zod.string(),
+      }),
+      message: zod.string(),
+      requestId: zod.string().optional(),
+    }),
+  }),
+]);
 
 /**
  * @summary Save workbook editor output as a new source revision
@@ -5293,14 +5311,33 @@ export const SaveQuestionBlueprintDraftWorkbookSourceRevision404Response =
   });
 
 export const SaveQuestionBlueprintDraftWorkbookSourceRevision409Response =
-  zod.strictObject({
-    error: zod.strictObject({
-      code: zod.string(),
-      details: zod.unknown().optional(),
-      message: zod.string(),
-      requestId: zod.string().optional(),
+  zod.union([
+    zod.strictObject({
+      error: zod.strictObject({
+        code: zod.string(),
+        details: zod.unknown().optional(),
+        message: zod.string(),
+        requestId: zod.string().optional(),
+      }),
     }),
-  });
+    zod.strictObject({
+      error: zod.strictObject({
+        code: zod.enum(["WORKBOOK_SOURCE_EDIT_INVALIDATES_REFERENCES"]),
+        details: zod.strictObject({
+          affectedInsertedValues: zod.array(
+            zod.strictObject({
+              label: zod.string(),
+              problem: zod.string(),
+            }),
+          ),
+          recoveryAction: zod.string(),
+          summary: zod.string(),
+        }),
+        message: zod.string(),
+        requestId: zod.string().optional(),
+      }),
+    }),
+  ]);
 
 /**
  * @summary Create workbook editor output upload for a draft source

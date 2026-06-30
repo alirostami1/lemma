@@ -23,6 +23,12 @@
       "import": "./dist/domain/index.js",
       "default": "./dist/domain/index.js"
     },
+    "./inline-blueprint": {
+      "types": "./src/domain/blueprint-document/index.ts",
+      "source": "./src/domain/blueprint-document/index.ts",
+      "import": "./dist/domain/blueprint-document/index.js",
+      "default": "./dist/domain/blueprint-document/index.js"
+    },
     "./infrastructure": {
       "types": "./src/infrastructure/index.ts",
       "source": "./src/infrastructure/index.ts",
@@ -52,7 +58,7 @@
     "generate:hono": "pnpm --filter @lemma/openapi-hono-generator build && orval",
     "lint": "biome lint",
     "lint:write": "biome lint --write",
-    "test": "node --conditions=source --import tsx --test src/**/*.test.ts"
+    "test": "node --conditions=source --import tsx --test \"src/**/*.test.ts\" \"openapi/**/*.test.ts\""
   },
   "dependencies": {
     "@hono/zod-validator": "catalog:",

@@ -27,6 +27,7 @@ import type {
   QuestionSetQuestion,
   QuestionSetStatus,
   QuestionStatus,
+  QuestionWorkbookSourceFileInspection,
   SourceArtifact,
   SourceArtifactId,
   SourceDocument,
@@ -221,9 +222,19 @@ export type SourceArtifactBackingWorkbook = {
   otherUncollectedSourceArtifacts: number;
 };
 
+export type DraftSourceWorkbookFileInspection =
+  QuestionWorkbookSourceFileInspection;
+
 export type DraftSourceWorkbookMaterialization = {
   attachedAt: Date;
   draftSourceStatus: "uploaded" | "validated" | "invalid";
+  inspection: DraftSourceWorkbookFileInspection;
+  registeredStatus:
+    | "pending_validation"
+    | "valid"
+    | "invalid"
+    | "archived"
+    | "deleted";
   sourceDocument: SourceDocument | null;
   sourceDocumentId: SourceDocumentId;
   sourceRevision: SourceRevision;
@@ -404,21 +415,35 @@ export interface DraftSourceFilePort {
 export type DraftSourceWorkbookRegistrationResult = {
   workbookId: WorkbookId;
   status: "pending_validation" | "valid" | "invalid" | "archived" | "deleted";
+  inspection: DraftSourceWorkbookFileInspection;
   validationError?: string | null;
 };
 
-export interface DraftSourceWorkbookRegistrationPort {
-  registerWorkbookFromFile(input: {
+export type DraftSourceWorkbookRegistrationInput = {
+  ownerUserId: UserId;
+  createdByUserId: UserId;
+  fileId: string;
+  name: string;
+  byteSize: number;
+  contentType: string;
+  checksumSha256: string;
+  originalName: string;
+  lineage: OperationLineage;
+  inspection: DraftSourceWorkbookFileInspection;
+};
+
+export interface DraftSourceWorkbookInspectionPort {
+  inspectWorkbookSourceFile(input: {
     ownerUserId: UserId;
-    createdByUserId: UserId;
     fileId: string;
-    name: string;
-    byteSize: number;
-    contentType: string;
-    checksumSha256: string;
-    originalName: string;
     lineage: OperationLineage;
-  }): Promise<DraftSourceWorkbookRegistrationResult>;
+  }): Promise<DraftSourceWorkbookFileInspection>;
+}
+
+export interface DraftSourceWorkbookRegistrationPort {
+  registerInspectedWorkbookFromFile(
+    input: DraftSourceWorkbookRegistrationInput,
+  ): Promise<DraftSourceWorkbookRegistrationResult>;
 }
 
 export interface QuestionBlueprintDraftTransactionPort {

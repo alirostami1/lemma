@@ -107,6 +107,33 @@ export class WorkbookEditorOutputStaleError extends QuestionsApplicationError {
   }
 }
 
+export type WorkbookSourceEditInvalidatesReferencesDetails = {
+  summary: string;
+  affectedInsertedValues: readonly {
+    label: string;
+    problem: string;
+  }[];
+  recoveryAction: string;
+};
+
+export class WorkbookSourceEditInvalidatesReferencesError extends QuestionsApplicationError {
+  readonly applicationCode = "WORKBOOK_SOURCE_EDIT_INVALIDATES_REFERENCES";
+  readonly details: WorkbookSourceEditInvalidatesReferencesDetails;
+
+  constructor(
+    affectedInsertedValues: readonly { label: string; problem: string }[],
+  ) {
+    const summary = "Some inserted values need attention.";
+    super(summary);
+    this.details = {
+      affectedInsertedValues,
+      recoveryAction:
+        "Remove or replace the affected inserted values before saving this workbook.",
+      summary,
+    };
+  }
+}
+
 export class InvalidDraftSourceReferenceError extends QuestionsApplicationError {
   readonly applicationCode = "INVALID_DRAFT_SOURCE_REFERENCE";
   constructor(message = "invalid draft source reference") {

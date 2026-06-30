@@ -10,6 +10,8 @@ import {
   type QuestionBlueprint,
   type QuestionBlueprintDraft,
   type QuestionBlueprintDraftStatus,
+  type QuestionWorkbookReferenceTargetAvailability,
+  type QuestionWorkbookReferenceTargets,
   questionBlueprintDescription,
   questionBlueprintDocument,
   questionBlueprintDraftId,
@@ -32,12 +34,16 @@ import {
   DraftSourceEditorUploadStorageError,
   DraftSourceFileInvalidError,
   QuestionBlueprintDraftRevisionConflictError,
+  WorkbookSourceEditInvalidatesReferencesError,
 } from "./errors.js";
 import type {
   DraftSourceFileMetadata,
   DraftSourceFilePort,
   DraftSourceUploadMetadata,
+  DraftSourceWorkbookFileInspection,
+  DraftSourceWorkbookInspectionPort,
   DraftSourceWorkbookMaterialization,
+  DraftSourceWorkbookRegistrationInput,
   DraftSourceWorkbookRegistrationPort,
   IdGenerator,
   QuestionBlueprintDraftTransactionPort,
@@ -555,6 +561,106 @@ describe("QuestionBlueprintDraftService", () => {
     );
   });
 
+  it("inspects workbook files before the draft write transaction and registers inside it", async () => {
+    const events: string[] = [];
+    const service = createService({
+      draft: createTargetedDraftWithLocalSource(),
+      fileMetadata: createFileMetadata(),
+      onInspectWorkbookSourceFile: () => {
+        events.push("inspect");
+      },
+      onRegisterWorkbook: () => {
+        events.push("register");
+      },
+      onTransactionStart: () => {
+        events.push("transaction:start");
+      },
+      onTransactionEnd: () => {
+        events.push("transaction:end");
+      },
+    });
+
+    await service.attachQuestionBlueprintDraftSourceFile({
+      currentUser: currentUser(),
+      draftId,
+      expectedRevision: 1,
+      fileId: "019e9315-6a87-715f-9861-8654df099006",
+      lineage: testLineage(),
+      sourceId: "sourceA",
+    });
+
+    assert.deepEqual(events, [
+      "inspect",
+      "transaction:start",
+      "register",
+      "transaction:end",
+    ]);
+  });
+
+  for (const [field, inspection] of [
+    [
+      "fileId",
+      workbookInspectionFixture({
+        fileMetadata: createFileMetadata({
+          fileId: "019e9315-6a87-715f-9861-8654df099099",
+        }),
+      }),
+    ],
+    [
+      "byteSize",
+      workbookInspectionFixture({
+        fileMetadata: createFileMetadata({ byteSize: 4321 }),
+      }),
+    ],
+    [
+      "checksumSha256",
+      workbookInspectionFixture({
+        fileMetadata: createFileMetadata({
+          checksumSha256:
+            "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        }),
+      }),
+    ],
+    [
+      "contentType",
+      workbookInspectionFixture({
+        fileMetadata: createFileMetadata({ contentType: "application/other" }),
+      }),
+    ],
+  ] as const) {
+    it(`rejects stale workbook inspection when ${field} does not match the source file`, async () => {
+      const materializations: DraftSourceWorkbookMaterialization[] = [];
+      let registered = false;
+      const service = createService({
+        draft: createTargetedDraftWithLocalSource(),
+        fileMetadata: createFileMetadata(),
+        inspection,
+        onMaterialization: (materialization) => {
+          materializations.push(materialization);
+        },
+        onRegisterWorkbook: () => {
+          registered = true;
+        },
+      });
+
+      await assert.rejects(
+        () =>
+          service.attachQuestionBlueprintDraftSourceFile({
+            currentUser: currentUser(),
+            draftId,
+            expectedRevision: 1,
+            fileId: "019e9315-6a87-715f-9861-8654df099006",
+            lineage: testLineage(),
+            sourceId: "sourceA",
+          }),
+        DraftSourceFileInvalidError,
+      );
+
+      assert.equal(registered, false);
+      assert.deepEqual(materializations, []);
+    });
+  }
+
   it("reuses source document and parents new revision when replacing existing source", async () => {
     const materializations: DraftSourceWorkbookMaterialization[] = [];
     const service = createService({
@@ -639,6 +745,464 @@ describe("QuestionBlueprintDraftService", () => {
     assert.equal(originalSource?.sourceArtifactId, testSourceArtifactId);
   });
 
+  it("blocks workbook editor output that removes a used inserted value target", async () => {
+    const materializations: DraftSourceWorkbookMaterialization[] = [];
+    const service = createService({
+      draft: createTargetedDraftWithWorkbook(
+        documentWithInsertedWorkbookCellReference({
+          id: "workbook:sourceA:cell:Sheet1:A1",
+          ref: "Sheet1!A1",
+        }),
+      ),
+      fileMetadata: createEditorOutputFileMetadata(),
+      generatedSourceArtifactId: nextSourceArtifactId,
+      generatedSourceRevisionId: nextSourceRevisionId,
+      onMaterialization: (materialization) => {
+        materializations.push(materialization);
+      },
+      referenceTargetAvailability: {
+        status: "available",
+        targets: {
+          schemaVersion: 1,
+          sheets: [
+            {
+              dimensions: { columnCount: 10, rowCount: 10 },
+              name: "Other",
+            },
+          ],
+        },
+      },
+    });
+
+    await assert.rejects(
+      () =>
+        service.saveQuestionBlueprintDraftWorkbookSourceRevision({
+          currentUser: currentUser(),
+          draftId,
+          editorOutputFileId: "019e9315-6a87-715f-9861-8654df099006",
+          expectedRevision: 1,
+          lineage: testLineage(),
+          sourceId: "sourceA",
+        }),
+      (error) => {
+        assert.ok(
+          error instanceof WorkbookSourceEditInvalidatesReferencesError,
+        );
+        assert.deepEqual(error.details.affectedInsertedValues, [
+          {
+            label: "Inserted value from Sheet1 A1",
+            problem: "The workbook sheet is no longer available.",
+          },
+        ]);
+        const details = JSON.stringify(error.details);
+        assert.equal(details.includes("sourceA"), false);
+        assert.equal(details.includes("workbook:"), false);
+        return true;
+      },
+    );
+
+    assert.deepEqual(materializations, []);
+    const readback = await service.getQuestionBlueprintDraft({
+      currentUser: currentUser(),
+      draftId,
+    });
+    assert.equal(
+      readback.draft.sources[0]?.sourceRevisionId,
+      testSourceRevisionId,
+    );
+    assert.equal(
+      readback.draft.sources[0]?.sourceArtifactId,
+      testSourceArtifactId,
+    );
+  });
+
+  it("rejects stale editor output before reference invalidation", async () => {
+    const materializations: DraftSourceWorkbookMaterialization[] = [];
+    let registered = false;
+    const service = createService({
+      attachRaceBeforeMaterialization: true,
+      draft: createTargetedDraftWithWorkbook(
+        documentWithInsertedWorkbookCellReference({
+          id: "workbook:sourceA:cell:Sheet1:A1",
+          ref: "Sheet1!A1",
+        }),
+      ),
+      fileMetadata: createEditorOutputFileMetadata(),
+      generatedSourceArtifactId: nextSourceArtifactId,
+      generatedSourceRevisionId: nextSourceRevisionId,
+      onMaterialization: (materialization) => {
+        materializations.push(materialization);
+      },
+      onRegisterWorkbook: () => {
+        registered = true;
+      },
+      referenceTargetAvailability: {
+        status: "available",
+        targets: {
+          schemaVersion: 1,
+          sheets: [
+            {
+              dimensions: { columnCount: 10, rowCount: 10 },
+              name: "Other",
+            },
+          ],
+        },
+      },
+    });
+
+    await assert.rejects(
+      () =>
+        service.saveQuestionBlueprintDraftWorkbookSourceRevision({
+          currentUser: currentUser(),
+          draftId,
+          editorOutputFileId: "019e9315-6a87-715f-9861-8654df099006",
+          expectedRevision: 1,
+          lineage: testLineage(),
+          sourceId: "sourceA",
+        }),
+      QuestionBlueprintDraftRevisionConflictError,
+    );
+
+    assert.equal(registered, false);
+    assert.deepEqual(materializations, []);
+  });
+
+  it("blocks normal replacement upload that removes a used inserted value target", async () => {
+    const materializations: DraftSourceWorkbookMaterialization[] = [];
+    let registered = false;
+    const service = createService({
+      draft: createTargetedDraftWithWorkbook(
+        documentWithInsertedWorkbookCellReference({
+          id: "workbook:sourceA:cell:Sheet1:A1",
+          ref: "Sheet1!A1",
+        }),
+      ),
+      fileMetadata: createFileMetadata(),
+      generatedSourceArtifactId: nextSourceArtifactId,
+      generatedSourceRevisionId: nextSourceRevisionId,
+      onMaterialization: (materialization) => {
+        materializations.push(materialization);
+      },
+      onRegisterWorkbook: () => {
+        registered = true;
+      },
+      referenceTargetAvailability: {
+        status: "available",
+        targets: {
+          schemaVersion: 1,
+          sheets: [
+            {
+              dimensions: { columnCount: 10, rowCount: 10 },
+              name: "Other",
+            },
+          ],
+        },
+      },
+    });
+
+    await assert.rejects(
+      () =>
+        service.attachQuestionBlueprintDraftSourceFile({
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 1,
+          fileId: "019e9315-6a87-715f-9861-8654df099006",
+          lineage: testLineage(),
+          sourceId: "sourceA",
+        }),
+      WorkbookSourceEditInvalidatesReferencesError,
+    );
+
+    assert.equal(registered, false);
+    assert.deepEqual(materializations, []);
+    const readback = await service.getQuestionBlueprintDraft({
+      currentUser: currentUser(),
+      draftId,
+    });
+    assert.equal(
+      readback.draft.sources[0]?.sourceRevisionId,
+      testSourceRevisionId,
+    );
+    assert.equal(
+      readback.draft.sources[0]?.sourceArtifactId,
+      testSourceArtifactId,
+    );
+  });
+
+  it("rejects stale replacement upload before reference invalidation", async () => {
+    const materializations: DraftSourceWorkbookMaterialization[] = [];
+    let registered = false;
+    const service = createService({
+      attachRaceBeforeMaterialization: true,
+      draft: createTargetedDraftWithWorkbook(
+        documentWithInsertedWorkbookCellReference({
+          id: "workbook:sourceA:cell:Sheet1:A1",
+          ref: "Sheet1!A1",
+        }),
+      ),
+      fileMetadata: createFileMetadata(),
+      generatedSourceArtifactId: nextSourceArtifactId,
+      generatedSourceRevisionId: nextSourceRevisionId,
+      onMaterialization: (materialization) => {
+        materializations.push(materialization);
+      },
+      onRegisterWorkbook: () => {
+        registered = true;
+      },
+      referenceTargetAvailability: {
+        status: "available",
+        targets: {
+          schemaVersion: 1,
+          sheets: [
+            {
+              dimensions: { columnCount: 10, rowCount: 10 },
+              name: "Other",
+            },
+          ],
+        },
+      },
+    });
+
+    await assert.rejects(
+      () =>
+        service.attachQuestionBlueprintDraftSourceFile({
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 1,
+          fileId: "019e9315-6a87-715f-9861-8654df099006",
+          lineage: testLineage(),
+          sourceId: "sourceA",
+        }),
+      QuestionBlueprintDraftRevisionConflictError,
+    );
+
+    assert.equal(registered, false);
+    assert.deepEqual(materializations, []);
+  });
+
+  it("allows replacement upload with no used inserted values when targets are unavailable", async () => {
+    const materializations: DraftSourceWorkbookMaterialization[] = [];
+    const service = createService({
+      draft: createTargetedDraftWithWorkbook(),
+      fileMetadata: createFileMetadata(),
+      generatedSourceArtifactId: nextSourceArtifactId,
+      generatedSourceRevisionId: nextSourceRevisionId,
+      onMaterialization: (materialization) => {
+        materializations.push(materialization);
+      },
+      referenceTargetAvailability: {
+        reason: "inspection_unavailable",
+        status: "unavailable",
+      },
+    });
+
+    const result = await service.attachQuestionBlueprintDraftSourceFile({
+      currentUser: currentUser(),
+      draftId,
+      expectedRevision: 1,
+      fileId: "019e9315-6a87-715f-9861-8654df099006",
+      lineage: testLineage(),
+      sourceId: "sourceA",
+    });
+
+    assert.equal(
+      result.draft.sources[0]?.sourceRevisionId,
+      nextSourceRevisionId,
+    );
+    assert.equal(materializations.length, 1);
+    assert.deepEqual(materializations[0]?.sourceArtifact.artifactMetadata, {
+      originalName: "source.xlsx",
+    });
+  });
+
+  it("rejects existing-source editor output with pending validation targets when used refs exist", async () => {
+    let registered = false;
+    const service = createService({
+      draft: createTargetedDraftWithWorkbook(
+        documentWithInsertedWorkbookCellReference({
+          id: "workbook:sourceA:cell:Sheet1:A1",
+          ref: "Sheet1!A1",
+        }),
+      ),
+      fileMetadata: createEditorOutputFileMetadata(),
+      onRegisterWorkbook: () => {
+        registered = true;
+      },
+      referenceTargetAvailability: {
+        reason: "pending_validation",
+        status: "unavailable",
+      },
+      registrationStatus: "pending_validation",
+    });
+
+    await assert.rejects(
+      () =>
+        service.saveQuestionBlueprintDraftWorkbookSourceRevision({
+          currentUser: currentUser(),
+          draftId,
+          editorOutputFileId: "019e9315-6a87-715f-9861-8654df099006",
+          expectedRevision: 1,
+          lineage: testLineage(),
+          sourceId: "sourceA",
+        }),
+      WorkbookSourceEditInvalidatesReferencesError,
+    );
+
+    assert.equal(registered, false);
+  });
+
+  it("rejects existing-source editor output when registration is invalid and used refs exist", async () => {
+    const materializations: DraftSourceWorkbookMaterialization[] = [];
+    let registered = false;
+    const service = createService({
+      draft: createTargetedDraftWithWorkbook(
+        documentWithInsertedWorkbookCellReference({
+          id: "workbook:sourceA:cell:Sheet1:A1",
+          ref: "Sheet1!A1",
+        }),
+      ),
+      fileMetadata: createEditorOutputFileMetadata(),
+      generatedSourceArtifactId: nextSourceArtifactId,
+      generatedSourceRevisionId: nextSourceRevisionId,
+      onMaterialization: (materialization) => {
+        materializations.push(materialization);
+      },
+      onRegisterWorkbook: () => {
+        registered = true;
+      },
+      referenceTargetAvailability: {
+        status: "available",
+        targets: referenceTargetsFixture(),
+      },
+      registrationStatus: "invalid",
+      registrationValidationError: "bad workbook",
+    });
+
+    await assert.rejects(
+      () =>
+        service.saveQuestionBlueprintDraftWorkbookSourceRevision({
+          currentUser: currentUser(),
+          draftId,
+          editorOutputFileId: "019e9315-6a87-715f-9861-8654df099006",
+          expectedRevision: 1,
+          lineage: testLineage(),
+          sourceId: "sourceA",
+        }),
+      WorkbookSourceEditInvalidatesReferencesError,
+    );
+
+    assert.equal(registered, false);
+    assert.deepEqual(materializations, []);
+    const readback = await service.getQuestionBlueprintDraft({
+      currentUser: currentUser(),
+      draftId,
+    });
+    assert.equal(
+      readback.draft.sources[0]?.sourceRevisionId,
+      testSourceRevisionId,
+    );
+    assert.equal(
+      readback.draft.sources[0]?.sourceArtifactId,
+      testSourceArtifactId,
+    );
+  });
+
+  it("stores workbook target metadata on the new source artifact when provided", async () => {
+    const materializations: DraftSourceWorkbookMaterialization[] = [];
+    const registrationInputs: DraftSourceWorkbookRegistrationInput[] = [];
+    let inspectionCount = 0;
+    const service = createService({
+      draft: createTargetedDraftWithWorkbook(
+        documentWithInsertedWorkbookCellReference({
+          id: "workbook:sourceA:cell:Sheet1:A1",
+          ref: "Sheet1!A1",
+        }),
+      ),
+      fileMetadata: createEditorOutputFileMetadata(),
+      generatedSourceArtifactId: nextSourceArtifactId,
+      generatedSourceRevisionId: nextSourceRevisionId,
+      onMaterialization: (materialization) => {
+        materializations.push(materialization);
+      },
+      onInspectWorkbookSourceFile: () => {
+        inspectionCount += 1;
+      },
+      onRegisterWorkbook: (input) => {
+        registrationInputs.push(input);
+      },
+      referenceTargetAvailability: {
+        status: "available",
+        targets: {
+          schemaVersion: 1,
+          sheets: [
+            {
+              dimensions: { columnCount: 1, rowCount: 1 },
+              name: "Sheet1",
+              valueCells: ["A1"],
+            },
+          ],
+        },
+      },
+    });
+
+    await service.saveQuestionBlueprintDraftWorkbookSourceRevision({
+      currentUser: currentUser(),
+      draftId,
+      editorOutputFileId: "019e9315-6a87-715f-9861-8654df099006",
+      expectedRevision: 1,
+      lineage: testLineage(),
+      sourceId: "sourceA",
+    });
+
+    assert.equal(inspectionCount, 1);
+    assert.deepEqual(materializations[0]?.sourceArtifact.artifactMetadata, {
+      originalName: "source.xlsx",
+      workbookReferenceTargets: {
+        schemaVersion: 1,
+        sheets: [
+          {
+            dimensions: { columnCount: 1, rowCount: 1 },
+            name: "Sheet1",
+            valueCells: ["A1"],
+          },
+        ],
+      },
+    });
+    assert.deepEqual(registrationInputs[0]?.inspection, {
+      byteSize: 1234,
+      checksumSha256:
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      contentType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      fileId: "019e9315-6a87-715f-9861-8654df099006",
+      referenceTargetAvailability: {
+        status: "available",
+        targets: {
+          schemaVersion: 1,
+          sheets: [
+            {
+              dimensions: { columnCount: 1, rowCount: 1 },
+              name: "Sheet1",
+              valueCells: ["A1"],
+            },
+          ],
+        },
+      },
+      referenceTargets: {
+        schemaVersion: 1,
+        sheets: [
+          {
+            dimensions: { columnCount: 1, rowCount: 1 },
+            name: "Sheet1",
+            valueCells: ["A1"],
+          },
+        ],
+      },
+      schemaVersion: 1,
+      validation: { status: "valid" },
+    });
+  });
+
   it("rejects editor output for a source without an existing revision", async () => {
     const service = createService({
       draft: createTargetedDraftWithLocalSource(),
@@ -656,6 +1220,30 @@ describe("QuestionBlueprintDraftService", () => {
           sourceId: "sourceA",
         }),
       /requires an existing source revision/,
+    );
+  });
+
+  it("rejects existing-source edits with partial source lifecycle pins", async () => {
+    const [source] = validatedDraftWorkbookSources();
+    if (!source) throw new Error("missing source fixture");
+    const service = createService({
+      draft: createUntargetedDraftWithSources([
+        { ...source, sourceArtifactId: null },
+      ]),
+      fileMetadata: createFileMetadata(),
+    });
+
+    await assert.rejects(
+      () =>
+        service.attachQuestionBlueprintDraftSourceFile({
+          currentUser: currentUser(),
+          draftId,
+          expectedRevision: 1,
+          fileId: "019e9315-6a87-715f-9861-8654df099006",
+          lineage: testLineage(),
+          sourceId: "sourceA",
+        }),
+      /Workbook source is not validated/,
     );
   });
 
@@ -1539,6 +2127,7 @@ function createService(
     uploadMetadata?: DraftSourceUploadMetadata;
     generatedSourceArtifactId?: typeof testSourceArtifactId;
     generatedSourceRevisionId?: typeof testSourceRevisionId;
+    inspection?: DraftSourceWorkbookFileInspection;
     onListQuestionBlueprintDrafts?: (input: {
       statuses?: readonly QuestionBlueprintDraftStatus[];
     }) => void;
@@ -1546,11 +2135,15 @@ function createService(
       input: Parameters<DraftSourceFilePort["createEditorOutputUpload"]>[0],
     ) => void;
     onMaterialization?: (input: DraftSourceWorkbookMaterialization) => void;
+    onInspectWorkbookSourceFile?: () => void;
     onPublish?: (input: unknown) => void;
-    onRegisterWorkbook?: (input: unknown) => void;
+    onRegisterWorkbook?: (input: DraftSourceWorkbookRegistrationInput) => void;
+    onTransactionEnd?: () => void;
+    onTransactionStart?: () => void;
     previousRevisionSourceDocumentId?: typeof testSourceDocumentId;
     publishError?: Error;
     registrationStatus?: "pending_validation" | "valid" | "invalid";
+    referenceTargetAvailability?: QuestionWorkbookReferenceTargetAvailability;
     registrationValidationError?: string | null;
     rootFindSourceRevisionByIdThrows?: boolean;
   } = {},
@@ -1692,6 +2285,8 @@ function createService(
               : "uploaded",
         sourceArtifact: artifact,
         sourceArtifactId: artifact.id,
+        inspection: workbookInspectionFixture(options),
+        registeredStatus: options.registrationStatus ?? "valid",
         sourceDocument: createdSourceDocument,
         sourceDocumentId: createdSourceDocument?.id ?? testSourceDocumentId,
         sourceRevision: createdSourceRevision ?? revisionFixture(),
@@ -1740,12 +2335,27 @@ function createService(
     | "updateQuestionBlueprintDraftWithExpectedRevision"
   >;
 
+  const draftSourceWorkbookInspectionPort: DraftSourceWorkbookInspectionPort = {
+    async inspectWorkbookSourceFile() {
+      options.onInspectWorkbookSourceFile?.();
+      return options.inspection ?? workbookInspectionFixture(options);
+    },
+  };
+
   const workbookRegistrationPort: DraftSourceWorkbookRegistrationPort = {
-    async registerWorkbookFromFile(input) {
+    async registerInspectedWorkbookFromFile(input) {
       options.onRegisterWorkbook?.(input);
+      const status =
+        input.inspection.validation.status === "invalid"
+          ? "invalid"
+          : (options.registrationStatus ?? "valid");
       return {
-        status: options.registrationStatus ?? "valid",
-        validationError: options.registrationValidationError ?? null,
+        inspection: input.inspection,
+        status,
+        validationError:
+          input.inspection.validation.status === "invalid"
+            ? input.inspection.validation.validationError
+            : (options.registrationValidationError ?? null),
         workbookId: testWorkbookId,
       };
     },
@@ -1754,6 +2364,7 @@ function createService(
   const questionBlueprintDraftTransaction: QuestionBlueprintDraftTransactionPort =
     {
       async transaction(fn) {
+        options.onTransactionStart?.();
         const transactionQuestionsRepository = {
           ...questionsRepository,
           async findSourceRevisionById(id: typeof testSourceRevisionId) {
@@ -1778,30 +2389,35 @@ function createService(
             };
           },
         };
-        return fn({
-          fileReferenceGuard: {
-            async assertFileAliasReferenceableForUpdate() {
-              if (options.fileReferenceUnexpectedError) {
-                throw options.fileReferenceUnexpectedError;
-              }
-              if (options.fileReferenceUnavailable) {
-                throw new DraftSourceFileInvalidError(
-                  "Draft source file is unavailable.",
-                );
-              }
+        try {
+          return await fn({
+            fileReferenceGuard: {
+              async assertFileAliasReferenceableForUpdate() {
+                if (options.fileReferenceUnexpectedError) {
+                  throw options.fileReferenceUnexpectedError;
+                }
+                if (options.fileReferenceUnavailable) {
+                  throw new DraftSourceFileInvalidError(
+                    "Draft source file is unavailable.",
+                  );
+                }
+              },
             },
-          },
-          questionsRepository:
-            // This focused transaction fake implements only methods exercised
-            // by the draft-source attach workflow under test.
-            transactionQuestionsRepository as unknown as QuestionsRepository,
-          workbookRegistrationPort,
-        });
+            questionsRepository:
+              // This focused transaction fake implements only methods exercised
+              // by the draft-source attach workflow under test.
+              transactionQuestionsRepository as unknown as QuestionsRepository,
+            workbookRegistrationPort,
+          });
+        } finally {
+          options.onTransactionEnd?.();
+        }
       },
     };
 
   return new QuestionBlueprintDraftService({
     clock: { now: () => at },
+    draftSourceWorkbookInspectionPort,
     draftSourceFilePort: {
       async createEditorOutputUpload(input) {
         options.onCreateEditorOutputUpload?.(input);
@@ -1862,6 +2478,87 @@ function createService(
     // application service tests.
     questionsRepository: questionsRepository as unknown as QuestionsRepository,
   });
+}
+
+function availableReferenceTargetAvailability(
+  value?: QuestionWorkbookReferenceTargetAvailability,
+): QuestionWorkbookReferenceTargetAvailability {
+  return value ?? { status: "available", targets: referenceTargetsFixture() };
+}
+
+function draftSourceWorkbookFileInspection(input: {
+  byteSize: number;
+  checksumSha256: string;
+  contentType: string;
+  fileId: string;
+  referenceTargetAvailability: QuestionWorkbookReferenceTargetAvailability;
+  validation?: DraftSourceWorkbookFileInspection["validation"];
+}): DraftSourceWorkbookFileInspection {
+  return {
+    byteSize: input.byteSize,
+    checksumSha256: input.checksumSha256,
+    contentType: input.contentType,
+    fileId: input.fileId,
+    referenceTargetAvailability: input.referenceTargetAvailability,
+    referenceTargets:
+      input.referenceTargetAvailability.status === "available"
+        ? input.referenceTargetAvailability.targets
+        : null,
+    schemaVersion: 1,
+    validation:
+      input.validation ??
+      (input.referenceTargetAvailability.status === "available"
+        ? { status: "valid" }
+        : { status: "pending_validation" }),
+  };
+}
+
+function workbookInspectionFixture(options: {
+  fileMetadata?: DraftSourceFileMetadata;
+  registrationStatus?: "pending_validation" | "valid" | "invalid";
+  referenceTargetAvailability?: QuestionWorkbookReferenceTargetAvailability;
+  registrationValidationError?: string | null;
+}): DraftSourceWorkbookFileInspection {
+  const file = options.fileMetadata ?? createFileMetadata();
+  if (options.registrationStatus === "invalid") {
+    return draftSourceWorkbookFileInspection({
+      byteSize: file.byteSize,
+      checksumSha256: file.checksumSha256,
+      contentType: file.contentType,
+      fileId: file.fileId,
+      referenceTargetAvailability: {
+        reason: "invalid_workbook",
+        status: "unavailable",
+      },
+      validation: {
+        status: "invalid",
+        validationError:
+          options.registrationValidationError ?? "Workbook is invalid.",
+      },
+    });
+  }
+  return draftSourceWorkbookFileInspection({
+    byteSize: file.byteSize,
+    checksumSha256: file.checksumSha256,
+    contentType: file.contentType,
+    fileId: file.fileId,
+    referenceTargetAvailability: availableReferenceTargetAvailability(
+      options.referenceTargetAvailability,
+    ),
+  });
+}
+
+function referenceTargetsFixture(): QuestionWorkbookReferenceTargets {
+  return {
+    schemaVersion: 1,
+    sheets: [
+      {
+        dimensions: { columnCount: 3, rowCount: 3 },
+        name: "Sheet1",
+        valueCells: ["A1", "B2", "C3"],
+      },
+    ],
+  };
 }
 
 function createTestBlueprint(patch: Partial<TestBlueprintInput> = {}) {
@@ -2020,14 +2717,14 @@ function createUntargetedDraftWithSources(
   );
 }
 
-function createTargetedDraftWithWorkbook() {
+function createTargetedDraftWithWorkbook(document = documentUsing("sourceA")) {
   return createDraft(
     {
       baseVersionId: versionId,
       blueprintId,
       createdByUserId: ownerUserId,
       description: questionBlueprintDescription(null),
-      document: documentUsing("sourceA"),
+      document,
       id: draftId,
       name: questionBlueprintName("Draft"),
       ownerUserId,
@@ -2254,6 +2951,34 @@ function documentUsing(sourceId: string) {
           type: "workbook_cell",
         },
         value: { referenceId, schemaVersion: 1, type: "reference" },
+      },
+    ],
+    responseFields: [],
+    schemaVersion: 1,
+  });
+}
+
+function documentWithInsertedWorkbookCellReference(input: {
+  id: string;
+  ref: string;
+}) {
+  return questionBlueprintDocument({
+    blocks: [
+      {
+        content: [{ referenceId: input.id, type: "reference" }],
+        id: "block_1",
+        type: "text",
+      },
+    ],
+    references: [
+      {
+        id: input.id,
+        source: {
+          ref: input.ref,
+          schemaVersion: 1,
+          sourceId: "sourceA",
+          type: "workbook_cell",
+        },
       },
     ],
     responseFields: [],

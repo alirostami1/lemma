@@ -243,6 +243,10 @@ class FakeWorkbookCalculator implements WorkbookCalculator {
   async health(): Promise<never> {
     throw new Error("Not implemented.");
   }
+
+  async referenceTargets(): Promise<never> {
+    throw new Error("Not implemented.");
+  }
 }
 
 function createValidWorkbook(id: ReturnType<typeof workbookId>): Workbook {

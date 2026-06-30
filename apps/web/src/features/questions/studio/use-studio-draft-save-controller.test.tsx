@@ -354,6 +354,76 @@ describe("useStudioDraftSaveController", () => {
     fetchMock.mockRestore();
   });
 
+  it("shows workbook source recovery details when local upload attach is rejected", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    fileUploadMocks.createFileUpload.mockResolvedValue({
+      upload: { id: "upload_1" },
+      uploadUrl: {
+        headers: {},
+        method: "PUT",
+        url: "https://uploads.example/file",
+      },
+    });
+    fileUploadMocks.completeFileUpload.mockResolvedValue({
+      byteSize: 512,
+      checksumSha256:
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      contentType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      id: "file_1",
+      originalName: "local.xlsx",
+    });
+    questionDraftMocks.updateServerDraft.mockResolvedValue(
+      createDraftResult("draft_existing", 2),
+    );
+    questionDraftMocks.attachDraftFile.mockRejectedValue(
+      createWorkbookSourceEditRecoveryError(),
+    );
+
+    const { result } = renderHook(() =>
+      useStudioDraftSaveController({
+        authoringModel: createModel(),
+        blueprintDescription: "",
+        blueprintName: "Draft",
+        initialDraftId: "draft_existing",
+        initialDraftRevision: 1,
+        onDraftPublished: () => {},
+        onDraftSaved: () => {},
+        onSourcesChange: () => {},
+        readiness: {
+          canGenerate: true,
+          canSave: true,
+          issues: [],
+        },
+        sources: [createLocalSource()],
+      }),
+    );
+
+    act(() => {
+      result.current.commandBarSave.onSaveDraft();
+    });
+
+    await waitFor(() => {
+      expect(result.current.commandBarSave.saveError).toContain(
+        "Some inserted values need attention.",
+      );
+    });
+    expect(result.current.commandBarSave.saveError).toContain(
+      "Revenue total: The referenced cell is no longer available.",
+    );
+    expect(result.current.commandBarSave.saveError).toContain(
+      "Remove or replace the affected inserted values before saving this workbook.",
+    );
+    expect(result.current.commandBarSave.saveError).not.toMatch(
+      /workbook:|sourceDocumentId|sourceRevisionId|sourceArtifactId|workbookId|referenceId|019e9315/,
+    );
+    expect(questionDraftMocks.attachDraftFile).toHaveBeenCalledOnce();
+
+    fetchMock.mockRestore();
+  });
+
   it("publishes a loaded draft through the draft API and preserves draft sources", async () => {
     const draftFileSource = createDraftFileSource();
     questionDraftMocks.updateServerDraft.mockResolvedValue({
@@ -1051,16 +1121,31 @@ function createLocalSource(): StudioSource {
   };
 }
 
-function createApiError(code: string) {
+function createApiError(code: string, details?: unknown) {
   return new AppApiError({
     body: null,
     headers: new Headers(),
     payload: {
       code,
+      details,
       message: code,
       requestId: "request-1",
     },
     status: 409,
+  });
+}
+
+function createWorkbookSourceEditRecoveryError() {
+  return createApiError("WORKBOOK_SOURCE_EDIT_INVALIDATES_REFERENCES", {
+    affectedInsertedValues: [
+      {
+        label: "Revenue total",
+        problem: "The referenced cell is no longer available.",
+      },
+    ],
+    recoveryAction:
+      "Remove or replace the affected inserted values before saving this workbook.",
+    summary: "Some inserted values need attention.",
   });
 }
 

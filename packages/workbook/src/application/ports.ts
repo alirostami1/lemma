@@ -14,8 +14,10 @@ import type {
   WorkbookEngineHealth,
   WorkbookId,
   WorkbookInspection,
+  WorkbookReferenceTargetAvailability,
   WorkbookSnapshot,
   WorkbookSnapshotId,
+  WorkbookSourceFileInspection,
   WorkbookSparseValues,
   WorkbookStatus,
 } from "../domain/index.js";
@@ -166,6 +168,10 @@ export interface WorkbookCalculator {
     path: string,
     options?: WorkbookCalculatorOptions,
   ): Promise<WorkbookInspection>;
+  referenceTargets(
+    path: string,
+    options?: WorkbookCalculatorOptions,
+  ): Promise<WorkbookReferenceTargetAvailability>;
 }
 
 export interface Clock {
@@ -234,14 +240,29 @@ export type DraftSourceWorkbookRegistrationCommand = {
   lineage: OperationLineage;
 };
 
+export type WorkbookSourceFileInspectionCommand = {
+  ownerUserId: UserId;
+  fileId: string;
+  lineage: OperationLineage;
+};
+
+export type DraftSourceInspectedWorkbookRegistrationCommand =
+  DraftSourceWorkbookRegistrationCommand & {
+    inspection: WorkbookSourceFileInspection;
+  };
+
 export type DraftSourceWorkbookRegistrationResult = {
   workbookId: WorkbookId;
   status: WorkbookStatus;
+  inspection: WorkbookSourceFileInspection;
   validationError: string | null;
 };
 
 export interface DraftSourceWorkbookRegistrationPort {
-  registerWorkbookFromFile(
-    input: DraftSourceWorkbookRegistrationCommand,
+  inspectWorkbookSourceFile(
+    input: WorkbookSourceFileInspectionCommand,
+  ): Promise<WorkbookSourceFileInspection>;
+  registerInspectedWorkbookFromFile(
+    input: DraftSourceInspectedWorkbookRegistrationCommand,
   ): Promise<DraftSourceWorkbookRegistrationResult>;
 }

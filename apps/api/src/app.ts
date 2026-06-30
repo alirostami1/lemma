@@ -4,13 +4,18 @@ import { createNotificationsModule } from "@lemma/notifications/module";
 import { createOpsModule } from "@lemma/ops/module";
 import {
   DraftSourceFileInvalidError,
+  type DraftSourceWorkbookFileInspection,
   WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_TYPE,
   WORKBOOK_EDITOR_OUTPUT_FILE_METADATA_VERSION,
 } from "@lemma/questions/application";
 import { workbookId as toQuestionWorkbookId } from "@lemma/questions/domain";
 import { KyselyQuestionsRepository } from "@lemma/questions/infrastructure";
 import { createQuestionsModule } from "@lemma/questions/module";
-import { userId as toWorkbookUserId } from "@lemma/workbook/domain";
+import {
+  userId as toWorkbookUserId,
+  type WorkbookSourceFileInspection,
+  workbookSourceFileInspection,
+} from "@lemma/workbook/domain";
 import { createWorkbookModule } from "@lemma/workbook/module";
 import { Hono } from "hono";
 import { secureHeaders } from "hono/secure-headers";
@@ -36,6 +41,84 @@ export type NewAppDeps = {
   database: DatabasePort;
   config?: Config;
 };
+
+function toQuestionDraftSourceWorkbookFileInspection(
+  inspection: WorkbookSourceFileInspection,
+): DraftSourceWorkbookFileInspection {
+  return {
+    byteSize: inspection.byteSize,
+    checksumSha256: inspection.checksumSha256,
+    contentType: inspection.contentType,
+    fileId: inspection.fileId,
+    referenceTargetAvailability: toQuestionReferenceTargetAvailability(
+      inspection.referenceTargetAvailability,
+    ),
+    referenceTargets:
+      inspection.referenceTargets === null
+        ? null
+        : toQuestionReferenceTargets(inspection.referenceTargets),
+    schemaVersion: inspection.schemaVersion,
+    validation: toQuestionInspectionValidation(inspection.validation),
+  };
+}
+
+function toQuestionReferenceTargetAvailability(
+  availability: WorkbookSourceFileInspection["referenceTargetAvailability"],
+): DraftSourceWorkbookFileInspection["referenceTargetAvailability"] {
+  if (availability.status === "available") {
+    return {
+      status: "available",
+      targets: toQuestionReferenceTargets(availability.targets),
+    };
+  }
+  return {
+    reason: availability.reason,
+    status: "unavailable",
+  };
+}
+
+function toQuestionReferenceTargets(
+  targets: NonNullable<WorkbookSourceFileInspection["referenceTargets"]>,
+): NonNullable<DraftSourceWorkbookFileInspection["referenceTargets"]> {
+  return {
+    schemaVersion: targets.schemaVersion,
+    sheets: targets.sheets.map((sheet) => ({
+      dimensions: {
+        columnCount: sheet.dimensions.columnCount,
+        rowCount: sheet.dimensions.rowCount,
+      },
+      name: sheet.name,
+      ...(sheet.valueCells === undefined
+        ? {}
+        : { valueCells: [...sheet.valueCells] }),
+    })),
+  };
+}
+
+function toQuestionInspectionValidation(
+  validation: WorkbookSourceFileInspection["validation"],
+): DraftSourceWorkbookFileInspection["validation"] {
+  if (validation.status === "invalid") {
+    return {
+      status: "invalid",
+      validationError: validation.validationError,
+    };
+  }
+  return { status: validation.status };
+}
+
+function toWorkbookSourceFileInspection(
+  inspection: DraftSourceWorkbookFileInspection,
+): WorkbookSourceFileInspection {
+  return workbookSourceFileInspection({
+    byteSize: inspection.byteSize,
+    checksumSha256: inspection.checksumSha256,
+    contentType: inspection.contentType,
+    fileId: inspection.fileId,
+    referenceTargetAvailability: inspection.referenceTargetAvailability,
+    validation: inspection.validation,
+  });
+}
 
 export function newApp({ database, config = defaultConfig }: NewAppDeps) {
   const clock = createClock();
@@ -77,6 +160,19 @@ export function newApp({ database, config = defaultConfig }: NewAppDeps) {
     idGenerator: idGenerators.questions,
     clock,
     workbookAccessPort: workbookModule.workbookAccessPort,
+    draftSourceWorkbookInspectionPort: {
+      async inspectWorkbookSourceFile(input) {
+        const workbookInspectionPort =
+          workbookModule.createDraftSourceWorkbookInspectionPort();
+        return toQuestionDraftSourceWorkbookFileInspection(
+          await workbookInspectionPort.inspectWorkbookSourceFile({
+            fileId: input.fileId,
+            lineage: input.lineage,
+            ownerUserId: toWorkbookUserId(input.ownerUserId),
+          }),
+        );
+      },
+    },
     draftSourceFilePort: {
       createEditorOutputUpload: async ({
         byteSize,
@@ -208,20 +304,28 @@ export function newApp({ database, config = defaultConfig }: NewAppDeps) {
             },
             questionsRepository: new KyselyQuestionsRepository(tx),
             workbookRegistrationPort: {
-              async registerWorkbookFromFile(input) {
+              async registerInspectedWorkbookFromFile(input) {
                 const result =
-                  await workbookRegistrationPort.registerWorkbookFromFile({
-                    byteSize: input.byteSize,
-                    checksumSha256: input.checksumSha256,
-                    contentType: input.contentType,
-                    createdByUserId: toWorkbookUserId(input.createdByUserId),
-                    fileId: input.fileId,
-                    lineage: input.lineage,
-                    name: input.name,
-                    originalName: input.originalName,
-                    ownerUserId: toWorkbookUserId(input.ownerUserId),
-                  });
+                  await workbookRegistrationPort.registerInspectedWorkbookFromFile(
+                    {
+                      byteSize: input.byteSize,
+                      checksumSha256: input.checksumSha256,
+                      contentType: input.contentType,
+                      createdByUserId: toWorkbookUserId(input.createdByUserId),
+                      fileId: input.fileId,
+                      inspection: toWorkbookSourceFileInspection(
+                        input.inspection,
+                      ),
+                      lineage: input.lineage,
+                      name: input.name,
+                      originalName: input.originalName,
+                      ownerUserId: toWorkbookUserId(input.ownerUserId),
+                    },
+                  );
                 return {
+                  inspection: toQuestionDraftSourceWorkbookFileInspection(
+                    result.inspection,
+                  ),
                   status: result.status,
                   validationError: result.validationError,
                   workbookId: toQuestionWorkbookId(result.workbookId),

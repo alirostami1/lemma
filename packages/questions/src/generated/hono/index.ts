@@ -22,6 +22,7 @@ import type {
   PublishQuestionBlueprintDraftResponse,
   QuestionBlueprintAuthoringResponse,
   QuestionBlueprintDraftResponse,
+  QuestionBlueprintDraftSourceConflictResponse,
   QuestionBlueprintEditDraftResponse,
   QuestionBlueprintResponse,
   QuestionGenerationRunResponse,
@@ -137,7 +138,7 @@ type AttachQuestionBlueprintDraftSourceFileResponses = {
   "401": ErrorResponse;
   "403": ErrorResponse;
   "404": ErrorResponse;
-  "409": ErrorResponse;
+  "409": QuestionBlueprintDraftSourceConflictResponse;
 };
 type SaveQuestionBlueprintDraftWorkbookSourceRevisionResponses = {
   "200": SaveQuestionBlueprintDraftWorkbookSourceRevisionResponse;
@@ -145,7 +146,7 @@ type SaveQuestionBlueprintDraftWorkbookSourceRevisionResponses = {
   "401": ErrorResponse;
   "403": ErrorResponse;
   "404": ErrorResponse;
-  "409": ErrorResponse;
+  "409": QuestionBlueprintDraftSourceConflictResponse;
 };
 type CreateQuestionBlueprintDraftWorkbookEditorUploadResponses = {
   "201": CreateQuestionBlueprintDraftWorkbookEditorUploadResponse;

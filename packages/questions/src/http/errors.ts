@@ -29,6 +29,7 @@ import {
   type UnsupportedQuestionValueExpressionError,
   type WorkbookEditorOutputStaleError,
   type WorkbookQuestionReferenceError,
+  type WorkbookSourceEditInvalidatesReferencesError,
 } from "../application/errors.js";
 import {
   InvalidQuestionAnswerError,
@@ -76,6 +77,7 @@ type QuestionsApplicationErrorType =
   | SourceDocumentRevisionConflictError
   | UnsupportedQuestionValueExpressionError
   | WorkbookEditorOutputStaleError
+  | WorkbookSourceEditInvalidatesReferencesError
   | WorkbookQuestionReferenceError;
 
 const applicationErrorMapper = {
@@ -137,6 +139,10 @@ const applicationErrorMapper = {
   },
   WORKBOOK_EDITOR_OUTPUT_STALE: {
     code: "WORKBOOK_EDITOR_OUTPUT_STALE",
+    status: 409,
+  },
+  WORKBOOK_SOURCE_EDIT_INVALIDATES_REFERENCES: {
+    code: "WORKBOOK_SOURCE_EDIT_INVALIDATES_REFERENCES",
     status: 409,
   },
   WORKBOOK_QUESTION_REFERENCE_ERROR: {

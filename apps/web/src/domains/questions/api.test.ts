@@ -1,4 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type {
+  ErrorResponse,
+  QuestionBlueprintDraftSourceConflictResponse,
+  WorkbookSourceEditInvalidatesReferencesErrorResponse,
+} from "#/api/generated/model";
 import {
   completeQuestionBlueprintDraftWorkbookEditorUpload,
   createQuestionBlueprintDraftWorkbookEditorUpload,
@@ -33,6 +38,42 @@ describe("questions api", () => {
     generatedMocks.completeQuestionBlueprintDraftWorkbookEditorUpload.mockReset();
     generatedMocks.listQuestionBlueprintDrafts.mockReset();
     generatedMocks.saveQuestionBlueprintDraftWorkbookSourceRevision.mockReset();
+  });
+
+  it("keeps source-edit 409 client errors typed as generic or recovery conflicts", () => {
+    const genericConflict = {
+      error: {
+        code: "DRAFT_REVISION_CONFLICT",
+        message: "This draft changed.",
+      },
+    } satisfies ErrorResponse;
+    const recoveryConflict = {
+      error: {
+        code: "WORKBOOK_SOURCE_EDIT_INVALIDATES_REFERENCES",
+        details: {
+          affectedInsertedValues: [
+            {
+              label: "Revenue total",
+              problem: "The referenced cell is no longer available.",
+            },
+          ],
+          recoveryAction:
+            "Remove or replace the affected inserted values before saving this workbook.",
+          summary: "Some inserted values need attention.",
+        },
+        message: "Some inserted values need attention.",
+      },
+    } satisfies WorkbookSourceEditInvalidatesReferencesErrorResponse;
+
+    const sourceConflicts: QuestionBlueprintDraftSourceConflictResponse[] = [
+      genericConflict,
+      recoveryConflict,
+    ];
+
+    expect(sourceConflicts.map((item) => item.error.code)).toEqual([
+      "DRAFT_REVISION_CONFLICT",
+      "WORKBOOK_SOURCE_EDIT_INVALIDATES_REFERENCES",
+    ]);
   });
 
   it("sends editor upload completion intent and maps the editor output file", async () => {

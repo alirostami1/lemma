@@ -76,6 +76,7 @@
     "kysely": "catalog:",
     "orval": "catalog:",
     "tsx": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "xlsx": "catalog:"
   }
 }

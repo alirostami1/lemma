@@ -20,7 +20,10 @@ import {
   notifyDraftPublished,
   notifyDraftPublishFailed,
 } from "#/features/notifications";
-import { getApiErrorCode } from "#/lib/errors/api-error";
+import {
+  getApiErrorCode,
+  getWorkbookSourceEditRecoveryMessage,
+} from "#/lib/errors/api-error";
 import type { PublishDraftDialogState } from "./publish-draft-dialog";
 import type { StudioSource } from "./source/studio-source-model";
 import {
@@ -249,6 +252,11 @@ export function useStudioDraftSaveController({
       if (conflictState) {
         setConflict(conflictState);
         setSaveError(conflictState.message);
+        return null;
+      }
+      const recoveryMessage = getWorkbookSourceEditRecoveryMessage(error);
+      if (recoveryMessage) {
+        setSaveError(recoveryMessage);
         return null;
       }
       setSaveError(
