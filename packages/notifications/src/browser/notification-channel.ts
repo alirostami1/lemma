@@ -1,12 +1,11 @@
-import { isUuidString } from "@lemma/domain";
-import { createNotificationChannelApi } from "./notification-channel-core.js";
+import { isUuidString } from "@lemma/domain/browser";
+import { createNotificationChannelApi } from "../domain/notification-channel-core.js";
 
-export {
-  NOTIFICATION_CHANNEL_REGISTRY,
-  type NotificationChannelAccessRequirement,
-  type NotificationChannelTarget,
-  type NotificationChannelType,
-} from "./notification-channel-core.js";
+export type {
+  NotificationChannelAccessRequirement,
+  NotificationChannelTarget,
+  NotificationChannelType,
+} from "../domain/notification-channel-core.js";
 
 const notificationChannelApi = createNotificationChannelApi(isUuidString);
 

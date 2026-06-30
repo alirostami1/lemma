@@ -82,7 +82,7 @@ describe("InspectorPanel", () => {
     expect(screen.queryByRole("button", { name: "Delete" })).toBeNull();
   });
 
-  it("sets a measured sticky offset for the settings panel", () => {
+  it("applies sticky sizing only at the desktop inspector breakpoint", () => {
     const model: ComposedEditorModel = {
       blocks: [],
       references: [],
@@ -111,8 +111,16 @@ describe("InspectorPanel", () => {
     expect(panel.style.getPropertyValue("--inspector-sticky-offset")).toBe(
       "212px",
     );
-    expect(panel.style.top).toBe("212px");
-    expect(panel.style.height).toBe("calc(100dvh - 212px)");
+    expect(panel).not.toHaveClass("sticky");
+    expect(panel).not.toHaveClass("top-(--inspector-sticky-offset)");
+    expect(panel).not.toHaveClass(
+      "h-[calc(100dvh-var(--inspector-sticky-offset))]",
+    );
+    expect(panel).toHaveClass("xl:sticky");
+    expect(panel).toHaveClass("xl:top-(--inspector-sticky-offset)");
+    expect(panel).toHaveClass(
+      "xl:h-[calc(100dvh-var(--inspector-sticky-offset))]",
+    );
   });
 
   it("renders actionable recovery without raw reference or source details", async () => {

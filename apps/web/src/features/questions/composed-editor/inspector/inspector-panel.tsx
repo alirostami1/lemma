@@ -43,14 +43,12 @@ export function InspectorPanel({
   const measuredStickyOffset = Math.max(stickyOffset, 0);
   const stickyStyle = {
     "--inspector-sticky-offset": `${measuredStickyOffset}px`,
-    height: `calc(100dvh - ${measuredStickyOffset}px)`,
-    top: measuredStickyOffset,
   } as CSSProperties;
 
   return (
     <aside
       aria-label="Element settings"
-      className="sticky self-start overflow-hidden rounded-lg border bg-background shadow-sm"
+      className="self-start overflow-hidden rounded-lg border bg-background shadow-sm xl:sticky xl:top-(--inspector-sticky-offset) xl:h-[calc(100dvh-var(--inspector-sticky-offset))]"
       style={stickyStyle}
     >
       <div className="flex h-full min-h-0 flex-col p-3">

@@ -350,7 +350,8 @@ function StudioEditorWorkbench({ studio }: { studio: StudioController }) {
       >
         <PageContainer className="pb-8" variant="workbench">
           <div
-            className="sticky top-0 z-30 grid gap-2 bg-background/95 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+            className="grid gap-2 bg-background py-2 xl:sticky xl:top-0 xl:z-30 xl:bg-background/95 xl:backdrop-blur xl:supports-[backdrop-filter]:bg-background/80"
+            data-testid="studio-editor-controls"
             ref={stickyRegionRef}
           >
             <StudioCommandBar {...studio.commandBar} />
