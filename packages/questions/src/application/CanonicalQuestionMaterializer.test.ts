@@ -282,6 +282,252 @@ describe("CanonicalQuestionMaterializer", () => {
     });
   });
 
+  it("materializes rich text heading references into generated question body text", async () => {
+    const materializer = new CanonicalQuestionMaterializer({
+      async resolveReference({ source }): Promise<JsonValue> {
+        if (source.type === "workbook_cell" && source.ref === "Sheet1!A1") {
+          return 1200;
+        }
+        if (source.type === "workbook_cell" && source.ref === "Sheet1!B1") {
+          return 0.32;
+        }
+        throw new Error(
+          `Unexpected reference source: ${JSON.stringify(source)}`,
+        );
+      },
+    });
+    const document = questionBlueprintDocument({
+      blocks: [
+        {
+          content: {
+            content: [
+              {
+                attrs: { level: 1 },
+                content: [
+                  {
+                    text: 'Revenue {{ .["workbook:source_1:cell:Sheet1:A1"] }}',
+                    type: "text",
+                  },
+                ],
+                type: "heading",
+              },
+              {
+                attrs: { level: 2 },
+                content: [
+                  {
+                    text: 'Margin {{ .["workbook:source_1:cell:Sheet1:B1"] }}',
+                    type: "text",
+                  },
+                ],
+                type: "heading",
+              },
+            ],
+            type: "doc",
+          },
+          id: "rich",
+          type: "rich_text",
+        },
+      ],
+      references: [
+        {
+          id: "workbook:source_1:cell:Sheet1:A1",
+          source: {
+            ref: "Sheet1!A1",
+            schemaVersion: 1,
+            sourceId: "source_1",
+            type: "workbook_cell",
+          },
+        },
+        {
+          id: "workbook:source_1:cell:Sheet1:B1",
+          source: {
+            ref: "Sheet1!B1",
+            schemaVersion: 1,
+            sourceId: "source_1",
+            type: "workbook_cell",
+          },
+        },
+      ],
+      responseFields: [],
+      schemaVersion: 1,
+    });
+
+    const result = await materializer.materialize({
+      document,
+      generationRunId,
+      questionIndex: 0,
+      sourceLineageBySourceId,
+      sources: [publishedWorkbookSource("source_1", "Source 1", workbookId)],
+      workbookCalculationId,
+    });
+
+    assert.deepEqual(result.body.blocks[0], {
+      content: {
+        content: [
+          {
+            attrs: { level: 1 },
+            content: [{ text: "Revenue 1200", type: "text" }],
+            type: "heading",
+          },
+          {
+            attrs: { level: 2 },
+            content: [{ text: "Margin 0.32", type: "text" }],
+            type: "heading",
+          },
+        ],
+        type: "doc",
+      },
+      id: "rich",
+      type: "rich_text",
+    });
+    const serializedBody = JSON.stringify(result.body);
+    assert.equal(serializedBody.includes("{{"), false);
+    assert.equal(serializedBody.includes("workbook:source_1"), false);
+    assert.equal(serializedBody.includes("Sheet1"), false);
+    assert.equal(serializedBody.includes("reference_1"), false);
+  });
+
+  it("materializes nested rich text list references into generated question body text", async () => {
+    const materializer = new CanonicalQuestionMaterializer({
+      async resolveReference({ source }): Promise<JsonValue> {
+        if (source.type === "workbook_cell" && source.ref === "Sheet1!A1") {
+          return 1200;
+        }
+        if (source.type === "workbook_cell" && source.ref === "Sheet1!B1") {
+          return 0.32;
+        }
+        throw new Error(
+          `Unexpected reference source: ${JSON.stringify(source)}`,
+        );
+      },
+    });
+    const document = questionBlueprintDocument({
+      blocks: [
+        {
+          content: {
+            content: [
+              {
+                content: [
+                  {
+                    content: [
+                      {
+                        content: [
+                          {
+                            text: 'Item {{ .["workbook:source_1:cell:Sheet1:A1"] }}',
+                            type: "text",
+                          },
+                        ],
+                        type: "paragraph",
+                      },
+                      {
+                        content: [
+                          {
+                            content: [
+                              {
+                                content: [
+                                  {
+                                    text: 'Nested {{ .["workbook:source_1:cell:Sheet1:B1"] }}',
+                                    type: "text",
+                                  },
+                                ],
+                                type: "paragraph",
+                              },
+                            ],
+                            type: "list_item",
+                          },
+                        ],
+                        type: "ordered_list",
+                      },
+                    ],
+                    type: "list_item",
+                  },
+                ],
+                type: "bullet_list",
+              },
+            ],
+            type: "doc",
+          },
+          id: "rich",
+          type: "rich_text",
+        },
+      ],
+      references: [
+        {
+          id: "workbook:source_1:cell:Sheet1:A1",
+          source: {
+            ref: "Sheet1!A1",
+            schemaVersion: 1,
+            sourceId: "source_1",
+            type: "workbook_cell",
+          },
+        },
+        {
+          id: "workbook:source_1:cell:Sheet1:B1",
+          source: {
+            ref: "Sheet1!B1",
+            schemaVersion: 1,
+            sourceId: "source_1",
+            type: "workbook_cell",
+          },
+        },
+      ],
+      responseFields: [],
+      schemaVersion: 1,
+    });
+
+    const result = await materializer.materialize({
+      document,
+      generationRunId,
+      questionIndex: 0,
+      sourceLineageBySourceId,
+      sources: [publishedWorkbookSource("source_1", "Source 1", workbookId)],
+      workbookCalculationId,
+    });
+
+    assert.deepEqual(result.body.blocks[0], {
+      content: {
+        content: [
+          {
+            content: [
+              {
+                content: [
+                  {
+                    content: [{ text: "Item 1200", type: "text" }],
+                    type: "paragraph",
+                  },
+                  {
+                    content: [
+                      {
+                        content: [
+                          {
+                            content: [{ text: "Nested 0.32", type: "text" }],
+                            type: "paragraph",
+                          },
+                        ],
+                        type: "list_item",
+                      },
+                    ],
+                    type: "ordered_list",
+                  },
+                ],
+                type: "list_item",
+              },
+            ],
+            type: "bullet_list",
+          },
+        ],
+        type: "doc",
+      },
+      id: "rich",
+      type: "rich_text",
+    });
+    const serializedBody = JSON.stringify(result.body);
+    assert.equal(serializedBody.includes("{{"), false);
+    assert.equal(serializedBody.includes("workbook:source_1"), false);
+    assert.equal(serializedBody.includes("Sheet1"), false);
+    assert.equal(serializedBody.includes("reference_1"), false);
+  });
+
   it("resolves workbook references with the snapshot for their source", async () => {
     const resolvedSnapshotIds: (WorkbookSnapshotId | null | undefined)[] = [];
     const materializer = new CanonicalQuestionMaterializer({

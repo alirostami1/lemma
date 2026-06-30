@@ -16,6 +16,10 @@ import type {
   QuestionValueExpression,
   RangeCellOffset,
   RenderedInlineContent,
+  RichContent,
+  RichContentNode,
+  RichListItemNode,
+  RichTextNode,
 } from "../domain/index.js";
 import {
   InvalidQuestionBlueprintError,
@@ -116,7 +120,13 @@ export class CanonicalQuestionMaterializer {
             content: renderInline(block.content, referenceValues),
           };
         }
-        if (block.type === "rich_text" || block.type === "separator") {
+        if (block.type === "rich_text") {
+          return {
+            ...block,
+            content: renderRichContent(block.content, referenceValues),
+          };
+        }
+        if (block.type === "separator") {
           return block;
         }
         if (block.type === "response") {
@@ -336,6 +346,122 @@ function renderPlainText(
           ),
     )
     .join("");
+}
+
+function renderRichContent(
+  content: RichContent,
+  referenceValues: ReadonlyMap<string, JsonValue>,
+): RichContent {
+  return {
+    content: content.content.map((node) =>
+      renderRichContentNode(node, referenceValues),
+    ),
+    type: "doc",
+  };
+}
+
+function renderRichContentNode(
+  node: RichContentNode,
+  referenceValues: ReadonlyMap<string, JsonValue>,
+): RichContentNode {
+  if (node.type === "paragraph") {
+    return {
+      ...node,
+      ...(node.content === undefined
+        ? {}
+        : { content: renderRichTextNodes(node.content, referenceValues) }),
+    };
+  }
+  if (node.type === "heading") {
+    return {
+      ...node,
+      ...(node.content === undefined
+        ? {}
+        : { content: renderRichTextNodes(node.content, referenceValues) }),
+    };
+  }
+  return {
+    content: node.content.map((item) =>
+      renderRichListItem(item, referenceValues),
+    ),
+    type: node.type,
+  };
+}
+
+function renderRichListItem(
+  item: RichListItemNode,
+  referenceValues: ReadonlyMap<string, JsonValue>,
+): RichListItemNode {
+  return {
+    content: item.content.map((child) => {
+      if (child.type === "paragraph") {
+        return {
+          ...child,
+          ...(child.content === undefined
+            ? {}
+            : { content: renderRichTextNodes(child.content, referenceValues) }),
+        };
+      }
+      return {
+        content: child.content.map((nestedItem) =>
+          renderRichListItem(nestedItem, referenceValues),
+        ),
+        type: child.type,
+      };
+    }),
+    type: "list_item",
+  };
+}
+
+function renderRichTextNodes(
+  nodes: RichTextNode[],
+  referenceValues: ReadonlyMap<string, JsonValue>,
+) {
+  return nodes.map((node) => ({
+    text: renderCanonicalInlineText(node.text, referenceValues),
+    type: node.type,
+  }));
+}
+
+const CANONICAL_REFERENCE_PATTERN =
+  /\{\{\s*\.\s*(?:([A-Za-z][A-Za-z0-9_-]*)|\[\s*"((?:[^"\\]|\\.)*)"\s*\])(?:\s*\[\s*(\d+)\s*,\s*(\d+)\s*\])?\s*\}\}/gu;
+
+function renderCanonicalInlineText(
+  text: string,
+  referenceValues: ReadonlyMap<string, JsonValue>,
+) {
+  return text.replace(
+    CANONICAL_REFERENCE_PATTERN,
+    (_raw, simpleReferenceId, bracketReferenceId, rowOffset, columnOffset) => {
+      const referenceId = simpleReferenceId
+        ? String(simpleReferenceId)
+        : decodeBracketReferenceId(String(bracketReferenceId ?? ""));
+      const rangeCell =
+        rowOffset === undefined || columnOffset === undefined
+          ? undefined
+          : {
+              columnOffset: Number(columnOffset),
+              rowOffset: Number(rowOffset),
+            };
+      const value = inlineReferenceValue(
+        {
+          referenceId,
+          type: "reference",
+          ...(rangeCell === undefined ? {} : { rangeCell }),
+        },
+        referenceValues,
+      );
+      return value === undefined ? "" : displayValue(value);
+    },
+  );
+}
+
+function decodeBracketReferenceId(value: string): string {
+  try {
+    return JSON.parse(`"${value}"`) as string;
+  } catch {
+    return value;
+  }
 }
 
 function inlineReferenceValue(
