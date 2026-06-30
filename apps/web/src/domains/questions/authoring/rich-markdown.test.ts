@@ -40,6 +40,37 @@ describe("rich text markdown conversion", () => {
     });
   });
 
+  it("round-trips heading references", () => {
+    const content: ComposedRichContent = {
+      content: [
+        {
+          content: [
+            { text: "Revenue ", type: "text" },
+            { referenceId: "revenue", type: "reference" },
+          ],
+          level: 1,
+          type: "heading",
+        },
+        {
+          content: [
+            { text: "Margin ", type: "text" },
+            { referenceId: "margin", type: "reference" },
+          ],
+          level: 2,
+          type: "heading",
+        },
+      ],
+      type: "doc",
+    };
+
+    expect(richContentToMarkdown(content)).toBe(
+      "# Revenue {{ .revenue }}\n## Margin {{ .margin }}",
+    );
+    expect(markdownToRichContent(richContentToMarkdown(content))).toEqual(
+      content,
+    );
+  });
+
   it("normalizes unsupported heading levels to paragraphs", () => {
     expect(markdownToRichContent("#### Title")).toEqual({
       content: [

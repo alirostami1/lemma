@@ -1143,6 +1143,74 @@ describe("composed blueprint conversions", () => {
     );
   });
 
+  it("round-trips rich text heading references as structured inline content", () => {
+    const model: ComposedEditorModel = {
+      blocks: [
+        {
+          content: {
+            content: [
+              {
+                content: [
+                  { text: "Revenue ", type: "text" },
+                  { referenceId: "revenue", type: "reference" },
+                ],
+                level: 1,
+                type: "heading",
+              },
+              {
+                content: [
+                  { text: "Margin ", type: "text" },
+                  { referenceId: "margin", type: "reference" },
+                ],
+                level: 2,
+                type: "heading",
+              },
+            ],
+            type: "doc",
+          },
+          id: "rich_1",
+          type: "rich_text",
+        },
+      ],
+      references: [
+        {
+          id: "revenue",
+          source: { type: "literal", value: 123 },
+        },
+        {
+          id: "margin",
+          source: { type: "literal", value: 0.32 },
+        },
+      ],
+      responseFields: [],
+      schemaVersion: 1,
+    };
+
+    const blueprint = composedEditorModelToQuestionBlueprintDocument(model);
+    expect(blueprint.blocks[0]).toEqual({
+      content: {
+        content: [
+          {
+            attrs: { level: 1 },
+            content: [{ text: "Revenue {{ .revenue }}", type: "text" }],
+            type: "heading",
+          },
+          {
+            attrs: { level: 2 },
+            content: [{ text: "Margin {{ .margin }}", type: "text" }],
+            type: "heading",
+          },
+        ],
+        type: "doc",
+      },
+      id: "rich_1",
+      type: "rich_text",
+    });
+    expect(questionBlueprintDocumentToComposedEditorModel(blueprint)).toEqual(
+      model,
+    );
+  });
+
   it("validates manually-constructed rich text reference nodes", () => {
     const model: ComposedEditorModel = {
       blocks: [
