@@ -7,6 +7,10 @@ import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model"
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import type { EditorSelection } from "../editor-selection";
 import { BlockInspector } from "./block-inspector";
+import {
+  DocumentInspector,
+  type DocumentReadinessIssue,
+} from "./document-inspector";
 import { ResponseBlockInspector } from "./response-block-inspector";
 import { TableCellInspector } from "./table-cell-inspector";
 import { TableColumnInspector } from "./table-column-inspector";
@@ -22,6 +26,7 @@ export function SelectedElementInspector({
   workbookEnabled,
   sources,
   workbookSheetNamesBySourceId,
+  documentIssues,
   disabled,
   onModelChange,
   onSelectionChange,
@@ -33,6 +38,7 @@ export function SelectedElementInspector({
   workbookEnabled: boolean;
   sources: QuestionBlueprintWorkbookSource[];
   workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
+  documentIssues?: readonly DocumentReadinessIssue[];
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onSelectionChange(selection: EditorSelection): void;
@@ -46,7 +52,15 @@ export function SelectedElementInspector({
   }
 
   if (selection.type === "document" || !selectedBlock) {
-    return <p className="text-sm text-muted-foreground">Select an element.</p>;
+    return (
+      <DocumentInspector
+        disabled={disabled}
+        documentIssues={documentIssues}
+        model={model}
+        onModelChange={onModelChange}
+        onSelectionChange={onSelectionChange}
+      />
+    );
   }
 
   return (

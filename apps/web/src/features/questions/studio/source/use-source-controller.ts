@@ -10,10 +10,12 @@ import {
   parseLocalWorkbookFile,
 } from "#/domains/workbooks/local-xlsx";
 import type { Workbook } from "#/domains/workbooks/model";
+import { INSERTED_VALUES_NEED_ATTENTION_MESSAGE } from "../studio-reference-copy";
 import {
   type SelectedWorkbookPreviewController,
   useSelectedWorkbookPreview,
 } from "../use-selected-workbook-preview";
+import { getUnavailableUsedReferenceIdsForParsedWorkbookReplacement } from "./source-integrity";
 import {
   buildSourceUsageBySourceId,
   getSourceRemovalState,
@@ -342,6 +344,21 @@ export function useSourceController(input: {
       }
 
       const parseOutcome = await parseLocalWorkbookFile(file);
+      if (parseOutcome.status === "parsed") {
+        const unavailableReferenceIds =
+          getUnavailableUsedReferenceIdsForParsedWorkbookReplacement({
+            model: input.model,
+            sourceId,
+            workbook: parseOutcome.workbook,
+          });
+        if (unavailableReferenceIds.length > 0) {
+          return {
+            reason: INSERTED_VALUES_NEED_ATTENTION_MESSAGE,
+            status: "blocked",
+          };
+        }
+      }
+
       const localSource: StudioSource = {
         ...source,
         backing:

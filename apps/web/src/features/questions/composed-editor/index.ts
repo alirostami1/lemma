@@ -14,4 +14,8 @@ export {
   InlineContentRenderer,
   type InlineRenderMode,
 } from "./inline-content-renderer";
+export type {
+  DocumentReadinessIssue,
+  ReferenceRecoveryItem,
+} from "./inspector";
 export { ReferenceChip } from "./reference-chip";

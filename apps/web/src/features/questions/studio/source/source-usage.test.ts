@@ -123,7 +123,7 @@ describe("source-usage", () => {
       referenceCount: 1,
       removal: {
         reason:
-          "This source is used by the blueprint. Remove its references before detaching it.",
+          "This workbook is used by inserted values. Remove those values before detaching it.",
         removable: false,
       },
       sourceId: "source_1",
@@ -147,6 +147,91 @@ describe("source-usage", () => {
     });
   });
 
+  it("preserves multiple locations for the same workbook reference", () => {
+    const model = createDefaultComposedEditorModel();
+    model.blocks = [
+      {
+        content: [{ referenceId: "ref_1", type: "reference" }],
+        id: "text_1",
+        type: "text",
+      },
+      {
+        content: {
+          content: [
+            {
+              content: [{ referenceId: "ref_1", type: "reference" }],
+              type: "paragraph",
+            },
+          ],
+          type: "doc",
+        },
+        id: "rich_text_1",
+        type: "rich_text",
+      },
+    ];
+    model.references = [
+      {
+        id: "ref_1",
+        source: {
+          ref: "Sheet1!A1",
+          sourceId: "source_1",
+          type: "workbook_cell",
+        },
+      },
+    ];
+
+    const usage = buildSourceUsageBySourceId({
+      model,
+      sources: [persistedSource("source_1")],
+    });
+
+    expect(
+      usage.get("source_1")?.usedWhere.map((entry) => entry.label),
+    ).toEqual(["Text block 1", "Question block 1"]);
+    expect(usage.get("source_1")?.referenceCount).toBe(1);
+  });
+
+  it("summarizes repeated same-reference occurrences in one text block as one used area", () => {
+    const model = {
+      ...createDefaultComposedEditorModel(),
+      blocks: [
+        {
+          content: [
+            { referenceId: "ref_1", type: "reference" as const },
+            { text: " and ", type: "text" as const },
+            { referenceId: "ref_1", type: "reference" as const },
+          ],
+          id: "text_1",
+          type: "text" as const,
+        },
+      ],
+      references: [
+        {
+          id: "ref_1",
+          source: {
+            ref: "Sheet1!A1",
+            sourceId: "source_1",
+            type: "workbook_cell" as const,
+          },
+        },
+      ],
+      responseFields: [],
+    };
+
+    const usage = buildSourceUsageBySourceId({
+      model,
+      sources: [persistedSource("source_1")],
+    });
+
+    expect(usage.get("source_1")?.usedWhere).toEqual([
+      expect.objectContaining({
+        label: "Text block 1",
+        referenceId: "ref_1",
+        sourceRef: "Sheet1!A1",
+      }),
+    ]);
+  });
+
   it("blocks removal for used sources", () => {
     const usageBySourceId = new Map([
       [
@@ -156,7 +241,7 @@ describe("source-usage", () => {
           referenceCount: 1,
           removal: {
             reason:
-              "This source is used by the blueprint. Remove its references before detaching it.",
+              "This workbook is used by inserted values. Remove those values before detaching it.",
             removable: false as const,
           },
           sourceId: "source_1",
@@ -172,7 +257,7 @@ describe("source-usage", () => {
       }),
     ).toEqual({
       reason:
-        "This source is used by the blueprint. Remove its references before detaching it.",
+        "This workbook is used by inserted values. Remove those values before detaching it.",
       removable: false,
     });
   });

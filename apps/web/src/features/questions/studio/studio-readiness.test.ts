@@ -4,6 +4,7 @@ import {
   createDefaultComposedEditorModel,
   createTableBlock,
 } from "#/domains/questions/authoring";
+import type { StudioWorkbookSource } from "./source/studio-source-model";
 import {
   getFirstReadinessIssueMessage,
   getStudioReadiness,
@@ -192,6 +193,84 @@ describe("studio readiness", () => {
     );
   });
 
+  it("uses recovery copy when inserted workbook values are unavailable", () => {
+    const model: ComposedEditorModel = {
+      ...createDefaultComposedEditorModel(),
+      blocks: [
+        {
+          content: [{ referenceId: "revenue", type: "reference" }],
+          id: "text_1",
+          type: "text",
+        },
+        ...createDefaultComposedEditorModel().blocks.filter(
+          (block) => block.type === "response",
+        ),
+      ],
+      references: [
+        {
+          id: "revenue",
+          source: {
+            ref: "Sheet1!A1",
+            sourceId: "source_1",
+            type: "workbook_cell",
+          },
+        },
+      ],
+    };
+
+    const readiness = getStudioReadiness(model, {
+      ...readyContext,
+      sources: [missingSource("source_1")],
+    });
+
+    expect(getFirstReadinessIssueMessage(readiness, "save")).toBe(
+      "Some inserted values need attention.",
+    );
+    expect(getFirstReadinessIssueMessage(readiness, "publish")).toBe(
+      "Review affected values before publishing.",
+    );
+  });
+
+  it("allows save but blocks publish while inserted workbook values are unknown", () => {
+    const readiness = getStudioReadiness(modelWithWorkbookValue(), {
+      ...readyContext,
+      sources: [persistedSourceWithoutPreview("source_1")],
+    });
+
+    expect(readiness.canSave).toBe(true);
+    expect(readiness.canGenerate).toBe(false);
+    expect(getFirstReadinessIssueMessage(readiness, "save")).toBeNull();
+    expect(getFirstReadinessIssueMessage(readiness, "publish")).toBe(
+      "Wait for workbook values to finish loading before publishing.",
+    );
+    expect(readiness.issues).toContainEqual(
+      expect.objectContaining({
+        message: "Some inserted values are still being checked.",
+        severity: "warning",
+      }),
+    );
+  });
+
+  it("treats draft file loading as checking and failed as blocking", () => {
+    const checking = getStudioReadiness(modelWithWorkbookValue(), {
+      ...readyContext,
+      sources: [draftFileSource("source_1", "loading")],
+    });
+    const failed = getStudioReadiness(modelWithWorkbookValue(), {
+      ...readyContext,
+      sources: [draftFileSource("source_1", "failed")],
+    });
+
+    expect(checking.canSave).toBe(true);
+    expect(getFirstReadinessIssueMessage(checking, "publish")).toBe(
+      "Wait for workbook values to finish loading before publishing.",
+    );
+    expect(failed.canSave).toBe(false);
+    expect(getFirstReadinessIssueMessage(failed, "save")).toBe(
+      "Some inserted values need attention.",
+    );
+  });
+
   it("accepts rich text references with existing references", () => {
     const model: ComposedEditorModel = {
       ...createDefaultComposedEditorModel(),
@@ -313,3 +392,85 @@ describe("studio readiness", () => {
     );
   });
 });
+
+function missingSource(sourceId: string): StudioWorkbookSource {
+  return {
+    backing: {
+      byteSize: 4,
+      kind: "missing_local_file",
+      lastModified: 1,
+      originalName: `${sourceId}.xlsx`,
+      parseError: "Workbook file missing. Reattach the file to continue.",
+      workbookId: null,
+    },
+    createdAt: new Date("2026-06-21T00:00:00.000Z"),
+    name: sourceId,
+    sourceId,
+    type: "workbook",
+  };
+}
+
+function persistedSourceWithoutPreview(sourceId: string): StudioWorkbookSource {
+  return {
+    backing: {
+      byteSize: null,
+      kind: "persisted_workbook",
+      originalName: `${sourceId}.xlsx`,
+      parsedWorkbook: null,
+      workbookId: `${sourceId}-workbook`,
+    },
+    createdAt: new Date("2026-06-21T00:00:00.000Z"),
+    name: sourceId,
+    sourceId,
+    type: "workbook",
+  };
+}
+
+function draftFileSource(
+  sourceId: string,
+  previewStatus: "idle" | "loading" | "loaded" | "failed",
+): StudioWorkbookSource {
+  return {
+    backing: {
+      byteSize: 4,
+      checksumSha256: "checksum-1",
+      fileId: "file-1",
+      kind: "draft_file",
+      originalName: `${sourceId}.xlsx`,
+      parsedWorkbook: null,
+      previewError: previewStatus === "failed" ? "Failed" : null,
+      previewStatus,
+      workbookId: null,
+    },
+    createdAt: new Date("2026-06-21T00:00:00.000Z"),
+    name: sourceId,
+    sourceId,
+    type: "workbook",
+  };
+}
+
+function modelWithWorkbookValue(): ComposedEditorModel {
+  return {
+    ...createDefaultComposedEditorModel(),
+    blocks: [
+      {
+        content: [{ referenceId: "revenue", type: "reference" }],
+        id: "text_1",
+        type: "text",
+      },
+      ...createDefaultComposedEditorModel().blocks.filter(
+        (block) => block.type === "response",
+      ),
+    ],
+    references: [
+      {
+        id: "revenue",
+        source: {
+          ref: "Sheet1!A1",
+          sourceId: "source_1",
+          type: "workbook_cell",
+        },
+      },
+    ],
+  };
+}

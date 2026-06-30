@@ -3,6 +3,10 @@ import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model"
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import type { LocalWorkbookParseResult } from "#/domains/workbooks/local-xlsx";
 import type {
+  DocumentReadinessIssue,
+  ReferenceRecoveryItem,
+} from "#/features/questions/composed-editor";
+import type {
   WorkbookPickerController,
   WorkbookPickerRequest,
   WorkbookRangeSelection,
@@ -62,7 +66,9 @@ export type StudioController = {
   source: SourceController;
   editor: {
     authoringModel: ComposedEditorModel;
+    documentIssues: readonly DocumentReadinessIssue[];
     referencePreviewCache: ReferencePreviewCache;
+    referenceRecoveryItems: readonly ReferenceRecoveryItem[];
     canUseWorkbookTools: boolean;
     sources: QuestionBlueprintWorkbookSource[];
     workbookSheetNamesBySourceId: Readonly<Record<string, readonly string[]>>;

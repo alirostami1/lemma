@@ -1,14 +1,10 @@
 import type {
   ComposedEditorBlock,
   ComposedEditorModel,
-} from "#/domains/questions/authoring";
-import {
-  extractInlineReferenceIds,
-  extractReferenceIdsFromValueExpression,
-  extractRichReferenceIds,
-  extractUsedReferenceIdsFromComposedEditorModel,
+  ReferenceUsage,
 } from "#/domains/questions/authoring";
 import type { QuestionBlueprintDocument } from "#/domains/questions/model";
+import { getWorkbookReferenceUsagesBySource } from "#/domains/questions/reference-integrity";
 import {
   getWorkbookReferenceDisplayName,
   getWorkbookReferenceKeyForSource,
@@ -16,7 +12,7 @@ import {
 import type { StudioSource } from "./studio-source-model";
 
 const USED_SOURCE_REMOVE_REASON =
-  "This source is used by the blueprint. Remove its references before detaching it.";
+  "This workbook is used by inserted values. Remove those values before detaching it.";
 
 export type StudioSourceRemovalState =
   | { removable: true }
@@ -68,11 +64,8 @@ export function buildSourceUsageBySourceId(input: {
   model: ComposedEditorModel;
   sources: readonly StudioSource[];
 }): ReadonlyMap<string, StudioSourceUsageSummary> {
-  const usedReferenceIds = new Set(
-    extractUsedReferenceIdsFromComposedEditorModel(input.model),
-  );
-  const locationsByReferenceId = buildReferenceUsageLocations(input.model);
   const summaries = new Map<string, StudioSourceUsageSummary>();
+  const usagesBySourceId = getWorkbookReferenceUsagesBySource(input.model);
 
   for (const source of input.sources) {
     summaries.set(source.sourceId, {
@@ -84,65 +77,54 @@ export function buildSourceUsageBySourceId(input: {
     });
   }
 
-  for (const reference of input.model.references) {
-    if (!usedReferenceIds.has(reference.id)) {
-      continue;
-    }
-
-    if (
-      reference.source.type !== "workbook_cell" &&
-      reference.source.type !== "workbook_range"
-    ) {
-      continue;
-    }
-    const workbookSource = reference.source;
-    const sourceRef = getWorkbookReferenceDisplayName(workbookSource);
-    const referenceKind =
-      workbookSource.type === "workbook_range" ? "range" : "cell";
-
-    const current = summaries.get(reference.source.sourceId) ?? {
+  for (const [sourceId, usages] of usagesBySourceId) {
+    let current = summaries.get(sourceId) ?? {
       isUsed: false,
       referenceCount: 0,
       removal: { removable: true } as const,
-      sourceId: reference.source.sourceId,
+      sourceId,
       usedWhere: [],
     };
-    const location = locationsByReferenceId.get(reference.id) ?? {
-      kind: "unknown" as const,
-      label: "Blueprint content",
-      referenceId: reference.id,
-      referenceKind: "unknown",
-      referenceName:
-        getWorkbookReferenceKeyForSource(workbookSource) ?? reference.id,
-      sourceRef: "",
-    };
-    const nextUsedWhere = dedupeUsageLocation([...current.usedWhere, location]);
-    const nextReferenceCount = new Set(
-      nextUsedWhere.map((entry) => entry.referenceId),
-    ).size;
-    const nextSummary: StudioSourceUsageSummary = {
-      isUsed: true,
-      referenceCount: nextReferenceCount,
-      removal: {
-        reason: USED_SOURCE_REMOVE_REASON,
-        removable: false,
-      },
-      sourceId: current.sourceId,
-      usedWhere: nextUsedWhere.map((entry) =>
-        entry.referenceId === reference.id
-          ? {
-              ...entry,
-              referenceKind,
-              referenceName:
-                getWorkbookReferenceKeyForSource(workbookSource) ??
-                reference.id,
-              sourceRef,
-            }
-          : entry,
-      ),
-    };
 
-    summaries.set(reference.source.sourceId, nextSummary);
+    for (const usage of usages) {
+      const workbookSource = usage.reference.source;
+      if (
+        workbookSource.type !== "workbook_cell" &&
+        workbookSource.type !== "workbook_range"
+      ) {
+        continue;
+      }
+
+      const sourceRef = getWorkbookReferenceDisplayName(workbookSource);
+      const referenceKind: StudioSourceUsageLocation["referenceKind"] =
+        workbookSource.type === "workbook_range" ? "range" : "cell";
+      const usageLocations = usage.locations.map((location) => ({
+        ...createStudioSourceUsageLocation(input.model, location),
+        referenceId: usage.reference.id,
+        referenceKind,
+        referenceName:
+          getWorkbookReferenceKeyForSource(workbookSource) ??
+          usage.reference.id,
+        sourceRef,
+      }));
+      const nextUsedWhere = dedupeUsageLocation([
+        ...current.usedWhere,
+        ...usageLocations,
+      ]);
+      current = {
+        isUsed: true,
+        referenceCount: new Set(nextUsedWhere.map((entry) => entry.referenceId))
+          .size,
+        removal: {
+          reason: USED_SOURCE_REMOVE_REASON,
+          removable: false,
+        },
+        sourceId: current.sourceId,
+        usedWhere: nextUsedWhere,
+      };
+    }
+
+    summaries.set(sourceId, current);
   }
 
   return summaries;
@@ -204,114 +186,6 @@ function sanitizeSourceIdBase(
   return `s-${candidate}`;
 }
 
-function buildReferenceUsageLocations(
-  model: ComposedEditorModel,
-): Map<string, StudioSourceUsageLocation> {
-  const locations = new Map<string, StudioSourceUsageLocation>();
-  let textBlockCount = 0;
-  let richTextBlockCount = 0;
-  let responseBlockCount = 0;
-
-  for (const block of model.blocks) {
-    switch (block.type) {
-      case "text": {
-        textBlockCount += 1;
-        addLocations(
-          locations,
-          extractInlineReferenceIds(block.content),
-          createBlockLabel(block, textBlockCount),
-        );
-        break;
-      }
-      case "rich_text": {
-        richTextBlockCount += 1;
-        addLocations(
-          locations,
-          extractRichReferenceIds(block.content),
-          createBlockLabel(block, richTextBlockCount),
-        );
-        break;
-      }
-      case "response": {
-        responseBlockCount += 1;
-        addLocations(
-          locations,
-          extractReferenceIdsFromValueExpression(block.correctValueSource),
-          createBlockLabel(block, responseBlockCount),
-          "response_field",
-        );
-        break;
-      }
-      case "table": {
-        addTableLocations(locations, block);
-        break;
-      }
-      default:
-        break;
-    }
-  }
-
-  return locations;
-}
-
-function addLocations(
-  locations: Map<string, StudioSourceUsageLocation>,
-  referenceIds: readonly string[],
-  label: string,
-  kind: StudioSourceUsageLocation["kind"] = "block",
-) {
-  for (const referenceId of referenceIds) {
-    if (!locations.has(referenceId)) {
-      locations.set(referenceId, {
-        kind,
-        label,
-        referenceId,
-        referenceKind: "unknown",
-        referenceName: referenceId,
-        sourceRef: "",
-      });
-    }
-  }
-}
-
-function addTableLocations(
-  locations: Map<string, StudioSourceUsageLocation>,
-  block: Extract<ComposedEditorBlock, { type: "table" }>,
-) {
-  for (const cell of block.table.cells) {
-    if (cell.type === "content") {
-      for (const referenceId of extractInlineReferenceIds(cell.content)) {
-        if (!locations.has(referenceId)) {
-          locations.set(referenceId, {
-            kind: "block",
-            label: "Table cell",
-            referenceId,
-            referenceKind: "unknown",
-            referenceName: referenceId,
-            sourceRef: "",
-          });
-        }
-      }
-      continue;
-    }
-
-    for (const referenceId of extractReferenceIdsFromValueExpression(
-      cell.correctValueSource,
-    )) {
-      if (!locations.has(referenceId)) {
-        locations.set(referenceId, {
-          kind: "response_field",
-          label: "Answer field",
-          referenceId,
-          referenceKind: "unknown",
-          referenceName: referenceId,
-          sourceRef: "",
-        });
-      }
-    }
-  }
-}
-
 function createBlockLabel(block: ComposedEditorBlock, count: number): string {
   switch (block.type) {
     case "text":
@@ -325,6 +199,46 @@ function createBlockLabel(block: ComposedEditorBlock, count: number): string {
   }
 }
 
+function createStudioSourceUsageLocation(
+  model: ComposedEditorModel,
+  usage: ReferenceUsage,
+): Omit<
+  StudioSourceUsageLocation,
+  "referenceId" | "referenceKind" | "referenceName" | "sourceRef"
+> {
+  const block = model.blocks.find(
+    (candidate) => candidate.id === usage.blockId,
+  );
+  const blockTypeCount = block
+    ? model.blocks
+        .slice(
+          0,
+          model.blocks.findIndex((candidate) => candidate.id === block.id) + 1,
+        )
+        .filter((candidate) => candidate.type === block.type).length
+    : 1;
+
+  switch (usage.type) {
+    case "text_block":
+    case "rich_text_block":
+      return {
+        kind: "block",
+        label: block
+          ? createBlockLabel(block, blockTypeCount)
+          : "Question content",
+      };
+    case "response_answer":
+      return {
+        kind: "response_field",
+        label: block ? createBlockLabel(block, blockTypeCount) : "Answer",
+      };
+    case "table_content_cell":
+      return { kind: "block", label: "Table content cell" };
+    case "table_answer_cell":
+      return { kind: "response_field", label: "Table answer cell" };
+  }
+}
+
 function dedupeUsageLocation(
   locations: readonly StudioSourceUsageLocation[],
 ): readonly StudioSourceUsageLocation[] {
@@ -332,6 +246,8 @@ function dedupeUsageLocation(
   const deduped: StudioSourceUsageLocation[] = [];
 
   for (const location of locations) {
+    // Source removal only needs a human-readable area summary; occurrence-exact
+    // remediation is built from ReferenceUsage in the recovery view model.
     const key = `${location.referenceId}:${location.label}:${location.sourceRef}`;
     if (seen.has(key)) {
       continue;

@@ -1,5 +1,5 @@
 import { getReferenceIdForSource } from "../reference-names";
-import type { ComposedInlineContent } from "./inline-content";
+import type { ComposedInlineContent, RangeCellOffset } from "./inline-content";
 import {
   extractInlineReferenceIds,
   plainTextToInlineContent,
@@ -47,10 +47,15 @@ export type ReferenceUsage =
   | {
       type: "text_block";
       blockId: string;
+      inlineContentIndex: number;
+      rangeCell?: RangeCellOffset;
     }
   | {
       type: "rich_text_block";
       blockId: string;
+      richNodePath: readonly number[];
+      inlineContentIndex: number;
+      rangeCell?: RangeCellOffset;
     }
   | {
       type: "response_answer";
@@ -61,6 +66,8 @@ export type ReferenceUsage =
       type: "table_content_cell";
       blockId: string;
       cellId: string;
+      inlineContentIndex: number;
+      rangeCell?: RangeCellOffset;
     }
   | {
       type: "table_answer_cell";
@@ -389,17 +396,26 @@ export function getReferenceUsage(
   for (const block of model.blocks) {
     switch (block.type) {
       case "text":
-        for (const referenceId of extractInlineReferenceIds(block.content)) {
-          addReferenceUsage(usage, referenceId, {
+        for (const inlineReference of getInlineReferenceUsages(block.content)) {
+          addReferenceUsage(usage, inlineReference.referenceId, {
             blockId: block.id,
+            inlineContentIndex: inlineReference.inlineContentIndex,
+            ...(inlineReference.rangeCell
+              ? { rangeCell: inlineReference.rangeCell }
+              : {}),
             type: "text_block",
           });
         }
         break;
       case "rich_text":
-        for (const referenceId of extractRichReferenceIds(block.content)) {
-          addReferenceUsage(usage, referenceId, {
+        for (const inlineReference of getRichReferenceUsages(block.content)) {
+          addReferenceUsage(usage, inlineReference.referenceId, {
             blockId: block.id,
+            inlineContentIndex: inlineReference.inlineContentIndex,
+            richNodePath: inlineReference.richNodePath,
+            ...(inlineReference.rangeCell
+              ? { rangeCell: inlineReference.rangeCell }
+              : {}),
             type: "rich_text_block",
           });
         }
@@ -418,10 +434,16 @@ export function getReferenceUsage(
       case "table":
         for (const cell of block.table.cells) {
           if (cell.type === "content") {
-            for (const referenceId of extractInlineReferenceIds(cell.content)) {
-              addReferenceUsage(usage, referenceId, {
+            for (const inlineReference of getInlineReferenceUsages(
+              cell.content,
+            )) {
+              addReferenceUsage(usage, inlineReference.referenceId, {
                 blockId: block.id,
                 cellId: cell.id,
+                inlineContentIndex: inlineReference.inlineContentIndex,
+                ...(inlineReference.rangeCell
+                  ? { rangeCell: inlineReference.rangeCell }
+                  : {}),
                 type: "table_content_cell",
               });
             }
@@ -586,6 +608,77 @@ function addReferenceUsage(
   item: ReferenceUsage,
 ) {
   usage.set(referenceId, [...(usage.get(referenceId) ?? []), item]);
+}
+
+function getInlineReferenceUsages(content: ComposedInlineContent[]): Array<{
+  inlineContentIndex: number;
+  referenceId: string;
+  rangeCell?: RangeCellOffset;
+}> {
+  return content.flatMap((item, inlineContentIndex) =>
+    item.type === "reference"
+      ? [
+          {
+            inlineContentIndex,
+            referenceId: item.referenceId,
+            ...(item.rangeCell ? { rangeCell: item.rangeCell } : {}),
+          },
+        ]
+      : [],
+  );
+}
+
+function getRichReferenceUsages(content: ComposedRichContent): Array<{
+  inlineContentIndex: number;
+  richNodePath: readonly number[];
+  referenceId: string;
+  rangeCell?: RangeCellOffset;
+}> {
+  const usages: Array<{
+    inlineContentIndex: number;
+    richNodePath: readonly number[];
+    referenceId: string;
+    rangeCell?: RangeCellOffset;
+  }> = [];
+
+  content.content.forEach((node, nodeIndex) => {
+    collectRichReferenceUsages(node, [nodeIndex], usages);
+  });
+
+  return usages;
+}
+
+type RichReferenceUsage = {
+  inlineContentIndex: number;
+  richNodePath: readonly number[];
+  referenceId: string;
+  rangeCell?: RangeCellOffset;
+};
+
+function collectRichReferenceUsages(
+  node: ComposedRichContent["content"][number],
+  path: readonly number[],
+  usages: RichReferenceUsage[],
+) {
+  if (node.type === "paragraph" || node.type === "heading") {
+    usages.push(
+      ...getInlineReferenceUsages(node.content).map((usage) => ({
+        ...usage,
+        richNodePath: path,
+      })),
+    );
+    return;
+  }
+
+  node.items.forEach((item, itemIndex) => {
+    item.content.forEach((child, childIndex) => {
+      collectRichReferenceUsages(
+        child,
+        [...path, itemIndex, childIndex],
+        usages,
+      );
+    });
+  });
 }
 
 function replaceReferenceIdUsagesInComposedEditorModel(

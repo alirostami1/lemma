@@ -59,9 +59,14 @@ vi.mock("../use-selected-workbook-preview", () => ({
   })),
 }));
 
-vi.mock("#/domains/workbooks/local-xlsx", () => ({
-  parseLocalWorkbookFile: sourceControllerMocks.parseLocalWorkbookFile,
-}));
+vi.mock("#/domains/workbooks/local-xlsx", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("#/domains/workbooks/local-xlsx")>();
+  return {
+    ...actual,
+    parseLocalWorkbookFile: sourceControllerMocks.parseLocalWorkbookFile,
+  };
+});
 
 vi.mock("#/domains/files/hooks", () => ({
   useCreateFileDownloadUrl: () => ({
@@ -273,7 +278,114 @@ describe("useSourceController", () => {
 
     expect(outcome).toEqual({
       reason:
-        "This source is used by the blueprint. Remove its references before detaching it.",
+        "This workbook is used by inserted values. Remove those values before detaching it.",
+      status: "blocked",
+    });
+    expect(mockOnSourcesChange).not.toHaveBeenCalled();
+  });
+
+  it("allows removing a source after inserted values are removed", () => {
+    const usedModel = createModel({
+      blocks: [
+        {
+          content: [{ referenceId: "ref_1", type: "reference" }],
+          id: "block_1",
+          type: "text",
+        },
+      ],
+      references: [
+        {
+          id: "ref_1",
+          source: {
+            ref: "Sheet1!A1",
+            sourceId: "source_1",
+            type: "workbook_cell",
+          },
+        },
+      ],
+    });
+    const { result, rerender } = renderHook(
+      ({ model }) =>
+        useSourceController({
+          draftKey: "new:default",
+          loadWorkbookPickerPreview: false,
+          lookupSourceId: null,
+          model,
+          onSourcesChange: mockOnSourcesChange,
+          sources: [localSource("source_1")],
+        }),
+      { initialProps: { model: usedModel } },
+    );
+
+    expect(
+      actResult(() => result.current.actions.removeSource("source_1")).status,
+    ).toBe("blocked");
+
+    rerender({
+      model: createModel({
+        blocks: [
+          {
+            content: [{ text: "Static", type: "text" }],
+            id: "block_1",
+            type: "text",
+          },
+        ],
+        references: usedModel.references,
+      }),
+    });
+
+    const outcome = actResult(() =>
+      result.current.actions.removeSource("source_1"),
+    );
+
+    expect(outcome).toEqual({ sources: [], status: "changed" });
+  });
+
+  it("blocks reattaching a workbook that does not contain used inserted values", async () => {
+    sourceControllerMocks.parseLocalWorkbookFile.mockResolvedValue({
+      status: "parsed",
+      workbook: parsedWorkbook("source_1"),
+    });
+    const { result } = renderHook(() =>
+      useSourceController({
+        draftKey: "new:default",
+        loadWorkbookPickerPreview: false,
+        lookupSourceId: null,
+        model: createModel({
+          blocks: [
+            {
+              content: [{ referenceId: "ref_1", type: "reference" }],
+              id: "block_1",
+              type: "text",
+            },
+          ],
+          references: [
+            {
+              id: "ref_1",
+              source: {
+                ref: "Sheet1!B2",
+                sourceId: "source_1",
+                type: "workbook_cell",
+              },
+            },
+          ],
+        }),
+        onSourcesChange: mockOnSourcesChange,
+        sources: [missingSource("source_1")],
+      }),
+    );
+    const file = new File(["test"], "source_1.xlsx", {
+      lastModified: 1,
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    const outcome = await result.current.actions.reattachSource(
+      "source_1",
+      file,
+    );
+
+    expect(outcome).toEqual({
+      reason: "Some inserted values need attention.",
       status: "blocked",
     });
     expect(mockOnSourcesChange).not.toHaveBeenCalled();

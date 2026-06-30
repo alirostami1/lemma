@@ -434,6 +434,51 @@ describe("composed blueprint conversions", () => {
     );
   });
 
+  it("strips unused references during canonical conversion", () => {
+    const model: ComposedEditorModel = {
+      blocks: [
+        {
+          content: [{ referenceId: "used_ref", type: "reference" }],
+          id: "text_1",
+          type: "text",
+        },
+      ],
+      references: [
+        {
+          id: "used_ref",
+          source: { type: "literal", value: "Alpha" },
+        },
+        {
+          id: "unused_ref",
+          source: {
+            ref: "'Sheet1'!A1",
+            sourceId: "source_1",
+            type: "workbook_cell",
+          },
+        },
+      ],
+      responseFields: [],
+      schemaVersion: 1,
+    };
+
+    const document = composedEditorModelToQuestionBlueprintDocument(model);
+
+    expect(document.references).toEqual([
+      {
+        id: "used_ref",
+        source: {
+          schemaVersion: 1,
+          type: "literal",
+          value: "Alpha",
+        },
+      },
+    ]);
+    expect(model.references.map((reference) => reference.id)).toEqual([
+      "used_ref",
+      "unused_ref",
+    ]);
+  });
+
   it("collects workbook refs from workbook-backed references", () => {
     const model: ComposedEditorModel = {
       blocks: [

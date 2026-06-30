@@ -68,7 +68,14 @@ export function getBlueprintReadinessIssues(input: {
   }
 
   if (attachedSourceIds.size > 0) {
+    const usedReferenceIds = new Set(
+      extractUsedReferenceIdsFromComposedEditorModel(input.model),
+    );
+
     for (const reference of input.model.references) {
+      if (!usedReferenceIds.has(reference.id)) {
+        continue;
+      }
       if (
         reference.source.type !== "workbook_cell" &&
         reference.source.type !== "workbook_range"

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  columnIndexToLabel,
   normalizeWorkbookRef,
   parseWorkbookRef,
   resolveWorkbookValue,
@@ -61,5 +62,11 @@ describe("workbook references", () => {
     expect(normalizeWorkbookRef("'Bob''s Sheet'!$a$1:$b$2")).toBe(
       "'Bob''s Sheet'!A1:B2",
     );
+  });
+
+  it("formats zero-based column indexes as spreadsheet labels", () => {
+    expect(columnIndexToLabel(0)).toBe("A");
+    expect(columnIndexToLabel(25)).toBe("Z");
+    expect(columnIndexToLabel(26)).toBe("AA");
   });
 });

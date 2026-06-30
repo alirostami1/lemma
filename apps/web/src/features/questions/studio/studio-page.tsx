@@ -359,10 +359,12 @@ function StudioEditorWorkbench({ studio }: { studio: StudioController }) {
           <section className="rounded-lg border bg-background p-3 shadow-sm sm:p-4">
             <div className="max-w-none">
               <ComposedQuestionEditor
+                documentIssues={studio.editor.documentIssues}
                 inspectorStickyOffset={inspectorStickyOffset}
                 model={studio.editor.authoringModel}
                 onModelChange={studio.editor.onAuthoringModelChange}
                 referencePreviewCache={studio.editor.referencePreviewCache}
+                referenceRecoveryItems={studio.editor.referenceRecoveryItems}
                 sources={studio.editor.sources}
                 workbookSheetNamesBySourceId={
                   studio.editor.workbookSheetNamesBySourceId

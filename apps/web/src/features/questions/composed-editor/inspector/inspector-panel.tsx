@@ -5,7 +5,12 @@ import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model"
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import { getComposedEditorSelectedBlock } from "../composed-editor-operations";
 import type { EditorSelection } from "../editor-selection";
+import type { DocumentReadinessIssue } from "./document-inspector";
 import { ElementsTab } from "./elements-tab";
+import {
+  type ReferenceRecoveryItem,
+  ReferenceRecoveryPanel,
+} from "./reference-recovery-panel";
 
 export function InspectorPanel({
   model,
@@ -14,6 +19,8 @@ export function InspectorPanel({
   workbookEnabled,
   sources = [],
   workbookSheetNamesBySourceId,
+  documentIssues,
+  referenceRecoveryItems,
   disabled,
   onModelChange,
   onSelectionChange,
@@ -25,6 +32,8 @@ export function InspectorPanel({
   workbookEnabled: boolean;
   sources?: QuestionBlueprintWorkbookSource[];
   workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
+  documentIssues?: readonly DocumentReadinessIssue[];
+  referenceRecoveryItems?: readonly ReferenceRecoveryItem[];
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onSelectionChange(selection: EditorSelection): void;
@@ -47,8 +56,16 @@ export function InspectorPanel({
       <div className="flex h-full min-h-0 flex-col p-3">
         <ScrollArea className="h-full min-h-0 pr-3">
           <div className="grid gap-3 pb-8">
+            <ReferenceRecoveryPanel
+              disabled={disabled}
+              items={referenceRecoveryItems}
+              model={model}
+              onModelChange={onModelChange}
+              onSelectionChange={onSelectionChange}
+            />
             <ElementsTab
               disabled={disabled}
+              documentIssues={documentIssues}
               model={model}
               onModelChange={onModelChange}
               onSelectionChange={onSelectionChange}

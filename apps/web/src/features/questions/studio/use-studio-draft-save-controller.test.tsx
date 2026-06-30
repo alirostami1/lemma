@@ -175,6 +175,142 @@ describe("useStudioDraftSaveController", () => {
     expect(fileUploadMocks.createFileUpload).not.toHaveBeenCalled();
   });
 
+  it("shows publish recovery copy for unavailable inserted values", () => {
+    const { result } = renderHook(() =>
+      useStudioDraftSaveController({
+        authoringModel: createModel(),
+        blueprintDescription: "",
+        blueprintName: "Draft",
+        initialDraftId: "draft_existing",
+        initialDraftRevision: 1,
+        onDraftSaved: () => {},
+        onDraftPublished: () => {},
+        onSourcesChange: () => {},
+        readiness: {
+          canGenerate: false,
+          canSave: false,
+          issues: [
+            {
+              id: "inserted_value_unavailable_ref_1",
+              message: "Some inserted values need attention.",
+              publishMessage: "Review affected values before publishing.",
+              severity: "error",
+            },
+          ],
+        },
+        sources: [createLocalSource()],
+      }),
+    );
+
+    expect(result.current.publishDialog.state.validationIssue).toBe(
+      "Review affected values before publishing.",
+    );
+  });
+
+  it("blocks direct publish for inserted values that are still being checked", async () => {
+    const { result } = renderHook(() =>
+      useStudioDraftSaveController({
+        authoringModel: createModel(),
+        blueprintDescription: "",
+        blueprintName: "Draft",
+        initialDraftId: "draft_existing",
+        initialDraftRevision: 1,
+        onDraftSaved: () => {},
+        onDraftPublished: () => {},
+        onSourcesChange: () => {},
+        readiness: readinessWithCheckingInsertedValue(),
+        sources: [],
+      }),
+    );
+
+    act(() => {
+      result.current.publishDialog.onPublish();
+    });
+
+    await waitFor(() => {
+      expect(result.current.commandBarSave.saveError).toBe(
+        "Wait for workbook values to finish loading before publishing.",
+      );
+    });
+    expect(questionDraftMocks.updateServerDraft).not.toHaveBeenCalled();
+    expect(
+      questionGenerationMocks.publishQuestionBlueprintDraft,
+    ).not.toHaveBeenCalled();
+  });
+
+  it("allows save while inserted values are still being checked", async () => {
+    questionDraftMocks.updateServerDraft.mockResolvedValue(
+      createDraftResult("draft_existing", 2),
+    );
+
+    const { result } = renderHook(() =>
+      useStudioDraftSaveController({
+        authoringModel: createModel(),
+        blueprintDescription: "",
+        blueprintName: "Draft",
+        initialDraftId: "draft_existing",
+        initialDraftRevision: 1,
+        onDraftSaved: () => {},
+        onDraftPublished: () => {},
+        onSourcesChange: () => {},
+        readiness: readinessWithCheckingInsertedValue(),
+        sources: [],
+      }),
+    );
+
+    act(() => {
+      result.current.commandBarSave.onSaveDraft();
+    });
+
+    await waitFor(() => {
+      expect(questionDraftMocks.updateServerDraft).toHaveBeenCalledOnce();
+    });
+    expect(
+      questionGenerationMocks.publishQuestionBlueprintDraft,
+    ).not.toHaveBeenCalled();
+  });
+
+  it("blocks save and publish when inserted values are unavailable", async () => {
+    const { result } = renderHook(() =>
+      useStudioDraftSaveController({
+        authoringModel: createModel(),
+        blueprintDescription: "",
+        blueprintName: "Draft",
+        initialDraftId: "draft_existing",
+        initialDraftRevision: 1,
+        onDraftSaved: () => {},
+        onDraftPublished: () => {},
+        onSourcesChange: () => {},
+        readiness: readinessWithUnavailableInsertedValue(),
+        sources: [],
+      }),
+    );
+
+    act(() => {
+      result.current.commandBarSave.onSaveDraft();
+    });
+
+    await waitFor(() => {
+      expect(result.current.commandBarSave.saveError).toBe(
+        "Some inserted values need attention.",
+      );
+    });
+
+    act(() => {
+      result.current.publishDialog.onPublish();
+    });
+
+    await waitFor(() => {
+      expect(result.current.commandBarSave.saveError).toBe(
+        "Review affected values before publishing.",
+      );
+    });
+    expect(questionDraftMocks.updateServerDraft).not.toHaveBeenCalled();
+    expect(
+      questionGenerationMocks.publishQuestionBlueprintDraft,
+    ).not.toHaveBeenCalled();
+  });
+
   it("updates an existing draft and calls onDraftSaved with the saved draft", async () => {
     questionDraftMocks.updateServerDraft.mockResolvedValue({
       draft: {
@@ -994,6 +1130,43 @@ function createModel(): ComposedEditorModel {
     references: [],
     responseFields: [],
     schemaVersion: 1,
+  };
+}
+
+function readinessWithCheckingInsertedValue() {
+  return {
+    canGenerate: false,
+    canSave: true,
+    issues: [
+      {
+        blockedActions: ["publish", "generate_saved_blueprint"] as const,
+        id: "inserted_value_checking_ref_1",
+        message: "Some inserted values are still being checked.",
+        publishMessage:
+          "Wait for workbook values to finish loading before publishing.",
+        severity: "warning" as const,
+      },
+    ],
+  };
+}
+
+function readinessWithUnavailableInsertedValue() {
+  return {
+    canGenerate: false,
+    canSave: false,
+    issues: [
+      {
+        blockedActions: [
+          "save",
+          "publish",
+          "generate_saved_blueprint",
+        ] as const,
+        id: "inserted_value_unavailable_ref_1",
+        message: "Some inserted values need attention.",
+        publishMessage: "Review affected values before publishing.",
+        severity: "error" as const,
+      },
+    ],
   };
 }
 
