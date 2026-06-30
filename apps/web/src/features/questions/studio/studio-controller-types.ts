@@ -34,6 +34,12 @@ import type { DraftSaveConflict } from "./use-studio-draft-save-controller";
 
 export type { StudioRouteIntent, StudioRouteSearch };
 
+export type StudioGenerationAction = {
+  available: boolean;
+  disabledReason: string | null;
+  onGenerate: (() => void) | null;
+};
+
 export type StudioController = {
   routeIntent: StudioRouteIntent;
   draftLoadState: StudioDraftLoadState;
@@ -41,11 +47,9 @@ export type StudioController = {
   commandBar: {
     blueprintDescription: string;
     blueprintName: string;
-    canGenerate: boolean;
-    routeSearch: StudioRouteSearch;
     canRedo: boolean;
     canUndo: boolean;
-    generateDisabledReason: string | null;
+    generationAction: StudioGenerationAction;
     isSaving: boolean;
     isPublishing: boolean;
     saveState: "saved" | "unsaved" | "saving" | "autosaved" | "failed";

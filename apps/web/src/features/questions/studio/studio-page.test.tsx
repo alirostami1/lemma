@@ -517,10 +517,11 @@ describe("StudioPage", () => {
 
     const { rerender } = render(<StudioPage draftId="draft-1" />);
 
+    await user.click(screen.getByRole("button", { name: "Blueprint details" }));
     expect(screen.getByRole("textbox", { name: "Blueprint name" })).toHaveValue(
       "Current work",
     );
-    expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
+    expect(screen.getAllByText("Unsaved changes").length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
     expect(
       screen.queryByRole("button", { name: "Save draft" }),
@@ -618,7 +619,7 @@ describe("StudioPage", () => {
 
     render(<StudioPage draftId="draft-1" />);
 
-    expect(screen.getByText("Saving changes")).toBeInTheDocument();
+    expect(screen.getAllByText("Saving changes").length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Saving..." })).toBeDisabled();
     expect(screen.queryByText("Save failed")).not.toBeInTheDocument();
@@ -649,7 +650,7 @@ describe("StudioPage", () => {
 
     render(<StudioPage draftId="draft-1" />);
 
-    expect(screen.getByText("Save failed")).toBeInTheDocument();
+    expect(screen.getAllByText("Save failed").length).toBeGreaterThan(0);
     expect(
       screen.getByText("This work could not be saved."),
     ).toBeInTheDocument();

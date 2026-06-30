@@ -9,7 +9,7 @@ import {
   within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { type ReactNode, useState } from "react";
+import { type ComponentProps, type ReactNode, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   type ComposedEditorModel,
@@ -26,6 +26,47 @@ vi.mock("./editor-tooltip", () => ({
 
 describe("ComposedQuestionEditor keyboard workflows", () => {
   afterEach(() => cleanup());
+
+  it("uses a full-width sequential editor without a persistent settings side panel", () => {
+    renderEditor();
+
+    const editor = screen.getByRole("region", { name: "Question editor" });
+
+    expect(editor).toHaveClass("grid");
+    expect(editor).not.toHaveClass("xl:grid-cols-[minmax(0,1fr)_22rem]");
+    expect(
+      screen.queryByRole("complementary", { name: "Element settings" }),
+    ).toBeNull();
+  });
+
+  it("shows local settings only for blocks that have them", async () => {
+    const user = userEvent.setup();
+    const model = createDefaultComposedEditorModel();
+    model.blocks.push(createTableBlock("table_1"));
+    renderEditor(model);
+
+    expect(screen.queryByRole("button", { name: "Settings" })).toBeNull();
+
+    getBlockFocus("Answer").focus();
+    await user.click(await screen.findByRole("button", { name: "Settings" }));
+    expect(screen.getByRole("heading", { name: "Answer" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: "Value mode" }),
+    ).toBeInTheDocument();
+
+    const tableBlock = getBlockFocus("Table");
+    tableBlock.focus();
+    await waitFor(() =>
+      expect(getBlockShell(tableBlock)).toHaveAttribute(
+        "data-selected",
+        "true",
+      ),
+    );
+    await user.click(screen.getByRole("button", { name: "Settings" }));
+    expect(
+      screen.getByRole("button", { name: "Add reference" }),
+    ).toBeInTheDocument();
+  });
 
   it("moves focus and selection between blocks from block focus surfaces", async () => {
     const user = userEvent.setup();
@@ -162,7 +203,7 @@ describe("ComposedQuestionEditor keyboard workflows", () => {
     );
   });
 
-  it("blocks insertion while editing across shortcuts, palette, toolbar, and inline insert controls", async () => {
+  it("blocks insertion while editing across shortcuts, palette, and inline insert controls", async () => {
     const user = userEvent.setup();
     const editor = renderEditor();
     const textBlock = getBlockFocus("Text");
@@ -191,7 +232,6 @@ describe("ComposedQuestionEditor keyboard workflows", () => {
     expect(editor.getModel().blocks).toHaveLength(2);
     await user.keyboard("{Escape}");
 
-    expect(screen.getByRole("button", { name: "Insert block" })).toBeDisabled();
     for (const addBlock of screen.getAllByRole("button", {
       name: "Add block",
     })) {
@@ -199,7 +239,7 @@ describe("ComposedQuestionEditor keyboard workflows", () => {
     }
   });
 
-  it("does not run Studio shortcuts from text entry, inspector, toolbar, menu, or table controls", async () => {
+  it("does not run Studio shortcuts from text entry, local controls, menu, or table controls", async () => {
     const user = userEvent.setup();
     const defaultModel = createDefaultComposedEditorModel();
     const firstBlock = defaultModel.blocks[0];
@@ -287,13 +327,6 @@ describe("ComposedQuestionEditor keyboard workflows", () => {
       ),
     );
 
-    const toolbarInsert = screen.getByRole("button", { name: "Insert block" });
-    toolbarInsert.focus();
-    fireEvent.keyDown(toolbarInsert, { key: "/" });
-    expect(
-      screen.queryByRole("dialog", { name: "Studio commands" }),
-    ).toBeNull();
-
     await user.click(screen.getAllByRole("button", { name: "Add block" })[0]);
     const textMenuItem = await screen.findByRole("menuitem", { name: "Text" });
     fireEvent.keyDown(textMenuItem, { key: "/" });
@@ -331,13 +364,12 @@ describe("ComposedQuestionEditor keyboard workflows", () => {
     ).toBeNull();
   });
 
-  it("opens shortcut help from visible controls and safe shortcut keys", async () => {
+  it("opens shortcut help from safe shortcut keys", async () => {
     const user = userEvent.setup();
     renderEditor();
 
-    await user.click(
-      screen.getByRole("button", { name: "Keyboard shortcuts" }),
-    );
+    getBlockFocus("Text").focus();
+    await user.keyboard("?");
     expect(
       screen.getByRole("dialog", { name: "Keyboard shortcuts" }),
     ).toBeInTheDocument();
@@ -350,58 +382,22 @@ describe("ComposedQuestionEditor keyboard workflows", () => {
     await user.keyboard("{Escape}");
 
     getBlockFocus("Text").focus();
-    await user.keyboard("?");
-    expect(
-      screen.getByRole("dialog", { name: "Keyboard shortcuts" }),
-    ).toBeInTheDocument();
-    await user.keyboard("{Escape}");
-
-    getBlockFocus("Text").focus();
     await user.keyboard("{F1}");
     expect(
       screen.getByRole("dialog", { name: "Keyboard shortcuts" }),
     ).toBeInTheDocument();
   });
 
-  it("routes toolbar navigation through the Studio command behavior", async () => {
+  it("keeps mobile and touch block controls visible and named", async () => {
     const user = userEvent.setup();
     renderEditor();
 
-    getBlockFocus("Text").focus();
-    await user.click(screen.getByRole("button", { name: "Next block" }));
-    const answerBlock = getBlockFocus("Answer");
-    await waitFor(() => expect(answerBlock).toHaveFocus());
-    expect(getBlockShell(answerBlock)).toHaveAttribute("data-selected", "true");
-
-    await user.click(screen.getByRole("button", { name: "Previous block" }));
-    const textBlock = getBlockFocus("Text");
-    await waitFor(() => expect(textBlock).toHaveFocus());
-    expect(getBlockShell(textBlock)).toHaveAttribute("data-selected", "true");
-
-    await user.keyboard("{Enter}");
     expect(
-      screen.getByRole("button", { name: "Previous block" }),
-    ).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Next block" })).toBeDisabled();
+      screen.getAllByRole("button", { name: "Edit block" }).length,
+    ).toBeGreaterThan(0);
     expect(
-      screen.getByRole("button", { name: "Edit selected block" }),
-    ).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Insert block" })).toBeDisabled();
-  });
-
-  it("keeps mobile and touch equivalent controls visible and named", async () => {
-    const user = userEvent.setup();
-    renderEditor();
-
-    expect(screen.getByRole("button", { name: "Previous block" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Next block" })).toBeTruthy();
-    expect(
-      screen.getByRole("button", { name: "Edit selected block" }),
-    ).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Insert block" })).toBeTruthy();
-    expect(
-      screen.getByRole("button", { name: "Keyboard shortcuts" }),
-    ).toBeTruthy();
+      screen.getAllByRole("button", { name: "Add block" }).length,
+    ).toBeGreaterThan(0);
 
     getBlockFocus("Text").focus();
     await user.keyboard("{Enter}");
@@ -410,7 +406,7 @@ describe("ComposedQuestionEditor keyboard workflows", () => {
     expect(screen.getByRole("button", { name: "Cancel changes" })).toBeTruthy();
   });
 
-  it("disables inspector model changes while editing so cancel keeps unrelated state intact", async () => {
+  it("disables local settings changes while editing so cancel keeps unrelated state intact", async () => {
     const user = userEvent.setup();
     const editor = renderEditor();
 
@@ -425,18 +421,79 @@ describe("ComposedQuestionEditor keyboard workflows", () => {
     await user.clear(blockLabelInput);
     await user.type(blockLabelInput, "Edited answer");
 
-    const inspectorPointsInput = screen.getByLabelText("Points");
-    expect(inspectorPointsInput).toBeDisabled();
-    fireEvent.change(inspectorPointsInput, { target: { value: "9" } });
+    expect(screen.getByRole("button", { name: "Settings" })).toBeDisabled();
     expect(editor.getModel().blocks).toHaveLength(2);
 
     fireEvent.keyDown(blockLabelInput, { ctrlKey: true, key: "." });
     await waitFor(() => expect(getAnswerLabel(editor.getModel())).toBeNull());
     expect(editor.getModel().blocks).toHaveLength(2);
   });
+
+  it("disables recovery actions while a block edit is active", async () => {
+    const user = userEvent.setup();
+    const model = createDefaultComposedEditorModel();
+    const textBlock = model.blocks[0];
+    if (textBlock?.type !== "text") {
+      throw new Error("Expected the first block to be text.");
+    }
+    textBlock.content = [
+      { referenceId: "reference_internal_1", type: "reference" },
+    ];
+    model.references = [
+      {
+        id: "reference_internal_1",
+        source: {
+          ref: "Sheet1!A1",
+          sourceId: "source_internal_1",
+          type: "workbook_cell",
+        },
+      },
+    ];
+    const editor = renderEditor(model, {
+      referenceRecoveryItems: [
+        {
+          id: "recovery_1",
+          referenceId: "reference_internal_1",
+          status: "unavailable",
+          usage: {
+            blockId: textBlock.id,
+            inlineContentIndex: 0,
+            type: "text_block",
+          },
+        },
+      ],
+    });
+
+    getBlockFocus("Text").focus();
+    await user.keyboard("{Enter}");
+    await user.click(screen.getByRole("button", { name: "Review" }));
+
+    const reviewArea = screen.getByRole("button", { name: "Review area" });
+    const removeValue = screen.getByRole("button", {
+      name: "Remove inserted value",
+    });
+    expect(reviewArea).toBeDisabled();
+    expect(removeValue).toBeDisabled();
+
+    fireEvent.click(reviewArea);
+    fireEvent.click(removeValue);
+    expect(getBlockShell(getBlockFocus("Text"))).toHaveAttribute(
+      "data-editing",
+      "true",
+    );
+    expect(editor.getModel()).toEqual(model);
+  });
 });
 
-function renderEditor(initialModel = createDefaultComposedEditorModel()) {
+type TestEditorProps = Pick<
+  ComponentProps<typeof ComposedQuestionEditor>,
+  "documentIssues" | "referenceRecoveryItems"
+>;
+
+function renderEditor(
+  initialModel = createDefaultComposedEditorModel(),
+  props: TestEditorProps = {},
+) {
   let currentModel = initialModel;
 
   function Harness() {
@@ -444,6 +501,7 @@ function renderEditor(initialModel = createDefaultComposedEditorModel()) {
     currentModel = model;
     return (
       <ComposedQuestionEditor
+        {...props}
         model={model}
         onModelChange={setModel}
         sources={[]}

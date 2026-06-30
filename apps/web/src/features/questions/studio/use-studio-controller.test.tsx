@@ -390,13 +390,18 @@ describe("useStudioController", () => {
     expect(saveControllerHelpers.markDraftChanged).toHaveBeenCalledTimes(3);
   });
 
-  it("keeps Generate disabled for saved edit drafts before publish", () => {
+  it("keeps generation unavailable for saved work before publish", () => {
     const { result } = renderStudioController({ draftId: "draft-active" });
 
-    expect(result.current.commandBar.canGenerate).toBe(false);
-    expect(result.current.commandBar.generateDisabledReason).toBe(
+    expect(result.current.state.canGenerate).toBe(false);
+    expect(result.current.state.generateDisabledReason).toBe(
       "Publish before generating questions.",
     );
+    expect(result.current.commandBar.generationAction).toEqual({
+      available: false,
+      disabledReason: "Publish before generating questions.",
+      onGenerate: null,
+    });
   });
 
   it("invalidates pending publish attempt when sources change", () => {

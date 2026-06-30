@@ -15,14 +15,14 @@ import {
   selectBlockInComposedEditor,
   selectFirstBlockOrDocument,
 } from "./composed-editor-operations";
+import { EditorAttentionDisclosure } from "./editor-attention-disclosure";
 import {
   type EditorSelection,
   selectedBlockIdFromSelection,
 } from "./editor-selection";
-import {
-  type DocumentReadinessIssue,
-  InspectorPanel,
-  type ReferenceRecoveryItem,
+import type {
+  DocumentReadinessIssue,
+  ReferenceRecoveryItem,
 } from "./inspector";
 import {
   canRunStudioEditorCommand,
@@ -49,7 +49,6 @@ export function ComposedQuestionEditor({
   documentIssues,
   referenceRecoveryItems,
   disabled,
-  inspectorStickyOffset,
 }: {
   model: ComposedEditorModel;
   onModelChange(model: ComposedEditorModel): void;
@@ -59,7 +58,6 @@ export function ComposedQuestionEditor({
   documentIssues?: readonly DocumentReadinessIssue[];
   referenceRecoveryItems?: readonly ReferenceRecoveryItem[];
   disabled?: boolean;
-  inspectorStickyOffset?: number;
 }) {
   const [selection, setSelection] = useState<EditorSelection>(() =>
     selectFirstBlockOrDocument(model),
@@ -340,10 +338,26 @@ export function ComposedQuestionEditor({
     <TooltipProvider>
       <section
         aria-label="Question editor"
-        className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]"
+        className="grid gap-4"
         onKeyDown={keyboard.handleKeyDown}
         ref={editorShellRef}
       >
+        <EditorAttentionDisclosure
+          disabled={disabled || editingMode !== null}
+          documentIssues={documentIssues}
+          model={model}
+          onModelChange={(nextModel) => {
+            if (!editingMode) {
+              onModelChange(nextModel);
+            }
+          }}
+          onSelectionChange={(nextSelection) => {
+            if (!editingMode) {
+              setSelection(nextSelection);
+            }
+          }}
+          referenceRecoveryItems={referenceRecoveryItems}
+        />
         <BlockList
           commandAvailability={commandAvailability}
           disabled={disabled}
@@ -358,36 +372,15 @@ export function ComposedQuestionEditor({
           onInsertBlock={insertBlock}
           onModelChange={onModelChange}
           onMoveBlock={moveBlock}
-          onRunCommand={runStudioCommand}
           onSelectBlock={selectBlock}
+          onSelectionChange={setSelection}
           onSelectReference={selectReference}
           onTableSelectionChange={setTableSelection}
           referencePreviewCache={referencePreviewCache}
           selectedBlockId={selectedBlockId}
-          sources={sources}
-          workbookEnabled={workbookToolsEnabled}
-          workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
-        />
-        <InspectorPanel
-          disabled={disabled || editingMode !== null}
-          documentIssues={documentIssues}
-          model={model}
-          onModelChange={(nextModel) => {
-            if (!editingMode) {
-              onModelChange(nextModel);
-            }
-          }}
-          onSelectionChange={(nextSelection) => {
-            if (!editingMode) {
-              setSelection(nextSelection);
-            }
-          }}
-          referencePreviewCache={referencePreviewCache}
-          referenceRecoveryItems={referenceRecoveryItems}
           selection={selection}
           sources={sources}
-          stickyOffset={inspectorStickyOffset}
-          workbookEnabled={workbookEnabled}
+          workbookEnabled={workbookToolsEnabled}
           workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
         />
         <StudioEditorCommandPalette
