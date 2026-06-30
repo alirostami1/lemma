@@ -1,6 +1,15 @@
 import { Button } from "@lemma/ui/components/button";
 import { cn } from "@lemma/ui/lib/utils";
-import { ArrowDown, ArrowUp, Copy, GripVertical, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Check,
+  Copy,
+  GripVertical,
+  Pencil,
+  Trash2,
+  X,
+} from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { BlockMenu } from "./block-menu";
 import { EditorTooltip } from "./editor-tooltip";
@@ -8,6 +17,8 @@ import type { SortableRenderControls } from "./sortable-block-list";
 
 export function BlockShell({
   selected,
+  editing,
+  blockId,
   blockLabel,
   bottomAction,
   disabled,
@@ -17,11 +28,16 @@ export function BlockShell({
   onSelect,
   onDelete,
   onDuplicate,
+  onEdit,
+  onConfirmEdit,
+  onCancelEdit,
   onMoveUp,
   onMoveDown,
   children,
 }: {
   selected: boolean;
+  editing?: boolean;
+  blockId: string;
   blockLabel: string;
   bottomAction?: ReactNode;
   disabled?: boolean;
@@ -37,6 +53,9 @@ export function BlockShell({
   onSelect: () => void;
   onDelete: () => void;
   onDuplicate: () => void;
+  onEdit: () => void;
+  onConfirmEdit: () => void;
+  onCancelEdit: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
   children: ReactNode;
@@ -45,13 +64,18 @@ export function BlockShell({
     <div
       className={cn(
         "group relative rounded-lg border bg-background transition-[border-color,box-shadow,background-color]",
+        "outline-none focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50",
         "hover:border-primary/30 hover:bg-background",
-        selected
-          ? "border-primary shadow-sm ring-2 ring-primary/20"
-          : "border-border/70",
+        editing
+          ? "border-primary shadow-sm ring-2 ring-primary/30"
+          : selected
+            ? "border-primary shadow-sm ring-2 ring-primary/20"
+            : "border-border/70",
         dragControls.isDragging ? "shadow-lg" : undefined,
       )}
-      data-selected={selected}
+      data-editing={editing ? "true" : "false"}
+      data-selected={selected ? "true" : "false"}
+      data-studio-block-id={blockId}
       onPointerDown={onSelect}
       ref={dragControls.setNodeRef}
       style={dragControls.style}
@@ -59,7 +83,10 @@ export function BlockShell({
       <button
         aria-label={`Select ${blockLabel} block`}
         className="sr-only"
+        data-studio-block-focus
+        data-studio-shortcut-scope="block"
         onClick={onSelect}
+        onFocus={onSelect}
         type="button"
       />
       <div className="relative z-10 flex min-h-10 items-center justify-between gap-2 border-b bg-muted/20 px-3 py-1.5">
@@ -67,7 +94,11 @@ export function BlockShell({
           <span className="truncate text-xs font-semibold uppercase text-muted-foreground">
             {blockLabel}
           </span>
-          {selected ? (
+          {editing ? (
+            <span className="rounded-md bg-primary px-1.5 py-0.5 text-xs font-medium text-primary-foreground">
+              Editing
+            </span>
+          ) : selected ? (
             <span
               aria-hidden="true"
               className="size-2 rounded-full bg-primary"
@@ -76,17 +107,76 @@ export function BlockShell({
         </div>
         <div
           className="flex shrink-0 items-center gap-1 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 sm:data-[selected=true]:opacity-100"
-          data-selected={selected}
+          data-selected={selected || editing}
           onPointerDown={(event) => event.stopPropagation()}
         >
+          {editing ? (
+            <>
+              <EditorTooltip label="Done editing">
+                <Button
+                  aria-label="Done editing"
+                  className="size-8 rounded-md"
+                  disabled={disabled}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (!disabled) {
+                      onConfirmEdit();
+                    }
+                  }}
+                  size="icon"
+                  type="button"
+                  variant="ghost"
+                >
+                  <Check />
+                </Button>
+              </EditorTooltip>
+              <EditorTooltip label="Cancel changes">
+                <Button
+                  aria-label="Cancel changes"
+                  className="size-8 rounded-md"
+                  disabled={disabled}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (!disabled) {
+                      onCancelEdit();
+                    }
+                  }}
+                  size="icon"
+                  type="button"
+                  variant="ghost"
+                >
+                  <X />
+                </Button>
+              </EditorTooltip>
+            </>
+          ) : (
+            <EditorTooltip label="Edit block">
+              <Button
+                aria-label="Edit block"
+                className="size-8 rounded-md"
+                disabled={disabled}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (!disabled) {
+                    onEdit();
+                  }
+                }}
+                size="icon"
+                type="button"
+                variant="ghost"
+              >
+                <Pencil />
+              </Button>
+            </EditorTooltip>
+          )}
           <EditorTooltip label="Move up">
             <Button
               aria-label="Move up"
               className="hidden size-8 rounded-md sm:inline-flex"
-              disabled={disabled || !canMoveUp}
+              disabled={disabled || !canMoveUp || editing}
               onClick={(event) => {
                 event.stopPropagation();
-                if (!disabled && canMoveUp) {
+                if (!disabled && !editing && canMoveUp) {
                   onMoveUp();
                 }
               }}
@@ -101,10 +191,10 @@ export function BlockShell({
             <Button
               aria-label="Move down"
               className="hidden size-8 rounded-md sm:inline-flex"
-              disabled={disabled || !canMoveDown}
+              disabled={disabled || !canMoveDown || editing}
               onClick={(event) => {
                 event.stopPropagation();
-                if (!disabled && canMoveDown) {
+                if (!disabled && !editing && canMoveDown) {
                   onMoveDown();
                 }
               }}
@@ -119,10 +209,10 @@ export function BlockShell({
             <Button
               aria-label="Duplicate"
               className="hidden size-8 rounded-md sm:inline-flex"
-              disabled={disabled}
+              disabled={disabled || editing}
               onClick={(event) => {
                 event.stopPropagation();
-                if (!disabled) {
+                if (!disabled && !editing) {
                   onDuplicate();
                 }
               }}
@@ -137,10 +227,10 @@ export function BlockShell({
             <Button
               aria-label="Delete"
               className="hidden size-8 rounded-md text-destructive hover:text-destructive sm:inline-flex"
-              disabled={disabled}
+              disabled={disabled || editing}
               onClick={(event) => {
                 event.stopPropagation();
-                if (!disabled) {
+                if (!disabled && !editing) {
                   onDelete();
                 }
               }}
@@ -158,7 +248,7 @@ export function BlockShell({
                 "size-8 rounded-md touch-none cursor-grab active:cursor-grabbing",
                 dragControls.isDragging ? "text-primary" : undefined,
               )}
-              disabled={disabled}
+              disabled={disabled || editing}
               onClick={(event) => event.stopPropagation()}
               size="icon"
               type="button"
@@ -171,10 +261,10 @@ export function BlockShell({
           </EditorTooltip>
 
           <BlockMenu
-            canMoveDown={canMoveDown}
-            canMoveUp={canMoveUp}
+            canMoveDown={canMoveDown && !editing}
+            canMoveUp={canMoveUp && !editing}
             className="sm:hidden"
-            disabled={disabled}
+            disabled={disabled || editing}
             onDelete={onDelete}
             onDuplicate={onDuplicate}
             onMoveDown={onMoveDown}
@@ -186,6 +276,7 @@ export function BlockShell({
       <div
         className="relative z-10 grid gap-3 p-3 sm:p-4"
         data-selected={selected}
+        data-studio-block-body
       >
         <div className="min-h-1">{children}</div>
       </div>
@@ -197,7 +288,7 @@ export function BlockShell({
             "group-focus-within:pointer-events-auto group-focus-within:opacity-100",
             "data-[selected=true]:pointer-events-auto data-[selected=true]:opacity-100",
           )}
-          data-selected={selected}
+          data-selected={selected || editing}
           data-testid="block-bottom-action"
           onPointerDown={(event) => event.stopPropagation()}
         >

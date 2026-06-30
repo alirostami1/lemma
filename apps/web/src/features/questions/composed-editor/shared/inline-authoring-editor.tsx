@@ -221,6 +221,8 @@ function InlineTextSegmentEditor({
     <Textarea
       aria-label={label}
       className="min-h-20 resize-y"
+      data-studio-primary-editor-focus
+      data-studio-shortcut-scope="editing"
       disabled={disabled}
       onBlur={(event) => updateInsertionTarget(event.currentTarget)}
       onChange={(event) => {

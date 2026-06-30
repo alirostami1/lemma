@@ -9,6 +9,7 @@ import {
   createTableBlock,
 } from "#/domains/questions/authoring";
 import { BlockList } from "./block-list";
+import type { StudioEditorCommandAvailability } from "./studio-editor-command-model";
 
 vi.mock("./block-editor", () => ({
   BlockEditor: ({ block }: { block: { type: string } }) => (
@@ -42,6 +43,18 @@ vi.mock("./editor-tooltip", () => ({
   EditorTooltip: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
+const testCommandAvailability: StudioEditorCommandAvailability = {
+  cancel_edit: false,
+  confirm_edit: false,
+  enter_edit_mode: true,
+  exit_edit_mode: false,
+  insert_block: true,
+  navigate_next_block: true,
+  navigate_previous_block: true,
+  open_commands: true,
+  open_shortcuts: true,
+};
+
 describe("BlockList", () => {
   afterEach(() => cleanup());
 
@@ -62,13 +75,18 @@ describe("BlockList", () => {
 
     render(
       <BlockList
+        commandAvailability={testCommandAvailability}
         getTableSelectionForBlock={() => ({ type: "table" })}
         model={model}
+        onCancelEdit={() => {}}
+        onConfirmEdit={() => {}}
         onDeleteBlock={() => {}}
         onDuplicateBlock={() => {}}
+        onEditBlock={() => {}}
         onInsertBlock={() => {}}
         onModelChange={() => {}}
         onMoveBlock={() => {}}
+        onRunCommand={() => {}}
         onSelectBlock={() => {}}
         onSelectReference={() => {}}
         onTableSelectionChange={() => {}}
@@ -87,7 +105,7 @@ describe("BlockList", () => {
     expect(screen.getByText("Divider")).toBeTruthy();
   });
 
-  it("edits the selected block inline and previews the rest", () => {
+  it("previews the selected block until editing starts", () => {
     const model = createDefaultComposedEditorModel();
     const firstBlock = model.blocks[0];
     if (!firstBlock) {
@@ -96,13 +114,54 @@ describe("BlockList", () => {
 
     render(
       <BlockList
+        commandAvailability={testCommandAvailability}
         getTableSelectionForBlock={() => ({ type: "table" })}
         model={model}
+        onCancelEdit={() => {}}
+        onConfirmEdit={() => {}}
         onDeleteBlock={() => {}}
         onDuplicateBlock={() => {}}
+        onEditBlock={() => {}}
         onInsertBlock={() => {}}
         onModelChange={() => {}}
         onMoveBlock={() => {}}
+        onRunCommand={() => {}}
+        onSelectBlock={() => {}}
+        onSelectReference={() => {}}
+        onTableSelectionChange={() => {}}
+        referencePreviewCache={{}}
+        selectedBlockId={firstBlock.id}
+        sources={[]}
+        workbookEnabled={false}
+        workbookSheetNamesBySourceId={{}}
+      />,
+    );
+
+    expect(screen.getAllByTestId("block-preview")).toHaveLength(2);
+  });
+
+  it("edits the active editing block", () => {
+    const model = createDefaultComposedEditorModel();
+    const firstBlock = model.blocks[0];
+    if (!firstBlock) {
+      throw new Error("Expected default composed model to contain blocks.");
+    }
+
+    render(
+      <BlockList
+        commandAvailability={testCommandAvailability}
+        editingBlockId={firstBlock.id}
+        getTableSelectionForBlock={() => ({ type: "table" })}
+        model={model}
+        onCancelEdit={() => {}}
+        onConfirmEdit={() => {}}
+        onDeleteBlock={() => {}}
+        onDuplicateBlock={() => {}}
+        onEditBlock={() => {}}
+        onInsertBlock={() => {}}
+        onModelChange={() => {}}
+        onMoveBlock={() => {}}
+        onRunCommand={() => {}}
         onSelectBlock={() => {}}
         onSelectReference={() => {}}
         onTableSelectionChange={() => {}}
@@ -117,13 +176,6 @@ describe("BlockList", () => {
     expect(screen.getByTestId("block-editor").textContent).toBe(
       firstBlock.type,
     );
-    const secondBlock = model.blocks[1];
-    if (!secondBlock) {
-      throw new Error("Expected default composed model to contain blocks.");
-    }
-    expect(screen.getByTestId("block-preview").textContent).toBe(
-      secondBlock.type,
-    );
   });
 
   it("renders a bottom insert menu for each block regardless of selection", () => {
@@ -135,13 +187,18 @@ describe("BlockList", () => {
 
     const { rerender } = render(
       <BlockList
+        commandAvailability={testCommandAvailability}
         getTableSelectionForBlock={() => ({ type: "table" })}
         model={model}
+        onCancelEdit={() => {}}
+        onConfirmEdit={() => {}}
         onDeleteBlock={() => {}}
         onDuplicateBlock={() => {}}
+        onEditBlock={() => {}}
         onInsertBlock={() => {}}
         onModelChange={() => {}}
         onMoveBlock={() => {}}
+        onRunCommand={() => {}}
         onSelectBlock={() => {}}
         onSelectReference={() => {}}
         onTableSelectionChange={() => {}}
@@ -159,13 +216,18 @@ describe("BlockList", () => {
 
     rerender(
       <BlockList
+        commandAvailability={testCommandAvailability}
         getTableSelectionForBlock={() => ({ type: "table" })}
         model={model}
+        onCancelEdit={() => {}}
+        onConfirmEdit={() => {}}
         onDeleteBlock={() => {}}
         onDuplicateBlock={() => {}}
+        onEditBlock={() => {}}
         onInsertBlock={() => {}}
         onModelChange={() => {}}
         onMoveBlock={() => {}}
+        onRunCommand={() => {}}
         onSelectBlock={() => {}}
         onSelectReference={() => {}}
         onTableSelectionChange={() => {}}

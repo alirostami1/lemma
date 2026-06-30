@@ -212,6 +212,8 @@ function ResponseBlockEditor({
         >
           Label
           <Input
+            data-studio-primary-editor-focus
+            data-studio-shortcut-scope="editing"
             disabled={disabled}
             id={`${block.id}-label`}
             onChange={(event) =>

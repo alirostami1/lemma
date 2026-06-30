@@ -169,6 +169,8 @@ export function RichTextEditor({
 
         <Textarea
           className="min-h-40 font-mono text-sm"
+          data-studio-primary-editor-focus
+          data-studio-shortcut-scope="editing"
           disabled={disabled}
           onBlur={updateSelection}
           onChange={(event) => updateMarkdown(event.currentTarget.value)}

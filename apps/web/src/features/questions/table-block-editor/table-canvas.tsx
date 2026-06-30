@@ -22,14 +22,20 @@ export function TableCanvas({
   onSelectionChange(selection: TableEditorSelection): void;
 }) {
   return (
+    // biome-ignore lint/a11y/useSemanticElements: This is a programmatic editor focus surface, not a form group.
     <div
-      className="group relative overflow-auto p-3 transition"
+      aria-label="Table block editor"
+      className="group relative min-w-0 overflow-auto p-3 transition"
+      data-studio-primary-editor-focus
+      data-studio-shortcut-scope="editing"
       onPointerDown={(event) => {
         event.stopPropagation();
         if (event.target === event.currentTarget) {
           onSelectionChange({ type: "table" });
         }
       }}
+      role="group"
+      tabIndex={-1}
     >
       <table className="w-full min-w-max border-separate border-spacing-2">
         {model.showColumnNames ? (
