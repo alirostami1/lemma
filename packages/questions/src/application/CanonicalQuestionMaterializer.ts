@@ -4,11 +4,12 @@ import { instrumentService } from "@lemma/observability";
 import type {
   BlueprintInlineContent,
   QuestionBlueprintDocument,
-  QuestionBlueprintResponseBlock,
+  QuestionBlueprintInputBlock,
+  QuestionBlueprintPrimitiveBlock,
   QuestionBlueprintSource,
-  QuestionBlueprintTableCell,
   QuestionBody,
   QuestionFieldRule,
+  QuestionPrimitiveBlock,
   QuestionReferenceSource,
   QuestionSolution,
   QuestionSourceEvidence,
@@ -112,69 +113,15 @@ export class CanonicalQuestionMaterializer {
       });
     }
 
-    const blocks = await Promise.all(
-      input.document.blocks.map(async (block) => {
-        if (block.type === "text") {
-          return {
-            ...block,
-            content: renderInline(block.content, referenceValues),
-          };
-        }
-        if (block.type === "rich_text") {
-          return {
-            ...block,
-            content: renderRichContent(block.content, referenceValues),
-          };
-        }
-        if (block.type === "separator") {
-          return block;
-        }
-        if (block.type === "response") {
-          this.addRule(rules, block, referenceValues);
-          return {
-            id: block.id,
-            responseFieldId: block.responseFieldId,
-            type: block.type,
-            ...(block.label === undefined ? {} : { label: block.label }),
-            ...(block.placeholder === undefined
-              ? {}
-              : { placeholder: block.placeholder }),
-          };
-        }
-        const cells = await Promise.all(
-          block.cells.map(async (cell) => {
-            if (cell.type === "content") {
-              return {
-                columnId: cell.columnId,
-                id: cell.id,
-                rowId: cell.rowId,
-                text: renderPlainText(cell.content, referenceValues),
-                type: "content" as const,
-              };
-            }
-            this.addRule(rules, cell, referenceValues);
-            return {
-              columnId: cell.columnId,
-              id: cell.id,
-              responseFieldId: cell.responseFieldId,
-              rowId: cell.rowId,
-              type: cell.type,
-              ...(cell.label === undefined ? {} : { label: cell.label }),
-              ...(cell.placeholder === undefined
-                ? {}
-                : { placeholder: cell.placeholder }),
-            };
-          }),
-        );
-        return { ...block, cells };
-      }),
+    const blocks = input.document.blocks.map((block) =>
+      this.materializeBlock(block, referenceValues, rules),
     );
 
     return {
       body: {
         blocks,
         responseFields: input.document.responseFields,
-        schemaVersion: 1,
+        schemaVersion: 2,
       },
       solution: { rules, schemaVersion: 1 },
       sourceEvidence: {
@@ -207,6 +154,66 @@ export class CanonicalQuestionMaterializer {
         references: sourcePlanReferences,
         schemaVersion: 1,
       },
+    };
+  }
+
+  private materializeBlock(
+    block: QuestionBlueprintDocument["blocks"][number],
+    referenceValues: ReadonlyMap<string, JsonValue>,
+    rules: QuestionSolution["rules"],
+  ): QuestionBody["blocks"][number] {
+    if (block.kind === "container") {
+      return {
+        ...block,
+        blocks: block.blocks.map((childBlock) =>
+          this.materializeBlock(childBlock, referenceValues, rules),
+        ),
+      };
+    }
+    if (block.kind === "complex") {
+      return {
+        ...block,
+        cells: block.cells.map((cell) => ({
+          ...cell,
+          blocks: cell.blocks.map((cellBlock) =>
+            this.materializePrimitiveBlock(cellBlock, referenceValues, rules),
+          ),
+        })),
+      };
+    }
+    return this.materializePrimitiveBlock(block, referenceValues, rules);
+  }
+
+  private materializePrimitiveBlock(
+    block: QuestionBlueprintPrimitiveBlock,
+    referenceValues: ReadonlyMap<string, JsonValue>,
+    rules: QuestionSolution["rules"],
+  ): QuestionPrimitiveBlock {
+    if (block.type === "text") {
+      return {
+        ...block,
+        content: renderInline(block.content, referenceValues),
+      };
+    }
+    if (block.type === "rich_text") {
+      return {
+        ...block,
+        content: renderRichContent(block.content, referenceValues),
+      };
+    }
+    if (block.type === "separator") {
+      return block;
+    }
+    this.addRule(rules, block, referenceValues);
+    return {
+      id: block.id,
+      kind: "primitive",
+      responseFieldId: block.responseFieldId,
+      type: "input",
+      ...(block.label === undefined ? {} : { label: block.label }),
+      ...(block.placeholder === undefined
+        ? {}
+        : { placeholder: block.placeholder }),
     };
   }
 
@@ -249,9 +256,7 @@ export class CanonicalQuestionMaterializer {
 
   private addRule(
     rules: QuestionFieldRule[],
-    block:
-      | QuestionBlueprintResponseBlock
-      | Extract<QuestionBlueprintTableCell, { type: "response" }>,
+    block: QuestionBlueprintInputBlock,
     referenceValues: ReadonlyMap<string, JsonValue>,
   ) {
     if (block.grading.mode === "manual") {
@@ -278,9 +283,7 @@ export class CanonicalQuestionMaterializer {
 function toRule(
   responseFieldId: string,
   correctValue: JsonValue,
-  block:
-    | QuestionBlueprintResponseBlock
-    | Extract<QuestionBlueprintTableCell, { type: "response" }>,
+  block: QuestionBlueprintInputBlock,
 ): QuestionFieldRule {
   if (block.grading.mode === "number") {
     const numericCorrectValue = Number(correctValue);
@@ -329,23 +332,6 @@ function renderInline(
       type: "value",
     };
   });
-}
-
-function renderPlainText(
-  content: BlueprintInlineContent[],
-  referenceValues: ReadonlyMap<string, JsonValue>,
-): string {
-  return content
-    .map((part) =>
-      part.type === "text"
-        ? part.text
-        : displayValue(
-            inlineReferenceValue(part, referenceValues) ??
-              part.fallbackText ??
-              "",
-          ),
-    )
-    .join("");
 }
 
 function renderRichContent(

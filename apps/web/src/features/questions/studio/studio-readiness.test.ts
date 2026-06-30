@@ -62,7 +62,7 @@ describe("studio readiness", () => {
       ],
       references: [],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     const readiness = getStudioReadiness(model, readyContext);
@@ -346,7 +346,7 @@ describe("studio readiness", () => {
       ],
       references: [],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     const readiness = getStudioReadiness(model, readyContext);
@@ -362,14 +362,19 @@ describe("studio readiness", () => {
         createTableBlock("table_1", {
           cells: [
             {
+              blocks: [
+                {
+                  correctValueSource: { type: "literal", value: 1 },
+                  grading: { mode: "exact" },
+                  id: "input_1",
+                  points: 1,
+                  responseFieldId: "answer_1",
+                  type: "input",
+                },
+              ],
               columnId: "column_1",
-              correctValueSource: { type: "literal", value: 1 },
-              grading: { mode: "exact" },
               id: "cell_1",
-              points: 1,
-              responseFieldId: "answer_1",
               rowId: "row_1",
-              type: "response",
             },
           ],
           columns: [{ id: "column_1", label: "Column 1" }],
@@ -382,7 +387,7 @@ describe("studio readiness", () => {
       ],
       references: [],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     const readiness = getStudioReadiness(model, readyContext);

@@ -1,5 +1,5 @@
+import { RichTextBlockRenderer } from "#/features/questions/presentation/rich-text-block-renderer";
 import { ResponseQuestionBlock } from "./blocks/response-question-block";
-import { RichTextQuestionBlock } from "./blocks/rich-text-question-block";
 import { TableQuestionBlock } from "./blocks/table-question-block";
 import { TextQuestionBlock } from "./blocks/text-question-block";
 import type {
@@ -69,7 +69,7 @@ function QuestionBlock({
       );
     case "rich_text":
       return (
-        <RichTextQuestionBlock
+        <RichTextBlockRenderer
           content={block.content}
           referencePreviewCache={referencePreviewCache}
         />
@@ -95,6 +95,27 @@ function QuestionBlock({
           onAnswerChange={onAnswerChange}
           referencePreviewCache={referencePreviewCache}
         />
+      );
+    case "container":
+      return (
+        <section className="grid gap-3 rounded-md border p-3">
+          {block.title ? (
+            <h2 className="text-sm font-medium">{block.title}</h2>
+          ) : null}
+          <div className="grid gap-4">
+            {block.blocks.map((childBlock) => (
+              <QuestionBlock
+                answer={answer}
+                block={childBlock}
+                disabled={disabled}
+                key={childBlock.id}
+                onAnswerChange={onAnswerChange}
+                question={question}
+                referencePreviewCache={referencePreviewCache}
+              />
+            ))}
+          </div>
+        </section>
       );
   }
 }

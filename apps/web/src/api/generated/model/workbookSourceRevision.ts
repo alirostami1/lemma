@@ -4,6 +4,7 @@
  * Lemma API
  * OpenAPI spec version: 0.1.0
  */
+import type { UuidV7 } from "./uuidV7.ts";
 import type { WorkbookSourceRevisionKind } from "./workbookSourceRevisionKind.ts";
 
 export interface WorkbookSourceRevision {
@@ -14,16 +15,13 @@ export interface WorkbookSourceRevision {
   /** @minLength 1 */
   contentType: string;
   createdAt: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  createdByUserId: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  id: string;
+  createdByUserId: UuidV7;
+  id: UuidV7;
   kind: WorkbookSourceRevisionKind;
   /**
    * @nullable
    * @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
    */
   parentRevisionId: string | null;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  sourceDocumentId: string;
+  sourceDocumentId: UuidV7;
 }

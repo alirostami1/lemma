@@ -417,7 +417,7 @@ export async function up(db: MigrationDb): Promise<void> {
     )
     .addCheckConstraint(
       "question_blueprints_document_schema_version_check",
-      sql`document @> '{"schemaVersion":1}'::jsonb`,
+      sql`document @> '{"schemaVersion":2}'::jsonb`,
     )
     .addCheckConstraint(
       "question_blueprints_document_blocks_check",
@@ -486,7 +486,7 @@ export async function up(db: MigrationDb): Promise<void> {
     )
     .addCheckConstraint(
       "question_blueprint_versions_document_schema_version_check",
-      sql`document @> '{"schemaVersion":1}'::jsonb`,
+      sql`document @> '{"schemaVersion":2}'::jsonb`,
     )
     .addCheckConstraint(
       "question_blueprint_versions_document_blocks_check",

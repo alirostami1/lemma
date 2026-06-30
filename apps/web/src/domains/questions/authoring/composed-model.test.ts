@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyInputGrading,
   type ComposedEditorModel,
   createDefaultComposedEditorModel,
   createReferenceDraft,
   createResponseBlock,
+  createTableBlock,
   createTextBlock,
   extractUsedReferenceIdsFromComposedEditorModel,
   extractWorkbookReferenceRefsFromComposedEditorModel,
@@ -11,10 +13,21 @@ import {
   getReferenceUsage,
   getUnusedComposedReferences,
   stripUnusedComposedReferences,
+  type TableEditorInputBlock,
   tableEditorModelToStaticPreviewModel,
 } from "#/domains/questions/authoring";
+import { validateComposedEditorModel } from "./canonical/validation";
 
 describe("composed authoring helpers", () => {
+  it("namespaces default table primitive ids by table block id", () => {
+    const tables = [createTableBlock("table_1"), createTableBlock("table_2")];
+    const primitiveIds = tables.flatMap((table) =>
+      table.table.cells.flatMap((cell) => cell.blocks.map((block) => block.id)),
+    );
+
+    expect(new Set(primitiveIds).size).toBe(primitiveIds.length);
+  });
+
   it("creates a default composed editor model", () => {
     expect(createDefaultComposedEditorModel()).toEqual({
       blocks: [
@@ -27,6 +40,7 @@ describe("composed authoring helpers", () => {
           correctValueSource: { type: "literal", value: "" },
           grading: { mode: "exact" },
           id: "response_1",
+          label: undefined,
           placeholder: "Answer",
           points: 1,
           responseFieldId: "answer_1",
@@ -42,8 +56,179 @@ describe("composed authoring helpers", () => {
           type: "text",
         },
       ],
-      schemaVersion: 1,
+      schemaVersion: 2,
     });
+  });
+
+  it("applies the input grading correct-source contract", () => {
+    const manualInput: TableEditorInputBlock = {
+      grading: { mode: "manual" },
+      id: "input_1",
+      points: 1,
+      responseFieldId: "answer_1",
+      type: "input",
+    };
+    const exactInput = applyInputGrading(manualInput, { mode: "exact" });
+
+    expect(exactInput).toEqual({
+      ...manualInput,
+      correctValueSource: { type: "literal", value: "" },
+      grading: { mode: "exact" },
+    });
+    expect(
+      applyInputGrading(
+        {
+          ...exactInput,
+          correctValueSource: { type: "literal", value: 42 },
+        },
+        { mode: "manual" },
+      ),
+    ).toEqual({
+      ...manualInput,
+      grading: { mode: "manual" },
+    });
+  });
+
+  it("rejects non-manual inputs without a correct value source", () => {
+    const model: ComposedEditorModel = {
+      blocks: [
+        {
+          grading: { mode: "exact" },
+          id: "response_1",
+          points: 1,
+          responseFieldId: "answer_1",
+          type: "response",
+        },
+      ],
+      references: [],
+      responseFields: [{ id: "answer_1", type: "text" }],
+      schemaVersion: 2,
+    };
+
+    expect(() => validateComposedEditorModel(model)).toThrow(
+      "Input block response_1 is missing correct value source for exact grading.",
+    );
+  });
+
+  it("rejects nested non-manual inputs without a correct value source", () => {
+    const model: ComposedEditorModel = {
+      blocks: [
+        {
+          blocks: [
+            {
+              grading: { mode: "case_insensitive_text" },
+              id: "response_1",
+              points: 1,
+              responseFieldId: "answer_1",
+              type: "response",
+            },
+          ],
+          containerType: "page",
+          id: "page_1",
+          type: "container",
+        },
+      ],
+      references: [],
+      responseFields: [{ id: "answer_1", type: "text" }],
+      schemaVersion: 2,
+    };
+
+    expect(() => validateComposedEditorModel(model)).toThrow(
+      "Input block response_1 is missing correct value source for case_insensitive_text grading.",
+    );
+  });
+
+  it("rejects table non-manual inputs without a correct value source", () => {
+    const model: ComposedEditorModel = {
+      blocks: [
+        createTableBlock("table_1", {
+          blockId: "table_1",
+          cells: [
+            {
+              blocks: [
+                {
+                  grading: {
+                    mode: "number",
+                    tolerance: { type: "absolute", value: 0 },
+                  },
+                  id: "cell_input_1",
+                  points: 1,
+                  responseFieldId: "answer_1",
+                  type: "input",
+                },
+              ],
+              columnId: "column_1",
+              id: "cell_1",
+              rowId: "row_1",
+            },
+          ],
+          columns: [{ id: "column_1", label: "Column" }],
+          prompt: "",
+          responseFields: [{ id: "answer_1", type: "number" }],
+          rows: [{ id: "row_1", label: "Row" }],
+          showColumnNames: true,
+          showRowNames: true,
+        }),
+      ],
+      references: [],
+      responseFields: [],
+      schemaVersion: 2,
+    };
+
+    expect(() => validateComposedEditorModel(model)).toThrow(
+      "Input block cell_input_1 in cell cell_1 is missing correct value source for number grading.",
+    );
+  });
+
+  it("allows manual inputs without a correct value source", () => {
+    const model: ComposedEditorModel = {
+      blocks: [
+        {
+          blocks: [
+            {
+              grading: { mode: "manual" },
+              id: "response_1",
+              points: 1,
+              responseFieldId: "answer_1",
+              type: "response",
+            },
+            createTableBlock("table_1", {
+              blockId: "table_1",
+              cells: [
+                {
+                  blocks: [
+                    {
+                      grading: { mode: "manual" },
+                      id: "cell_input_1",
+                      points: 1,
+                      responseFieldId: "table_answer_1",
+                      type: "input",
+                    },
+                  ],
+                  columnId: "column_1",
+                  id: "cell_1",
+                  rowId: "row_1",
+                },
+              ],
+              columns: [{ id: "column_1", label: "Column" }],
+              prompt: "",
+              responseFields: [{ id: "table_answer_1", type: "text" }],
+              rows: [{ id: "row_1", label: "Row" }],
+              showColumnNames: true,
+              showRowNames: true,
+            }),
+          ],
+          containerType: "page",
+          id: "page_1",
+          type: "container",
+        },
+      ],
+      references: [],
+      responseFields: [{ id: "answer_1", type: "text" }],
+      schemaVersion: 2,
+    };
+
+    expect(() => validateComposedEditorModel(model)).not.toThrow();
   });
 
   it("creates a reference draft with a fresh id", () => {
@@ -53,7 +238,7 @@ describe("composed authoring helpers", () => {
         { id: "reference_1", source: { type: "literal", value: "alpha" } },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(createReferenceDraft(model)).toEqual({
@@ -109,7 +294,7 @@ describe("composed authoring helpers", () => {
           type: "text",
         },
       ],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(extractUsedReferenceIdsFromComposedEditorModel(model)).toEqual([
@@ -147,24 +332,47 @@ describe("composed authoring helpers", () => {
           table: {
             cells: [
               {
+                blocks: [
+                  {
+                    content: [
+                      { referenceId: "content_ref", type: "reference" },
+                    ],
+                    id: "cell_text_1",
+                    type: "text",
+                  },
+                  {
+                    content: {
+                      content: [
+                        {
+                          content: [
+                            {
+                              referenceId: "rich_ref",
+                              type: "reference",
+                            },
+                          ],
+                          type: "paragraph",
+                        },
+                      ],
+                      type: "doc",
+                    },
+                    id: "cell_rich_1",
+                    type: "rich_text",
+                  },
+                  {
+                    correctValueSource: {
+                      referenceId: "table_ref",
+                      type: "reference",
+                    },
+                    grading: { mode: "exact" },
+                    id: "cell_input_1",
+                    points: 1,
+                    responseFieldId: "table_answer_1",
+                    type: "input",
+                  },
+                ],
                 columnId: "column_1",
-                content: [{ referenceId: "content_ref", type: "reference" }],
                 id: "cell_1",
                 rowId: "row_1",
-                type: "content",
-              },
-              {
-                columnId: "column_1",
-                correctValueSource: {
-                  referenceId: "table_ref",
-                  type: "reference",
-                },
-                grading: { mode: "exact" },
-                id: "cell_2",
-                points: 1,
-                responseFieldId: "table_answer_1",
-                rowId: "row_1",
-                type: "response",
               },
             ],
             columns: [{ id: "column_1", label: "Column 1" }],
@@ -199,6 +407,10 @@ describe("composed authoring helpers", () => {
           id: "table_ref",
           source: { type: "literal", value: "delta" },
         },
+        {
+          id: "rich_ref",
+          source: { type: "literal", value: "epsilon" },
+        },
       ],
       responseFields: [
         {
@@ -206,7 +418,7 @@ describe("composed authoring helpers", () => {
           type: "text",
         },
       ],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(getReferenceUsage(model)).toEqual(
@@ -237,7 +449,21 @@ describe("composed authoring helpers", () => {
             {
               blockId: "table_1",
               cellId: "cell_1",
+              cellBlockId: "cell_text_1",
               inlineContentIndex: 0,
+              type: "table_content_cell",
+            },
+          ],
+        ],
+        [
+          "rich_ref",
+          [
+            {
+              blockId: "table_1",
+              cellId: "cell_1",
+              cellBlockId: "cell_rich_1",
+              inlineContentIndex: 0,
+              richNodePath: [0],
               type: "table_content_cell",
             },
           ],
@@ -247,7 +473,8 @@ describe("composed authoring helpers", () => {
           [
             {
               blockId: "table_1",
-              cellId: "cell_2",
+              cellId: "cell_1",
+              cellBlockId: "cell_input_1",
               responseFieldId: "table_answer_1",
               type: "table_answer_cell",
             },
@@ -289,7 +516,7 @@ describe("composed authoring helpers", () => {
           type: "text",
         },
       ],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(getComposedEditorReferenceUsage(model)).toEqual(
@@ -314,11 +541,16 @@ describe("composed authoring helpers", () => {
       tableEditorModelToStaticPreviewModel({
         cells: [
           {
+            blocks: [
+              {
+                content: [{ text: "001", type: "text" }],
+                id: "cell_1_text",
+                type: "text",
+              },
+            ],
             columnId: "column_1",
-            content: [{ text: "001", type: "text" }],
             id: "cell_1",
             rowId: "row_1",
-            type: "content",
           },
         ],
         columns: [{ id: "column_1", label: "Column 1" }],
@@ -331,11 +563,16 @@ describe("composed authoring helpers", () => {
     ).toEqual({
       cells: [
         {
+          blocks: [
+            {
+              content: [{ text: "001", type: "text" }],
+              id: "cell_1_text",
+              type: "text",
+            },
+          ],
           columnId: "column_1",
-          content: [{ text: "001", type: "text" }],
           id: "cell_1",
           rowId: "row_1",
-          type: "content",
         },
       ],
       columns: [{ id: "column_1", label: "Column 1" }],

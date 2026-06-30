@@ -33,19 +33,22 @@ import { assertReferenceIdMatchesStructuredSource } from "./reference-key.js";
 
 export type QuestionBlueprintTextBlock = {
   id: string;
+  kind: "primitive";
   type: "text";
   content: BlueprintInlineContent[];
 };
 
 export type QuestionBlueprintRichTextBlock = {
   id: string;
+  kind: "primitive";
   type: "rich_text";
   content: RichContent;
 };
 
-export type QuestionBlueprintResponseBlock = {
+export type QuestionBlueprintInputBlock = {
   id: string;
-  type: "response";
+  kind: "primitive";
+  type: "input";
   responseFieldId: string;
   label?: string;
   placeholder?: string;
@@ -56,32 +59,34 @@ export type QuestionBlueprintResponseBlock = {
 
 export type QuestionBlueprintSeparatorBlock = {
   id: string;
+  kind: "primitive";
   type: "separator";
 };
 
-export type QuestionBlueprintTableCell =
-  | {
-      id: string;
-      rowId: string;
-      columnId: string;
-      type: "content";
-      content: BlueprintInlineContent[];
-    }
-  | {
-      id: string;
-      rowId: string;
-      columnId: string;
-      type: "response";
-      responseFieldId: string;
-      label?: string;
-      placeholder?: string;
-      correctValueSource?: QuestionValueExpression;
-      points: number;
-      grading: QuestionGrading;
-    };
+export type QuestionBlueprintPrimitiveBlock =
+  | QuestionBlueprintTextBlock
+  | QuestionBlueprintRichTextBlock
+  | QuestionBlueprintInputBlock
+  | QuestionBlueprintSeparatorBlock;
+
+export type QuestionBlueprintContainerBlock = {
+  id: string;
+  kind: "container";
+  type: "page" | "step";
+  title?: string;
+  blocks: QuestionBlueprintBlock[];
+};
+
+export type QuestionBlueprintTableCell = {
+  id: string;
+  rowId: string;
+  columnId: string;
+  blocks: QuestionBlueprintPrimitiveBlock[];
+};
 
 export type QuestionBlueprintTableBlock = {
   id: string;
+  kind: "complex";
   type: "table";
   showColumnNames: boolean;
   showRowNames: boolean;
@@ -90,15 +95,15 @@ export type QuestionBlueprintTableBlock = {
   cells: QuestionBlueprintTableCell[];
 };
 
+export type QuestionBlueprintComplexBlock = QuestionBlueprintTableBlock;
+
 export type QuestionBlueprintBlock =
-  | QuestionBlueprintTextBlock
-  | QuestionBlueprintRichTextBlock
-  | QuestionBlueprintResponseBlock
-  | QuestionBlueprintTableBlock
-  | QuestionBlueprintSeparatorBlock;
+  | QuestionBlueprintPrimitiveBlock
+  | QuestionBlueprintContainerBlock
+  | QuestionBlueprintComplexBlock;
 
 export type QuestionBlueprintDocument = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   blocks: QuestionBlueprintBlock[];
   responseFields: QuestionResponseField[];
   references: QuestionReference[];
@@ -112,7 +117,7 @@ export function questionBlueprintDocument(
     "question blueprint document must be an object",
     fail,
   );
-  assertSchemaVersion(input, fail);
+  assertSchemaVersion(input, fail, 2);
   const responseFields = validatedResponseFields(input, fail);
   const references = validatedReferences(input.references, fail);
   const referenceIds = new Set(references.map((reference) => reference.id));
@@ -120,13 +125,14 @@ export function questionBlueprintDocument(
     input.blocks,
     responseFieldIds(responseFields),
     referenceIds,
+    createBlockIdRegistry(),
     fail,
   );
   return {
     blocks,
     references,
     responseFields,
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 
@@ -173,66 +179,135 @@ function validatedBlueprintBlocks(
   blocks: unknown,
   responseIds: ReadonlySet<string>,
   referenceIds: ReadonlySet<string>,
+  blockIds: BlockIdRegistry,
   failWith: (message: string) => never,
 ): QuestionBlueprintBlock[] {
   assertArray(blocks, "blocks", failWith);
-  assertUniqueIds(blocks, "blocks", failWith);
   return blocks.map((block) => {
     assertPlainRecord(block, "block must be an object", failWith);
     assertNonEmptyString(block.id, "block.id", failWith);
-    if (block.type === "text") {
-      return {
-        content: blueprintInlineContent(block.content, failWith, referenceIds),
-        id: block.id,
-        type: "text",
-      };
-    }
-    if (block.type === "rich_text") {
-      return {
-        content: richContent(block.content, failWith),
-        id: block.id,
-        type: "rich_text",
-      };
-    }
-    if (block.type === "response") {
-      return validatedBlueprintResponseBlock(
+    blockIds.register(block.id, "block", failWith);
+    if (block.kind === "primitive") {
+      return validatedBlueprintPrimitiveBlock(
         block,
         responseIds,
         referenceIds,
         failWith,
       );
     }
-    if (block.type === "separator") {
-      return { id: block.id, type: "separator" };
+    if (block.kind === "container") {
+      return validatedBlueprintContainerBlock(
+        block,
+        responseIds,
+        referenceIds,
+        blockIds,
+        failWith,
+      );
     }
-    if (block.type === "table") {
+    if (block.kind === "complex" && block.type === "table") {
       return validatedBlueprintTableBlock(
         block,
         responseIds,
         referenceIds,
+        blockIds,
         failWith,
       );
     }
-    return failWith("block type is invalid");
+    return failWith("block kind or type is invalid");
   });
 }
 
-function validatedBlueprintResponseBlock(
+function validatedBlueprintPrimitiveBlock(
   block: PlainObject,
   responseIds: ReadonlySet<string>,
   referenceIds: ReadonlySet<string>,
   failWith: (message: string) => never,
-): QuestionBlueprintResponseBlock {
+): QuestionBlueprintPrimitiveBlock {
+  if (block.type === "text") {
+    return {
+      content: blueprintInlineContent(block.content, failWith, referenceIds),
+      id: block.id as string,
+      kind: "primitive",
+      type: "text",
+    };
+  }
+  if (block.type === "rich_text") {
+    return {
+      content: richContent(block.content, failWith),
+      id: block.id as string,
+      kind: "primitive",
+      type: "rich_text",
+    };
+  }
+  if (block.type === "input") {
+    return validatedBlueprintInputBlock(
+      block,
+      responseIds,
+      referenceIds,
+      failWith,
+    );
+  }
+  if (block.type === "separator") {
+    return { id: block.id as string, kind: "primitive", type: "separator" };
+  }
+  return failWith("primitive block type is invalid");
+}
+
+function validatedBlueprintContainerBlock(
+  block: PlainObject,
+  responseIds: ReadonlySet<string>,
+  referenceIds: ReadonlySet<string>,
+  blockIds: BlockIdRegistry,
+  failWith: (message: string) => never,
+): QuestionBlueprintContainerBlock {
+  const type = block.type;
+  if (type !== "page" && type !== "step") {
+    failWith("container block type is invalid");
+  }
+  if (block.title !== undefined) {
+    assertString(block.title, "container.title", failWith);
+  }
+  return {
+    blocks: validatedBlueprintBlocks(
+      block.blocks,
+      responseIds,
+      referenceIds,
+      blockIds,
+      failWith,
+    ),
+    id: block.id as string,
+    kind: "container",
+    ...(block.title === undefined ? {} : { title: block.title }),
+    type,
+  };
+}
+
+function validatedBlueprintInputBlock(
+  block: PlainObject,
+  responseIds: ReadonlySet<string>,
+  referenceIds: ReadonlySet<string>,
+  failWith: (message: string) => never,
+): QuestionBlueprintInputBlock {
   assertNonEmptyString(block.responseFieldId, "responseFieldId", failWith);
   if (!responseIds.has(block.responseFieldId)) {
-    failWith("response block references unknown response field");
+    failWith(
+      `input block ${block.id} references unknown response field ${block.responseFieldId}`,
+    );
   }
-  const out: QuestionBlueprintResponseBlock = {
-    grading: grading(block.grading, failWith),
+  const inputGrading = grading(block.grading, failWith);
+  if (
+    inputGrading.mode !== "manual" &&
+    block.correctValueSource === undefined
+  ) {
+    failWith(`non-manual input block ${block.id} requires correctValueSource`);
+  }
+  const out: QuestionBlueprintInputBlock = {
+    grading: inputGrading,
     id: block.id as string,
-    points: positiveNumber(block.points, "response block points", failWith),
+    kind: "primitive",
+    points: positiveNumber(block.points, "input block points", failWith),
     responseFieldId: block.responseFieldId,
-    type: "response",
+    type: "input",
   };
   addOptionalStrings(out, block, ["label", "placeholder"], failWith);
   if (block.correctValueSource !== undefined) {
@@ -249,6 +324,7 @@ function validatedBlueprintTableBlock(
   block: PlainObject,
   responseIds: ReadonlySet<string>,
   referenceIds: ReadonlySet<string>,
+  blockIds: BlockIdRegistry,
   failWith: (message: string) => never,
 ): QuestionBlueprintTableBlock {
   assertBoolean(block.showColumnNames, "table.showColumnNames", failWith);
@@ -272,49 +348,67 @@ function validatedBlueprintTableBlock(
       failWith("table cells must be unique by rowId and columnId");
     }
     positions.add(position);
-    if (cell.type === "content") {
-      return {
-        columnId: cell.columnId,
-        content: blueprintInlineContent(cell.content, failWith, referenceIds),
-        id: cell.id,
-        rowId: cell.rowId,
-        type: "content" as const,
-      };
-    }
-    if (cell.type === "response") {
-      assertNonEmptyString(cell.responseFieldId, "responseFieldId", failWith);
-      if (!responseIds.has(cell.responseFieldId)) {
-        failWith("response cell references unknown response field");
-      }
-      const out: Extract<QuestionBlueprintTableCell, { type: "response" }> = {
-        columnId: cell.columnId,
-        grading: grading(cell.grading, failWith),
-        id: cell.id,
-        points: positiveNumber(cell.points, "response cell points", failWith),
-        responseFieldId: cell.responseFieldId,
-        rowId: cell.rowId,
-        type: "response",
-      };
-      addOptionalStrings(out, cell, ["label", "placeholder"], failWith);
-      if (cell.correctValueSource !== undefined) {
-        out.correctValueSource = questionValueExpression(
-          cell.correctValueSource,
+    assertArray(cell.blocks, "table cell blocks", failWith);
+    return {
+      blocks: cell.blocks.map((cellBlock) => {
+        assertPlainRecord(
+          cellBlock,
+          "table cell block must be an object",
           failWith,
-          referenceIds,
         );
-      }
-      return out;
-    }
-    return failWith("table cell type is invalid");
+        assertNonEmptyString(cellBlock.id, "cell block.id", failWith);
+        blockIds.register(
+          cellBlock.id,
+          `table cell ${cell.id} block`,
+          failWith,
+        );
+        if (cellBlock.kind !== "primitive") {
+          failWith("table cell blocks must be primitive blocks");
+        }
+        return validatedBlueprintPrimitiveBlock(
+          cellBlock,
+          responseIds,
+          referenceIds,
+          failWith,
+        );
+      }),
+      columnId: cell.columnId,
+      id: cell.id,
+      rowId: cell.rowId,
+    };
   });
   return {
     cells,
     columns,
     id: block.id as string,
+    kind: "complex",
     rows,
     showColumnNames: block.showColumnNames,
     showRowNames: block.showRowNames,
     type: "table",
+  };
+}
+
+type BlockIdRegistry = {
+  register(
+    id: string,
+    label: string,
+    failWith: (message: string) => never,
+  ): void;
+};
+
+function createBlockIdRegistry(): BlockIdRegistry {
+  const ids = new Map<string, string>();
+  return {
+    register(id, label, failWith) {
+      const existingLabel = ids.get(id);
+      if (existingLabel !== undefined) {
+        failWith(
+          `block id ${id} is duplicated between ${existingLabel} and ${label}`,
+        );
+      }
+      ids.set(id, label);
+    },
   };
 }
 

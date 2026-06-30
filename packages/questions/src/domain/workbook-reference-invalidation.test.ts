@@ -214,12 +214,13 @@ describe("workbook reference invalidation", () => {
           {
             content: [{ text: "No inserted values here.", type: "text" }],
             id: "block_1",
+            kind: "primitive",
             type: "text",
           },
         ],
         references: [reference({ ref: "Sheet1!A1", type: "workbook_cell" })],
         responseFields: [],
-        schemaVersion: 1,
+        schemaVersion: 2,
       }),
       sourceId: "sourceA",
       targetAvailability: availableTargets([]),
@@ -534,6 +535,7 @@ function documentWithTextInlineReference(input: {
         },
       ],
       id: "block_1",
+      kind: "primitive",
       type: "text",
     },
   ]);
@@ -548,15 +550,22 @@ function documentWithTableContentReference(input: {
     {
       cells: [
         {
+          blocks: [
+            {
+              content: [{ referenceId: ref.id, type: "reference" }],
+              id: "cell_1_text",
+              kind: "primitive",
+              type: "text",
+            },
+          ],
           columnId: "column_1",
-          content: [{ referenceId: ref.id, type: "reference" }],
           id: "cell_1",
           rowId: "row_1",
-          type: "content",
         },
       ],
       columns: [{ id: "column_1", label: "Column" }],
       id: "block_1",
+      kind: "complex",
       rows: [{ id: "row_1", label: "Row" }],
       showColumnNames: true,
       showRowNames: true,
@@ -581,9 +590,10 @@ function documentWithResponseCorrectValueReference(input: {
         },
         grading: { mode: "exact" },
         id: "block_1",
+        kind: "primitive",
         points: 1,
         responseFieldId: "answer",
-        type: "response",
+        type: "input",
       },
     ],
     [{ id: "answer", type: "text" }],
@@ -601,22 +611,29 @@ function documentWithTableResponseCorrectValueReference(input: {
       {
         cells: [
           {
+            blocks: [
+              {
+                correctValueSource: {
+                  referenceId: ref.id,
+                  schemaVersion: 1,
+                  type: "reference",
+                },
+                grading: { mode: "exact" },
+                id: "cell_1_input",
+                kind: "primitive",
+                points: 1,
+                responseFieldId: "answer",
+                type: "input",
+              },
+            ],
             columnId: "column_1",
-            correctValueSource: {
-              referenceId: ref.id,
-              schemaVersion: 1,
-              type: "reference",
-            },
-            grading: { mode: "exact" },
             id: "cell_1",
-            points: 1,
-            responseFieldId: "answer",
             rowId: "row_1",
-            type: "response",
           },
         ],
         columns: [{ id: "column_1", label: "Column" }],
         id: "block_1",
+        kind: "complex",
         rows: [{ id: "row_1", label: "Row" }],
         showColumnNames: true,
         showRowNames: true,
@@ -649,6 +666,7 @@ function documentWithRichTextReference(input: {
           type: "doc",
         },
         id: "block_1",
+        kind: "primitive",
         type: "rich_text",
       },
     ]);
@@ -690,6 +708,7 @@ function documentWithRichTextReference(input: {
           type: "doc",
         },
         id: "block_1",
+        kind: "primitive",
         type: "rich_text",
       },
     ]);
@@ -706,6 +725,7 @@ function documentWithRichTextReference(input: {
         type: "doc",
       },
       id: "block_1",
+      kind: "primitive",
       type: "rich_text",
     },
   ]);
@@ -735,7 +755,7 @@ function documentWithReference(
       },
     ],
     responseFields,
-    schemaVersion: 1,
+    schemaVersion: 2,
   });
 }
 
@@ -772,6 +792,7 @@ function unsafeDocumentWithMalformedReference(input: {
       {
         content: [{ referenceId: "malformed_ref", type: "reference" }],
         id: "block_1",
+        kind: "primitive",
         type: "text",
       },
     ],
@@ -787,6 +808,6 @@ function unsafeDocumentWithMalformedReference(input: {
       },
     ],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   } as QuestionBlueprintDocument;
 }

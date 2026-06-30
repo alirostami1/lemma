@@ -4,6 +4,7 @@
  * Lemma API
  * OpenAPI spec version: 0.1.0
  */
+import type { UuidV7 } from "./uuidV7.ts";
 
 export interface WorkbookEditorOutputFile {
   /** @exclusiveMinimum 0 */
@@ -12,8 +13,7 @@ export interface WorkbookEditorOutputFile {
   checksumSha256: string;
   /** @minLength 1 */
   contentType: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  id: string;
+  id: UuidV7;
   /** @minLength 1 */
   originalName: string;
 }

@@ -4,20 +4,18 @@
  * Lemma API
  * OpenAPI spec version: 0.1.0
  */
+import type { PublicQuestionBlueprintTableBlockKind } from "./publicQuestionBlueprintTableBlockKind.ts";
 import type { PublicQuestionBlueprintTableBlockType } from "./publicQuestionBlueprintTableBlockType.ts";
-import type { PublicQuestionBlueprintTableContentCell } from "./publicQuestionBlueprintTableContentCell.ts";
-import type { PublicQuestionBlueprintTableResponseCell } from "./publicQuestionBlueprintTableResponseCell.ts";
+import type { PublicQuestionBlueprintTableCell } from "./publicQuestionBlueprintTableCell.ts";
 import type { QuestionTableColumn } from "./questionTableColumn.ts";
 import type { QuestionTableRow } from "./questionTableRow.ts";
 
 export interface PublicQuestionBlueprintTableBlock {
-  cells: (
-    | PublicQuestionBlueprintTableContentCell
-    | PublicQuestionBlueprintTableResponseCell
-  )[];
+  cells: PublicQuestionBlueprintTableCell[];
   columns: QuestionTableColumn[];
   /** @minLength 1 */
   id: string;
+  kind: PublicQuestionBlueprintTableBlockKind;
   rows: QuestionTableRow[];
   showColumnNames: boolean;
   showRowNames: boolean;

@@ -125,7 +125,7 @@ function modelWithWorkbookReference(
       },
     ],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 

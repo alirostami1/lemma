@@ -90,6 +90,7 @@ describe("CanonicalQuestionMaterializer", () => {
             },
           ],
           id: "prompt",
+          kind: "primitive",
           type: "text",
         },
         {
@@ -100,9 +101,10 @@ describe("CanonicalQuestionMaterializer", () => {
           },
           grading: { mode: "exact" },
           id: "answer",
+          kind: "primitive",
           points: 1,
           responseFieldId: "answer",
-          type: "response",
+          type: "input",
         },
       ],
       references: [
@@ -130,7 +132,7 @@ describe("CanonicalQuestionMaterializer", () => {
         },
       ],
       responseFields: [{ id: "answer", type: "number" }],
-      schemaVersion: 1,
+      schemaVersion: 2,
     });
 
     const result = await materializer.materialize({
@@ -157,6 +159,7 @@ describe("CanonicalQuestionMaterializer", () => {
         },
       ],
       id: "prompt",
+      kind: "primitive",
       type: "text",
     });
     assert.deepEqual(result.solution.rules[0], {
@@ -217,22 +220,29 @@ describe("CanonicalQuestionMaterializer", () => {
         {
           cells: [
             {
-              columnId: "column_1",
-              content: [
+              blocks: [
                 {
-                  fallbackText: "fallback",
-                  rangeCell: { columnOffset: 0, rowOffset: 1 },
-                  referenceId: "workbook:source_1:range:Sheet1:A1:B2",
-                  type: "reference",
+                  content: [
+                    {
+                      fallbackText: "fallback",
+                      rangeCell: { columnOffset: 0, rowOffset: 1 },
+                      referenceId: "workbook:source_1:range:Sheet1:A1:B2",
+                      type: "reference",
+                    },
+                  ],
+                  id: "cell_1_1_text",
+                  kind: "primitive",
+                  type: "text",
                 },
               ],
+              columnId: "column_1",
               id: "cell_1_1",
               rowId: "row_1",
-              type: "content",
             },
           ],
           columns: [{ id: "column_1", label: "Column 1" }],
           id: "table",
+          kind: "complex",
           rows: [{ id: "row_1", label: "Row 1" }],
           showColumnNames: true,
           showRowNames: true,
@@ -251,7 +261,7 @@ describe("CanonicalQuestionMaterializer", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     });
 
     const result = await materializer.materialize({
@@ -266,15 +276,28 @@ describe("CanonicalQuestionMaterializer", () => {
     assert.deepEqual(result.body.blocks[0], {
       cells: [
         {
+          blocks: [
+            {
+              content: [
+                {
+                  displayValue: "A2",
+                  referenceId: "workbook:source_1:range:Sheet1:A1:B2",
+                  type: "value",
+                },
+              ],
+              id: "cell_1_1_text",
+              kind: "primitive",
+              type: "text",
+            },
+          ],
           columnId: "column_1",
           id: "cell_1_1",
           rowId: "row_1",
-          text: "A2",
-          type: "content",
         },
       ],
       columns: [{ id: "column_1", label: "Column 1" }],
       id: "table",
+      kind: "complex",
       rows: [{ id: "row_1", label: "Row 1" }],
       showColumnNames: true,
       showRowNames: true,
@@ -325,6 +348,7 @@ describe("CanonicalQuestionMaterializer", () => {
             type: "doc",
           },
           id: "rich",
+          kind: "primitive",
           type: "rich_text",
         },
       ],
@@ -349,7 +373,7 @@ describe("CanonicalQuestionMaterializer", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     });
 
     const result = await materializer.materialize({
@@ -378,6 +402,7 @@ describe("CanonicalQuestionMaterializer", () => {
         type: "doc",
       },
       id: "rich",
+      kind: "primitive",
       type: "rich_text",
     });
     const serializedBody = JSON.stringify(result.body);
@@ -448,6 +473,7 @@ describe("CanonicalQuestionMaterializer", () => {
             type: "doc",
           },
           id: "rich",
+          kind: "primitive",
           type: "rich_text",
         },
       ],
@@ -472,7 +498,7 @@ describe("CanonicalQuestionMaterializer", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     });
 
     const result = await materializer.materialize({
@@ -519,6 +545,7 @@ describe("CanonicalQuestionMaterializer", () => {
         type: "doc",
       },
       id: "rich",
+      kind: "primitive",
       type: "rich_text",
     });
     const serializedBody = JSON.stringify(result.body);
@@ -551,6 +578,7 @@ describe("CanonicalQuestionMaterializer", () => {
             },
           ],
           id: "prompt",
+          kind: "primitive",
           type: "text",
         },
       ],
@@ -575,7 +603,7 @@ describe("CanonicalQuestionMaterializer", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     });
 
     const result = await materializer.materialize({
@@ -609,6 +637,7 @@ describe("CanonicalQuestionMaterializer", () => {
         },
       ],
       id: "prompt",
+      kind: "primitive",
       type: "text",
     });
   });

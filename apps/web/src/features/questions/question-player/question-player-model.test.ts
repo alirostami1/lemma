@@ -58,11 +58,12 @@ function question(): Question {
         {
           content: [{ text: "Prompt", type: "text" }],
           id: "prompt",
+          kind: "primitive",
           type: "text",
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     },
     createdAt: timestamp,
     createdByUserId: "creator",
@@ -101,11 +102,12 @@ function generatedRichHeadingQuestion(): Question {
             type: "doc",
           },
           id: "rich",
+          kind: "primitive",
           type: "rich_text",
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     },
   };
 }

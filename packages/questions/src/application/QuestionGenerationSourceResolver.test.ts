@@ -104,7 +104,7 @@ function createBlueprint(input: { workbookId: WorkbookId }) {
           },
         ],
         responseFields: [],
-        schemaVersion: 1,
+        schemaVersion: 2,
       }),
       id: questionBlueprintId("019e9315-6a87-715f-9861-8654df070c59"),
       name: questionBlueprintName("Revenue"),

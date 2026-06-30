@@ -140,7 +140,7 @@ function createDraft() {
         blocks: [],
         references: [],
         responseFields: [],
-        schemaVersion: 1,
+        schemaVersion: 2,
       }),
       id: draftId,
       name: questionBlueprintName("Draft"),

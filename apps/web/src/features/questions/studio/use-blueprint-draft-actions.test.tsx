@@ -113,7 +113,7 @@ describe("useStudioDraftMarkServerSavedAction", () => {
             blocks: [],
             references: [],
             responseFields: [],
-            schemaVersion: 1,
+            schemaVersion: 2,
           },
           id: "draft-1",
           lastSavedAt: new Date("2026-06-21T00:00:00.000Z"),
@@ -142,6 +142,6 @@ function createModel(): ComposedEditorModel {
     blocks: [],
     references: [],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }

@@ -681,7 +681,7 @@ function createModel(): ComposedEditorModel {
       },
     ],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 

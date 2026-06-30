@@ -105,6 +105,10 @@ Generated output falls into three buckets:
 ## Review Rules
 
 - Review source OpenAPI changes and generator config changes carefully.
+- Contracts with recursive schemas must use the shared
+  `@lemma/openapi-hono-generator` reusable Zod schema helper in Orval config so
+  generated validators can emit lazy recursive schemas instead of weakening
+  child references.
 - Do not review generated output line by line unless generator behavior changed.
 - Prefer separate commits for generated output when a change creates large diffs.
 - If generated output changes without source OpenAPI, migration, or generator

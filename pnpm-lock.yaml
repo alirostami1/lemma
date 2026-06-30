@@ -1036,6 +1036,9 @@ importers:
       hono:
         specifier: 'catalog:'
         version: 4.12.25
+      orval:
+        specifier: 'catalog:'
+        version: 8.17.0(@faker-js/faker@10.4.0)(prettier@3.8.4)(typescript@6.0.3)
       typescript:
         specifier: 'catalog:'
         version: 6.0.3

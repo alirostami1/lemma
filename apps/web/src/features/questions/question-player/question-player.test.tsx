@@ -42,11 +42,16 @@ const tableQuestion: PresentableQuestion = {
       table: {
         cells: [
           {
+            blocks: [
+              {
+                id: "table-input",
+                responseFieldId: "table-answer",
+                type: "input",
+              },
+            ],
             columnId: "column",
             id: "cell",
-            responseFieldId: "table-answer",
             rowId: "row",
-            type: "response",
           },
         ],
         columns: [{ id: "column", label: "Value" }],
@@ -199,11 +204,12 @@ function generatedRichHeadingQuestion(): Question {
             type: "doc",
           },
           id: "rich",
+          kind: "primitive",
           type: "rich_text",
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     },
     createdAt: timestamp,
     createdByUserId: "creator",

@@ -204,7 +204,7 @@ function revisionResponse() {
         blocks: [],
         references: [],
         responseFields: [],
-        schemaVersion: 1,
+        schemaVersion: 2,
       },
       id: "draft-1",
       lastSavedAt: "2026-06-23T00:00:00.000Z",

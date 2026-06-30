@@ -62,7 +62,7 @@ export function AnswerFieldSettings({
           }}
           value={responseField.type}
         >
-          <SelectTrigger>
+          <SelectTrigger aria-label="Grading">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

@@ -72,6 +72,6 @@ function createModel(text: string): ComposedEditorModel {
     ],
     references: [],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }

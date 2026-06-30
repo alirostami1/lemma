@@ -1,4 +1,9 @@
+import { execFile } from "node:child_process";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
+import { promisify } from "node:util";
+import { generate } from "orval";
 import { describe, expect, it } from "vitest";
 import {
   buildHonoRoutesSource,
@@ -8,6 +13,9 @@ import {
   resolveOpenApiDocument,
   toHonoRoutePath,
 } from "./generator.js";
+import { reusableZodSchemaOptions } from "./orval.js";
+
+const execFileAsync = promisify(execFile);
 
 describe("toHonoRoutePath", () => {
   it("converts OpenAPI path params to Hono params", () => {
@@ -56,6 +64,58 @@ describe("resolveOpenApiDocument", () => {
         expectedRevision: { type: "integer", minimum: 1, multipleOf: 1 },
       },
     });
+  });
+});
+
+describe("recursive Orval Zod configuration", () => {
+  it("emits and executes lazy validators for recursive component schemas", async () => {
+    const outputDirectory = await mkdtemp(
+      join(process.cwd(), ".recursive-zod-"),
+    );
+    const target = join(outputDirectory, "operations.ts");
+    const schemas = join(outputDirectory, "schemas");
+
+    try {
+      await generate({
+        input: {
+          target: join(import.meta.dirname, "fixtures/recursive-openapi.json"),
+        },
+        output: {
+          clean: true,
+          client: "zod",
+          override: {
+            zod: {
+              ...reusableZodSchemaOptions(),
+              strict: {
+                body: true,
+                header: true,
+                param: true,
+                query: true,
+                response: true,
+              },
+            },
+          },
+          schemas,
+          target,
+        },
+      });
+
+      const nodeSchemaPath = join(schemas, "node.zod.ts");
+      const source = await readFile(nodeSchemaPath, "utf8");
+      expect(source).toContain("zod.lazy");
+
+      const moduleUrl = pathToFileURL(nodeSchemaPath).href;
+      await execFileAsync(process.execPath, [
+        "--input-type=module",
+        "--eval",
+        `const { Node } = await import(${JSON.stringify(moduleUrl)});
+const valid = Node.safeParse({ kind: "node", children: [{ kind: "node", children: [] }] });
+const invalid = Node.safeParse({ kind: "node", children: [{}] });
+if (!valid.success || invalid.success) process.exit(1);`,
+      ]);
+    } finally {
+      await rm(outputDirectory, { force: true, recursive: true });
+    }
   });
 });
 

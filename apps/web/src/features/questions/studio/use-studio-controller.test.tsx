@@ -311,7 +311,7 @@ describe("useStudioController", () => {
         document: {
           blocks: [],
           responseFields: [],
-          schemaVersion: 1,
+          schemaVersion: 2,
         },
         id: "blueprint-1",
         name: "Published blueprint",
@@ -476,7 +476,7 @@ function createModel(): ComposedEditorModel {
     blocks: [],
     references: [],
     responseFields: [],
-    schemaVersion: 1 as const,
+    schemaVersion: 2 as const,
   };
 }
 
@@ -485,7 +485,7 @@ function createDocument() {
     blocks: [],
     references: [],
     responseFields: [],
-    schemaVersion: 1 as const,
+    schemaVersion: 2 as const,
   };
 }
 

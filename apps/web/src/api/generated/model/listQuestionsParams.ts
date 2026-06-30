@@ -5,6 +5,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ListQuestionsStatus } from "./listQuestionsStatus.ts";
+import type { UuidV7 } from "./uuidV7.ts";
 
 export type ListQuestionsParams = {
   /**
@@ -14,12 +15,6 @@ export type ListQuestionsParams = {
   limit?: number;
   cursor?: string;
   status?: ListQuestionsStatus;
-  /**
-   * @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
-   */
-  blueprintId?: string;
-  /**
-   * @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
-   */
-  generationRunId?: string;
+  blueprintId?: UuidV7;
+  generationRunId?: UuidV7;
 };

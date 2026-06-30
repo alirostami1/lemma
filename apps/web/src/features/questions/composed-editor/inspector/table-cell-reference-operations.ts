@@ -5,62 +5,100 @@ import type {
   TableEditorCell,
   ValueExpression,
 } from "#/domains/questions/authoring";
-import { formatAnswerInputValue } from "#/domains/questions/authoring";
+import {
+  formatAnswerInputValue,
+  getPrimaryTableInputBlock,
+  getPrimaryTableTextBlock,
+  getTableCellPrimitiveBlocks,
+  updateComposedBlock,
+} from "#/domains/questions/authoring";
 
 export function updateTableCellValueInComposedModel(input: {
   editorModel: ComposedEditorModel;
   tableBlockId: string;
   cellId: string;
+  cellBlockId?: string;
   value: ValueExpression;
 }): ComposedEditorModel {
-  let updated = false;
-
-  const nextModel = {
-    ...input.editorModel,
-    blocks: input.editorModel.blocks.map((block) => {
-      if (block.id !== input.tableBlockId || block.type !== "table") {
-        return block;
-      }
-
-      updated = true;
-
-      return {
-        ...block,
-        table: {
-          ...block.table,
-          cells: block.table.cells.map((cell) =>
-            updateTableCellValueExpression(cell, input.cellId, input.value),
-          ),
-        },
-      };
-    }),
-  };
-
-  return updated ? nextModel : input.editorModel;
+  return updateComposedBlock(input.editorModel, input.tableBlockId, (block) =>
+    block.type === "table"
+      ? {
+          ...block,
+          table: {
+            ...block.table,
+            cells: block.table.cells.map((cell) =>
+              updateTableCellValueExpression(cell, {
+                cellBlockId: input.cellBlockId,
+                cellId: input.cellId,
+                value: input.value,
+              }),
+            ),
+          },
+        }
+      : block,
+  );
 }
 
 function updateTableCellValueExpression(
   cell: TableEditorCell,
-  cellId: string,
-  value: ValueExpression,
+  input: {
+    cellId: string;
+    cellBlockId?: string;
+    value: ValueExpression;
+  },
 ): TableEditorCell {
-  if (cell.id !== cellId) {
+  if (cell.id !== input.cellId) {
     return cell;
   }
 
-  if (cell.type === "content") {
-    return {
-      ...cell,
-      content:
-        value.type === "reference"
-          ? [{ referenceId: value.referenceId, type: "reference" }]
-          : [{ text: formatAnswerInputValue(value.value), type: "text" }],
-    };
+  if (input.cellBlockId) {
+    return updateCellBlockValueExpression(cell, input.cellBlockId, input.value);
   }
 
+  const inputBlock = getPrimaryTableInputBlock(cell);
+  if (inputBlock) {
+    return updateCellBlockValueExpression(cell, inputBlock.id, input.value);
+  }
+
+  const textBlock = getPrimaryTableTextBlock(cell);
+  return textBlock
+    ? updateCellBlockValueExpression(cell, textBlock.id, input.value)
+    : cell;
+}
+
+function updateCellBlockValueExpression(
+  cell: TableEditorCell,
+  cellBlockId: string,
+  value: ValueExpression,
+): TableEditorCell {
   return {
     ...cell,
-    correctValueSource: value,
+    blocks: getTableCellPrimitiveBlocks(cell).map((block) => {
+      if (block.id !== cellBlockId) {
+        return block;
+      }
+
+      if (block.type === "input") {
+        return { ...block, correctValueSource: value };
+      }
+
+      if (block.type === "text") {
+        return {
+          ...block,
+          content:
+            value.type === "reference"
+              ? [{ referenceId: value.referenceId, type: "reference" }]
+              : [
+                  {
+                    text: formatAnswerInputValue(value.value),
+                    type: "text",
+                  },
+                ],
+        };
+      }
+
+      return block;
+    }),
   };
 }
 
@@ -68,9 +106,11 @@ export function addReferenceAndUpdateTableCellValue(input: {
   editorModel: ComposedEditorModel;
   tableBlockId: string;
   cellId: string;
+  cellBlockId?: string;
   reference: ComposedReferenceDraft;
 }): ComposedEditorModel {
   return updateTableCellValueInComposedModel({
+    cellBlockId: input.cellBlockId,
     cellId: input.cellId,
     editorModel: {
       ...input.editorModel,
@@ -88,37 +128,37 @@ export function updateTableContentCellInlineContentInComposedModel(input: {
   editorModel: ComposedEditorModel;
   tableBlockId: string;
   cellId: string;
+  cellBlockId?: string;
   content: ComposedInlineContent[];
 }): ComposedEditorModel {
-  let updated = false;
+  return updateComposedBlock(input.editorModel, input.tableBlockId, (block) =>
+    block.type === "table"
+      ? {
+          ...block,
+          table: {
+            ...block.table,
+            cells: block.table.cells.map((cell) => {
+              if (cell.id !== input.cellId) {
+                return cell;
+              }
 
-  const nextModel = {
-    ...input.editorModel,
-    blocks: input.editorModel.blocks.map((block) => {
-      if (block.id !== input.tableBlockId || block.type !== "table") {
-        return block;
-      }
+              const targetTextBlockId =
+                input.cellBlockId ?? getPrimaryTableTextBlock(cell)?.id;
+              if (!targetTextBlockId) {
+                return cell;
+              }
 
-      return {
-        ...block,
-        table: {
-          ...block.table,
-          cells: block.table.cells.map((cell) => {
-            if (cell.id !== input.cellId || cell.type !== "content") {
-              return cell;
-            }
-
-            updated = true;
-
-            return {
-              ...cell,
-              content: input.content,
-            };
-          }),
-        },
-      };
-    }),
-  };
-
-  return updated ? nextModel : input.editorModel;
+              return {
+                ...cell,
+                blocks: getTableCellPrimitiveBlocks(cell).map((block) =>
+                  block.id === targetTextBlockId && block.type === "text"
+                    ? { ...block, content: input.content }
+                    : block,
+                ),
+              };
+            }),
+          },
+        }
+      : block,
+  );
 }

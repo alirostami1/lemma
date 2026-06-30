@@ -115,6 +115,31 @@ export function BlockEditor({
       />
     );
   }
+  if (block.type === "container") {
+    return (
+      <section className="grid gap-3 rounded-md border p-3">
+        {block.title ? (
+          <h3 className="text-sm font-medium">{block.title}</h3>
+        ) : null}
+        {block.blocks.map((childBlock) => (
+          <BlockEditor
+            block={childBlock}
+            disabled={disabled}
+            getTableSelectionForBlock={getTableSelectionForBlock}
+            key={childBlock.id}
+            model={model}
+            onModelChange={onModelChange}
+            onSelectReference={onSelectReference}
+            onTableSelectionChange={onTableSelectionChange}
+            referencePreviewCache={referencePreviewCache}
+            sources={sources}
+            workbookEnabled={workbookEnabled}
+            workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
+          />
+        ))}
+      </section>
+    );
+  }
   return (
     <ResponseBlockEditor
       block={block}

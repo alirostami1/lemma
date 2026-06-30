@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { QuestionBlueprintDocument } from "#/api/generated/model";
 import { QuestionBodySchemaVersion } from "#/api/generated/model/questionBodySchemaVersion";
-import type { TableEditorModel } from "#/domains/questions/authoring";
+import type {
+  ComposedInlineContent,
+  TableEditorCell,
+  TableEditorInputBlock,
+  TableEditorModel,
+} from "#/domains/questions/authoring";
 import {
   type ComposedEditorModel,
   coerceAnswerValue,
@@ -12,6 +17,7 @@ import {
   extractUsedReferenceIdsFromComposedEditorModel,
   extractWorkbookReferenceRefsFromComposedEditorModel,
   nextAvailableResponseFieldId,
+  richContentFromInlineContent,
 } from "#/domains/questions/authoring";
 import {
   formatInlineBlueprint,
@@ -172,6 +178,7 @@ describe("composed blueprint conversions", () => {
 
   it("creates range-backed table cells without generated cell references", () => {
     const currentModel: TableEditorModel = {
+      blockId: "table_1",
       cells: [],
       columns: [],
       prompt: "",
@@ -200,65 +207,123 @@ describe("composed blueprint conversions", () => {
     expect(result.references).toEqual([]);
     expect(result.table.cells).toEqual([
       {
-        columnId: "column_1",
-        content: [
+        blocks: [
           {
-            fallbackText: "A1",
-            rangeCell: { columnOffset: 0, rowOffset: 0 },
-            referenceId: "range",
-            type: "reference",
+            content: [
+              {
+                fallbackText: "A1",
+                rangeCell: { columnOffset: 0, rowOffset: 0 },
+                referenceId: "range",
+                type: "reference",
+              },
+            ],
+            id: "table_1_cell_1_1_text",
+            type: "text",
           },
         ],
+        columnId: "column_1",
         id: "cell_1_1",
         rowId: "row_1",
-        type: "content",
       },
       {
-        columnId: "column_2",
-        content: [
+        blocks: [
           {
-            fallbackText: "B1",
-            rangeCell: { columnOffset: 1, rowOffset: 0 },
-            referenceId: "range",
-            type: "reference",
+            content: [
+              {
+                fallbackText: "B1",
+                rangeCell: { columnOffset: 1, rowOffset: 0 },
+                referenceId: "range",
+                type: "reference",
+              },
+            ],
+            id: "table_1_cell_1_2_text",
+            type: "text",
           },
         ],
+        columnId: "column_2",
         id: "cell_1_2",
         rowId: "row_1",
-        type: "content",
       },
       {
-        columnId: "column_1",
-        content: [
+        blocks: [
           {
-            fallbackText: "A2",
-            rangeCell: { columnOffset: 0, rowOffset: 1 },
-            referenceId: "range",
-            type: "reference",
+            content: [
+              {
+                fallbackText: "A2",
+                rangeCell: { columnOffset: 0, rowOffset: 1 },
+                referenceId: "range",
+                type: "reference",
+              },
+            ],
+            id: "table_1_cell_2_1_text",
+            type: "text",
           },
         ],
+        columnId: "column_1",
         id: "cell_2_1",
         rowId: "row_2",
-        type: "content",
       },
       {
-        columnId: "column_2",
-        content: [
+        blocks: [
           {
-            fallbackText: "B2",
-            rangeCell: { columnOffset: 1, rowOffset: 1 },
-            referenceId: "range",
-            type: "reference",
+            content: [
+              {
+                fallbackText: "B2",
+                rangeCell: { columnOffset: 1, rowOffset: 1 },
+                referenceId: "range",
+                type: "reference",
+              },
+            ],
+            id: "table_1_cell_2_2_text",
+            type: "text",
           },
         ],
+        columnId: "column_2",
         id: "cell_2_2",
         rowId: "row_2",
-        type: "content",
       },
     ]);
   });
 
-  it("creates canonical blocks for text and response blocks", () => {
+  it("namespaces range-backed table primitive ids by table block id", () => {
+    const createRangeTable = (blockId: string) =>
+      createTableFromWorkbookRangeReference({
+        currentModel: {
+          blockId,
+          cells: [],
+          columns: [],
+          prompt: "",
+          responseFields: [],
+          rows: [],
+          showColumnNames: true,
+          showRowNames: true,
+        },
+        rangeReference: {
+          id: "range",
+          source: {
+            ref: "Sheet1!A1:A1",
+            sourceId: "source_1",
+            type: "workbook_range",
+          },
+        },
+        values: [["A1"]],
+      }).table;
+
+    const primitiveIds = [
+      createRangeTable("table_1"),
+      createRangeTable("table_2"),
+    ]
+      .flatMap((table) => table.cells)
+      .flatMap((cell) => cell.blocks.map((block) => block.id));
+
+    expect(primitiveIds).toEqual([
+      "table_1_cell_1_1_text",
+      "table_2_cell_1_1_text",
+    ]);
+    expect(new Set(primitiveIds).size).toBe(primitiveIds.length);
+  });
+
+  it("creates canonical primitives for text and answer inputs", () => {
     const model: ComposedEditorModel = {
       blocks: [
         {
@@ -294,7 +359,7 @@ describe("composed blueprint conversions", () => {
           type: "number",
         },
       ],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(composedEditorModelToQuestionBlueprintDocument(model)).toEqual({
@@ -302,6 +367,7 @@ describe("composed blueprint conversions", () => {
         {
           content: [{ text: "What is 2 + 2?", type: "text" }],
           id: "text_1",
+          kind: "primitive",
           type: "text",
         },
         {
@@ -312,11 +378,12 @@ describe("composed blueprint conversions", () => {
           },
           grading: { mode: "exact" },
           id: "response_1",
+          kind: "primitive",
           label: "Answer",
           placeholder: "Type a number",
           points: 2,
           responseFieldId: "answer_1",
-          type: "response",
+          type: "input",
         },
       ],
       references: [
@@ -333,7 +400,7 @@ describe("composed blueprint conversions", () => {
           type: "number",
         },
       ],
-      schemaVersion: 1,
+      schemaVersion: 2,
     });
   });
 
@@ -369,7 +436,7 @@ describe("composed blueprint conversions", () => {
           type: "text",
         },
       ],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(extractWorkbookReferenceRefsFromComposedEditorModel(model)).toEqual(
@@ -396,7 +463,7 @@ describe("composed blueprint conversions", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     const blueprint = composedEditorModelToQuestionBlueprintDocument(model);
@@ -412,6 +479,7 @@ describe("composed blueprint conversions", () => {
         { referenceId: "rate", type: "reference" },
       ],
       id: "text_1",
+      kind: "primitive",
       type: "text",
     });
     expect(extractWorkbookReferenceRefsFromComposedEditorModel(model)).toEqual(
@@ -439,7 +507,7 @@ describe("composed blueprint conversions", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(extractUsedReferenceIdsFromComposedEditorModel(model)).toEqual([]);
@@ -472,7 +540,7 @@ describe("composed blueprint conversions", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     const document = composedEditorModelToQuestionBlueprintDocument(model);
@@ -513,7 +581,7 @@ describe("composed blueprint conversions", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(
@@ -550,7 +618,7 @@ describe("composed blueprint conversions", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(extractUsedReferenceIdsFromComposedEditorModel(model)).toEqual([
@@ -566,14 +634,15 @@ describe("composed blueprint conversions", () => {
       blocks: [
         createTableBlock("table_1", {
           cells: [
-            {
+            createTextTableCell({
+              blockId: "cell_1_text",
               columnId: "column_1",
               content: [{ referenceId: "content_ref", type: "reference" }],
               id: "cell_1",
               rowId: "row_1",
-              type: "content",
-            },
-            {
+            }),
+            createInputTableCell({
+              blockId: "cell_2_input",
               columnId: "column_1",
               correctValueSource: {
                 referenceId: "answer_ref",
@@ -584,8 +653,7 @@ describe("composed blueprint conversions", () => {
               points: 2,
               responseFieldId: "answer_1",
               rowId: "row_1",
-              type: "response",
-            },
+            }),
           ],
           columns: [{ id: "column_1", label: "Column 1" }],
           prompt: "",
@@ -613,7 +681,7 @@ describe("composed blueprint conversions", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     const blueprint = composedEditorModelToQuestionBlueprintDocument(model);
@@ -622,7 +690,7 @@ describe("composed blueprint conversions", () => {
     );
   });
 
-  it("collects workbook refs from standalone response blocks", () => {
+  it("collects workbook refs from standalone answer inputs", () => {
     const model: ComposedEditorModel = {
       blocks: [
         {
@@ -653,7 +721,7 @@ describe("composed blueprint conversions", () => {
           type: "number",
         },
       ],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(extractWorkbookReferenceRefsFromComposedEditorModel(model)).toEqual([
@@ -666,13 +734,13 @@ describe("composed blueprint conversions", () => {
       blocks: [
         createTableBlock("table_1", {
           cells: [
-            {
+            createTextTableCell({
+              blockId: "cell_1_text",
               columnId: "column_1",
               content: [{ referenceId: "table_source", type: "reference" }],
               id: "cell_1",
               rowId: "row_1",
-              type: "content",
-            },
+            }),
           ],
           columns: [{ id: "column_1", label: "Column 1" }],
           prompt: "",
@@ -693,7 +761,7 @@ describe("composed blueprint conversions", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(extractWorkbookReferenceRefsFromComposedEditorModel(model)).toEqual([
@@ -712,7 +780,7 @@ describe("composed blueprint conversions", () => {
       ],
       references: [],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(() => validateComposedEditorModel(model)).toThrow(
@@ -739,7 +807,7 @@ describe("composed blueprint conversions", () => {
           type: "text",
         },
       ],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(() => validateComposedEditorModel(model)).toThrow(
@@ -752,13 +820,13 @@ describe("composed blueprint conversions", () => {
       blocks: [
         createTableBlock("table_1", {
           cells: [
-            {
+            createTextTableCell({
+              blockId: "cell_1_text",
               columnId: "column_1",
               content: [{ referenceId: "missing", type: "reference" }],
               id: "cell_1",
               rowId: "row_1",
-              type: "content",
-            },
+            }),
           ],
           columns: [{ id: "column_1", label: "Column 1" }],
           prompt: "",
@@ -770,7 +838,7 @@ describe("composed blueprint conversions", () => {
       ],
       references: [],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(() => validateComposedEditorModel(model)).toThrow(
@@ -783,7 +851,8 @@ describe("composed blueprint conversions", () => {
       blocks: [
         createTableBlock("table_1", {
           cells: [
-            {
+            createInputTableCell({
+              blockId: "cell_1_input",
               columnId: "column_1",
               correctValueSource: { referenceId: "missing", type: "reference" },
               grading: { mode: "exact" },
@@ -791,8 +860,7 @@ describe("composed blueprint conversions", () => {
               points: 1,
               responseFieldId: "answer_1",
               rowId: "row_1",
-              type: "response",
-            },
+            }),
           ],
           columns: [{ id: "column_1", label: "Column 1" }],
           prompt: "",
@@ -809,7 +877,7 @@ describe("composed blueprint conversions", () => {
       ],
       references: [],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(() => validateComposedEditorModel(model)).toThrow(
@@ -831,7 +899,7 @@ describe("composed blueprint conversions", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(() => validateComposedEditorModel(model)).toThrow(
@@ -849,7 +917,7 @@ describe("composed blueprint conversions", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(() => validateComposedEditorModel(model)).toThrow(
@@ -863,8 +931,10 @@ describe("composed blueprint conversions", () => {
         {
           id: "table_1",
           table: {
+            blockId: "table_1",
             cells: [
-              {
+              createInputTableCell({
+                blockId: "cell_1_input",
                 columnId: "column_1",
                 correctValueSource: { type: "literal", value: 1 },
                 grading: { mode: "exact" },
@@ -872,8 +942,7 @@ describe("composed blueprint conversions", () => {
                 points: 1,
                 responseFieldId: "answer_1",
                 rowId: "row_1",
-                type: "response",
-              },
+              }),
             ],
             columns: [{ id: "column_1", label: "Column 1" }],
             prompt: "",
@@ -892,7 +961,7 @@ describe("composed blueprint conversions", () => {
       ],
       references: [],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(nextAvailableResponseFieldId(model)).toBe("answer_2");
@@ -901,14 +970,15 @@ describe("composed blueprint conversions", () => {
   it("preserves table conversion inside composed documents", () => {
     const tableModel: TableEditorModel = {
       cells: [
-        {
+        createTextTableCell({
+          blockId: "cell_1_text",
           columnId: "column_1",
           content: [{ text: "Alpha", type: "text" }],
           id: "cell_1",
           rowId: "row_1",
-          type: "content",
-        },
-        {
+        }),
+        createInputTableCell({
+          blockId: "cell_2_input",
           columnId: "column_2",
           correctValueSource: { type: "literal", value: 3 },
           grading: { mode: "exact" },
@@ -916,8 +986,7 @@ describe("composed blueprint conversions", () => {
           points: 2,
           responseFieldId: "answer_1",
           rowId: "row_1",
-          type: "response",
-        },
+        }),
       ],
       columns: [
         { id: "column_1", label: "Column 1" },
@@ -947,7 +1016,7 @@ describe("composed blueprint conversions", () => {
       ],
       references: [],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     const blueprint = composedEditorModelToQuestionBlueprintDocument(model);
@@ -955,10 +1024,12 @@ describe("composed blueprint conversions", () => {
     expect(blueprint.blocks[1]).toMatchObject({
       content: [{ text: "Ignored in composed mode", type: "text" }],
       id: "table_1_prompt",
+      kind: "primitive",
       type: "text",
     });
     expect(blueprint.blocks[2]).toMatchObject({
       id: "table_1",
+      kind: "complex",
       type: "table",
     });
     const tableBlock = blueprint.blocks[2];
@@ -967,21 +1038,33 @@ describe("composed blueprint conversions", () => {
     }
     expect(tableBlock.cells).toEqual([
       {
+        blocks: [
+          {
+            content: [{ text: "Alpha", type: "text" }],
+            id: "cell_1_text",
+            kind: "primitive",
+            type: "text",
+          },
+        ],
         columnId: "column_1",
-        content: [{ text: "Alpha", type: "text" }],
         id: "cell_1",
         rowId: "row_1",
-        type: "content",
       },
       {
+        blocks: [
+          {
+            correctValueSource: { schemaVersion: 1, type: "literal", value: 3 },
+            grading: { mode: "exact" },
+            id: "cell_2_input",
+            kind: "primitive",
+            points: 2,
+            responseFieldId: "table_1_answer_1",
+            type: "input",
+          },
+        ],
         columnId: "column_2",
-        correctValueSource: { schemaVersion: 1, type: "literal", value: 3 },
-        grading: { mode: "exact" },
         id: "cell_2",
-        points: 2,
-        responseFieldId: "table_1_answer_1",
         rowId: "row_1",
-        type: "response",
       },
     ]);
     expect(blueprint.responseFields).toEqual([
@@ -994,16 +1077,18 @@ describe("composed blueprint conversions", () => {
     ]);
   });
 
-  it("loads canonical text and response blocks back into the composed model", () => {
+  it("loads canonical text and input primitives back into the composed model", () => {
     const blueprint: QuestionBlueprintDocument = {
       blocks: [
         {
           content: [{ text: "Prompt", type: "text" }],
           id: "text_1",
+          kind: "primitive",
           type: "text",
         },
         {
           id: "separator_1",
+          kind: "primitive",
           type: "separator",
         },
         {
@@ -1014,11 +1099,12 @@ describe("composed blueprint conversions", () => {
           },
           grading: { mode: "exact" },
           id: "response_1",
+          kind: "primitive",
           label: "Answer",
           placeholder: "Type here",
           points: 1,
           responseFieldId: "answer_1",
-          type: "response",
+          type: "input",
         },
       ],
       references: [],
@@ -1030,7 +1116,7 @@ describe("composed blueprint conversions", () => {
           type: "text",
         },
       ],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(questionBlueprintDocumentToComposedEditorModel(blueprint)).toEqual({
@@ -1064,8 +1150,78 @@ describe("composed blueprint conversions", () => {
           type: "text",
         },
       ],
-      schemaVersion: 1,
+      schemaVersion: 2,
     });
+  });
+
+  it("round-trips manual inputs without correct value sources", () => {
+    const blueprint: QuestionBlueprintDocument = {
+      blocks: [
+        {
+          grading: { mode: "manual" },
+          id: "manual_input",
+          kind: "primitive",
+          points: 1,
+          responseFieldId: "answer_1",
+          type: "input",
+        },
+        {
+          cells: [
+            {
+              blocks: [
+                {
+                  grading: { mode: "manual" },
+                  id: "table_manual_input",
+                  kind: "primitive",
+                  points: 1,
+                  responseFieldId: "table_1_answer_1",
+                  type: "input",
+                },
+              ],
+              columnId: "column_1",
+              id: "cell_1",
+              rowId: "row_1",
+            },
+          ],
+          columns: [{ id: "column_1", label: "Column" }],
+          id: "table_1",
+          kind: "complex",
+          rows: [{ id: "row_1", label: "Row" }],
+          showColumnNames: true,
+          showRowNames: true,
+          type: "table",
+        },
+      ],
+      references: [],
+      responseFields: [
+        { id: "answer_1", type: "text" },
+        { id: "table_1_answer_1", type: "text" },
+      ],
+      schemaVersion: 2,
+    };
+
+    const model = questionBlueprintDocumentToComposedEditorModel(blueprint);
+    const topLevelInput = model.blocks[0];
+    const table = model.blocks[1];
+    expect(
+      topLevelInput?.type === "response"
+        ? topLevelInput.correctValueSource
+        : "unexpected",
+    ).toBeUndefined();
+    expect(
+      table?.type === "table" &&
+        table.table.cells[0]?.blocks[0]?.type === "input"
+        ? table.table.cells[0].blocks[0].correctValueSource
+        : "unexpected",
+    ).toBeUndefined();
+
+    const serialized = composedEditorModelToQuestionBlueprintDocument(model);
+    expect(serialized.blocks[0]).not.toHaveProperty("correctValueSource");
+    expect(
+      serialized.blocks[1]?.kind === "complex"
+        ? serialized.blocks[1].cells[0]?.blocks[0]
+        : null,
+    ).not.toHaveProperty("correctValueSource");
   });
 
   it("loads references from canonical blueprints", () => {
@@ -1077,6 +1233,7 @@ describe("composed blueprint conversions", () => {
             { referenceId: "revenue", type: "reference" },
           ],
           id: "text_1",
+          kind: "primitive",
           type: "text",
         },
       ],
@@ -1087,7 +1244,7 @@ describe("composed blueprint conversions", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(questionBlueprintDocumentToComposedEditorModel(blueprint)).toEqual({
@@ -1108,7 +1265,7 @@ describe("composed blueprint conversions", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     });
   });
 
@@ -1131,7 +1288,7 @@ describe("composed blueprint conversions", () => {
       ],
       references: [],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     const blueprint = composedEditorModelToQuestionBlueprintDocument(model);
@@ -1146,6 +1303,7 @@ describe("composed blueprint conversions", () => {
         type: "doc",
       },
       id: "rich_1",
+      kind: "primitive",
       type: "rich_text",
     });
     expect(questionBlueprintDocumentToComposedEditorModel(blueprint)).toEqual(
@@ -1180,7 +1338,7 @@ describe("composed blueprint conversions", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     const blueprint = composedEditorModelToQuestionBlueprintDocument(model);
@@ -1195,6 +1353,7 @@ describe("composed blueprint conversions", () => {
         type: "doc",
       },
       id: "rich_1",
+      kind: "primitive",
       type: "rich_text",
     });
     expect(questionBlueprintDocumentToComposedEditorModel(blueprint)).toEqual(
@@ -1242,7 +1401,7 @@ describe("composed blueprint conversions", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     const blueprint = composedEditorModelToQuestionBlueprintDocument(model);
@@ -1263,6 +1422,7 @@ describe("composed blueprint conversions", () => {
         type: "doc",
       },
       id: "rich_1",
+      kind: "primitive",
       type: "rich_text",
     });
     expect(questionBlueprintDocumentToComposedEditorModel(blueprint)).toEqual(
@@ -1294,7 +1454,7 @@ describe("composed blueprint conversions", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(() => validateComposedEditorModel(model)).not.toThrow();
@@ -1302,17 +1462,80 @@ describe("composed blueprint conversions", () => {
 });
 
 describe("table blueprint conversions", () => {
+  it("round-trips every ordered primitive in a composed table cell", () => {
+    const table = createTableBlock("table_1", {
+      blockId: "table_1",
+      cells: [
+        {
+          blocks: [
+            {
+              content: [{ text: "Before", type: "text" }],
+              id: "cell_text_1",
+              type: "text",
+            },
+            {
+              grading: { mode: "manual" },
+              id: "cell_input_1",
+              points: 1,
+              responseFieldId: "answer_1",
+              type: "input",
+            },
+            {
+              content: [{ text: "After", type: "text" }],
+              id: "cell_text_2",
+              type: "text",
+            },
+            {
+              content: richContentFromInlineContent([
+                { text: "Rich", type: "text" },
+              ]),
+              id: "cell_rich_text_1",
+              type: "rich_text",
+            },
+            { id: "cell_separator_1", type: "separator" },
+          ],
+          columnId: "column_1",
+          id: "cell_1",
+          rowId: "row_1",
+        },
+      ],
+      columns: [{ id: "column_1", label: "Column" }],
+      prompt: "",
+      responseFields: [{ id: "answer_1", type: "text" }],
+      rows: [{ id: "row_1", label: "Row" }],
+      showColumnNames: true,
+      showRowNames: true,
+    });
+    const model: ComposedEditorModel = {
+      blocks: [table],
+      references: [],
+      responseFields: [],
+      schemaVersion: 2,
+    };
+
+    const roundTripped = questionBlueprintDocumentToComposedEditorModel(
+      composedEditorModelToQuestionBlueprintDocument(model),
+    );
+    const roundTrippedTable = roundTripped.blocks[0];
+    expect(
+      roundTrippedTable?.type === "table"
+        ? roundTrippedTable.table.cells[0]?.blocks
+        : null,
+    ).toEqual(table.table.cells[0]?.blocks);
+  });
+
   it("keeps literal table content inline", () => {
     const model: TableEditorModel = {
       cells: [
-        {
+        createTextTableCell({
+          blockId: "cell_1_text",
           columnId: "column_1",
           content: [{ text: "Alpha", type: "text" }],
           id: "cell_1",
           rowId: "row_1",
-          type: "content",
-        },
-        {
+        }),
+        createInputTableCell({
+          blockId: "cell_2_input",
           columnId: "column_2",
           correctValueSource: { type: "literal", value: 3 },
           grading: { mode: "exact" },
@@ -1320,8 +1543,7 @@ describe("table blueprint conversions", () => {
           points: 2,
           responseFieldId: "answer_1",
           rowId: "row_1",
-          type: "response",
-        },
+        }),
       ],
       columns: [
         { id: "column_1", label: "Column 1" },
@@ -1345,6 +1567,7 @@ describe("table blueprint conversions", () => {
     expect(blueprint.blocks[0]).toEqual({
       content: [{ text: "Prompt", type: "text" }],
       id: "prompt",
+      kind: "primitive",
       type: "text",
     });
 
@@ -1362,21 +1585,33 @@ describe("table blueprint conversions", () => {
       (cell: (typeof tableBlock.cells)[number]) => cell.id === "cell_2",
     );
     expect(contentCell).toEqual({
+      blocks: [
+        {
+          content: [{ text: "Alpha", type: "text" }],
+          id: "cell_1_text",
+          kind: "primitive",
+          type: "text",
+        },
+      ],
       columnId: "column_1",
-      content: [{ text: "Alpha", type: "text" }],
       id: "cell_1",
       rowId: "row_1",
-      type: "content",
     });
     expect(responseCell).toEqual({
+      blocks: [
+        {
+          correctValueSource: { schemaVersion: 1, type: "literal", value: 3 },
+          grading: { mode: "exact" },
+          id: "cell_2_input",
+          kind: "primitive",
+          points: 2,
+          responseFieldId: "answer_1",
+          type: "input",
+        },
+      ],
       columnId: "column_2",
-      correctValueSource: { schemaVersion: 1, type: "literal", value: 3 },
-      grading: { mode: "exact" },
       id: "cell_2",
-      points: 2,
-      responseFieldId: "answer_1",
       rowId: "row_1",
-      type: "response",
     });
   });
 
@@ -1386,23 +1621,36 @@ describe("table blueprint conversions", () => {
         {
           content: [{ text: "Prompt", type: "text" }],
           id: "prompt",
+          kind: "primitive",
           type: "text",
         },
         {
           cells: [
             {
+              blocks: [
+                {
+                  content: [{ text: "A1", type: "text" }],
+                  id: "cell_1_text",
+                  kind: "primitive",
+                  type: "text",
+                },
+              ],
               columnId: "column_1",
               id: "cell_1",
               rowId: "row_1",
-              text: "A1",
-              type: "content",
             },
             {
+              blocks: [
+                {
+                  id: "cell_2_input",
+                  kind: "primitive",
+                  responseFieldId: "answer_1",
+                  type: "input",
+                },
+              ],
               columnId: "column_2",
               id: "cell_2",
-              responseFieldId: "answer_1",
               rowId: "row_1",
-              type: "response",
             },
           ],
           columns: [
@@ -1410,6 +1658,7 @@ describe("table blueprint conversions", () => {
             { id: "column_2", label: "Column 2" },
           ],
           id: "table",
+          kind: "complex",
           rows: [{ id: "row_1", label: "Row 1" }],
           showColumnNames: true,
           showRowNames: true,
@@ -1424,23 +1673,36 @@ describe("table blueprint conversions", () => {
           type: "number",
         },
       ],
-      schemaVersion: QuestionBodySchemaVersion.NUMBER_1,
+      schemaVersion: QuestionBodySchemaVersion.NUMBER_2,
     });
 
+    expect(preview.prompt).toBe("Prompt");
     expect(preview.cells).toEqual([
       {
+        blocks: [
+          {
+            content: [{ text: "A1", type: "text" }],
+            id: "cell_1_text",
+            type: "text",
+          },
+        ],
         columnId: "column_1",
-        content: [{ text: "A1", type: "text" }],
         id: "cell_1",
         rowId: "row_1",
-        type: "content",
       },
       {
+        blocks: [
+          {
+            id: "cell_2_input",
+            label: undefined,
+            placeholder: undefined,
+            responseFieldId: "answer_1",
+            type: "input",
+          },
+        ],
         columnId: "column_2",
         id: "cell_2",
-        responseFieldId: "answer_1",
         rowId: "row_1",
-        type: "response",
       },
     ]);
   });
@@ -1457,21 +1719,29 @@ describe("table blueprint conversions", () => {
               type: "value",
             },
           ],
-          id: "prompt",
+          id: "table_prompt",
+          kind: "primitive",
           type: "text",
         },
         {
           cells: [
             {
+              blocks: [
+                {
+                  content: [{ text: "A1", type: "text" }],
+                  id: "cell_1_text",
+                  kind: "primitive",
+                  type: "text",
+                },
+              ],
               columnId: "column_1",
               id: "cell_1",
               rowId: "row_1",
-              text: "A1",
-              type: "content",
             },
           ],
           columns: [{ id: "column_1", label: "Column 1" }],
           id: "table",
+          kind: "complex",
           rows: [{ id: "row_1", label: "Row 1" }],
           showColumnNames: true,
           showRowNames: true,
@@ -1479,10 +1749,206 @@ describe("table blueprint conversions", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: QuestionBodySchemaVersion.NUMBER_1,
+      schemaVersion: QuestionBodySchemaVersion.NUMBER_2,
     });
 
     expect(preview.prompt).toBe("Revenue: 123");
+  });
+
+  it("maps same-list composed table prompt ids to preview prompt text", () => {
+    const preview = questionBodyToTableBlockPreviewModel({
+      blocks: [
+        {
+          content: [{ text: "Composed prompt", type: "text" }],
+          id: "table_1_prompt",
+          kind: "primitive",
+          type: "text",
+        },
+        {
+          cells: [
+            {
+              blocks: [
+                {
+                  content: [{ text: "A1", type: "text" }],
+                  id: "cell_1_text",
+                  kind: "primitive",
+                  type: "text",
+                },
+              ],
+              columnId: "column_1",
+              id: "cell_1",
+              rowId: "row_1",
+            },
+          ],
+          columns: [{ id: "column_1", label: "Column 1" }],
+          id: "table_1",
+          kind: "complex",
+          rows: [{ id: "row_1", label: "Row 1" }],
+          showColumnNames: true,
+          showRowNames: true,
+          type: "table",
+        },
+      ],
+      responseFields: [],
+      schemaVersion: QuestionBodySchemaVersion.NUMBER_2,
+    });
+
+    expect(preview.prompt).toBe("Composed prompt");
+  });
+
+  it("maps nested rendered table bodies with same-list prompt convention", () => {
+    const preview = questionBodyToTableBlockPreviewModel({
+      blocks: [
+        {
+          blocks: [
+            {
+              blocks: [
+                {
+                  content: [{ text: "Nested prompt", type: "text" }],
+                  id: "table_1_prompt",
+                  kind: "primitive",
+                  type: "text",
+                },
+                {
+                  cells: [
+                    {
+                      blocks: [
+                        {
+                          content: [{ text: "A1", type: "text" }],
+                          id: "cell_1_text",
+                          kind: "primitive",
+                          type: "text",
+                        },
+                      ],
+                      columnId: "column_1",
+                      id: "cell_1",
+                      rowId: "row_1",
+                    },
+                  ],
+                  columns: [{ id: "column_1", label: "Column 1" }],
+                  id: "table_1",
+                  kind: "complex",
+                  rows: [{ id: "row_1", label: "Row 1" }],
+                  showColumnNames: true,
+                  showRowNames: true,
+                  type: "table",
+                },
+              ],
+              id: "step_1",
+              kind: "container",
+              title: "Step",
+              type: "step",
+            },
+          ],
+          id: "page_1",
+          kind: "container",
+          title: "Page",
+          type: "page",
+        },
+      ],
+      responseFields: [],
+      schemaVersion: QuestionBodySchemaVersion.NUMBER_2,
+    });
+
+    expect(preview.prompt).toBe("Nested prompt");
+    expect(preview.cells[0]?.blocks[0]).toMatchObject({
+      id: "cell_1_text",
+      type: "text",
+    });
+  });
+
+  it("does not use unrelated top-level prompt text for a nested table", () => {
+    const preview = questionBodyToTableBlockPreviewModel({
+      blocks: [
+        {
+          content: [{ text: "Unrelated", type: "text" }],
+          id: "prompt",
+          kind: "primitive",
+          type: "text",
+        },
+        {
+          blocks: [
+            {
+              cells: [
+                {
+                  blocks: [
+                    {
+                      content: [{ text: "A1", type: "text" }],
+                      id: "cell_1_text",
+                      kind: "primitive",
+                      type: "text",
+                    },
+                  ],
+                  columnId: "column_1",
+                  id: "cell_1",
+                  rowId: "row_1",
+                },
+              ],
+              columns: [{ id: "column_1", label: "Column 1" }],
+              id: "table",
+              kind: "complex",
+              rows: [{ id: "row_1", label: "Row 1" }],
+              showColumnNames: true,
+              showRowNames: true,
+              type: "table",
+            },
+          ],
+          id: "page_1",
+          kind: "container",
+          type: "page",
+        },
+      ],
+      responseFields: [],
+      schemaVersion: QuestionBodySchemaVersion.NUMBER_2,
+    });
+
+    expect(preview.prompt).toBe("");
+  });
+
+  it("does not use a prompt text block that is not adjacent to the table", () => {
+    const preview = questionBodyToTableBlockPreviewModel({
+      blocks: [
+        {
+          content: [{ text: "Non-adjacent prompt", type: "text" }],
+          id: "table_1_prompt",
+          kind: "primitive",
+          type: "text",
+        },
+        {
+          id: "separator_1",
+          kind: "primitive",
+          type: "separator",
+        },
+        {
+          cells: [
+            {
+              blocks: [
+                {
+                  content: [{ text: "A1", type: "text" }],
+                  id: "cell_1_text",
+                  kind: "primitive",
+                  type: "text",
+                },
+              ],
+              columnId: "column_1",
+              id: "cell_1",
+              rowId: "row_1",
+            },
+          ],
+          columns: [{ id: "column_1", label: "Column 1" }],
+          id: "table_1",
+          kind: "complex",
+          rows: [{ id: "row_1", label: "Row 1" }],
+          showColumnNames: true,
+          showRowNames: true,
+          type: "table",
+        },
+      ],
+      responseFields: [],
+      schemaVersion: QuestionBodySchemaVersion.NUMBER_2,
+    });
+
+    expect(preview.prompt).toBe("");
   });
 });
 
@@ -1493,27 +1959,35 @@ describe("table blueprint response fields", () => {
         {
           content: [{ text: "Prompt", type: "text" }],
           id: "prompt",
+          kind: "primitive",
           type: "text",
         },
         {
           cells: [
             {
+              blocks: [
+                {
+                  correctValueSource: {
+                    schemaVersion: 1,
+                    type: "literal",
+                    value: "001",
+                  },
+                  grading: { mode: "exact" },
+                  id: "cell_1_input",
+                  kind: "primitive",
+                  points: 2,
+                  responseFieldId: "answer_1",
+                  type: "input",
+                },
+              ],
               columnId: "column_1",
-              correctValueSource: {
-                schemaVersion: 1,
-                type: "literal",
-                value: "001",
-              },
-              grading: { mode: "exact" },
               id: "cell_1",
-              points: 2,
-              responseFieldId: "answer_1",
               rowId: "row_1",
-              type: "response",
             },
           ],
           columns: [{ id: "column_1", label: "Column 1" }],
           id: "table",
+          kind: "complex",
           rows: [{ id: "row_1", label: "Row 1" }],
           showColumnNames: true,
           showRowNames: true,
@@ -1529,7 +2003,7 @@ describe("table blueprint response fields", () => {
           type: "text",
         },
       ],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     const model = questionBlueprintDocumentToTableEditorModel(blueprint);
@@ -1543,7 +2017,8 @@ describe("table blueprint response fields", () => {
   it("preserves response field types when saving table models", () => {
     const model: TableEditorModel = {
       cells: [
-        {
+        createInputTableCell({
+          blockId: "cell_1_input",
           columnId: "column_1",
           correctValueSource: { type: "literal", value: 3 },
           grading: { mode: "exact" },
@@ -1551,8 +2026,7 @@ describe("table blueprint response fields", () => {
           points: 1,
           responseFieldId: "answer_1",
           rowId: "row_1",
-          type: "response",
-        },
+        }),
       ],
       columns: [{ id: "column_1", label: "Column 1" }],
       prompt: "Prompt",
@@ -1593,7 +2067,7 @@ describe("table blueprint response fields", () => {
           type: "json",
         },
       ],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(() =>
@@ -1605,17 +2079,17 @@ describe("table blueprint response fields", () => {
   it("rejects reference-backed content cells in standalone table conversion", () => {
     const model = createModelWithResponseFields([]);
     model.cells = [
-      {
+      createTextTableCell({
+        blockId: "cell_1_text",
         columnId: "column_1",
         content: [{ referenceId: "content_ref", type: "reference" }],
         id: "cell_1",
         rowId: "row_1",
-        type: "content",
-      },
+      }),
     ];
 
     expect(() => tableEditorModelToQuestionBlueprintDocument(model)).toThrow(
-      "Standalone table content cell cell_1 references a reference",
+      "Standalone table text block cell_1_text references a reference",
     );
   });
 
@@ -1625,7 +2099,8 @@ describe("table blueprint response fields", () => {
     ]);
 
     model.cells = [
-      {
+      createInputTableCell({
+        blockId: "cell_1_input",
         columnId: "column_1",
         correctValueSource: { referenceId: "answer_ref", type: "reference" },
         grading: { mode: "exact" },
@@ -1633,20 +2108,19 @@ describe("table blueprint response fields", () => {
         points: 1,
         responseFieldId: "answer_1",
         rowId: "row_1",
-        type: "response",
-      },
+      }),
     ];
 
     expect(() => tableEditorModelToQuestionBlueprintDocument(model)).toThrow(
-      "Standalone table answer cell cell_1 references answer_ref",
+      "Standalone table input block cell_1_input references answer_ref",
     );
   });
 
-  it("throws when a response cell references a missing response field", () => {
+  it("throws when an input primitive references a missing response field", () => {
     const model = createModelWithResponseFields([]);
 
     expect(() => tableEditorModelToQuestionBlueprintDocument(model)).toThrow(
-      "Response cell cell_1 references missing response field answer_1.",
+      "Input block cell_1_input in cell cell_1 references missing response field answer_1.",
     );
   });
 
@@ -1690,7 +2164,8 @@ describe("table blueprint composed namespacing", () => {
           id: "table_1",
           table: {
             cells: [
-              {
+              createInputTableCell({
+                blockId: "table_1_cell_1_input",
                 columnId: "column_1",
                 correctValueSource: { type: "literal", value: 3 },
                 grading: { mode: "exact" },
@@ -1698,8 +2173,7 @@ describe("table blueprint composed namespacing", () => {
                 points: 1,
                 responseFieldId: "answer_1",
                 rowId: "row_1",
-                type: "response",
-              },
+              }),
             ],
             columns: [{ id: "column_1", label: "Column 1" }],
             prompt: "Prompt",
@@ -1721,7 +2195,8 @@ describe("table blueprint composed namespacing", () => {
           id: "table_2",
           table: {
             cells: [
-              {
+              createInputTableCell({
+                blockId: "table_2_cell_1_input",
                 columnId: "column_1",
                 correctValueSource: { type: "literal", value: 4 },
                 grading: { mode: "exact" },
@@ -1729,8 +2204,7 @@ describe("table blueprint composed namespacing", () => {
                 points: 1,
                 responseFieldId: "answer_1",
                 rowId: "row_1",
-                type: "response",
-              },
+              }),
             ],
             columns: [{ id: "column_1", label: "Column 1" }],
             prompt: "Prompt",
@@ -1765,17 +2239,25 @@ describe("table blueprint composed namespacing", () => {
     expect(tableBlocks).toHaveLength(2);
     expect(tableBlocks[0]).toMatchObject({
       cells: [
-        expect.objectContaining({
-          responseFieldId: "table_1_answer_1",
-        }),
+        {
+          blocks: [
+            expect.objectContaining({
+              responseFieldId: "table_1_answer_1",
+            }),
+          ],
+        },
       ],
       id: "table_1",
     });
     expect(tableBlocks[1]).toMatchObject({
       cells: [
-        expect.objectContaining({
-          responseFieldId: "table_2_answer_1",
-        }),
+        {
+          blocks: [
+            expect.objectContaining({
+              responseFieldId: "table_2_answer_1",
+            }),
+          ],
+        },
       ],
       id: "table_2",
     });
@@ -1788,8 +2270,10 @@ describe("table blueprint composed namespacing", () => {
         {
           id: "table_1",
           table: {
+            blockId: "table_1",
             cells: [
-              {
+              createInputTableCell({
+                blockId: "table_1_cell_1_input",
                 columnId: "column_1",
                 correctValueSource: { type: "literal", value: 3 },
                 grading: { mode: "exact" },
@@ -1797,8 +2281,7 @@ describe("table blueprint composed namespacing", () => {
                 points: 1,
                 responseFieldId: "answer_1",
                 rowId: "row_1",
-                type: "response",
-              },
+              }),
             ],
             columns: [{ id: "column_1", label: "Column 1" }],
             prompt: "Prompt",
@@ -1834,14 +2317,19 @@ function createModelWithResponseFields(
   return {
     cells: [
       {
+        blocks: [
+          {
+            correctValueSource: { type: "literal", value: 3 },
+            grading: { mode: "exact" },
+            id: "cell_1_input",
+            points: 1,
+            responseFieldId: "answer_1",
+            type: "input",
+          },
+        ],
         columnId: "column_1",
-        correctValueSource: { type: "literal", value: 3 },
-        grading: { mode: "exact" },
         id: "cell_1",
-        points: 1,
-        responseFieldId: "answer_1",
         rowId: "row_1",
-        type: "response",
       },
     ],
     columns: [{ id: "column_1", label: "Column 1" }],
@@ -1850,5 +2338,45 @@ function createModelWithResponseFields(
     rows: [{ id: "row_1", label: "Row 1" }],
     showColumnNames: true,
     showRowNames: true,
+  };
+}
+
+function createTextTableCell(input: {
+  blockId: string;
+  columnId: string;
+  content: ComposedInlineContent[];
+  id: string;
+  rowId: string;
+}): TableEditorCell {
+  return {
+    blocks: [{ content: input.content, id: input.blockId, type: "text" }],
+    columnId: input.columnId,
+    id: input.id,
+    rowId: input.rowId,
+  };
+}
+
+function createInputTableCell(
+  input: Omit<TableEditorInputBlock, "id" | "type"> & {
+    blockId: string;
+    columnId: string;
+    id: string;
+    rowId: string;
+  },
+): TableEditorCell {
+  return {
+    blocks: [
+      {
+        correctValueSource: input.correctValueSource,
+        grading: input.grading,
+        id: input.blockId,
+        points: input.points,
+        responseFieldId: input.responseFieldId,
+        type: "input",
+      },
+    ],
+    columnId: input.columnId,
+    id: input.id,
+    rowId: input.rowId,
   };
 }

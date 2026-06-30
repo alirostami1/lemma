@@ -39,10 +39,14 @@ const questionTag: Tag = {
 };
 
 const jsonObject = { additionalProperties: true, type: "object" } as const;
-const uuid = {
-  pattern: UUID_V7_OPENAPI_PATTERN,
-  type: "string",
-} as const;
+const uuidSchema: Schema = {
+  name: "UuidV7",
+  schema: {
+    pattern: UUID_V7_OPENAPI_PATTERN,
+    type: "string",
+  },
+};
+const uuid = schemaRef(uuidSchema);
 const nullableUuid = {
   example: "019e8278-6746-768e-b90b-3c6d2fb8267f",
   pattern: UUID_V7_OPENAPI_PATTERN,
@@ -56,6 +60,8 @@ const nullableDateTime = {
   format: "date-time",
   type: ["string", "null"],
 } satisfies OpenApiSchema;
+const schemaRefByName = (name: string) =>
+  ({ $ref: `#/components/schemas/${name}` }) as OpenApiSchema;
 
 const questionValueExpressionSchema: Schema = {
   name: "QuestionValueExpression",
@@ -309,22 +315,51 @@ const richHeadingNodeSchema: Schema = {
     type: "object",
   },
 };
+const nestedRichListVariant = (
+  type: "bullet_list" | "ordered_list",
+): OpenApiSchema => ({
+  additionalProperties: false,
+  properties: {
+    content: {
+      items: {
+        additionalProperties: false,
+        properties: {
+          content: {
+            items: schemaRefByName("RichListItemNodeContentItem"),
+            type: "array",
+          },
+          type: { const: "list_item", type: "string" },
+        },
+        required: ["type", "content"],
+        type: "object",
+      },
+      type: "array",
+    },
+    type: { const: type, type: "string" },
+  },
+  required: ["type", "content"],
+  type: "object",
+});
+const richListItemNodeContentItemSchema: Schema = {
+  name: "RichListItemNodeContentItem",
+  schema: {
+    oneOf: [
+      schemaRef(richParagraphNodeSchema),
+      nestedRichListVariant("bullet_list"),
+      nestedRichListVariant("ordered_list"),
+    ],
+  },
+};
 const richListItemNodeSchema: Schema = {
   name: "RichListItemNode",
   schema: {
     additionalProperties: false,
     properties: {
       content: {
-        items: {
-          oneOf: [
-            schemaRef(richParagraphNodeSchema),
-            { $ref: "#/components/schemas/RichBulletListNode" },
-            { $ref: "#/components/schemas/RichOrderedListNode" },
-          ],
-        },
+        items: schemaRef(richListItemNodeContentItemSchema),
         type: "array",
       },
-      type: { enum: ["list_item"], type: "string" },
+      type: { const: "list_item", type: "string" },
     },
     required: ["type", "content"],
     type: "object",
@@ -336,7 +371,7 @@ const richBulletListNodeSchema: Schema = {
     additionalProperties: false,
     properties: {
       content: { items: schemaRef(richListItemNodeSchema), type: "array" },
-      type: { enum: ["bullet_list"], type: "string" },
+      type: { const: "bullet_list", type: "string" },
     },
     required: ["type", "content"],
     type: "object",
@@ -348,7 +383,7 @@ const richOrderedListNodeSchema: Schema = {
     additionalProperties: false,
     properties: {
       content: { items: schemaRef(richListItemNodeSchema), type: "array" },
-      type: { enum: ["ordered_list"], type: "string" },
+      type: { const: "ordered_list", type: "string" },
     },
     required: ["type", "content"],
     type: "object",
@@ -396,9 +431,10 @@ const questionTextBlockSchema: Schema = {
     properties: {
       content: { items: schemaRef(renderedInlineContentSchema), type: "array" },
       id: { minLength: 1, type: "string" },
+      kind: { enum: ["primitive"], type: "string" },
       type: { enum: ["text"], type: "string" },
     },
-    required: ["id", "type", "content"],
+    required: ["id", "kind", "type", "content"],
     type: "object",
   },
 };
@@ -413,9 +449,10 @@ const questionBlueprintTextBlockSchema: Schema = {
         type: "array",
       },
       id: { minLength: 1, type: "string" },
+      kind: { enum: ["primitive"], type: "string" },
       type: { enum: ["text"], type: "string" },
     },
-    required: ["id", "type", "content"],
+    required: ["id", "kind", "type", "content"],
     type: "object",
   },
 };
@@ -426,9 +463,10 @@ const publicQuestionBlueprintTextBlockSchema: Schema = {
     properties: {
       content: { items: schemaRef(blueprintInlineTextSchema), type: "array" },
       id: { minLength: 1, type: "string" },
+      kind: { enum: ["primitive"], type: "string" },
       type: { enum: ["text"], type: "string" },
     },
-    required: ["id", "type", "content"],
+    required: ["id", "kind", "type", "content"],
     type: "object",
   },
 };
@@ -440,9 +478,10 @@ const questionRichTextBlockSchema: Schema = {
     properties: {
       content: schemaRef(richContentSchema),
       id: { minLength: 1, type: "string" },
+      kind: { enum: ["primitive"], type: "string" },
       type: { enum: ["rich_text"], type: "string" },
     },
-    required: ["id", "type", "content"],
+    required: ["id", "kind", "type", "content"],
     type: "object",
   },
 };
@@ -452,24 +491,26 @@ const questionSeparatorBlockSchema: Schema = {
     additionalProperties: false,
     properties: {
       id: { minLength: 1, type: "string" },
+      kind: { enum: ["primitive"], type: "string" },
       type: { enum: ["separator"], type: "string" },
     },
-    required: ["id", "type"],
+    required: ["id", "kind", "type"],
     type: "object",
   },
 };
-const questionResponseBlockSchema: Schema = {
-  name: "QuestionResponseBlock",
+const questionInputBlockSchema: Schema = {
+  name: "QuestionInputBlock",
   schema: {
     additionalProperties: false,
     properties: {
       id: { minLength: 1, type: "string" },
+      kind: { enum: ["primitive"], type: "string" },
       label: { type: "string" },
       placeholder: { type: "string" },
       responseFieldId: { minLength: 1, type: "string" },
-      type: { enum: ["response"], type: "string" },
+      type: { enum: ["input"], type: "string" },
     },
-    required: ["id", "type", "responseFieldId"],
+    required: ["id", "kind", "type", "responseFieldId"],
     type: "object",
   },
 };
@@ -510,35 +551,51 @@ const questionTableRowSchema: Schema = {
     type: "object",
   },
 };
-const questionTableContentCellSchema: Schema = {
-  name: "QuestionTableContentCell",
+const questionPrimitiveBlockSchema: Schema = {
+  name: "QuestionPrimitiveBlock",
   schema: {
-    additionalProperties: false,
-    properties: {
-      columnId: { minLength: 1, type: "string" },
-      id: { minLength: 1, type: "string" },
-      rowId: { minLength: 1, type: "string" },
-      text: { type: "string" },
-      type: { enum: ["content"], type: "string" },
-    },
-    required: ["id", "rowId", "columnId", "type", "text"],
-    type: "object",
+    oneOf: [
+      schemaRef(questionTextBlockSchema),
+      schemaRef(questionRichTextBlockSchema),
+      schemaRef(questionSeparatorBlockSchema),
+      schemaRef(questionInputBlockSchema),
+    ],
   },
 };
-const questionTableResponseCellSchema: Schema = {
-  name: "QuestionTableResponseCell",
+const containerBlockVariant = (blockSchemaName: string): OpenApiSchema => ({
+  additionalProperties: false,
+  properties: {
+    blocks: {
+      items: schemaRefByName(blockSchemaName),
+      type: "array",
+    },
+    id: { minLength: 1, type: "string" },
+    kind: { const: "container", type: "string" },
+    title: { type: "string" },
+    type: {
+      oneOf: [
+        { const: "page", type: "string" },
+        { const: "step", type: "string" },
+      ],
+    },
+  },
+  required: ["id", "kind", "type", "blocks"],
+  type: "object",
+});
+const questionTableCellSchema: Schema = {
+  name: "QuestionTableCell",
   schema: {
     additionalProperties: false,
     properties: {
+      blocks: {
+        items: schemaRef(questionPrimitiveBlockSchema),
+        type: "array",
+      },
       columnId: { minLength: 1, type: "string" },
       id: { minLength: 1, type: "string" },
-      label: { type: "string" },
-      placeholder: { type: "string" },
-      responseFieldId: { minLength: 1, type: "string" },
       rowId: { minLength: 1, type: "string" },
-      type: { enum: ["response"], type: "string" },
     },
-    required: ["id", "rowId", "columnId", "type", "responseFieldId"],
+    required: ["id", "rowId", "columnId", "blocks"],
     type: "object",
   },
 };
@@ -548,12 +605,7 @@ const questionTableBlockSchema: Schema = {
     additionalProperties: false,
     properties: {
       cells: {
-        items: {
-          oneOf: [
-            schemaRef(questionTableContentCellSchema),
-            schemaRef(questionTableResponseCellSchema),
-          ],
-        },
+        items: schemaRef(questionTableCellSchema),
         type: "array",
       },
       columns: {
@@ -561,6 +613,7 @@ const questionTableBlockSchema: Schema = {
         type: "array",
       },
       id: { minLength: 1, type: "string" },
+      kind: { enum: ["complex"], type: "string" },
       rows: {
         items: schemaRef(questionTableRowSchema),
         type: "array",
@@ -571,6 +624,7 @@ const questionTableBlockSchema: Schema = {
     },
     required: [
       "id",
+      "kind",
       "type",
       "showColumnNames",
       "showRowNames",
@@ -585,10 +639,8 @@ const questionBlockSchema: Schema = {
   name: "QuestionBlock",
   schema: {
     oneOf: [
-      schemaRef(questionTextBlockSchema),
-      schemaRef(questionRichTextBlockSchema),
-      schemaRef(questionSeparatorBlockSchema),
-      schemaRef(questionResponseBlockSchema),
+      schemaRef(questionPrimitiveBlockSchema),
+      containerBlockVariant("QuestionBlock"),
       schemaRef(questionTableBlockSchema),
     ],
   },
@@ -599,27 +651,9 @@ const questionBodySchema: Schema = {
     properties: {
       blocks: { items: schemaRef(questionBlockSchema), type: "array" },
       responseFields: { items: schemaRef(responseFieldSchema), type: "array" },
-      schemaVersion: { enum: [1], type: "number" },
+      schemaVersion: { enum: [2], type: "number" },
     },
     required: ["schemaVersion", "blocks", "responseFields"],
-    type: "object",
-  },
-};
-const questionBlueprintTableContentCellSchema: Schema = {
-  name: "QuestionBlueprintTableContentCell",
-  schema: {
-    additionalProperties: false,
-    properties: {
-      columnId: { minLength: 1, type: "string" },
-      content: {
-        items: schemaRef(blueprintInlineContentSchema),
-        type: "array",
-      },
-      id: { minLength: 1, type: "string" },
-      rowId: { minLength: 1, type: "string" },
-      type: { enum: ["content"], type: "string" },
-    },
-    required: ["id", "rowId", "columnId", "type", "content"],
     type: "object",
   },
 };
@@ -667,96 +701,94 @@ const gradingSchema: Schema = {
     ],
   },
 };
-const questionBlueprintTableResponseCellSchema: Schema = {
-  name: "QuestionBlueprintTableResponseCell",
+const questionBlueprintInputBlockSchema: Schema = {
+  name: "QuestionBlueprintInputBlock",
   schema: {
     additionalProperties: false,
     properties: {
-      columnId: { minLength: 1, type: "string" },
       correctValueSource: schemaRef(questionValueExpressionSchema),
       grading: schemaRef(gradingSchema),
       id: { minLength: 1, type: "string" },
+      kind: { enum: ["primitive"], type: "string" },
       label: { type: "string" },
       placeholder: { type: "string" },
       points: { exclusiveMinimum: 0, type: "number" },
       responseFieldId: { minLength: 1, type: "string" },
-      rowId: { minLength: 1, type: "string" },
-      type: { enum: ["response"], type: "string" },
+      type: { enum: ["input"], type: "string" },
     },
-    required: [
-      "id",
-      "rowId",
-      "columnId",
-      "type",
-      "responseFieldId",
-      "points",
-      "grading",
+    required: ["id", "kind", "type", "responseFieldId", "points", "grading"],
+    type: "object",
+  },
+};
+const publicQuestionBlueprintInputBlockSchema: Schema = {
+  name: "PublicQuestionBlueprintInputBlock",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      id: { minLength: 1, type: "string" },
+      kind: { enum: ["primitive"], type: "string" },
+      label: { type: "string" },
+      placeholder: { type: "string" },
+      responseFieldId: { minLength: 1, type: "string" },
+      type: { enum: ["input"], type: "string" },
+    },
+    required: ["id", "kind", "type", "responseFieldId"],
+    type: "object",
+  },
+};
+const questionBlueprintPrimitiveBlockSchema: Schema = {
+  name: "QuestionBlueprintPrimitiveBlock",
+  schema: {
+    oneOf: [
+      schemaRef(questionBlueprintTextBlockSchema),
+      schemaRef(questionRichTextBlockSchema),
+      schemaRef(questionSeparatorBlockSchema),
+      schemaRef(questionBlueprintInputBlockSchema),
     ],
-    type: "object",
   },
 };
-const questionBlueprintResponseBlockSchema: Schema = {
-  name: "QuestionBlueprintResponseBlock",
+const publicQuestionBlueprintPrimitiveBlockSchema: Schema = {
+  name: "PublicQuestionBlueprintPrimitiveBlock",
+  schema: {
+    oneOf: [
+      schemaRef(publicQuestionBlueprintTextBlockSchema),
+      schemaRef(questionRichTextBlockSchema),
+      schemaRef(questionSeparatorBlockSchema),
+      schemaRef(publicQuestionBlueprintInputBlockSchema),
+    ],
+  },
+};
+const questionBlueprintTableCellSchema: Schema = {
+  name: "QuestionBlueprintTableCell",
   schema: {
     additionalProperties: false,
     properties: {
-      correctValueSource: schemaRef(questionValueExpressionSchema),
-      grading: schemaRef(gradingSchema),
-      id: { minLength: 1, type: "string" },
-      label: { type: "string" },
-      placeholder: { type: "string" },
-      points: { exclusiveMinimum: 0, type: "number" },
-      responseFieldId: { minLength: 1, type: "string" },
-      type: { enum: ["response"], type: "string" },
-    },
-    required: ["id", "type", "responseFieldId", "points", "grading"],
-    type: "object",
-  },
-};
-const publicQuestionBlueprintResponseBlockSchema: Schema = {
-  name: "PublicQuestionBlueprintResponseBlock",
-  schema: {
-    additionalProperties: false,
-    properties: {
-      id: { minLength: 1, type: "string" },
-      label: { type: "string" },
-      placeholder: { type: "string" },
-      responseFieldId: { minLength: 1, type: "string" },
-      type: { enum: ["response"], type: "string" },
-    },
-    required: ["id", "type", "responseFieldId"],
-    type: "object",
-  },
-};
-const publicQuestionBlueprintTableResponseCellSchema: Schema = {
-  name: "PublicQuestionBlueprintTableResponseCell",
-  schema: {
-    additionalProperties: false,
-    properties: {
+      blocks: {
+        items: schemaRef(questionBlueprintPrimitiveBlockSchema),
+        type: "array",
+      },
       columnId: { minLength: 1, type: "string" },
       id: { minLength: 1, type: "string" },
-      label: { type: "string" },
-      placeholder: { type: "string" },
-      responseFieldId: { minLength: 1, type: "string" },
       rowId: { minLength: 1, type: "string" },
-      type: { enum: ["response"], type: "string" },
     },
-    required: ["id", "rowId", "columnId", "type", "responseFieldId"],
+    required: ["id", "rowId", "columnId", "blocks"],
     type: "object",
   },
 };
-const publicQuestionBlueprintTableContentCellSchema: Schema = {
-  name: "PublicQuestionBlueprintTableContentCell",
+const publicQuestionBlueprintTableCellSchema: Schema = {
+  name: "PublicQuestionBlueprintTableCell",
   schema: {
     additionalProperties: false,
     properties: {
+      blocks: {
+        items: schemaRef(publicQuestionBlueprintPrimitiveBlockSchema),
+        type: "array",
+      },
       columnId: { minLength: 1, type: "string" },
-      content: { items: schemaRef(blueprintInlineTextSchema), type: "array" },
       id: { minLength: 1, type: "string" },
       rowId: { minLength: 1, type: "string" },
-      type: { enum: ["content"], type: "string" },
     },
-    required: ["id", "rowId", "columnId", "type", "content"],
+    required: ["id", "rowId", "columnId", "blocks"],
     type: "object",
   },
 };
@@ -766,12 +798,7 @@ const questionBlueprintTableBlockSchema: Schema = {
     additionalProperties: false,
     properties: {
       cells: {
-        items: {
-          oneOf: [
-            schemaRef(questionBlueprintTableContentCellSchema),
-            schemaRef(questionBlueprintTableResponseCellSchema),
-          ],
-        },
+        items: schemaRef(questionBlueprintTableCellSchema),
         type: "array",
       },
       columns: {
@@ -779,6 +806,7 @@ const questionBlueprintTableBlockSchema: Schema = {
         type: "array",
       },
       id: { minLength: 1, type: "string" },
+      kind: { enum: ["complex"], type: "string" },
       rows: {
         items: schemaRef(questionTableRowSchema),
         type: "array",
@@ -789,6 +817,7 @@ const questionBlueprintTableBlockSchema: Schema = {
     },
     required: [
       "id",
+      "kind",
       "type",
       "showColumnNames",
       "showRowNames",
@@ -805,12 +834,7 @@ const publicQuestionBlueprintTableBlockSchema: Schema = {
     additionalProperties: false,
     properties: {
       cells: {
-        items: {
-          oneOf: [
-            schemaRef(publicQuestionBlueprintTableContentCellSchema),
-            schemaRef(publicQuestionBlueprintTableResponseCellSchema),
-          ],
-        },
+        items: schemaRef(publicQuestionBlueprintTableCellSchema),
         type: "array",
       },
       columns: {
@@ -818,6 +842,7 @@ const publicQuestionBlueprintTableBlockSchema: Schema = {
         type: "array",
       },
       id: { minLength: 1, type: "string" },
+      kind: { enum: ["complex"], type: "string" },
       rows: {
         items: schemaRef(questionTableRowSchema),
         type: "array",
@@ -828,6 +853,7 @@ const publicQuestionBlueprintTableBlockSchema: Schema = {
     },
     required: [
       "id",
+      "kind",
       "type",
       "showColumnNames",
       "showRowNames",
@@ -842,10 +868,8 @@ const questionBlueprintBlockSchema: Schema = {
   name: "QuestionBlueprintBlock",
   schema: {
     oneOf: [
-      schemaRef(questionBlueprintTextBlockSchema),
-      schemaRef(questionRichTextBlockSchema),
-      schemaRef(questionSeparatorBlockSchema),
-      schemaRef(questionBlueprintResponseBlockSchema),
+      schemaRef(questionBlueprintPrimitiveBlockSchema),
+      containerBlockVariant("QuestionBlueprintBlock"),
       schemaRef(questionBlueprintTableBlockSchema),
     ],
   },
@@ -855,10 +879,8 @@ const publicQuestionBlueprintBlockSchema: Schema = {
   name: "PublicQuestionBlueprintBlock",
   schema: {
     oneOf: [
-      schemaRef(publicQuestionBlueprintTextBlockSchema),
-      schemaRef(questionRichTextBlockSchema),
-      schemaRef(questionSeparatorBlockSchema),
-      schemaRef(publicQuestionBlueprintResponseBlockSchema),
+      schemaRef(publicQuestionBlueprintPrimitiveBlockSchema),
+      containerBlockVariant("PublicQuestionBlueprintBlock"),
       schemaRef(publicQuestionBlueprintTableBlockSchema),
     ],
   },
@@ -873,7 +895,7 @@ const questionBlueprintDocumentSchema: Schema = {
       },
       references: { items: schemaRef(questionReferenceSchema), type: "array" },
       responseFields: { items: schemaRef(responseFieldSchema), type: "array" },
-      schemaVersion: { enum: [1], type: "number" },
+      schemaVersion: { enum: [2], type: "number" },
     },
     required: ["schemaVersion", "blocks", "responseFields", "references"],
     type: "object",
@@ -888,7 +910,7 @@ const publicQuestionBlueprintDocumentSchema: Schema = {
         type: "array",
       },
       responseFields: { items: schemaRef(responseFieldSchema), type: "array" },
-      schemaVersion: { enum: [1], type: "number" },
+      schemaVersion: { enum: [2], type: "number" },
     },
     required: ["schemaVersion", "blocks", "responseFields"],
     type: "object",
@@ -1996,6 +2018,7 @@ const questionGenerationRunParam: Param = {
 export const tags: readonly Tag[] = Object.freeze([questionTag]);
 
 export const schemas = Object.freeze([
+  uuidSchema,
   questionValueExpressionSchema,
   questionReferenceSourceSchema,
   blueprintInlineTextSchema,
@@ -2007,6 +2030,7 @@ export const schemas = Object.freeze([
   richTextNodeSchema,
   richParagraphNodeSchema,
   richHeadingNodeSchema,
+  richListItemNodeContentItemSchema,
   richListItemNodeSchema,
   richBulletListNodeSchema,
   richOrderedListNodeSchema,
@@ -2017,22 +2041,22 @@ export const schemas = Object.freeze([
   publicQuestionBlueprintTextBlockSchema,
   questionRichTextBlockSchema,
   questionSeparatorBlockSchema,
-  questionResponseBlockSchema,
+  questionInputBlockSchema,
   questionReferenceSchema,
   questionTableColumnSchema,
   questionTableRowSchema,
-  questionTableContentCellSchema,
-  questionTableResponseCellSchema,
+  questionPrimitiveBlockSchema,
+  questionTableCellSchema,
   questionTableBlockSchema,
   questionBlockSchema,
   questionBodySchema,
-  questionBlueprintTableContentCellSchema,
   gradingSchema,
-  questionBlueprintTableResponseCellSchema,
-  questionBlueprintResponseBlockSchema,
-  publicQuestionBlueprintResponseBlockSchema,
-  publicQuestionBlueprintTableContentCellSchema,
-  publicQuestionBlueprintTableResponseCellSchema,
+  questionBlueprintInputBlockSchema,
+  publicQuestionBlueprintInputBlockSchema,
+  questionBlueprintPrimitiveBlockSchema,
+  publicQuestionBlueprintPrimitiveBlockSchema,
+  questionBlueprintTableCellSchema,
+  publicQuestionBlueprintTableCellSchema,
   questionBlueprintTableBlockSchema,
   publicQuestionBlueprintTableBlockSchema,
   questionBlueprintBlockSchema,

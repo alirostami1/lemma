@@ -19,9 +19,10 @@ export function assertPlainRecord(
 export function assertSchemaVersion(
   value: { schemaVersion?: unknown },
   fail: (message: string) => never,
-): asserts value is { schemaVersion: 1 } & PlainObject {
-  if (value.schemaVersion !== 1) {
-    fail("schemaVersion must be 1");
+  expectedVersion = 1,
+): asserts value is { schemaVersion: number } & PlainObject {
+  if (value.schemaVersion !== expectedVersion) {
+    fail(`schemaVersion must be ${expectedVersion}`);
   }
 }
 

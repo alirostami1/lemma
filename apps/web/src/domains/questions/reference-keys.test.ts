@@ -85,7 +85,7 @@ describe("reference keys", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     });
 
     expect(model.references[0]?.id).toBe("workbook:source_1:cell:Sheet1:A1");
@@ -127,7 +127,7 @@ describe("reference keys", () => {
         },
       ],
       responseFields: [{ id: "answer_1", type: "text" }],
-      schemaVersion: 1,
+      schemaVersion: 2,
     });
 
     expect(model.references[0]?.id).toBe("workbook:source_1:cell:Sheet1:B2");
@@ -180,7 +180,7 @@ describe("reference keys", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     });
 
     expect(model.references).toHaveLength(1);

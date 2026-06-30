@@ -10,6 +10,8 @@ export function getComposedBlockLabel(block: ComposedEditorBlock): string {
       return "Answer";
     case "table":
       return "Table";
+    case "container":
+      return block.containerType === "page" ? "Page" : "Step";
     case "separator":
       return "Divider";
     default:

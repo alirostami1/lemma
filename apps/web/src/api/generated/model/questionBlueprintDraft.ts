@@ -7,6 +7,7 @@
 import type { QuestionBlueprintDocument } from "./questionBlueprintDocument.ts";
 import type { QuestionBlueprintDraftSource } from "./questionBlueprintDraftSource.ts";
 import type { QuestionBlueprintDraftStatus } from "./questionBlueprintDraftStatus.ts";
+import type { UuidV7 } from "./uuidV7.ts";
 
 export interface QuestionBlueprintDraft {
   /**
@@ -20,8 +21,7 @@ export interface QuestionBlueprintDraft {
    */
   blueprintId: string | null;
   createdAt: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  createdByUserId: string;
+  createdByUserId: UuidV7;
   /**
    * @maxLength 1000
    * @nullable
@@ -30,16 +30,14 @@ export interface QuestionBlueprintDraft {
   /** @nullable */
   discardedAt: string | null;
   document: QuestionBlueprintDocument;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  id: string;
+  id: UuidV7;
   lastSavedAt: string;
   /**
    * @minLength 1
    * @maxLength 160
    */
   name: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  ownerUserId: string;
+  ownerUserId: UuidV7;
   /** @nullable */
   publishedAt: string | null;
   /**

@@ -140,6 +140,7 @@ describe("QuestionGenerationWorkerService", () => {
     assert.deepEqual(questions[0]?.body.blocks[0], {
       content: [{ text: "v1", type: "text" }],
       id: "prompt",
+      kind: "primitive",
       type: "text",
     });
   });
@@ -414,12 +415,13 @@ function document(label: string) {
       {
         content: [{ text: label, type: "text" }],
         id: "prompt",
+        kind: "primitive",
         type: "text",
       },
     ],
     references: [],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   });
 }
 
@@ -438,7 +440,7 @@ function workbookDocument() {
       },
     ],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   });
 }
 

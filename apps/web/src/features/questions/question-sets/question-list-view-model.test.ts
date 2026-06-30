@@ -1,32 +1,36 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { Question } from "#/domains/questions";
-import {
-  buildQuestionListViewModel,
-  getQuestionSummary,
-} from "./question-list-view-model";
+import { getQuestionSummaryText } from "#/domains/questions";
+import { buildQuestionListViewModel } from "./question-list-view-model";
+
+vi.mock("#/domains/questions", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("#/domains/questions")>();
+  return {
+    ...actual,
+    getQuestionSummaryText: vi.fn(() => "Domain summary"),
+  };
+});
 
 describe("question list view model", () => {
-  it("builds compact question rows from question content", () => {
+  it("builds compact question rows from the domain summary", () => {
     const items = buildQuestionListViewModel([
       question([
         {
           content: [{ text: "What is 2 + 2?", type: "text" }],
           id: "prompt",
+          kind: "primitive",
           type: "text",
         },
       ]),
     ]);
 
     expect(items[0]).toEqual({
-      description: "What is 2 + 2?",
+      description: "Domain summary",
       id: "question-1",
       metadata: "Generated Jun 14, 2026, 12:00 AM UTC",
       title: "Question 1",
     });
-  });
-
-  it("falls back when no block provides summary text", () => {
-    expect(getQuestionSummary(question([]))).toBe("Untitled question");
+    expect(getQuestionSummaryText).toHaveBeenCalledOnce();
   });
 });
 
@@ -37,7 +41,7 @@ function question(blocks: Question["body"]["blocks"]): Question {
     body: {
       blocks,
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     },
     createdAt: timestamp,
     createdByUserId: "creator",

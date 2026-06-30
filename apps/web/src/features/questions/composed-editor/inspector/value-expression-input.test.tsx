@@ -32,7 +32,7 @@ vi.mock("./reference-picker-popover", () => ({
               },
             ],
             responseFields: [],
-            schemaVersion: 1,
+            schemaVersion: 2,
           })
         }
         type="button"
@@ -144,6 +144,6 @@ function createModel(): ComposedEditorModel {
     blocks: [],
     references: [],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }

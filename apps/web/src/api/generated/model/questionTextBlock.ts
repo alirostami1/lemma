@@ -4,6 +4,7 @@
  * Lemma API
  * OpenAPI spec version: 0.1.0
  */
+import type { QuestionTextBlockKind } from "./questionTextBlockKind.ts";
 import type { QuestionTextBlockType } from "./questionTextBlockType.ts";
 import type { RenderedInlineContent } from "./renderedInlineContent.ts";
 
@@ -11,5 +12,6 @@ export interface QuestionTextBlock {
   content: RenderedInlineContent[];
   /** @minLength 1 */
   id: string;
+  kind: QuestionTextBlockKind;
   type: QuestionTextBlockType;
 }

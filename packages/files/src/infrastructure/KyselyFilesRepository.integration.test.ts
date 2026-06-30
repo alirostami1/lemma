@@ -25,7 +25,7 @@ const document = {
   blocks: [],
   references: [],
   responseFields: [],
-  schemaVersion: 1,
+  schemaVersion: 2,
 };
 let database: TestDatabase | null = null;
 

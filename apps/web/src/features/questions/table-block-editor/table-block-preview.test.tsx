@@ -32,6 +32,69 @@ describe("TableBlockPreview", () => {
     expect(screen.queryByText("answer_2")).toBeNull();
   });
 
+  it("renders every cell primitive in its stored order", () => {
+    const model: TableBlockPreviewModel = {
+      cells: [
+        {
+          blocks: [
+            {
+              content: [{ text: "Before", type: "text" }],
+              id: "text_1",
+              type: "text",
+            },
+            { id: "input_1", responseFieldId: "answer_1", type: "input" },
+            {
+              content: {
+                content: [
+                  {
+                    content: [{ text: "Rich", type: "text" }],
+                    type: "paragraph",
+                  },
+                ],
+                type: "doc",
+              },
+              id: "rich_1",
+              type: "rich_text",
+            },
+            { id: "separator_1", type: "separator" },
+            {
+              content: [{ text: "After", type: "text" }],
+              id: "text_2",
+              type: "text",
+            },
+          ],
+          columnId: "column_1",
+          id: "cell_1",
+          rowId: "row_1",
+        },
+      ],
+      columns: [{ id: "column_1", label: "Column" }],
+      prompt: "",
+      responseFields: [{ id: "answer_1", type: "text" }],
+      rows: [{ id: "row_1", label: "Row" }],
+      showColumnNames: true,
+      showRowNames: true,
+    };
+
+    const { container } = render(
+      <TableBlockPreview answer={{}} model={model} onAnswerChange={() => {}} />,
+    );
+    const cell = container.querySelector("tbody td");
+    if (!cell) {
+      throw new Error("Expected rendered table cell.");
+    }
+
+    expect(
+      Array.from(cell.childNodes).map((node) =>
+        node.nodeType === Node.TEXT_NODE ? node.textContent : node.nodeName,
+      ),
+    ).toEqual(["Before", "DIV", "DIV", "HR", "After"]);
+    expect(cell.querySelector("input")).not.toBeNull();
+    expect(cell.textContent).toContain("Before");
+    expect(cell.textContent).toContain("Rich");
+    expect(cell.textContent).toContain("After");
+  });
+
   it("keeps answer keys isolated and coerces values by field type", async () => {
     const user = userEvent.setup();
     const onAnswerChange = vi.fn();
@@ -116,25 +179,22 @@ function createPreviewModel(): TableBlockPreviewModel {
   return {
     cells: [
       {
+        blocks: [{ id: "input_1", responseFieldId: "answer_1", type: "input" }],
         columnId: "column_2",
         id: "cell_1",
-        responseFieldId: "answer_1",
         rowId: "row_1",
-        type: "response",
       },
       {
+        blocks: [{ id: "input_2", responseFieldId: "answer_2", type: "input" }],
         columnId: "column_1",
         id: "cell_2",
-        responseFieldId: "answer_2",
         rowId: "row_2",
-        type: "response",
       },
       {
+        blocks: [{ id: "input_3", responseFieldId: "answer_3", type: "input" }],
         columnId: "column_2",
         id: "cell_3",
-        responseFieldId: "answer_3",
         rowId: "row_2",
-        type: "response",
       },
     ],
     columns: [

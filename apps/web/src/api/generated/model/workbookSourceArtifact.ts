@@ -4,21 +4,20 @@
  * Lemma API
  * OpenAPI spec version: 0.1.0
  */
+import type { UuidV7 } from "./uuidV7.ts";
 import type { WorkbookSourceArtifactKind } from "./workbookSourceArtifactKind.ts";
 import type { WorkbookSourceArtifactStatus } from "./workbookSourceArtifactStatus.ts";
 import type { WorkbookSourceArtifactValidationError } from "./workbookSourceArtifactValidationError.ts";
 
 export interface WorkbookSourceArtifact {
   createdAt: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  id: string;
+  id: UuidV7;
   kind: WorkbookSourceArtifactKind;
   /** @minLength 1 */
   processor: string;
   /** @minLength 1 */
   processorVersion: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  sourceRevisionId: string;
+  sourceRevisionId: UuidV7;
   status: WorkbookSourceArtifactStatus;
   updatedAt: string;
   /** @nullable */

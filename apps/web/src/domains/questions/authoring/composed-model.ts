@@ -15,12 +15,15 @@ import type {
   ReferenceSourceDraft,
   TableBlockPreviewModel,
   TableEditorModel,
+  TableEditorPrimitiveBlock,
   TableGrading,
   ValueExpression,
 } from "./table-model";
 import {
   createDefaultTableEditorModel,
+  getTableCellPrimitiveBlocks,
   nextAvailableId as nextAvailableTableId,
+  validateTableEditorModelAnswers,
 } from "./table-model";
 import { extractReferenceIdsFromValueExpression } from "./value-source";
 
@@ -36,6 +39,10 @@ export type ComposedResponseField = {
   label?: string;
   required?: boolean;
 };
+
+export const COMPOSED_AUTHORING_SCHEMA_VERSION = 2;
+export type ComposedAuthoringSchemaVersion =
+  typeof COMPOSED_AUTHORING_SCHEMA_VERSION;
 
 export type ComposedReferenceDraft = {
   id: string;
@@ -66,13 +73,16 @@ export type ReferenceUsage =
       type: "table_content_cell";
       blockId: string;
       cellId: string;
+      cellBlockId: string;
       inlineContentIndex: number;
+      richNodePath?: readonly number[];
       rangeCell?: RangeCellOffset;
     }
   | {
       type: "table_answer_cell";
       blockId: string;
       cellId: string;
+      cellBlockId: string;
       responseFieldId: string;
     };
 
@@ -94,7 +104,7 @@ export type ComposedResponseEditorBlock = {
   responseFieldId: string;
   label?: string;
   placeholder?: string;
-  correctValueSource: ValueExpression;
+  correctValueSource?: ValueExpression;
   points: number;
   grading: TableGrading;
 };
@@ -110,15 +120,24 @@ export type ComposedTableEditorBlock = {
   table: TableEditorModel;
 };
 
+export type ComposedContainerEditorBlock = {
+  id: string;
+  type: "container";
+  containerType: "page" | "step";
+  title?: string;
+  blocks: ComposedEditorBlock[];
+};
+
 export type ComposedEditorBlock =
   | ComposedTextEditorBlock
   | ComposedRichTextEditorBlock
   | ComposedResponseEditorBlock
   | ComposedSeparatorEditorBlock
-  | ComposedTableEditorBlock;
+  | ComposedTableEditorBlock
+  | ComposedContainerEditorBlock;
 
 export type ComposedEditorModel = {
-  schemaVersion: 1;
+  schemaVersion: ComposedAuthoringSchemaVersion;
   blocks: ComposedEditorBlock[];
   responseFields: ComposedResponseField[];
   references: ComposedReferenceDraft[];
@@ -166,15 +185,24 @@ export type ComposedTablePreviewBlock = {
   table: TableBlockPreviewModel;
 };
 
+export type ComposedContainerPreviewBlock = {
+  id: string;
+  type: "container";
+  containerType: "page" | "step";
+  title?: string;
+  blocks: ComposedPreviewBlock[];
+};
+
 export type ComposedPreviewBlock =
   | ComposedTextPreviewBlock
   | ComposedRichTextPreviewBlock
   | ComposedResponsePreviewBlock
   | ComposedSeparatorPreviewBlock
-  | ComposedTablePreviewBlock;
+  | ComposedTablePreviewBlock
+  | ComposedContainerPreviewBlock;
 
 export type ComposedPreviewModel = {
-  schemaVersion: 1;
+  schemaVersion: ComposedAuthoringSchemaVersion;
   blocks: ComposedPreviewBlock[];
   responseFields: ComposedResponseField[];
 };
@@ -183,19 +211,60 @@ export function nextAvailableComposedBlockId(
   model: ComposedEditorModel,
   prefix: ComposedEditorBlock["type"],
 ) {
-  return nextAvailableTableId(
-    prefix,
-    model.blocks.map((block) => block.id),
-  );
+  return nextAvailableTableId(prefix, collectComposedBlockIds(model.blocks));
+}
+
+export type ClonedComposedBlock = {
+  block: ComposedEditorBlock;
+  responseFields: ComposedResponseField[];
+};
+
+export function cloneComposedBlockWithFreshIds(
+  model: ComposedEditorModel,
+  source: ComposedEditorBlock,
+): ClonedComposedBlock {
+  const usedBlockIds = new Set(collectDocumentBlockIds(model.blocks));
+  const usedResponseFieldIds = new Set([
+    ...model.responseFields.map((field) => field.id),
+    ...flattenComposedBlocks(model.blocks).flatMap((block) =>
+      block.type === "table"
+        ? block.table.responseFields.map((field) => field.id)
+        : [],
+    ),
+  ]);
+  const responseFields: ComposedResponseField[] = [];
+
+  const allocateBlockId = (prefix: string) => {
+    const id = nextAvailableTableId(prefix, usedBlockIds);
+    usedBlockIds.add(id);
+    return id;
+  };
+  const allocateResponseFieldId = () => {
+    const id = nextAvailableTableId("answer", usedResponseFieldIds);
+    usedResponseFieldIds.add(id);
+    return id;
+  };
+
+  return {
+    block: cloneComposedBlock(source, {
+      allocateBlockId,
+      allocateResponseFieldId,
+      model,
+      responseFields,
+    }),
+    responseFields,
+  };
 }
 
 export function nextAvailableResponseFieldId(model: ComposedEditorModel) {
   return nextAvailableTableId("answer", [
     ...model.responseFields.map((field) => field.id),
-    ...model.blocks.flatMap((block) =>
+    ...flattenComposedBlocks(model.blocks).flatMap((block) =>
       block.type === "table"
         ? block.table.responseFields.map((field) => field.id)
-        : [],
+        : block.type === "response"
+          ? [block.responseFieldId]
+          : [],
     ),
   ]);
 }
@@ -253,11 +322,11 @@ export function createSeparatorBlock(id: string): ComposedSeparatorEditorBlock {
 
 export function createTableBlock(
   id: string,
-  table: TableEditorModel = createDefaultTableEditorModel(),
+  table: TableEditorModel = createDefaultTableEditorModel(id),
 ): ComposedTableEditorBlock {
   return {
     id,
-    table,
+    table: { ...table, blockId: id },
     type: "table",
   };
 }
@@ -280,7 +349,7 @@ export function createDefaultComposedEditorModel(): ComposedEditorModel {
         type: "text",
       },
     ],
-    schemaVersion: 1,
+    schemaVersion: COMPOSED_AUTHORING_SCHEMA_VERSION,
   };
 }
 
@@ -305,9 +374,7 @@ export function updateComposedBlock(
 ): ComposedEditorModel {
   return {
     ...model,
-    blocks: model.blocks.map((block) =>
-      block.id === blockId ? updater(block) : block,
-    ),
+    blocks: updateComposedBlocks(model.blocks, blockId, updater),
   };
 }
 
@@ -315,23 +382,18 @@ export function removeComposedBlock(
   model: ComposedEditorModel,
   blockId: string,
 ): ComposedEditorModel {
-  const block = model.blocks.find((current) => current.id === blockId);
   const nextModel = {
     ...model,
-    blocks: model.blocks.filter((current) => current.id !== blockId),
+    blocks: removeComposedBlockFromBlocks(model.blocks, blockId),
   };
-  if (block?.type === "response") {
-    const stillUsed = nextModel.blocks.some(
-      (current) =>
-        current.type === "response" &&
-        current.responseFieldId === block.responseFieldId,
-    );
-    if (!stillUsed) {
-      nextModel.responseFields = nextModel.responseFields.filter(
-        (field) => field.id !== block.responseFieldId,
-      );
-    }
-  }
+  const usedResponseFieldIds = new Set(
+    flattenComposedBlocks(nextModel.blocks).flatMap((block) =>
+      block.type === "response" ? [block.responseFieldId] : [],
+    ),
+  );
+  nextModel.responseFields = nextModel.responseFields.filter((field) =>
+    usedResponseFieldIds.has(field.id),
+  );
   return nextModel;
 }
 
@@ -340,18 +402,8 @@ export function moveComposedBlock(
   blockId: string,
   direction: "up" | "down",
 ): ComposedEditorModel {
-  const index = model.blocks.findIndex((block) => block.id === blockId);
-  if (index < 0) {
-    return model;
-  }
-  const targetIndex = direction === "up" ? index - 1 : index + 1;
-  if (targetIndex < 0 || targetIndex >= model.blocks.length) {
-    return model;
-  }
-  const blocks = [...model.blocks];
-  const [block] = blocks.splice(index, 1);
-  blocks.splice(targetIndex, 0, block);
-  return { ...model, blocks };
+  const moved = moveComposedBlockInTree(model.blocks, blockId, direction);
+  return moved.changed ? { ...model, blocks: moved.blocks } : model;
 }
 
 export function reorderComposedBlocks(
@@ -433,35 +485,72 @@ export function getReferenceUsage(
         break;
       case "table":
         for (const cell of block.table.cells) {
-          if (cell.type === "content") {
-            for (const inlineReference of getInlineReferenceUsages(
-              cell.content,
-            )) {
-              addReferenceUsage(usage, inlineReference.referenceId, {
-                blockId: block.id,
-                cellId: cell.id,
-                inlineContentIndex: inlineReference.inlineContentIndex,
-                ...(inlineReference.rangeCell
-                  ? { rangeCell: inlineReference.rangeCell }
-                  : {}),
-                type: "table_content_cell",
-              });
+          for (const cellBlock of getTableCellPrimitiveBlocks(cell)) {
+            if (cellBlock.type === "text") {
+              for (const inlineReference of getInlineReferenceUsages(
+                cellBlock.content,
+              )) {
+                addReferenceUsage(usage, inlineReference.referenceId, {
+                  blockId: block.id,
+                  cellId: cell.id,
+                  cellBlockId: cellBlock.id,
+                  inlineContentIndex: inlineReference.inlineContentIndex,
+                  ...(inlineReference.rangeCell
+                    ? { rangeCell: inlineReference.rangeCell }
+                    : {}),
+                  type: "table_content_cell",
+                });
+              }
             }
-            continue;
-          }
 
-          for (const referenceId of extractReferenceIdsFromValueExpression(
-            cell.correctValueSource,
-          )) {
-            addReferenceUsage(usage, referenceId, {
-              blockId: block.id,
-              cellId: cell.id,
-              responseFieldId: cell.responseFieldId,
-              type: "table_answer_cell",
-            });
+            if (cellBlock.type === "rich_text") {
+              for (const inlineReference of getRichReferenceUsages(
+                cellBlock.content,
+              )) {
+                addReferenceUsage(usage, inlineReference.referenceId, {
+                  blockId: block.id,
+                  cellId: cell.id,
+                  cellBlockId: cellBlock.id,
+                  inlineContentIndex: inlineReference.inlineContentIndex,
+                  richNodePath: inlineReference.richNodePath,
+                  ...(inlineReference.rangeCell
+                    ? { rangeCell: inlineReference.rangeCell }
+                    : {}),
+                  type: "table_content_cell",
+                });
+              }
+            }
+
+            if (cellBlock.type === "input") {
+              for (const referenceId of extractReferenceIdsFromValueExpression(
+                cellBlock.correctValueSource,
+              )) {
+                addReferenceUsage(usage, referenceId, {
+                  blockId: block.id,
+                  cellId: cell.id,
+                  cellBlockId: cellBlock.id,
+                  responseFieldId: cellBlock.responseFieldId,
+                  type: "table_answer_cell",
+                });
+              }
+            }
           }
         }
         break;
+      case "container": {
+        const childUsage = getReferenceUsage({
+          blocks: block.blocks,
+          references: [],
+          responseFields: [],
+          schemaVersion: COMPOSED_AUTHORING_SCHEMA_VERSION,
+        });
+        for (const [referenceId, items] of childUsage) {
+          for (const item of items) {
+            addReferenceUsage(usage, referenceId, item);
+          }
+        }
+        break;
+      }
       case "separator":
         break;
       default:
@@ -572,11 +661,12 @@ export function normalizeWorkbookReferenceIdsInComposedEditorModel(
 }
 
 function replaceReferenceIdInValueExpression(
-  value: ValueExpression,
+  value: ValueExpression | undefined,
   previousReferenceId: string,
   nextReferenceId: string,
-): ValueExpression {
-  return value.type === "reference" && value.referenceId === previousReferenceId
+): ValueExpression | undefined {
+  return value?.type === "reference" &&
+    value.referenceId === previousReferenceId
     ? { ...value, referenceId: nextReferenceId }
     : value;
 }
@@ -591,10 +681,12 @@ function getReferenceIdsUsedByBlock(block: ComposedEditorBlock): string[] {
       return extractReferenceIdsFromValueExpression(block.correctValueSource);
     case "table":
       return block.table.cells.flatMap((cell) =>
-        cell.type === "content"
-          ? extractInlineReferenceIds(cell.content)
-          : extractReferenceIdsFromValueExpression(cell.correctValueSource),
+        getTableCellPrimitiveBlocks(cell).flatMap(
+          getReferenceIdsUsedByTablePrimitiveBlock,
+        ),
       );
+    case "container":
+      return block.blocks.flatMap(getReferenceIdsUsedByBlock);
     case "separator":
       return [];
     default:
@@ -723,25 +815,22 @@ function replaceReferenceIdUsagesInComposedEditorModel(
             table: {
               ...block.table,
               cells: block.table.cells.map((cell) =>
-                cell.type === "content"
-                  ? {
-                      ...cell,
-                      content: replaceInlineReferenceId(
-                        cell.content,
-                        previousReferenceId,
-                        nextReferenceId,
-                      ),
-                    }
-                  : {
-                      ...cell,
-                      correctValueSource: replaceReferenceIdInValueExpression(
-                        cell.correctValueSource,
-                        previousReferenceId,
-                        nextReferenceId,
-                      ),
-                    },
+                replaceReferenceIdInTableCell(
+                  cell,
+                  previousReferenceId,
+                  nextReferenceId,
+                ),
               ),
             },
+          };
+        case "container":
+          return {
+            ...block,
+            blocks: replaceReferenceIdUsagesInBlocks(
+              block.blocks,
+              previousReferenceId,
+              nextReferenceId,
+            ),
           };
         case "separator":
           return block;
@@ -750,6 +839,347 @@ function replaceReferenceIdUsagesInComposedEditorModel(
       }
     }),
   };
+}
+
+function getReferenceIdsUsedByTablePrimitiveBlock(
+  block: TableEditorPrimitiveBlock,
+): string[] {
+  if (block.type === "text") {
+    return extractInlineReferenceIds(block.content);
+  }
+  if (block.type === "rich_text") {
+    return extractRichReferenceIds(block.content);
+  }
+  if (block.type === "input") {
+    return extractReferenceIdsFromValueExpression(block.correctValueSource);
+  }
+  return [];
+}
+
+function replaceReferenceIdInTableCell(
+  cell: TableEditorModel["cells"][number],
+  previousReferenceId: string,
+  nextReferenceId: string,
+): TableEditorModel["cells"][number] {
+  return {
+    ...cell,
+    blocks: getTableCellPrimitiveBlocks(cell).map((cellBlock) => {
+      if (cellBlock.type === "text") {
+        return {
+          ...cellBlock,
+          content: replaceInlineReferenceId(
+            cellBlock.content,
+            previousReferenceId,
+            nextReferenceId,
+          ),
+        };
+      }
+      if (cellBlock.type === "input") {
+        return {
+          ...cellBlock,
+          correctValueSource: replaceReferenceIdInValueExpression(
+            cellBlock.correctValueSource,
+            previousReferenceId,
+            nextReferenceId,
+          ),
+        };
+      }
+      if (cellBlock.type === "rich_text") {
+        return {
+          ...cellBlock,
+          content: replaceRichReferenceId(
+            cellBlock.content,
+            previousReferenceId,
+            nextReferenceId,
+          ),
+        };
+      }
+      return cellBlock;
+    }),
+  };
+}
+
+function collectDocumentBlockIds(blocks: ComposedEditorBlock[]): string[] {
+  return flattenComposedBlocks(blocks).flatMap((block) =>
+    block.type === "table"
+      ? [
+          block.id,
+          ...block.table.cells.flatMap((cell) =>
+            cell.blocks.map((cellBlock) => cellBlock.id),
+          ),
+        ]
+      : [block.id],
+  );
+}
+
+const collectComposedBlockIds = collectDocumentBlockIds;
+
+type ComposedCloneContext = {
+  allocateBlockId(prefix: string): string;
+  allocateResponseFieldId(): string;
+  model: ComposedEditorModel;
+  responseFields: ComposedResponseField[];
+};
+
+function cloneComposedBlock(
+  block: ComposedEditorBlock,
+  context: ComposedCloneContext,
+): ComposedEditorBlock {
+  switch (block.type) {
+    case "text":
+      return {
+        ...block,
+        content: structuredClone(block.content),
+        id: context.allocateBlockId("text"),
+      };
+    case "rich_text":
+      return {
+        ...block,
+        content: structuredClone(block.content),
+        id: context.allocateBlockId("rich_text"),
+      };
+    case "separator":
+      return { ...block, id: context.allocateBlockId("separator") };
+    case "response": {
+      const responseFieldId = context.allocateResponseFieldId();
+      const sourceField = context.model.responseFields.find(
+        (field) => field.id === block.responseFieldId,
+      );
+      if (!sourceField) {
+        throw new Error(
+          `Cannot duplicate input block ${block.id}: missing response field ${block.responseFieldId}.`,
+        );
+      }
+
+      context.responseFields.push({ ...sourceField, id: responseFieldId });
+      return {
+        ...block,
+        correctValueSource: structuredClone(block.correctValueSource),
+        id: context.allocateBlockId("response"),
+        responseFieldId,
+      };
+    }
+    case "container":
+      return {
+        ...block,
+        blocks: block.blocks.map((child) => cloneComposedBlock(child, context)),
+        id: context.allocateBlockId("container"),
+      };
+    case "table":
+      return cloneComposedTableBlock(block, context);
+    default:
+      return assertNever(block);
+  }
+}
+
+function cloneComposedTableBlock(
+  block: ComposedTableEditorBlock,
+  context: ComposedCloneContext,
+): ComposedTableEditorBlock {
+  validateTableEditorModelAnswers(block.table);
+  const id = context.allocateBlockId("table");
+  const rowIds = new Map(
+    block.table.rows.map((row, index) => [row.id, `${id}_row_${index + 1}`]),
+  );
+  const columnIds = new Map(
+    block.table.columns.map((column, index) => [
+      column.id,
+      `${id}_column_${index + 1}`,
+    ]),
+  );
+  const responseFieldIds = new Map(
+    block.table.responseFields.map((field) => [
+      field.id,
+      context.allocateResponseFieldId(),
+    ]),
+  );
+
+  function getMappedResponseFieldId(
+    primitive: Extract<TableEditorPrimitiveBlock, { type: "input" }>,
+  ): string {
+    const responseFieldId = responseFieldIds.get(primitive.responseFieldId);
+    if (!responseFieldId) {
+      throw new Error(
+        `Cannot duplicate table ${block.id}: input block ${primitive.id} references missing response field ${primitive.responseFieldId}.`,
+      );
+    }
+    return responseFieldId;
+  }
+
+  return {
+    ...block,
+    id,
+    table: {
+      ...block.table,
+      blockId: id,
+      cells: block.table.cells.map((cell, index) => ({
+        blocks: cell.blocks.map((primitive) => ({
+          ...structuredClone(primitive),
+          id: context.allocateBlockId(`table_${primitive.type}`),
+          ...(primitive.type === "input"
+            ? {
+                responseFieldId: getMappedResponseFieldId(primitive),
+              }
+            : {}),
+        })),
+        columnId: columnIds.get(cell.columnId) ?? cell.columnId,
+        id: `${id}_cell_${index + 1}`,
+        rowId: rowIds.get(cell.rowId) ?? cell.rowId,
+      })),
+      columns: block.table.columns.map((column) => ({
+        ...column,
+        id: columnIds.get(column.id) ?? column.id,
+      })),
+      responseFields: block.table.responseFields.map((field) => ({
+        ...field,
+        id: responseFieldIds.get(field.id) ?? field.id,
+      })),
+      rows: block.table.rows.map((row) => ({
+        ...row,
+        id: rowIds.get(row.id) ?? row.id,
+      })),
+    },
+  };
+}
+
+export function flattenComposedBlocks(
+  blocks: ComposedEditorBlock[],
+): ComposedEditorBlock[] {
+  return blocks.flatMap((block) =>
+    block.type === "container"
+      ? [block, ...flattenComposedBlocks(block.blocks)]
+      : [block],
+  );
+}
+
+export function findComposedBlockById(
+  blocks: ComposedEditorBlock[],
+  blockId: string,
+): ComposedEditorBlock | null {
+  return (
+    flattenComposedBlocks(blocks).find((block) => block.id === blockId) ?? null
+  );
+}
+
+export function insertComposedBlockAfterId(
+  blocks: ComposedEditorBlock[],
+  blockId: string,
+  insertedBlock: ComposedEditorBlock,
+): ComposedEditorBlock[] {
+  const index = blocks.findIndex((block) => block.id === blockId);
+  if (index >= 0) {
+    const nextBlocks = [...blocks];
+    nextBlocks.splice(index + 1, 0, insertedBlock);
+    return nextBlocks;
+  }
+  return blocks.map((block) =>
+    block.type === "container" && findComposedBlockById(block.blocks, blockId)
+      ? {
+          ...block,
+          blocks: insertComposedBlockAfterId(
+            block.blocks,
+            blockId,
+            insertedBlock,
+          ),
+        }
+      : block,
+  );
+}
+
+function moveComposedBlockInTree(
+  blocks: ComposedEditorBlock[],
+  blockId: string,
+  direction: "up" | "down",
+): { blocks: ComposedEditorBlock[]; changed: boolean } {
+  const index = blocks.findIndex((block) => block.id === blockId);
+  if (index >= 0) {
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= blocks.length) {
+      return { blocks, changed: false };
+    }
+    const nextBlocks = [...blocks];
+    const block = nextBlocks[index];
+    if (!block) {
+      return { blocks, changed: false };
+    }
+    nextBlocks.splice(index, 1);
+    nextBlocks.splice(targetIndex, 0, block);
+    return { blocks: nextBlocks, changed: true };
+  }
+
+  for (const block of blocks) {
+    if (block.type !== "container") {
+      continue;
+    }
+    const childResult = moveComposedBlockInTree(
+      block.blocks,
+      blockId,
+      direction,
+    );
+    if (childResult.changed) {
+      return {
+        blocks: blocks.map((candidate) =>
+          candidate.id === block.id
+            ? { ...block, blocks: childResult.blocks }
+            : candidate,
+        ),
+        changed: true,
+      };
+    }
+  }
+  return { blocks, changed: false };
+}
+
+function updateComposedBlocks(
+  blocks: ComposedEditorBlock[],
+  blockId: string,
+  updater: (block: ComposedEditorBlock) => ComposedEditorBlock,
+): ComposedEditorBlock[] {
+  return blocks.map((block) => {
+    if (block.id === blockId) {
+      return updater(block);
+    }
+    if (block.type === "container") {
+      return {
+        ...block,
+        blocks: updateComposedBlocks(block.blocks, blockId, updater),
+      };
+    }
+    return block;
+  });
+}
+
+function removeComposedBlockFromBlocks(
+  blocks: ComposedEditorBlock[],
+  blockId: string,
+): ComposedEditorBlock[] {
+  return blocks
+    .filter((block) => block.id !== blockId)
+    .map((block) =>
+      block.type === "container"
+        ? {
+            ...block,
+            blocks: removeComposedBlockFromBlocks(block.blocks, blockId),
+          }
+        : block,
+    );
+}
+
+function replaceReferenceIdUsagesInBlocks(
+  blocks: ComposedEditorBlock[],
+  previousReferenceId: string,
+  nextReferenceId: string,
+): ComposedEditorBlock[] {
+  return replaceReferenceIdUsagesInComposedEditorModel(
+    {
+      blocks,
+      references: [],
+      responseFields: [],
+      schemaVersion: COMPOSED_AUTHORING_SCHEMA_VERSION,
+    },
+    previousReferenceId,
+    nextReferenceId,
+  ).blocks;
 }
 
 function assertNever(value: never): never {

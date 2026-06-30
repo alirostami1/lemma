@@ -4,10 +4,10 @@
  * Lemma API
  * OpenAPI spec version: 0.1.0
  */
+import type { UuidV7 } from "./uuidV7.ts";
 
 export interface AttachQuestionBlueprintDraftSourceFileRequest {
   /** @minimum 1 */
   expectedRevision: number;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  fileId: string;
+  fileId: UuidV7;
 }

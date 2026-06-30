@@ -11,6 +11,8 @@ export {
   updateResponseCellCorrectValueSource,
   updateResponseFieldForCell,
   updateTableCell,
+  updateTableCellInputBlockCorrectValueSource,
+  updateTableCellTextBlockContent,
 } from "#/domains/questions/authoring/table-cell-operations";
 export {
   addTableColumn,

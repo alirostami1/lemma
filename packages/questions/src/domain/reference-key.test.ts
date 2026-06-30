@@ -219,7 +219,7 @@ describe("workbook reference keys", () => {
             },
           ],
           responseFields: [],
-          schemaVersion: 1,
+          schemaVersion: 2,
         }),
       /workbook reference id must match structured source/,
     );

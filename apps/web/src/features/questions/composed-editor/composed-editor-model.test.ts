@@ -22,7 +22,7 @@ describe("reorderComposedBlocks", () => {
           type: "text",
         },
       ],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     const textBlock = model.blocks[0];

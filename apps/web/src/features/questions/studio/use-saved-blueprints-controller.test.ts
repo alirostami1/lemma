@@ -25,7 +25,7 @@ const queryState = vi.hoisted(() => ({
               document: {
                 blocks: [],
                 responseFields: [],
-                schemaVersion: 1,
+                schemaVersion: 2,
               },
               id: "blueprint-1",
               name: "Blueprint one",
@@ -43,7 +43,7 @@ const queryState = vi.hoisted(() => ({
               document: {
                 blocks: [],
                 responseFields: [],
-                schemaVersion: 1,
+                schemaVersion: 2,
               },
               id: "blueprint-2",
               name: "Blueprint two",

@@ -27,6 +27,7 @@ import type {
   ListQuestionGenerationRunsResponse,
   ListQuestionSetsResponse,
   ListQuestionsResponse,
+  PublicQuestionBlueprintPrimitiveBlock,
   PublishQuestionBlueprintDraftResponse,
   QuestionBlueprintAuthoringResponse,
   QuestionBlueprintDraftResponse,
@@ -304,56 +305,58 @@ function toLearnerQuestionBlueprintDocumentDto(
   document: QuestionBlueprintResult["questionBlueprint"]["document"],
 ): QuestionBlueprintDto["document"] {
   return {
-    blocks: document.blocks.map((block) => {
-      if (block.type === "text") {
-        return {
-          ...block,
-          content: toPublicInlineContentDto(block.content),
-        };
-      }
-      if (block.type === "response") {
-        return {
-          id: block.id,
-          responseFieldId: block.responseFieldId,
-          type: block.type,
-          ...(block.label === undefined ? {} : { label: block.label }),
-          ...(block.placeholder === undefined
-            ? {}
-            : { placeholder: block.placeholder }),
-        };
-      }
-      if (block.type !== "table") {
-        return block;
-      }
-      return {
-        ...block,
-        cells: block.cells.map((cell) => {
-          if (cell.type === "content") {
-            return {
-              columnId: cell.columnId,
-              content: toPublicInlineContentDto(cell.content),
-              id: cell.id,
-              rowId: cell.rowId,
-              type: cell.type,
-            };
-          }
-          return {
-            columnId: cell.columnId,
-            id: cell.id,
-            responseFieldId: cell.responseFieldId,
-            rowId: cell.rowId,
-            type: cell.type,
-            ...(cell.label === undefined ? {} : { label: cell.label }),
-            ...(cell.placeholder === undefined
-              ? {}
-              : { placeholder: cell.placeholder }),
-          };
-        }),
-      };
-    }),
+    blocks: document.blocks.map(toPublicQuestionBlueprintBlockDto),
     responseFields: document.responseFields,
     schemaVersion: document.schemaVersion,
   };
+}
+
+function toPublicQuestionBlueprintBlockDto(
+  block: QuestionBlueprintResult["questionBlueprint"]["document"]["blocks"][number],
+): QuestionBlueprintDto["document"]["blocks"][number] {
+  if (block.kind === "container") {
+    return {
+      ...block,
+      blocks: block.blocks.map(toPublicQuestionBlueprintBlockDto),
+    };
+  }
+  if (block.kind === "complex") {
+    return {
+      ...block,
+      cells: block.cells.map((cell) => ({
+        ...cell,
+        blocks: cell.blocks.map(toPublicQuestionBlueprintPrimitiveBlockDto),
+      })),
+    };
+  }
+  return toPublicQuestionBlueprintPrimitiveBlockDto(block);
+}
+
+function toPublicQuestionBlueprintPrimitiveBlockDto(
+  block: Extract<
+    QuestionBlueprintResult["questionBlueprint"]["document"]["blocks"][number],
+    { kind: "primitive" }
+  >,
+): PublicQuestionBlueprintPrimitiveBlock {
+  if (block.type === "text") {
+    return {
+      ...block,
+      content: toPublicInlineContentDto(block.content),
+    };
+  }
+  if (block.type === "input") {
+    return {
+      id: block.id,
+      kind: "primitive",
+      responseFieldId: block.responseFieldId,
+      type: block.type,
+      ...(block.label === undefined ? {} : { label: block.label }),
+      ...(block.placeholder === undefined
+        ? {}
+        : { placeholder: block.placeholder }),
+    };
+  }
+  return block;
 }
 
 function toPublicInlineContentDto(

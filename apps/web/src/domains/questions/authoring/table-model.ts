@@ -1,4 +1,6 @@
+import type { ComposedRenderedInlineContent } from "./composed-model";
 import type { ComposedInlineContent } from "./inline-content";
+import type { ComposedRichContent } from "./rich-content-types";
 
 export type TableCellValue = string | number | boolean | null;
 
@@ -45,6 +47,34 @@ export type TableGrading =
   | { mode: "case_insensitive_text" }
   | { mode: "manual" };
 
+export type InputCorrectValueContract = {
+  grading: TableGrading;
+  correctValueSource?: ValueExpression;
+};
+
+export function requiresCorrectValueSource(grading: TableGrading): boolean {
+  return grading.mode !== "manual";
+}
+
+export function createDefaultCorrectValueSource(): ValueExpression {
+  return { type: "literal", value: "" };
+}
+
+export function applyInputGrading<T extends InputCorrectValueContract>(
+  block: T,
+  grading: TableGrading,
+): T {
+  const next: T = { ...block, grading };
+  if (!requiresCorrectValueSource(grading)) {
+    delete next.correctValueSource;
+    return next;
+  }
+
+  next.correctValueSource =
+    block.correctValueSource ?? createDefaultCorrectValueSource();
+  return next;
+}
+
 export type TableAxis = {
   id: string;
   label: string;
@@ -57,30 +87,49 @@ export type TableResponseField = {
   required?: boolean;
 };
 
-export type TableEditorContentCell = {
+export type TableEditorTextBlock = {
   id: string;
-  rowId: string;
-  columnId: string;
-  type: "content";
+  type: "text";
   content: ComposedInlineContent[];
 };
 
-export type TableEditorResponseCell = {
+export type TableEditorRichTextBlock = {
   id: string;
-  rowId: string;
-  columnId: string;
-  type: "response";
+  type: "rich_text";
+  content: ComposedRichContent;
+};
+
+export type TableEditorSeparatorBlock = {
+  id: string;
+  type: "separator";
+};
+
+export type TableEditorInputBlock = {
+  id: string;
+  type: "input";
   responseFieldId: string;
   label?: string;
   placeholder?: string;
-  correctValueSource: ValueExpression;
+  correctValueSource?: ValueExpression;
   points: number;
   grading: TableGrading;
 };
 
-export type TableEditorCell = TableEditorContentCell | TableEditorResponseCell;
+export type TableEditorPrimitiveBlock =
+  | TableEditorTextBlock
+  | TableEditorRichTextBlock
+  | TableEditorSeparatorBlock
+  | TableEditorInputBlock;
+
+export type TableEditorCell = {
+  id: string;
+  rowId: string;
+  columnId: string;
+  blocks: TableEditorPrimitiveBlock[];
+};
 
 export type TableEditorModel = {
+  blockId?: string;
   prompt: string;
   columns: TableAxis[];
   rows: TableAxis[];
@@ -90,25 +139,35 @@ export type TableEditorModel = {
   cells: TableEditorCell[];
 };
 
-export type TableBlockPreviewContentCell = {
+export type TableBlockPreviewTextBlock = {
   id: string;
-  rowId: string;
-  columnId: string;
-  type: "content";
-  content: ComposedInlineContent[];
+  type: "text";
+  content: Array<ComposedInlineContent | ComposedRenderedInlineContent>;
 };
 
-export type TableBlockPreviewResponseCell = {
+export type TableBlockPreviewRichTextBlock = TableEditorRichTextBlock;
+export type TableBlockPreviewSeparatorBlock = TableEditorSeparatorBlock;
+
+export type TableBlockPreviewInputBlock = {
   id: string;
-  rowId: string;
-  columnId: string;
-  type: "response";
+  type: "input";
   responseFieldId: string;
+  label?: string;
+  placeholder?: string;
 };
 
-export type TableBlockPreviewCell =
-  | TableBlockPreviewContentCell
-  | TableBlockPreviewResponseCell;
+export type TableBlockPreviewPrimitiveBlock =
+  | TableBlockPreviewTextBlock
+  | TableBlockPreviewRichTextBlock
+  | TableBlockPreviewSeparatorBlock
+  | TableBlockPreviewInputBlock;
+
+export type TableBlockPreviewCell = {
+  id: string;
+  rowId: string;
+  columnId: string;
+  blocks: TableBlockPreviewPrimitiveBlock[];
+};
 
 export type TableBlockPreviewModel = {
   prompt: string;
@@ -141,39 +200,62 @@ export type TableBlockPreviewProps = {
   showPrompt?: boolean;
 };
 
-export function createDefaultTableEditorModel(): TableEditorModel {
+export function createDefaultTableEditorModel(
+  tableBlockId = "table_1",
+): TableEditorModel {
   return {
+    blockId: tableBlockId,
     cells: [
       {
+        blocks: [
+          {
+            content: [{ text: "1", type: "text" }],
+            id: `${tableBlockId}_cell_1_text`,
+            type: "text",
+          },
+        ],
         columnId: "column_1",
-        content: [{ text: "1", type: "text" }],
         id: "cell_1",
         rowId: "row_1",
-        type: "content",
       },
       {
+        blocks: [
+          {
+            correctValueSource: { type: "literal", value: 3 },
+            grading: { mode: "exact" },
+            id: `${tableBlockId}_cell_2_input`,
+            points: 1,
+            responseFieldId: "answer_1",
+            type: "input",
+          },
+        ],
         columnId: "column_2",
-        correctValueSource: { type: "literal", value: 3 },
-        grading: { mode: "exact" },
         id: "cell_2",
-        points: 1,
-        responseFieldId: "answer_1",
         rowId: "row_1",
-        type: "response",
       },
       {
+        blocks: [
+          {
+            content: [{ text: "2", type: "text" }],
+            id: `${tableBlockId}_cell_3_text`,
+            type: "text",
+          },
+        ],
         columnId: "column_1",
-        content: [{ text: "2", type: "text" }],
         id: "cell_3",
         rowId: "row_2",
-        type: "content",
       },
       {
+        blocks: [
+          {
+            content: [{ text: "4", type: "text" }],
+            id: `${tableBlockId}_cell_4_text`,
+            type: "text",
+          },
+        ],
         columnId: "column_2",
-        content: [{ text: "4", type: "text" }],
         id: "cell_4",
         rowId: "row_2",
-        type: "content",
       },
     ],
     columns: [
@@ -287,26 +369,36 @@ export function validateTableEditorModelAnswers(model: TableEditorModel): void {
 
   const usedResponseFieldIds = new Set<string>();
   for (const cell of model.cells) {
-    if (cell.type !== "response") {
-      continue;
-    }
-    if (!responseFieldIds.has(cell.responseFieldId)) {
-      throw new Error(
-        `Response cell ${cell.id} references missing response field ${cell.responseFieldId}.`,
-      );
-    }
-    if (!Number.isFinite(cell.points)) {
-      throw new Error(`Response cell ${cell.id} has invalid points.`);
-    }
-    if (cell.grading.mode === "number") {
-      const { tolerance } = cell.grading;
-      if (!Number.isFinite(tolerance.value) || tolerance.value < 0) {
+    for (const block of cell.blocks) {
+      if (block.type !== "input") {
+        continue;
+      }
+      if (!responseFieldIds.has(block.responseFieldId)) {
         throw new Error(
-          `Response cell ${cell.id} has invalid number tolerance.`,
+          `Input block ${block.id} in cell ${cell.id} references missing response field ${block.responseFieldId}.`,
         );
       }
+      if (!Number.isFinite(block.points)) {
+        throw new Error(`Input block ${block.id} has invalid points.`);
+      }
+      if (
+        requiresCorrectValueSource(block.grading) &&
+        block.correctValueSource === undefined
+      ) {
+        throw new Error(
+          `Input block ${block.id} in cell ${cell.id} is missing correct value source for ${block.grading.mode} grading.`,
+        );
+      }
+      if (block.grading.mode === "number") {
+        const { tolerance } = block.grading;
+        if (!Number.isFinite(tolerance.value) || tolerance.value < 0) {
+          throw new Error(
+            `Input block ${block.id} has invalid number tolerance.`,
+          );
+        }
+      }
+      usedResponseFieldIds.add(block.responseFieldId);
     }
-    usedResponseFieldIds.add(cell.responseFieldId);
   }
 
   for (const field of model.responseFields) {
@@ -320,23 +412,10 @@ export function tableEditorModelToStaticPreviewModel(
   model: TableEditorModel,
 ): TableBlockPreviewModel {
   return {
-    cells: model.cells.map((cell) =>
-      cell.type === "content"
-        ? {
-            columnId: cell.columnId,
-            content: [...cell.content],
-            id: cell.id,
-            rowId: cell.rowId,
-            type: "content" as const,
-          }
-        : {
-            columnId: cell.columnId,
-            id: cell.id,
-            responseFieldId: cell.responseFieldId,
-            rowId: cell.rowId,
-            type: "response" as const,
-          },
-    ),
+    cells: model.cells.map((cell) => ({
+      ...cell,
+      blocks: cell.blocks.map(tableEditorPrimitiveToPreviewPrimitive),
+    })),
     columns: [...model.columns],
     prompt: model.prompt,
     responseFields: [...model.responseFields],
@@ -344,4 +423,49 @@ export function tableEditorModelToStaticPreviewModel(
     showColumnNames: model.showColumnNames,
     showRowNames: model.showRowNames,
   };
+}
+
+export function getPrimaryTableTextBlock(
+  cell: TableEditorCell,
+): TableEditorTextBlock | null {
+  return cell.blocks.find((block) => block.type === "text") ?? null;
+}
+
+export function getPrimaryTableInputBlock(
+  cell: TableEditorCell,
+): TableEditorInputBlock | null {
+  return cell.blocks.find((block) => block.type === "input") ?? null;
+}
+
+export function getTableCellEditingKind(
+  cell: TableEditorCell,
+): "content" | "response" {
+  return getPrimaryTableInputBlock(cell) ? "response" : "content";
+}
+
+export function getTableCellPrimitiveBlocks(
+  cell: TableEditorCell,
+): TableEditorPrimitiveBlock[] {
+  return cell.blocks;
+}
+
+export function getTablePreviewCellPrimitiveBlocks(
+  cell: TableBlockPreviewCell,
+): TableBlockPreviewPrimitiveBlock[] {
+  return cell.blocks;
+}
+
+function tableEditorPrimitiveToPreviewPrimitive(
+  block: TableEditorPrimitiveBlock,
+): TableBlockPreviewPrimitiveBlock {
+  if (block.type === "input") {
+    return {
+      id: block.id,
+      label: block.label,
+      placeholder: block.placeholder,
+      responseFieldId: block.responseFieldId,
+      type: "input",
+    };
+  }
+  return block;
 }

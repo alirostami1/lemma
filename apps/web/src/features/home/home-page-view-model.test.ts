@@ -20,7 +20,7 @@ function blueprint(
     createdByUserId: "creator",
     currentVersionId: `version-${id}`,
     description: null,
-    document: { blocks: [], responseFields: [], schemaVersion: 1 },
+    document: { blocks: [], responseFields: [], schemaVersion: 2 },
     id,
     name: `Blueprint ${id}`,
     ownerUserId: "owner",

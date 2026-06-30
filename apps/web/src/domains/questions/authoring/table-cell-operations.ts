@@ -1,9 +1,13 @@
 import {
+  getPrimaryTableInputBlock,
+  getPrimaryTableTextBlock,
+  getTableCellPrimitiveBlocks,
   nextAvailableId,
   type TableEditorCell,
-  type TableEditorContentCell,
+  type TableEditorInputBlock,
   type TableEditorModel,
-  type TableEditorResponseCell,
+  type TableEditorPrimitiveBlock,
+  type TableEditorTextBlock,
   type TableResponseField,
   type ValueExpression,
 } from "./table-model";
@@ -39,15 +43,14 @@ export function ensureTableCell(
     return { cell: existing, model };
   }
 
-  const cell: TableEditorContentCell = {
+  const cell: TableEditorCell = {
+    blocks: [],
     columnId,
-    content: [],
     id: nextAvailableId(
       "cell",
       model.cells.map((item) => item.id),
     ),
     rowId,
-    type: "content",
   };
 
   return {
@@ -77,11 +80,19 @@ export function makeContentCell(
   cellId: string,
 ): TableEditorModel {
   return updateTableCell(model, cellId, (cell) => ({
+    blocks: [
+      {
+        content: getPrimaryTableTextBlock(cell)?.content ?? [],
+        id: nextAvailableId(
+          `${model.blockId ?? "table"}_${cell.id}_text`,
+          model.cells.flatMap((item) => item.blocks.map((block) => block.id)),
+        ),
+        type: "text",
+      },
+    ],
     columnId: cell.columnId,
-    content: cell.type === "content" ? [...cell.content] : [],
     id: cell.id,
     rowId: cell.rowId,
-    type: "content",
   }));
 }
 
@@ -94,7 +105,7 @@ export function makeResponseCell(
     return model;
   }
 
-  if (cell.type === "response") {
+  if (getPrimaryTableInputBlock(cell)) {
     return ensureResponseFieldForCell(model, cell.id);
   }
 
@@ -120,11 +131,16 @@ export function ensureResponseFieldForCell(
   cellId: string,
 ): TableEditorModel {
   const cell = getTableCell(model, cellId);
-  if (cell?.type !== "response") {
+  const inputBlock = cell ? getPrimaryTableInputBlock(cell) : null;
+  if (!cell || !inputBlock) {
     return model;
   }
 
-  if (model.responseFields.some((field) => field.id === cell.responseFieldId)) {
+  if (
+    model.responseFields.some(
+      (field) => field.id === inputBlock.responseFieldId,
+    )
+  ) {
     return model;
   }
 
@@ -136,17 +152,22 @@ export function repairMissingAnswerFieldForCell(
   cellId: string,
 ): TableEditorModel {
   const cell = getTableCell(model, cellId);
-  if (cell?.type !== "response") {
+  const inputBlock = cell ? getPrimaryTableInputBlock(cell) : null;
+  if (!cell || !inputBlock) {
     return model;
   }
 
-  if (model.responseFields.some((field) => field.id === cell.responseFieldId)) {
+  if (
+    model.responseFields.some(
+      (field) => field.id === inputBlock.responseFieldId,
+    )
+  ) {
     return model;
   }
 
   const responseField: TableResponseField = {
-    id: cell.responseFieldId,
-    label: cell.label ?? nextTableAnswerLabel(model),
+    id: inputBlock.responseFieldId,
+    label: inputBlock.label ?? nextTableAnswerLabel(model),
     required: true,
     type: DEFAULT_TABLE_ANSWER_FIELD_TYPE,
   };
@@ -163,14 +184,15 @@ export function updateResponseFieldForCell(
   update: (field: TableResponseField) => TableResponseField,
 ): TableEditorModel {
   const cell = getTableCell(model, cellId);
-  if (cell?.type !== "response") {
+  const inputBlock = cell ? getPrimaryTableInputBlock(cell) : null;
+  if (!inputBlock) {
     return model;
   }
 
   return {
     ...model,
     responseFields: model.responseFields.map((field) =>
-      field.id === cell.responseFieldId ? update(field) : field,
+      field.id === inputBlock.responseFieldId ? update(field) : field,
     ),
   };
 }
@@ -178,10 +200,23 @@ export function updateResponseFieldForCell(
 export function updateContentCellContent(
   model: TableEditorModel,
   cellId: string,
-  content: TableEditorContentCell["content"],
+  content: TableEditorTextBlock["content"],
 ): TableEditorModel {
-  return updateTableCell(model, cellId, (cell) =>
-    cell.type === "content" ? { ...cell, content } : cell,
+  const cell = getTableCell(model, cellId);
+  const textBlock = cell ? getPrimaryTableTextBlock(cell) : null;
+  return textBlock
+    ? updateTableCellTextBlockContent(model, cellId, textBlock.id, content)
+    : model;
+}
+
+export function updateTableCellTextBlockContent(
+  model: TableEditorModel,
+  cellId: string,
+  cellBlockId: string,
+  content: TableEditorTextBlock["content"],
+): TableEditorModel {
+  return updateTableCellPrimitiveBlock(model, cellId, cellBlockId, (block) =>
+    block.type === "text" ? { ...block, content } : block,
   );
 }
 
@@ -190,20 +225,52 @@ export function updateResponseCellCorrectValueSource(
   cellId: string,
   correctValueSource: ValueExpression,
 ): TableEditorModel {
-  return updateTableCell(model, cellId, (cell) =>
-    cell.type === "response" ? { ...cell, correctValueSource } : cell,
+  const cell = getTableCell(model, cellId);
+  const inputBlock = cell ? getPrimaryTableInputBlock(cell) : null;
+  return inputBlock
+    ? updateTableCellInputBlockCorrectValueSource(
+        model,
+        cellId,
+        inputBlock.id,
+        correctValueSource,
+      )
+    : model;
+}
+
+export function updateTableCellInputBlockCorrectValueSource(
+  model: TableEditorModel,
+  cellId: string,
+  cellBlockId: string,
+  correctValueSource: ValueExpression,
+): TableEditorModel {
+  return updateTableCellPrimitiveBlock(model, cellId, cellBlockId, (block) =>
+    block.type === "input" ? { ...block, correctValueSource } : block,
   );
+}
+
+function updateTableCellPrimitiveBlock(
+  model: TableEditorModel,
+  cellId: string,
+  cellBlockId: string,
+  update: (block: TableEditorPrimitiveBlock) => TableEditorPrimitiveBlock,
+): TableEditorModel {
+  return updateTableCell(model, cellId, (cell) => ({
+    ...cell,
+    blocks: getTableCellPrimitiveBlocks(cell).map((block) =>
+      block.id === cellBlockId ? update(block) : block,
+    ),
+  }));
 }
 
 export function pruneUnusedResponseFields(
   model: TableEditorModel,
 ): TableEditorModel {
   const usedResponseFieldIds = new Set(
-    model.cells
-      .filter(
-        (cell): cell is TableEditorResponseCell => cell.type === "response",
-      )
-      .map((cell) => cell.responseFieldId),
+    model.cells.flatMap((cell) =>
+      getTableCellPrimitiveBlocks(cell).flatMap((block) =>
+        block.type === "input" ? [block.responseFieldId] : [],
+      ),
+    ),
   );
 
   return {
@@ -219,50 +286,62 @@ export function duplicateTableCell({
   rowId = cell.rowId,
   columnId = cell.columnId,
   usedCellIds,
+  usedPrimitiveBlockIds,
   responseFields,
 }: {
   cell: TableEditorCell;
   rowId?: string;
   columnId?: string;
   usedCellIds: Set<string>;
+  usedPrimitiveBlockIds: Set<string>;
   responseFields: TableResponseField[];
 }): TableEditorCell {
   const nextCellId = nextAvailableId("cell", usedCellIds);
   usedCellIds.add(nextCellId);
 
-  if (cell.type === "content") {
-    return {
-      ...cell,
-      columnId,
-      content: [...cell.content],
-      id: nextCellId,
-      rowId,
-    };
+  return {
+    blocks: getTableCellPrimitiveBlocks(cell).map((block) => {
+      const id = nextAvailableId(`${block.id}_copy`, usedPrimitiveBlockIds);
+      usedPrimitiveBlockIds.add(id);
+      return block.type === "input"
+        ? duplicateInputBlock(block, id, responseFields)
+        : { ...block, id };
+    }),
+    columnId,
+    id: nextCellId,
+    rowId,
+  };
+}
+
+function duplicateInputBlock(
+  block: TableEditorInputBlock,
+  id: string,
+  responseFields: TableResponseField[],
+): TableEditorInputBlock {
+  const sourceField = responseFields.find(
+    (field) => field.id === block.responseFieldId,
+  );
+  if (!sourceField) {
+    throw new Error(
+      `Cannot duplicate table input block ${block.id}: missing response field ${block.responseFieldId}.`,
+    );
   }
 
   const responseField = createNextTableAnswerField(
     modelForDuplicate(responseFields),
     {
-      label: cell.label,
-      required: responseFields.find(
-        (field) => field.id === cell.responseFieldId,
-      )?.required,
-      type:
-        cell.type === "response"
-          ? responseFields.find((field) => field.id === cell.responseFieldId)
-              ?.type
-          : undefined,
+      label: block.label,
+      required: sourceField.required,
+      type: sourceField.type,
     },
   );
   responseFields.push(responseField);
 
   return {
-    ...cell,
-    columnId,
-    id: nextCellId,
-    label: cell.label ?? responseField.label,
+    ...block,
+    id,
+    label: block.label ?? responseField.label,
     responseFieldId: responseField.id,
-    rowId,
   };
 }
 
@@ -279,24 +358,35 @@ function createAnswerCellForPosition({
   columnId: string;
   previousCell?: TableEditorCell;
 }): {
-  cell: TableEditorResponseCell;
+  cell: TableEditorCell;
   responseField: TableResponseField;
 } {
+  const previousInputBlock = previousCell
+    ? getPrimaryTableInputBlock(previousCell)
+    : null;
   const responseField = createNextTableAnswerField(model, {
-    label: previousCell?.type === "response" ? previousCell.label : undefined,
+    label: previousInputBlock?.label,
   });
 
   return {
     cell: {
+      blocks: [
+        {
+          correctValueSource: { type: "literal", value: "" },
+          grading: { mode: "exact" },
+          id: nextAvailableId(
+            `${model.blockId ?? "table"}_${cellId}_input`,
+            model.cells.flatMap((cell) => cell.blocks.map((block) => block.id)),
+          ),
+          label: responseField.label,
+          points: 1,
+          responseFieldId: responseField.id,
+          type: "input",
+        },
+      ],
       columnId,
-      correctValueSource: { type: "literal", value: "" },
-      grading: { mode: "exact" },
       id: cellId,
-      label: responseField.label,
-      points: 1,
-      responseFieldId: responseField.id,
       rowId,
-      type: "response",
     },
     responseField,
   };
@@ -337,8 +427,10 @@ function createNextTableAnswerField(
 function getUsedTableAnswerFieldIds(model: TableEditorModel): Set<string> {
   const ids = new Set(model.responseFields.map((field) => field.id));
   for (const cell of model.cells) {
-    if (cell.type === "response") {
-      ids.add(cell.responseFieldId);
+    for (const block of getTableCellPrimitiveBlocks(cell)) {
+      if (block.type === "input") {
+        ids.add(block.responseFieldId);
+      }
     }
   }
   return ids;

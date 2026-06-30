@@ -143,7 +143,7 @@ describe("useBlueprintDraftController draft loading", () => {
             blocks: [],
             references: [],
             responseFields: [],
-            schemaVersion: 1,
+            schemaVersion: 2,
           },
           id: "draft_a",
           lastSavedAt: "2026-06-21T00:00:00.000Z",
@@ -562,7 +562,7 @@ function draftTemplate(
       blocks: [],
       references: [],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     },
     id,
     lastSavedAt: "2026-06-21T00:00:00.000Z",
@@ -591,7 +591,7 @@ function createSavedDomainDraft(input: {
       blocks: [],
       references: [],
       responseFields: [],
-      schemaVersion: 1 as const,
+      schemaVersion: 2 as const,
     },
     id: input.id,
     lastSavedAt: new Date("2026-06-21T00:00:00.000Z"),
@@ -611,7 +611,7 @@ function createModel(): ComposedEditorModel {
     blocks: [],
     references: [],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 

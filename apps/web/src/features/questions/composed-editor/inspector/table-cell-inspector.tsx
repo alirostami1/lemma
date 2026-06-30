@@ -6,11 +6,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@lemma/ui/components/select";
-import type {
-  ComposedEditorModel,
-  TableEditorCell,
-  TableEditorModel,
-  TableResponseField,
+import {
+  applyInputGrading,
+  type ComposedEditorModel,
+  createDefaultCorrectValueSource,
+  getPrimaryTableInputBlock,
+  getPrimaryTableTextBlock,
+  getTableCellPrimitiveBlocks,
+  requiresCorrectValueSource,
+  type TableEditorCell,
+  type TableEditorInputBlock,
+  type TableEditorModel,
+  type TableEditorTextBlock,
+  type TableResponseField,
 } from "#/domains/questions/authoring";
 import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
@@ -18,10 +26,10 @@ import {
   makeContentCell,
   makeResponseCell,
   repairMissingAnswerFieldForCell,
-  updateContentCellContent,
-  updateResponseCellCorrectValueSource,
   updateResponseFieldForCell,
   updateTableCell,
+  updateTableCellInputBlockCorrectValueSource,
+  updateTableCellTextBlockContent,
 } from "#/features/questions/table-block-editor";
 import {
   AnswerFieldSettings,
@@ -66,7 +74,9 @@ export function TableCellInspector({
   if (viewModel.status === "missing_cell") {
     return <p className="text-sm text-muted-foreground">Select a cell.</p>;
   }
-  const { cell, context, responseField, title } = viewModel;
+  const { cell, context, kind, responseField, title } = viewModel;
+  const textBlock = getPrimaryTableTextBlock(cell);
+  const inputBlock = getPrimaryTableInputBlock(cell);
 
   return (
     <div className="grid gap-5">
@@ -89,7 +99,7 @@ export function TableCellInspector({
                 onModelChange(makeResponseCell(model, cell.id));
               }
             }}
-            value={cell.type}
+            value={kind}
           >
             <SelectTrigger aria-label="Type">
               <SelectValue placeholder="Cell type" />
@@ -101,7 +111,7 @@ export function TableCellInspector({
           </Select>
         </InspectorField>
       </InspectorSection>
-      {cell.type === "content" ? (
+      {kind === "content" && textBlock ? (
         <InspectorSection title="Content">
           <ContentCellSettings
             cell={cell}
@@ -113,15 +123,17 @@ export function TableCellInspector({
             referencePreviewCache={referencePreviewCache}
             sources={sources}
             tableBlockId={tableBlockId}
+            textBlock={textBlock}
             workbookEnabled={workbookEnabled}
             workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
           />
         </InspectorSection>
-      ) : (
+      ) : inputBlock ? (
         <AnswerCellSettings
           cell={cell}
           disabled={disabled}
           editorModel={editorModel}
+          inputBlock={inputBlock}
           model={model}
           onEditorModelChange={onEditorModelChange}
           onModelChange={onModelChange}
@@ -132,7 +144,7 @@ export function TableCellInspector({
           workbookEnabled={workbookEnabled}
           workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
         />
-      )}
+      ) : null}
     </div>
   );
 }
@@ -140,6 +152,7 @@ export function TableCellInspector({
 function ContentCellSettings({
   model,
   cell,
+  textBlock,
   tableBlockId,
   editorModel,
   referencePreviewCache,
@@ -151,7 +164,8 @@ function ContentCellSettings({
   onEditorModelChange,
 }: {
   model: TableEditorModel;
-  cell: Extract<TableEditorCell, { type: "content" }>;
+  cell: TableEditorCell;
+  textBlock: TableEditorTextBlock;
   tableBlockId: string;
   editorModel: ComposedEditorModel;
   referencePreviewCache: ReferencePreviewCache;
@@ -164,15 +178,23 @@ function ContentCellSettings({
 }) {
   return (
     <TextAuthoringContent
-      content={cell.content}
+      content={textBlock.content}
       disabled={disabled}
       model={editorModel}
       onChange={(content) =>
-        onModelChange(updateContentCellContent(model, cell.id, content))
+        onModelChange(
+          updateTableCellTextBlockContent(
+            model,
+            cell.id,
+            textBlock.id,
+            content,
+          ),
+        )
       }
       onCreatedReference={({ nextModel, nextContent }) => {
         onEditorModelChange(
           updateTableContentCellInlineContentInComposedModel({
+            cellBlockId: textBlock.id,
             cellId: cell.id,
             content: nextContent,
             editorModel: nextModel,
@@ -193,6 +215,7 @@ function ContentCellSettings({
 function AnswerCellSettings({
   model,
   cell,
+  inputBlock,
   tableBlockId,
   editorModel,
   responseField,
@@ -205,7 +228,8 @@ function AnswerCellSettings({
   onEditorModelChange,
 }: {
   model: TableEditorModel;
-  cell: Extract<TableEditorCell, { type: "response" }>;
+  cell: TableEditorCell;
+  inputBlock: TableEditorInputBlock;
   tableBlockId: string;
   editorModel: ComposedEditorModel;
   responseField: TableResponseField | null | undefined;
@@ -247,22 +271,24 @@ function AnswerCellSettings({
           <InspectorSection title="Input">
             <AnswerFieldSettings
               disabled={disabled}
-              label={cell.label}
+              label={inputBlock.label}
               onLabelChange={(label) =>
                 onModelChange(
                   updateTableCell(model, cell.id, (current) =>
-                    current.type === "response"
-                      ? { ...current, label }
-                      : current,
+                    updatePrimaryInputBlock(current, (block) => ({
+                      ...block,
+                      label,
+                    })),
                   ),
                 )
               }
               onPlaceholderChange={(placeholder) =>
                 onModelChange(
                   updateTableCell(model, cell.id, (current) =>
-                    current.type === "response"
-                      ? { ...current, placeholder }
-                      : current,
+                    updatePrimaryInputBlock(current, (block) => ({
+                      ...block,
+                      placeholder,
+                    })),
                   ),
                 )
               }
@@ -271,7 +297,7 @@ function AnswerCellSettings({
                   updateResponseFieldForCell(model, cell.id, () => field),
                 )
               }
-              placeholder={cell.placeholder}
+              placeholder={inputBlock.placeholder}
               responseField={responseField}
             />
           </InspectorSection>
@@ -280,66 +306,91 @@ function AnswerCellSettings({
             <GradingSettings
               blockId={cell.id}
               disabled={disabled}
-              grading={cell.grading}
+              grading={inputBlock.grading}
               onGradingChange={(grading) =>
                 onModelChange(
                   updateTableCell(model, cell.id, (current) =>
-                    current.type === "response"
-                      ? { ...current, grading }
-                      : current,
+                    updatePrimaryInputBlock(current, (block) =>
+                      applyInputGrading(block, grading),
+                    ),
                   ),
                 )
               }
               onPointsChange={(points) =>
                 onModelChange(
                   updateTableCell(model, cell.id, (current) =>
-                    current.type === "response"
-                      ? { ...current, points }
-                      : current,
+                    updatePrimaryInputBlock(current, (block) => ({
+                      ...block,
+                      points,
+                    })),
                   ),
                 )
               }
-              points={cell.points}
+              points={inputBlock.points}
             />
           </InspectorSection>
 
-          <InspectorSection title="Correct answer">
-            <CorrectAnswerSettings
-              disabled={disabled}
-              model={editorModel}
-              onChange={(valueSource) =>
-                onModelChange(
-                  updateResponseCellCorrectValueSource(
-                    model,
-                    cell.id,
-                    valueSource,
-                  ),
-                )
-              }
-              onCreatedReference={({ nextModel, referenceId }) => {
-                onEditorModelChange(
-                  updateTableCellValueInComposedModel({
-                    cellId: cell.id,
-                    editorModel: nextModel,
-                    tableBlockId,
-                    value: {
-                      referenceId,
-                      type: "reference",
-                    },
-                  }),
-                );
-              }}
-              onModelChange={onEditorModelChange}
-              referencePreviewCache={referencePreviewCache}
-              sources={sources}
-              value={cell.correctValueSource}
-              valueType={responseField.type}
-              workbookEnabled={workbookEnabled}
-              workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
-            />
-          </InspectorSection>
+          {requiresCorrectValueSource(inputBlock.grading) ? (
+            <InspectorSection title="Correct answer">
+              <CorrectAnswerSettings
+                disabled={disabled}
+                model={editorModel}
+                onChange={(valueSource) =>
+                  onModelChange(
+                    updateTableCellInputBlockCorrectValueSource(
+                      model,
+                      cell.id,
+                      inputBlock.id,
+                      valueSource,
+                    ),
+                  )
+                }
+                onCreatedReference={({ nextModel, referenceId }) => {
+                  onEditorModelChange(
+                    updateTableCellValueInComposedModel({
+                      cellBlockId: inputBlock.id,
+                      cellId: cell.id,
+                      editorModel: nextModel,
+                      tableBlockId,
+                      value: {
+                        referenceId,
+                        type: "reference",
+                      },
+                    }),
+                  );
+                }}
+                onModelChange={onEditorModelChange}
+                referencePreviewCache={referencePreviewCache}
+                sources={sources}
+                value={
+                  inputBlock.correctValueSource ??
+                  createDefaultCorrectValueSource()
+                }
+                valueType={responseField.type}
+                workbookEnabled={workbookEnabled}
+                workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
+              />
+            </InspectorSection>
+          ) : null}
         </>
       ) : null}
     </div>
   );
+}
+
+function updatePrimaryInputBlock(
+  cell: TableEditorCell,
+  update: (block: TableEditorInputBlock) => TableEditorInputBlock,
+): TableEditorCell {
+  let updated = false;
+  return {
+    ...cell,
+    blocks: getTableCellPrimitiveBlocks(cell).map((block) => {
+      if (!updated && block.type === "input") {
+        updated = true;
+        return update(block);
+      }
+      return block;
+    }),
+  };
 }

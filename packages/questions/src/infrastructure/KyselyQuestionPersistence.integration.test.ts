@@ -1917,7 +1917,7 @@ function emptyDocument() {
     blocks: [],
     references: [],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   });
 }
 
@@ -1964,6 +1964,6 @@ function documentUsing(sourceId: string) {
       },
     ],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   });
 }

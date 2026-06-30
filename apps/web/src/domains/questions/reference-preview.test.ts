@@ -20,7 +20,7 @@ describe("reference preview cache", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(
@@ -53,7 +53,7 @@ describe("reference preview cache", () => {
         },
       ],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     expect(

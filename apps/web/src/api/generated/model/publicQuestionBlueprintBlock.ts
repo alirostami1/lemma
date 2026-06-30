@@ -4,15 +4,17 @@
  * Lemma API
  * OpenAPI spec version: 0.1.0
  */
-import type { PublicQuestionBlueprintResponseBlock } from "./publicQuestionBlueprintResponseBlock.ts";
+import type { PublicQuestionBlueprintPrimitiveBlock } from "./publicQuestionBlueprintPrimitiveBlock.ts";
 import type { PublicQuestionBlueprintTableBlock } from "./publicQuestionBlueprintTableBlock.ts";
-import type { PublicQuestionBlueprintTextBlock } from "./publicQuestionBlueprintTextBlock.ts";
-import type { QuestionRichTextBlock } from "./questionRichTextBlock.ts";
-import type { QuestionSeparatorBlock } from "./questionSeparatorBlock.ts";
 
 export type PublicQuestionBlueprintBlock =
-  | PublicQuestionBlueprintTextBlock
-  | QuestionRichTextBlock
-  | QuestionSeparatorBlock
-  | PublicQuestionBlueprintResponseBlock
+  | PublicQuestionBlueprintPrimitiveBlock
+  | {
+      blocks: PublicQuestionBlueprintBlock[];
+      /** @minLength 1 */
+      id: string;
+      kind: "container";
+      title?: string;
+      type: "page" | "step";
+    }
   | PublicQuestionBlueprintTableBlock;

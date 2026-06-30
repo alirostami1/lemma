@@ -3,15 +3,18 @@ import { useMemo } from "react";
 import type {
   TableAnswerValue,
   TableBlockPreviewModel,
+  TableBlockPreviewPrimitiveBlock,
   TableBlockPreviewProps,
   TableResponseField,
 } from "#/domains/questions/authoring";
 import {
   coerceAnswerValue,
   formatAnswerInputValue,
+  getTablePreviewCellPrimitiveBlocks,
 } from "#/domains/questions/authoring";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import { InlineContentRenderer } from "#/features/questions/editor-shared";
+import { RichTextBlockRenderer } from "#/features/questions/presentation/rich-text-block-renderer";
 
 type TableBlockPreviewWithReferencesProps = TableBlockPreviewProps & {
   referencePreviewCache?: ReferencePreviewCache;
@@ -68,38 +71,29 @@ export function TableBlockPreview({
                   if (!cell) {
                     return <td className="px-2 py-2" key={column.id} />;
                   }
-                  if (cell.type === "content") {
-                    return (
-                      <td className="px-2 py-2" key={cell.id}>
-                        {cell.content.length > 0 ? (
-                          <InlineContentRenderer
-                            content={cell.content}
-                            mode="preview"
-                            referencePreviewValues={referencePreviewCache ?? {}}
-                          />
-                        ) : (
-                          <span className="text-muted-foreground">Empty</span>
-                        )}
-                      </td>
-                    );
-                  }
-                  const field = responseFieldsById.get(cell.responseFieldId);
-                  const currentAnswer = answer[cell.responseFieldId];
                   return (
-                    <td className="px-2 py-2" key={cell.id}>
-                      <TableAnswerInput
-                        columnLabel={column.label}
-                        disabled={disabled}
-                        field={field}
-                        onChange={(nextValue) =>
-                          onAnswerChange({
-                            ...answer,
-                            [cell.responseFieldId]: nextValue,
-                          })
-                        }
-                        rowLabel={row.label}
-                        value={currentAnswer}
-                      />
+                    <td className="space-y-2 px-2 py-2" key={cell.id}>
+                      {getTablePreviewCellPrimitiveBlocks(cell).length > 0 ? (
+                        getTablePreviewCellPrimitiveBlocks(cell).map(
+                          (cellBlock) => (
+                            <TableCellPrimitive
+                              answer={answer}
+                              block={cellBlock}
+                              columnLabel={column.label}
+                              disabled={disabled}
+                              key={cellBlock.id}
+                              onAnswerChange={onAnswerChange}
+                              referencePreviewCache={
+                                referencePreviewCache ?? {}
+                              }
+                              responseFieldsById={responseFieldsById}
+                              rowLabel={row.label}
+                            />
+                          ),
+                        )
+                      ) : (
+                        <span className="text-muted-foreground">Empty</span>
+                      )}
                     </td>
                   );
                 })}
@@ -109,6 +103,67 @@ export function TableBlockPreview({
         </table>
       </div>
     </div>
+  );
+}
+
+function TableCellPrimitive({
+  block,
+  responseFieldsById,
+  rowLabel,
+  columnLabel,
+  answer,
+  referencePreviewCache,
+  disabled,
+  onAnswerChange,
+}: {
+  block: TableBlockPreviewPrimitiveBlock;
+  responseFieldsById: ReadonlyMap<string, TableResponseField>;
+  rowLabel: string;
+  columnLabel: string;
+  answer: TableBlockPreviewProps["answer"];
+  referencePreviewCache: ReferencePreviewCache;
+  disabled?: boolean;
+  onAnswerChange: TableBlockPreviewProps["onAnswerChange"];
+}) {
+  if (block.type === "text") {
+    return block.content.length > 0 ? (
+      <InlineContentRenderer
+        content={block.content}
+        mode="preview"
+        referencePreviewValues={referencePreviewCache}
+      />
+    ) : (
+      <span className="text-muted-foreground">Empty</span>
+    );
+  }
+  if (block.type === "rich_text") {
+    return (
+      <RichTextBlockRenderer
+        content={block.content}
+        referencePreviewCache={referencePreviewCache}
+      />
+    );
+  }
+  if (block.type === "separator") {
+    return <hr className="border-border" />;
+  }
+
+  const field = responseFieldsById.get(block.responseFieldId);
+  const currentAnswer = answer[block.responseFieldId];
+  return (
+    <TableAnswerInput
+      columnLabel={columnLabel}
+      disabled={disabled}
+      field={field}
+      onChange={(nextValue) =>
+        onAnswerChange({
+          ...answer,
+          [block.responseFieldId]: nextValue,
+        })
+      }
+      rowLabel={rowLabel}
+      value={currentAnswer}
+    />
   );
 }
 

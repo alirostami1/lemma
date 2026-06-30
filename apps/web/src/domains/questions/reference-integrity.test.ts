@@ -4,6 +4,7 @@ import {
   createTableBlock,
   richContentFromInlineContent,
 } from "./authoring";
+import { getTableCellPrimitiveBlocks } from "./authoring/table-model";
 import {
   getReferenceIntegrityIssues,
   getReferenceUsageLocations,
@@ -41,6 +42,114 @@ describe("reference integrity", () => {
       "table_content_cell",
       "table_answer_cell",
     ]);
+  });
+
+  it("extracts and removes reference usages inside nested containers", () => {
+    const base = modelWithAllUsageLocations();
+    const model: ComposedEditorModel = {
+      ...base,
+      blocks: [
+        {
+          blocks: [
+            {
+              blocks: base.blocks,
+              containerType: "step",
+              id: "step_1",
+              type: "container",
+            },
+          ],
+          containerType: "page",
+          id: "page_1",
+          type: "container",
+        },
+      ],
+    };
+    const usages = getReferenceUsageLocations(model).get("range_ref") ?? [];
+    expect(usages.map((usage) => usage.type)).toEqual([
+      "text_block",
+      "rich_text_block",
+      "response_answer",
+      "table_content_cell",
+      "table_answer_cell",
+    ]);
+
+    let updated = model;
+    for (const usage of usages) {
+      updated = removeReferenceUsageFromComposedEditorModel({
+        model: updated,
+        referenceId: "range_ref",
+        usage,
+      });
+    }
+    expect(getReferenceUsageLocations(updated).has("range_ref")).toBe(false);
+  });
+
+  it("extracts and removes rich text references inside nested table cells", () => {
+    const model: ComposedEditorModel = {
+      blocks: [
+        {
+          blocks: [
+            createTableBlock("table_1", {
+              blockId: "table_1",
+              cells: [
+                {
+                  blocks: [
+                    {
+                      content: richContentFromInlineContent([
+                        { referenceId: "range_ref", type: "reference" },
+                      ]),
+                      id: "table_rich_text_1",
+                      type: "rich_text",
+                    },
+                  ],
+                  columnId: "column_1",
+                  id: "cell_1",
+                  rowId: "row_1",
+                },
+              ],
+              columns: [{ id: "column_1", label: "Column" }],
+              prompt: "",
+              responseFields: [],
+              rows: [{ id: "row_1", label: "Row" }],
+              showColumnNames: true,
+              showRowNames: true,
+            }),
+          ],
+          containerType: "page",
+          id: "page_1",
+          type: "container",
+        },
+      ],
+      references: [
+        {
+          id: "range_ref",
+          source: {
+            ref: "Sheet1!A1:B2",
+            sourceId: "source_1",
+            type: "workbook_range",
+          },
+        },
+      ],
+      responseFields: [],
+      schemaVersion: 2,
+    };
+    const usage = getReferenceUsageLocations(model).get("range_ref")?.[0];
+    if (!usage) {
+      throw new Error("Expected nested table rich text usage.");
+    }
+    expect(usage).toMatchObject({
+      blockId: "table_1",
+      cellId: "cell_1",
+      richNodePath: [0],
+      type: "table_content_cell",
+    });
+
+    const updated = removeReferenceUsageFromComposedEditorModel({
+      model,
+      referenceId: "range_ref",
+      usage,
+    });
+    expect(getReferenceUsageLocations(updated).has("range_ref")).toBe(false);
   });
 
   it("reports a partial range when a used offset is missing", () => {
@@ -285,6 +394,30 @@ describe("reference integrity", () => {
     ]);
   });
 
+  it("removes a table content reference from only the targeted primitive", () => {
+    const model = modelWithMultipleReferencedTableTextPrimitives();
+    const usage = getReferenceUsageLocations(model)
+      .get("range_ref")
+      ?.find((item) => item.type === "table_content_cell");
+
+    if (usage?.type !== "table_content_cell") {
+      throw new Error("Expected a table content usage.");
+    }
+
+    const resolved = removeReferenceUsageFromComposedEditorModel({
+      model,
+      referenceId: "range_ref",
+      usage,
+    });
+
+    expect(
+      getTableContentCellBlockContent(resolved, "content_cell", "table_text_1"),
+    ).toEqual([]);
+    expect(
+      getTableContentCellBlockContent(resolved, "content_cell", "table_text_2"),
+    ).toEqual([{ referenceId: "range_ref", type: "reference" }]);
+  });
+
   it("removes only one repeated range cell occurrence with the same offset", () => {
     const rangeCell = { columnOffset: 1, rowOffset: 0 };
     const model = modelWithRepeatedTextReferences(rangeCell);
@@ -332,21 +465,34 @@ function modelWithAllUsageLocations(): ComposedEditorModel {
       createTableBlock("table_1", {
         cells: [
           {
+            blocks: [
+              {
+                content: [{ referenceId: "range_ref", type: "reference" }],
+                id: "table_text_1",
+                type: "text",
+              },
+            ],
             columnId: "column_1",
-            content: [{ referenceId: "range_ref", type: "reference" }],
             id: "content_cell",
             rowId: "row_1",
-            type: "content",
           },
           {
+            blocks: [
+              {
+                correctValueSource: {
+                  referenceId: "range_ref",
+                  type: "reference",
+                },
+                grading: { mode: "exact" },
+                id: "table_input_1",
+                points: 1,
+                responseFieldId: "answer_2",
+                type: "input",
+              },
+            ],
             columnId: "column_2",
-            correctValueSource: { referenceId: "range_ref", type: "reference" },
-            grading: { mode: "exact" },
             id: "answer_cell",
-            points: 1,
-            responseFieldId: "answer_2",
             rowId: "row_1",
-            type: "response",
           },
         ],
         columns: [
@@ -373,7 +519,7 @@ function modelWithAllUsageLocations(): ComposedEditorModel {
       },
     ],
     responseFields: [{ id: "answer_1", label: "Answer", type: "number" }],
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 
@@ -484,14 +630,55 @@ function modelWithRepeatedTableContentReferences(): ComposedEditorModel {
       createTableBlock("table_1", {
         cells: [
           {
-            columnId: "column_1",
-            content: [
-              { referenceId: "range_ref", type: "reference" },
-              { referenceId: "range_ref", type: "reference" },
+            blocks: [
+              {
+                content: [
+                  { referenceId: "range_ref", type: "reference" },
+                  { referenceId: "range_ref", type: "reference" },
+                ],
+                id: "table_text_1",
+                type: "text",
+              },
             ],
+            columnId: "column_1",
             id: "content_cell",
             rowId: "row_1",
-            type: "content",
+          },
+        ],
+        columns: [{ id: "column_1", label: "Column 1" }],
+        prompt: "",
+        responseFields: [],
+        rows: [{ id: "row_1", label: "Row 1" }],
+        showColumnNames: true,
+        showRowNames: true,
+      }),
+    ],
+    responseFields: [],
+  };
+}
+
+function modelWithMultipleReferencedTableTextPrimitives(): ComposedEditorModel {
+  return {
+    ...modelWithAllUsageLocations(),
+    blocks: [
+      createTableBlock("table_1", {
+        cells: [
+          {
+            blocks: [
+              {
+                content: [{ referenceId: "range_ref", type: "reference" }],
+                id: "table_text_1",
+                type: "text",
+              },
+              {
+                content: [{ referenceId: "range_ref", type: "reference" }],
+                id: "table_text_2",
+                type: "text",
+              },
+            ],
+            columnId: "column_1",
+            id: "content_cell",
+            rowId: "row_1",
           },
         ],
         columns: [{ id: "column_1", label: "Column 1" }],
@@ -513,27 +700,40 @@ function modelWithTableRangeCells(): ComposedEditorModel {
       createTableBlock("table_1", {
         cells: [
           {
-            columnId: "column_1",
-            content: [
+            blocks: [
               {
-                rangeCell: { columnOffset: 1, rowOffset: 0 },
-                referenceId: "range_ref",
-                type: "reference",
+                content: [
+                  {
+                    rangeCell: { columnOffset: 1, rowOffset: 0 },
+                    referenceId: "range_ref",
+                    type: "reference",
+                  },
+                ],
+                id: "table_text_1",
+                type: "text",
               },
             ],
+            columnId: "column_1",
             id: "content_cell",
             rowId: "row_1",
-            type: "content",
           },
           {
+            blocks: [
+              {
+                correctValueSource: {
+                  referenceId: "range_ref",
+                  type: "reference",
+                },
+                grading: { mode: "exact" },
+                id: "table_input_1",
+                points: 1,
+                responseFieldId: "answer_1",
+                type: "input",
+              },
+            ],
             columnId: "column_2",
-            correctValueSource: { referenceId: "range_ref", type: "reference" },
-            grading: { mode: "exact" },
             id: "answer_cell",
-            points: 1,
-            responseFieldId: "answer_1",
             rowId: "row_1",
-            type: "response",
           },
         ],
         columns: [
@@ -568,10 +768,30 @@ function getTableContentCellContent(
   if (table?.type !== "table") {
     return [];
   }
-  const cell = table.table.cells.find(
-    (candidate) => candidate.id === cellId && candidate.type === "content",
+  const cell = table.table.cells.find((candidate) => candidate.id === cellId);
+  return cell
+    ? (getTableCellPrimitiveBlocks(cell).find((block) => block.type === "text")
+        ?.content ?? [])
+    : [];
+}
+
+function getTableContentCellBlockContent(
+  model: ComposedEditorModel,
+  cellId: string,
+  cellBlockId: string,
+) {
+  const table = model.blocks.find((block) => block.type === "table");
+  if (table?.type !== "table") {
+    return [];
+  }
+  const cell = table.table.cells.find((candidate) => candidate.id === cellId);
+  if (!cell) {
+    return [];
+  }
+  const block = getTableCellPrimitiveBlocks(cell).find(
+    (candidate) => candidate.id === cellBlockId,
   );
-  return cell?.type === "content" ? cell.content : [];
+  return block?.type === "text" ? block.content : [];
 }
 
 function availableSource(

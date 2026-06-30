@@ -4,12 +4,9 @@
  * Lemma API
  * OpenAPI spec version: 0.1.0
  */
-import type { RichBulletListNode } from "./richBulletListNode.ts";
-import type { RichListItemNodeType } from "./richListItemNodeType.ts";
-import type { RichOrderedListNode } from "./richOrderedListNode.ts";
-import type { RichParagraphNode } from "./richParagraphNode.ts";
+import type { RichListItemNodeContentItem } from "./richListItemNodeContentItem.ts";
 
 export interface RichListItemNode {
-  content: (RichParagraphNode | RichBulletListNode | RichOrderedListNode)[];
-  type: RichListItemNodeType;
+  content: RichListItemNodeContentItem[];
+  type: "list_item";
 }

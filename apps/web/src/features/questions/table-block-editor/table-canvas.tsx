@@ -1,5 +1,8 @@
 import { cn } from "@lemma/ui/lib/utils";
-import type { TableEditorModel } from "#/domains/questions/authoring";
+import {
+  getPrimaryTableInputBlock,
+  type TableEditorModel,
+} from "#/domains/questions/authoring";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import { TableCellView } from "./table-cell-view";
 import { ensureTableCell, getTableCellAt } from "./table-editor-operations";
@@ -97,12 +100,14 @@ export function TableCanvas({
 
               {model.columns.map((column) => {
                 const cell = getTableCellAt(model, row.id, column.id);
-                const responseField =
-                  cell?.type === "response"
-                    ? model.responseFields.find(
-                        (field) => field.id === cell.responseFieldId,
-                      )
-                    : undefined;
+                const inputBlock = cell
+                  ? getPrimaryTableInputBlock(cell)
+                  : null;
+                const responseField = inputBlock
+                  ? model.responseFields.find(
+                      (field) => field.id === inputBlock.responseFieldId,
+                    )
+                  : undefined;
                 const isSelected =
                   cell !== null &&
                   isTableSelectionEqual(selection, {

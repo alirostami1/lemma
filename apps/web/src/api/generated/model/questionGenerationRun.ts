@@ -6,27 +6,23 @@
  */
 import type { QuestionGenerationRunResult } from "./questionGenerationRunResult.ts";
 import type { QuestionGenerationRunStatus } from "./questionGenerationRunStatus.ts";
+import type { UuidV7 } from "./uuidV7.ts";
 
 export interface QuestionGenerationRun {
   /** @minimum 1 */
   attemptNumber: number;
   /** @minimum 0 */
   attempts: number;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  blueprintId: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  blueprintVersionId: string;
+  blueprintId: UuidV7;
+  blueprintVersionId: UuidV7;
   createdAt: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  createdByUserId: string;
+  createdByUserId: UuidV7;
   /** @nullable */
   errorMessage: string | null;
   /** @nullable */
   finishedAt: string | null;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  id: string;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  ownerUserId: string;
+  id: UuidV7;
+  ownerUserId: UuidV7;
   /**
    * @minimum 1
    * @maximum 100
@@ -41,8 +37,7 @@ export interface QuestionGenerationRun {
   /** @nullable */
   startedAt: string | null;
   status: QuestionGenerationRunStatus;
-  /** @pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ */
-  targetQuestionSetId: string;
+  targetQuestionSetId: UuidV7;
   updatedAt: string;
   /**
    * @nullable

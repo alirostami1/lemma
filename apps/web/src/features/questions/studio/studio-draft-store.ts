@@ -288,7 +288,7 @@ function isComposedEditorModel(value: unknown): value is ComposedEditorModel {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<ComposedEditorModel>;
   return (
-    candidate.schemaVersion === 1 &&
+    candidate.schemaVersion === 2 &&
     Array.isArray(candidate.blocks) &&
     Array.isArray(candidate.responseFields) &&
     Array.isArray(candidate.references)

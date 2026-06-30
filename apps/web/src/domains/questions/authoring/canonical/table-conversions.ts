@@ -1,5 +1,6 @@
 import type {
   QuestionBlueprintDocument,
+  QuestionBlueprintPrimitiveBlock,
   QuestionBlueprintTableBlock,
   QuestionResponseField,
   QuestionTableBlock,
@@ -12,14 +13,21 @@ import {
 import type {
   TableBlockPreviewCell,
   TableBlockPreviewModel,
+  TableBlockPreviewPrimitiveBlock,
+  TableBlockPreviewTextBlock,
   TableEditorModel,
+  TableEditorPrimitiveBlock,
 } from "../table-model";
-import { validateTableEditorModelAnswers } from "../table-model";
+import {
+  getTableCellPrimitiveBlocks,
+  validateTableEditorModelAnswers,
+} from "../table-model";
 import {
   asRecord,
+  canonicalRichContentToComposed,
+  composedRichContentToCanonicalRichContent,
   fromCanonicalTableAnswerFieldId,
   questionResponseFieldToTable,
-  readArray,
   readAxisArray,
   readString,
   toCanonicalTableAnswerFieldId,
@@ -39,13 +47,14 @@ export function tableEditorModelToQuestionBlueprintDocument(
       {
         content: plainTextToInlineContent(model.prompt),
         id: "prompt",
+        kind: "primitive",
         type: "text",
       },
       tableEditorModelToQuestionBlueprintTableBlock(model, "table"),
     ],
     references: [],
     responseFields: tableEditorModelToResponseFields(model),
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 
@@ -75,36 +84,21 @@ export function tableEditorModelToQuestionBlueprintTableBlock(
   options?: { responseFieldIdPrefix?: string },
 ): QuestionBlueprintTableBlock {
   return {
-    cells: model.cells.map((cell) => {
-      if (cell.type === "content") {
-        return {
-          columnId: cell.columnId,
-          content: cell.content,
-          id: toCanonicalTableCellId(cell.id),
-          rowId: cell.rowId,
-          type: "content" as const,
-        };
-      }
-
-      return {
-        columnId: cell.columnId,
-        correctValueSource: toQuestionValueExpression(cell.correctValueSource),
-        grading: cell.grading,
-        id: toCanonicalTableCellId(cell.id),
-        points: cell.points,
-        responseFieldId: options?.responseFieldIdPrefix
-          ? toCanonicalTableAnswerFieldId(blockId, cell.responseFieldId)
-          : cell.responseFieldId,
-        rowId: cell.rowId,
-        type: "response" as const,
-        ...(cell.label === undefined ? {} : { label: cell.label }),
-        ...(cell.placeholder === undefined
-          ? {}
-          : { placeholder: cell.placeholder }),
-      };
-    }),
+    cells: model.cells.map((cell) => ({
+      blocks: getTableCellPrimitiveBlocks(cell).map((cellBlock) =>
+        tableEditorPrimitiveBlockToQuestionBlueprintPrimitiveBlock(
+          cellBlock,
+          blockId,
+          Boolean(options?.responseFieldIdPrefix),
+        ),
+      ),
+      columnId: cell.columnId,
+      id: toCanonicalTableCellId(cell.id),
+      rowId: cell.rowId,
+    })),
     columns: model.columns,
     id: blockId,
+    kind: "complex",
     rows: model.rows,
     showColumnNames: model.showColumnNames,
     showRowNames: model.showRowNames,
@@ -116,22 +110,24 @@ function assertStandaloneTableHasOnlyLiteralValues(
   model: TableEditorModel,
 ): void {
   for (const cell of model.cells) {
-    if (
-      cell.type === "content" &&
-      extractInlineReferenceIds(cell.content).length > 0
-    ) {
-      throw new Error(
-        `Standalone table content cell ${cell.id} references a reference, but standalone table conversion does not support references.`,
-      );
-    }
+    for (const block of getTableCellPrimitiveBlocks(cell)) {
+      if (
+        block.type === "text" &&
+        extractInlineReferenceIds(block.content).length > 0
+      ) {
+        throw new Error(
+          `Standalone table text block ${block.id} references a reference, but standalone table conversion does not support references.`,
+        );
+      }
 
-    if (
-      cell.type === "response" &&
-      cell.correctValueSource.type === "reference"
-    ) {
-      throw new Error(
-        `Standalone table answer cell ${cell.id} references ${cell.correctValueSource.referenceId}, but standalone table conversion does not support references.`,
-      );
+      if (
+        block.type === "input" &&
+        block.correctValueSource?.type === "reference"
+      ) {
+        throw new Error(
+          `Standalone table input block ${block.id} references ${block.correctValueSource.referenceId}, but standalone table conversion does not support references.`,
+        );
+      }
     }
   }
 }
@@ -169,52 +165,57 @@ export function questionBlueprintTableBlockToTableEditorModel(
   const tableResponseFieldIds = new Set<string>();
 
   const cells = block.cells.map((cell) => {
-    if (cell.type === "content") {
-      return {
-        columnId: cell.columnId,
-        content: [...cell.content],
-        id: cell.id,
-        rowId: cell.rowId,
-        type: "content" as const,
-      };
-    }
+    const blocks = cell.blocks.map((cellBlock) => {
+      if (cellBlock.type === "input") {
+        if (cellBlock.points === undefined || cellBlock.grading === undefined) {
+          throw new Error(
+            "Unsupported question blueprint document for composed editor.",
+          );
+        }
+        const responseFieldId = fromCanonicalTableAnswerFieldId(
+          block.id,
+          cellBlock.responseFieldId,
+        );
+        if (!responseFieldIds.has(responseFieldId)) {
+          throw new Error(
+            "Unsupported question blueprint document for composed editor.",
+          );
+        }
+        tableResponseFieldIds.add(responseFieldId);
+        return {
+          grading: cellBlock.grading,
+          id: cellBlock.id,
+          points: cellBlock.points,
+          responseFieldId,
+          type: "input" as const,
+          ...(cellBlock.correctValueSource === undefined
+            ? {}
+            : {
+                correctValueSource: toValueExpression(
+                  cellBlock.correctValueSource,
+                ),
+              }),
+          ...(cellBlock.label === undefined ? {} : { label: cellBlock.label }),
+          ...(cellBlock.placeholder === undefined
+            ? {}
+            : { placeholder: cellBlock.placeholder }),
+        };
+      }
 
-    if (
-      cell.correctValueSource === undefined ||
-      cell.points === undefined ||
-      cell.grading === undefined
-    ) {
-      throw new Error(
-        "Unsupported question blueprint document for composed editor.",
+      return questionBlueprintPrimitiveBlockToTableEditorPrimitiveBlock(
+        cellBlock,
       );
-    }
-    const responseFieldId = fromCanonicalTableAnswerFieldId(
-      block.id,
-      cell.responseFieldId,
-    );
-    if (!responseFieldIds.has(responseFieldId)) {
-      throw new Error(
-        "Unsupported question blueprint document for composed editor.",
-      );
-    }
-    tableResponseFieldIds.add(responseFieldId);
+    });
     return {
+      blocks,
       columnId: cell.columnId,
-      correctValueSource: toValueExpression(cell.correctValueSource),
-      grading: cell.grading,
       id: cell.id,
-      points: cell.points,
-      responseFieldId,
       rowId: cell.rowId,
-      type: "response" as const,
-      ...(cell.label === undefined ? {} : { label: cell.label }),
-      ...(cell.placeholder === undefined
-        ? {}
-        : { placeholder: cell.placeholder }),
     };
   });
 
   return {
+    blockId: block.id,
     cells,
     columns: block.columns,
     prompt: prompt ?? "",
@@ -232,10 +233,12 @@ export function questionTableBlockToPreviewModel(
   responseFields: QuestionResponseField[],
 ): TableBlockPreviewModel {
   const tableResponseFieldIds = new Set<string>();
-  const cells = readArray(block.cells).map((cell) => {
-    const previewCell = tableQuestionCellToPreviewCell(asRecord(cell));
-    if (previewCell.type === "response") {
-      tableResponseFieldIds.add(previewCell.responseFieldId);
+  const cells = block.cells.map((cell) => {
+    const previewCell = tableQuestionCellToPreviewCell(cell);
+    for (const cellBlock of previewCell.blocks ?? []) {
+      if (cellBlock.type === "input") {
+        tableResponseFieldIds.add(cellBlock.responseFieldId);
+      }
     }
     return previewCell;
   });
@@ -254,25 +257,144 @@ export function questionTableBlockToPreviewModel(
 }
 
 function tableQuestionCellToPreviewCell(
-  cell: Record<string, unknown>,
+  cell: QuestionTableBlock["cells"][number],
 ): TableBlockPreviewCell {
-  if (cell.type === "content") {
+  return {
+    blocks: cell.blocks.map((cellBlock) =>
+      questionPrimitiveBlockToTablePreviewPrimitiveBlock(cellBlock),
+    ),
+    columnId: cell.columnId,
+    id: cell.id,
+    rowId: cell.rowId,
+  };
+}
+
+function tableEditorPrimitiveBlockToQuestionBlueprintPrimitiveBlock(
+  block: TableEditorPrimitiveBlock,
+  tableBlockId: string,
+  prefixResponseFieldId: boolean,
+): QuestionBlueprintPrimitiveBlock {
+  if (block.type === "text") {
     return {
-      columnId: readString(cell.columnId),
-      content: [{ text: readString(cell.text), type: "text" }],
-      id: readString(cell.id),
-      rowId: readString(cell.rowId),
-      type: "content",
+      content: block.content,
+      id: block.id,
+      kind: "primitive",
+      type: "text",
     };
   }
-  if (cell.type === "response") {
+  if (block.type === "rich_text") {
     return {
-      columnId: readString(cell.columnId),
-      id: readString(cell.id),
-      responseFieldId: readString(cell.responseFieldId),
-      rowId: readString(cell.rowId),
-      type: "response",
+      content: composedRichContentToCanonicalRichContent(block.content),
+      id: block.id,
+      kind: "primitive",
+      type: "rich_text",
     };
   }
-  throw new Error("Unsupported table block cell.");
+  if (block.type === "separator") {
+    return { id: block.id, kind: "primitive", type: "separator" };
+  }
+  return {
+    grading: block.grading,
+    id: block.id,
+    kind: "primitive",
+    points: block.points,
+    responseFieldId: prefixResponseFieldId
+      ? toCanonicalTableAnswerFieldId(tableBlockId, block.responseFieldId)
+      : block.responseFieldId,
+    type: "input",
+    ...(block.correctValueSource === undefined
+      ? {}
+      : {
+          correctValueSource: toQuestionValueExpression(
+            block.correctValueSource,
+          ),
+        }),
+    ...(block.label === undefined ? {} : { label: block.label }),
+    ...(block.placeholder === undefined
+      ? {}
+      : { placeholder: block.placeholder }),
+  };
+}
+
+function questionBlueprintPrimitiveBlockToTableEditorPrimitiveBlock(
+  block: QuestionBlueprintPrimitiveBlock,
+): TableEditorPrimitiveBlock {
+  if (block.type === "text") {
+    return {
+      content: [...block.content],
+      id: block.id,
+      type: "text",
+    };
+  }
+  if (block.type === "rich_text") {
+    return {
+      content: canonicalRichContentToComposed(block.content),
+      id: block.id,
+      type: "rich_text",
+    };
+  }
+  if (block.type === "separator") {
+    return { id: block.id, type: "separator" };
+  }
+  throw new Error("Input blocks are handled before generic conversion.");
+}
+
+function questionPrimitiveBlockToTablePreviewPrimitiveBlock(
+  block: QuestionTableBlock["cells"][number]["blocks"][number],
+): TableBlockPreviewPrimitiveBlock {
+  if (block.type === "text") {
+    return {
+      content: readInlineContent(block.content),
+      id: readString(block.id),
+      type: "text",
+    };
+  }
+  if (block.type === "rich_text") {
+    return {
+      content: canonicalRichContentToComposed(block.content),
+      id: block.id,
+      type: "rich_text",
+    };
+  }
+  if (block.type === "separator") {
+    return { id: block.id, type: "separator" };
+  }
+  if (block.type === "input") {
+    return {
+      id: block.id,
+      label: block.label,
+      placeholder: block.placeholder,
+      responseFieldId: block.responseFieldId,
+      type: "input",
+    };
+  }
+  throw new Error("Unsupported table block cell primitive.");
+}
+
+function readInlineContent(
+  value: unknown,
+): TableBlockPreviewTextBlock["content"] {
+  if (!Array.isArray(value)) {
+    throw new Error("Expected inline content.");
+  }
+  return value.map((item) => {
+    const record = asRecord(item);
+    if (record.type === "text") {
+      return { text: readString(record.text), type: "text" };
+    }
+    if (record.type === "reference") {
+      return {
+        referenceId: readString(record.referenceId),
+        type: "reference",
+      };
+    }
+    if (record.type === "value") {
+      return {
+        displayValue: readString(record.displayValue),
+        referenceId: readString(record.referenceId),
+        type: "value",
+      };
+    }
+    throw new Error("Unsupported inline content.");
+  });
 }

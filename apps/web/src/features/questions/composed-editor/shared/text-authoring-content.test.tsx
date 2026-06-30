@@ -19,7 +19,7 @@ describe("TextAuthoringContent", () => {
       blocks: [],
       references: [],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
 
     render(
@@ -272,7 +272,7 @@ function TextHarness({
       blocks: [],
       references: [],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     },
   );
   const [content, setContent] = useState<ComposedInlineContent[]>([
@@ -339,6 +339,6 @@ function modelWithTaxRate(): ComposedEditorModel {
       },
     ],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }

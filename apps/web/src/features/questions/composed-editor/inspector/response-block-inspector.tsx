@@ -1,7 +1,10 @@
 import {
+  applyInputGrading,
   type ComposedEditorModel,
   type ComposedResponseEditorBlock,
   type ComposedResponseField,
+  createDefaultCorrectValueSource,
+  requiresCorrectValueSource,
   updateComposedBlock,
   updateComposedResponseField,
 } from "#/domains/questions/authoring";
@@ -99,10 +102,7 @@ export function ResponseBlockInspector({
           disabled={disabled}
           grading={block.grading}
           onGradingChange={(grading) =>
-            updateBlock((current) => ({
-              ...current,
-              grading,
-            }))
+            updateBlock((current) => applyInputGrading(current, grading))
           }
           onPointsChange={(points) =>
             updateBlock((current) => ({
@@ -114,42 +114,46 @@ export function ResponseBlockInspector({
         />
       </InspectorSection>
 
-      <InspectorSection title="Correct answer">
-        <CorrectAnswerSettings
-          disabled={disabled}
-          model={model}
-          onChange={(correctValueSource) =>
-            updateBlock((current) => ({
-              ...current,
-              correctValueSource,
-            }))
-          }
-          onCreatedReference={({ nextModel, referenceId }) => {
-            onModelChange(
-              updateComposedBlock(nextModel, block.id, (current) => {
-                if (current.type !== "response") {
-                  throw new Error("Expected answer block.");
-                }
+      {requiresCorrectValueSource(block.grading) ? (
+        <InspectorSection title="Correct answer">
+          <CorrectAnswerSettings
+            disabled={disabled}
+            model={model}
+            onChange={(correctValueSource) =>
+              updateBlock((current) => ({
+                ...current,
+                correctValueSource,
+              }))
+            }
+            onCreatedReference={({ nextModel, referenceId }) => {
+              onModelChange(
+                updateComposedBlock(nextModel, block.id, (current) => {
+                  if (current.type !== "response") {
+                    throw new Error("Expected answer block.");
+                  }
 
-                return {
-                  ...current,
-                  correctValueSource: {
-                    referenceId,
-                    type: "reference",
-                  },
-                };
-              }),
-            );
-          }}
-          onModelChange={onModelChange}
-          referencePreviewCache={referencePreviewCache}
-          sources={sources}
-          value={block.correctValueSource}
-          valueType={responseField.type}
-          workbookEnabled={workbookEnabled}
-          workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
-        />
-      </InspectorSection>
+                  return {
+                    ...current,
+                    correctValueSource: {
+                      referenceId,
+                      type: "reference",
+                    },
+                  };
+                }),
+              );
+            }}
+            onModelChange={onModelChange}
+            referencePreviewCache={referencePreviewCache}
+            sources={sources}
+            value={
+              block.correctValueSource ?? createDefaultCorrectValueSource()
+            }
+            valueType={responseField.type}
+            workbookEnabled={workbookEnabled}
+            workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
+          />
+        </InspectorSection>
+      ) : null}
     </div>
   );
 }

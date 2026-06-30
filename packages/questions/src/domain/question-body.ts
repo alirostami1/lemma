@@ -76,19 +76,22 @@ export type QuestionGrading =
 
 export type QuestionTextBlock = {
   id: string;
+  kind: "primitive";
   type: "text";
   content: RenderedInlineContent[];
 };
 
 export type QuestionRichTextBlock = {
   id: string;
+  kind: "primitive";
   type: "rich_text";
   content: RichContent;
 };
 
-export type QuestionResponseBlock = {
+export type QuestionInputBlock = {
   id: string;
-  type: "response";
+  kind: "primitive";
+  type: "input";
   responseFieldId: string;
   label?: string;
   placeholder?: string;
@@ -96,33 +99,34 @@ export type QuestionResponseBlock = {
 
 export type QuestionSeparatorBlock = {
   id: string;
+  kind: "primitive";
   type: "separator";
 };
 
-export type QuestionTableContentCell = {
+export type QuestionPrimitiveBlock =
+  | QuestionTextBlock
+  | QuestionRichTextBlock
+  | QuestionInputBlock
+  | QuestionSeparatorBlock;
+
+export type QuestionContainerBlock = {
+  id: string;
+  kind: "container";
+  type: "page" | "step";
+  title?: string;
+  blocks: QuestionBlock[];
+};
+
+export type QuestionTableCell = {
   id: string;
   rowId: string;
   columnId: string;
-  type: "content";
-  text: string;
+  blocks: QuestionPrimitiveBlock[];
 };
-
-export type QuestionTableResponseCell = {
-  id: string;
-  rowId: string;
-  columnId: string;
-  type: "response";
-  responseFieldId: string;
-  label?: string;
-  placeholder?: string;
-};
-
-export type QuestionTableCell =
-  | QuestionTableContentCell
-  | QuestionTableResponseCell;
 
 export type QuestionTableBlock = {
   id: string;
+  kind: "complex";
   type: "table";
   showColumnNames: boolean;
   showRowNames: boolean;
@@ -131,28 +135,33 @@ export type QuestionTableBlock = {
   cells: QuestionTableCell[];
 };
 
+export type QuestionComplexBlock = QuestionTableBlock;
+
 export type QuestionBlock =
-  | QuestionTextBlock
-  | QuestionRichTextBlock
-  | QuestionResponseBlock
-  | QuestionTableBlock
-  | QuestionSeparatorBlock;
+  | QuestionPrimitiveBlock
+  | QuestionContainerBlock
+  | QuestionComplexBlock;
 
 export type QuestionBody = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   blocks: QuestionBlock[];
   responseFields: QuestionResponseField[];
 };
 
 export function questionBody(input: unknown): QuestionBody {
   assertPlainRecord(input, "question body must be an object", fail);
-  assertSchemaVersion(input, fail);
+  assertSchemaVersion(input, fail, 2);
   const responseFields = validatedResponseFields(input, fail);
-  const blocks = validatedBlocks(input, responseFieldIds(responseFields), fail);
+  const blocks = validatedBlocks(
+    input,
+    responseFieldIds(responseFields),
+    createBlockIdRegistry(),
+    fail,
+  );
   return {
     blocks,
     responseFields,
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 
@@ -195,61 +204,104 @@ export function validatedResponseFields(
 export function validatedBlocks(
   value: PlainObject & { blocks?: unknown },
   responseIds: ReadonlySet<string>,
+  blockIds: BlockIdRegistry,
   failWith: (message: string) => never,
 ): QuestionBlock[] {
   assertArray(value.blocks, "blocks", failWith);
-  assertUniqueIds(value.blocks, "blocks", failWith);
   return value.blocks.map((block) =>
-    validatedBlock(block, responseIds, failWith),
+    validatedBlock(block, responseIds, blockIds, failWith),
   );
 }
 
 function validatedBlock(
   block: unknown,
   responseIds: ReadonlySet<string>,
+  blockIds: BlockIdRegistry,
   failWith: (message: string) => never,
 ): QuestionBlock {
   assertPlainRecord(block, "block must be an object", failWith);
   assertNonEmptyString(block.id, "block.id", failWith);
+  blockIds.register(block.id, "block", failWith);
+  if (block.kind === "primitive") {
+    return validatedPrimitiveBlock(block, responseIds, failWith);
+  }
+  if (block.kind === "container") {
+    return validatedContainerBlock(block, responseIds, blockIds, failWith);
+  }
+  if (block.kind === "complex" && block.type === "table") {
+    return validatedTableBlock(block, responseIds, blockIds, failWith);
+  }
+  failWith("block kind or type is invalid");
+}
+
+function validatedPrimitiveBlock(
+  block: PlainObject,
+  responseIds: ReadonlySet<string>,
+  failWith: (message: string) => never,
+): QuestionPrimitiveBlock {
   if (block.type === "text") {
     return {
       content: renderedInlineContent(block.content, failWith),
-      id: block.id,
+      id: block.id as string,
+      kind: "primitive",
       type: "text",
     };
   }
   if (block.type === "rich_text") {
     return {
       content: richContent(block.content, failWith),
-      id: block.id,
+      id: block.id as string,
+      kind: "primitive",
       type: "rich_text",
     };
   }
-  if (block.type === "response") {
-    return validatedResponseBlock(block, responseIds, failWith);
+  if (block.type === "input") {
+    return validatedInputBlock(block, responseIds, failWith);
   }
   if (block.type === "separator") {
-    return { id: block.id, type: "separator" };
+    return { id: block.id as string, kind: "primitive", type: "separator" };
   }
-  if (block.type === "table") {
-    return validatedTableBlock(block, responseIds, failWith);
-  }
-  failWith("block type is invalid");
+  failWith("primitive block type is invalid");
 }
 
-function validatedResponseBlock(
+function validatedContainerBlock(
+  block: PlainObject,
+  responseIds: ReadonlySet<string>,
+  blockIds: BlockIdRegistry,
+  failWith: (message: string) => never,
+): QuestionContainerBlock {
+  const type = block.type;
+  if (type !== "page" && type !== "step") {
+    failWith("container block type is invalid");
+  }
+  if (block.title !== undefined) {
+    assertString(block.title, "container.title", failWith);
+  }
+  return {
+    blocks: validatedBlocks(block, responseIds, blockIds, failWith),
+    id: block.id as string,
+    kind: "container",
+    ...(block.title === undefined ? {} : { title: block.title }),
+    type,
+  };
+}
+
+function validatedInputBlock(
   block: PlainObject,
   responseIds: ReadonlySet<string>,
   failWith: (message: string) => never,
-): QuestionResponseBlock {
+): QuestionInputBlock {
   assertNonEmptyString(block.responseFieldId, "responseFieldId", failWith);
   if (!responseIds.has(block.responseFieldId)) {
-    failWith("response block references unknown response field");
+    failWith(
+      `input block ${block.id} references unknown response field ${block.responseFieldId}`,
+    );
   }
   return {
     id: block.id as string,
+    kind: "primitive",
     responseFieldId: block.responseFieldId,
-    type: "response",
+    type: "input",
     ...optionalStringProps(block, ["label", "placeholder"], failWith),
   };
 }
@@ -257,6 +309,7 @@ function validatedResponseBlock(
 function validatedTableBlock(
   block: PlainObject,
   responseIds: ReadonlySet<string>,
+  blockIds: BlockIdRegistry,
   failWith: (message: string) => never,
 ): QuestionTableBlock {
   assertBoolean(block.showColumnNames, "table.showColumnNames", failWith);
@@ -280,43 +333,62 @@ function validatedTableBlock(
       failWith("table cells must be unique by rowId and columnId");
     }
     positions.add(position);
-    if (cell.type === "content") {
-      assertString(cell.text, "cell text", failWith);
-      if (cell.content !== undefined) {
-        failWith("table content cells must use plain text");
-      }
-      return {
-        columnId: cell.columnId,
-        id: cell.id,
-        rowId: cell.rowId,
-        text: cell.text,
-        type: "content" as const,
-      };
-    }
-    if (cell.type === "response") {
-      assertNonEmptyString(cell.responseFieldId, "responseFieldId", failWith);
-      if (!responseIds.has(cell.responseFieldId)) {
-        failWith("response cell references unknown response field");
-      }
-      return {
-        columnId: cell.columnId,
-        id: cell.id,
-        responseFieldId: cell.responseFieldId,
-        rowId: cell.rowId,
-        type: "response" as const,
-        ...optionalStringProps(cell, ["label", "placeholder"], failWith),
-      };
-    }
-    return failWith("table cell type is invalid");
+    assertArray(cell.blocks, "table cell blocks", failWith);
+    return {
+      blocks: cell.blocks.map((cellBlock) => {
+        assertPlainRecord(
+          cellBlock,
+          "table cell block must be an object",
+          failWith,
+        );
+        assertNonEmptyString(cellBlock.id, "cell block.id", failWith);
+        blockIds.register(
+          cellBlock.id,
+          `table cell ${cell.id} block`,
+          failWith,
+        );
+        if (cellBlock.kind !== "primitive") {
+          failWith("table cell blocks must be primitive blocks");
+        }
+        return validatedPrimitiveBlock(cellBlock, responseIds, failWith);
+      }),
+      columnId: cell.columnId,
+      id: cell.id,
+      rowId: cell.rowId,
+    };
   });
   return {
     cells,
     columns,
     id: block.id as string,
+    kind: "complex",
     rows,
     showColumnNames: block.showColumnNames,
     showRowNames: block.showRowNames,
     type: "table",
+  };
+}
+
+type BlockIdRegistry = {
+  register(
+    id: string,
+    label: string,
+    failWith: (message: string) => never,
+  ): void;
+};
+
+function createBlockIdRegistry(): BlockIdRegistry {
+  const ids = new Map<string, string>();
+  return {
+    register(id, label, failWith) {
+      const existingLabel = ids.get(id);
+      if (existingLabel !== undefined) {
+        failWith(
+          `block id ${id} is duplicated between ${existingLabel} and ${label}`,
+        );
+      }
+      ids.set(id, label);
+    },
   };
 }
 

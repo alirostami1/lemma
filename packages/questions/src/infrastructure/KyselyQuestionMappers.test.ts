@@ -26,7 +26,7 @@ describe("KyselyQuestionMappers", () => {
   it("maps blueprint rows with normalized source inputs", () => {
     const blueprint = mapQuestionBlueprintRowToDomain(blueprintRow());
 
-    assert.equal(blueprint.document.schemaVersion, 1);
+    assert.equal(blueprint.document.schemaVersion, 2);
     assert.equal(blueprint.sources[0]?.sourceId, "source_1");
     assert.equal("sources" in mapQuestionBlueprintToInsert(blueprint), false);
     assert.equal("sources" in mapQuestionBlueprintToUpdate(blueprint), false);
@@ -109,7 +109,7 @@ function emptyBlueprintRow(): Parameters<
       blocks: [],
       references: [],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     },
     id,
     name: "Blueprint",
@@ -163,7 +163,7 @@ function questionRow(): Parameters<typeof mapQuestionRowToDomain>[0] {
     body: {
       blocks: [],
       responseFields: [],
-      schemaVersion: 1,
+      schemaVersion: 2,
     },
     createdAt,
     createdByUserId: userId,
@@ -218,7 +218,7 @@ function document() {
       },
     ],
     responseFields: [],
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 
