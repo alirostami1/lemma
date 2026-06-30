@@ -43,13 +43,17 @@ describe("BlockShell", () => {
   it("renders the bottom action slot with hover and focus visibility classes", () => {
     render(
       <BlockShell
+        blockId="answer_1"
         blockLabel="Answer"
         bottomAction={<button type="button">Add block</button>}
         canMoveDown
         canMoveUp
         dragControls={createTestDragControls()}
+        onCancelEdit={() => {}}
+        onConfirmEdit={() => {}}
         onDelete={() => {}}
         onDuplicate={() => {}}
+        onEdit={() => {}}
         onMoveDown={() => {}}
         onMoveUp={() => {}}
         onSelect={() => {}}
@@ -70,12 +74,16 @@ describe("BlockShell", () => {
   it("renders the block label in the shell header", () => {
     render(
       <BlockShell
+        blockId="answer_1"
         blockLabel="Answer"
         canMoveDown
         canMoveUp
         dragControls={createTestDragControls()}
+        onCancelEdit={() => {}}
+        onConfirmEdit={() => {}}
         onDelete={() => {}}
         onDuplicate={() => {}}
+        onEdit={() => {}}
         onMoveDown={() => {}}
         onMoveUp={() => {}}
         onSelect={() => {}}
@@ -93,12 +101,16 @@ describe("BlockShell", () => {
 
     render(
       <BlockShell
+        blockId="answer_1"
         blockLabel="Answer"
         canMoveDown
         canMoveUp
         dragControls={createTestDragControls()}
+        onCancelEdit={() => {}}
+        onConfirmEdit={() => {}}
         onDelete={() => {}}
         onDuplicate={() => {}}
+        onEdit={() => {}}
         onMoveDown={() => {}}
         onMoveUp={() => {}}
         onSelect={onSelect}
@@ -119,12 +131,16 @@ describe("BlockShell", () => {
 
     render(
       <BlockShell
+        blockId="answer_1"
         blockLabel="Answer"
         canMoveDown
         canMoveUp
         dragControls={createTestDragControls()}
+        onCancelEdit={() => {}}
+        onConfirmEdit={() => {}}
         onDelete={() => {}}
         onDuplicate={onDuplicate}
+        onEdit={() => {}}
         onMoveDown={() => {}}
         onMoveUp={() => {}}
         onSelect={onSelect}
@@ -143,12 +159,16 @@ describe("BlockShell", () => {
   it("shows selected state and the block menu", () => {
     render(
       <BlockShell
+        blockId="answer_1"
         blockLabel="Answer"
         canMoveDown
         canMoveUp
         dragControls={createTestDragControls()}
+        onCancelEdit={() => {}}
+        onConfirmEdit={() => {}}
         onDelete={() => {}}
         onDuplicate={() => {}}
+        onEdit={() => {}}
         onMoveDown={() => {}}
         onMoveUp={() => {}}
         onSelect={() => {}}

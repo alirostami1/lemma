@@ -18,7 +18,7 @@ import type { InsertComposedBlockType } from "./composed-editor-operations";
 
 export type InsertBlockType = InsertComposedBlockType;
 
-const blockMenuItems: Array<{
+export const INSERT_BLOCK_MENU_ITEMS: Array<{
   type: InsertBlockType;
   label: string;
   Icon: LucideIcon;
@@ -56,7 +56,7 @@ export function InsertBlockMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
-        {blockMenuItems.map(({ type, label, Icon }) => (
+        {INSERT_BLOCK_MENU_ITEMS.map(({ type, label, Icon }) => (
           <DropdownMenuItem
             className="gap-2"
             key={type}

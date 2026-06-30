@@ -11,10 +11,16 @@ import { BlockShell } from "./block-shell";
 import { EditorToolbar } from "./editor-toolbar";
 import { InsertBlockMenu, type InsertBlockType } from "./insert-block-menu";
 import { SortableBlockList } from "./sortable-block-list";
+import type {
+  StudioEditorCommand,
+  StudioEditorCommandAvailability,
+} from "./studio-editor-command-model";
 
 export function BlockList({
+  commandAvailability,
   model,
   selectedBlockId,
+  editingBlockId,
   disabled,
   referencePreviewCache,
   workbookEnabled,
@@ -25,13 +31,19 @@ export function BlockList({
   onSelectReference,
   onTableSelectionChange,
   getTableSelectionForBlock,
+  onCancelEdit,
+  onConfirmEdit,
+  onEditBlock,
+  onRunCommand,
   onInsertBlock,
   onDuplicateBlock,
   onDeleteBlock,
   onMoveBlock,
 }: {
+  commandAvailability: StudioEditorCommandAvailability;
   model: ComposedEditorModel;
   selectedBlockId: string | null;
+  editingBlockId?: string | null;
   disabled?: boolean;
   referencePreviewCache: ReferencePreviewCache;
   workbookEnabled: boolean;
@@ -45,6 +57,10 @@ export function BlockList({
     selection: TableEditorSelection,
   ): void;
   getTableSelectionForBlock(blockId: string): TableEditorSelection;
+  onCancelEdit(): void;
+  onConfirmEdit(): void;
+  onEditBlock(blockId: string): void;
+  onRunCommand(command: StudioEditorCommand): void;
   onInsertBlock(type: InsertBlockType, index: number): void;
   onDuplicateBlock(blockId: string): void;
   onDeleteBlock(blockId: string): void;
@@ -53,9 +69,13 @@ export function BlockList({
   return (
     <div className="flex flex-col justify-start gap-3">
       <div className="flex items-center justify-between gap-3 rounded-lg border bg-background p-3 shadow-sm">
-        <EditorToolbar blockCount={model.blocks.length} />
+        <EditorToolbar
+          blockCount={model.blocks.length}
+          commandAvailability={commandAvailability}
+          onRunCommand={onRunCommand}
+        />
         <BlockLibrary
-          disabled={disabled}
+          disabled={disabled || !commandAvailability.insert_block}
           onInsert={(type) => onInsertBlock(type, model.blocks.length)}
         />
       </div>
@@ -71,7 +91,7 @@ export function BlockList({
             </div>
             <div className="justify-self-center">
               <InsertBlockMenu
-                disabled={disabled}
+                disabled={disabled || !commandAvailability.insert_block}
                 onInsert={(type: InsertBlockType) => onInsertBlock(type, 0)}
               />
             </div>
@@ -80,26 +100,31 @@ export function BlockList({
       ) : null}
 
       <SortableBlockList
-        disabled={disabled}
+        disabled={disabled || editingBlockId !== null}
         items={model.blocks}
         onReorder={(blocks) =>
-          onModelChange(reorderComposedBlocks(model, blocks))
+          !editingBlockId
+            ? onModelChange(reorderComposedBlocks(model, blocks))
+            : undefined
         }
         renderItem={(block, controls) => {
           const selected = block.id === selectedBlockId;
-          const shouldRenderInteractiveBody =
-            selected || block.type === "table";
+          const shouldRenderInteractiveBody = editingBlockId === block.id;
           const index = model.blocks.findIndex(
             (candidate) => candidate.id === block.id,
           );
+          const blockActionsDisabled =
+            disabled ||
+            (editingBlockId !== null && editingBlockId !== block.id);
           return (
             <div className="grid gap-3" key={block.id}>
               <BlockShell
+                blockId={block.id}
                 blockLabel={getComposedBlockLabel(block)}
                 bottomAction={
                   <InsertBlockMenu
                     compact
-                    disabled={disabled}
+                    disabled={disabled || !commandAvailability.insert_block}
                     onInsert={(type: InsertBlockType) =>
                       onInsertBlock(type, index + 1)
                     }
@@ -107,10 +132,14 @@ export function BlockList({
                 }
                 canMoveDown={index < model.blocks.length - 1}
                 canMoveUp={index > 0}
-                disabled={disabled}
+                disabled={blockActionsDisabled}
                 dragControls={controls}
+                editing={editingBlockId === block.id}
+                onCancelEdit={onCancelEdit}
+                onConfirmEdit={onConfirmEdit}
                 onDelete={() => onDeleteBlock(block.id)}
                 onDuplicate={() => onDuplicateBlock(block.id)}
+                onEdit={() => onEditBlock(block.id)}
                 onMoveDown={() => onMoveBlock(block.id, "down")}
                 onMoveUp={() => onMoveBlock(block.id, "up")}
                 onSelect={() => onSelectBlock(block.id)}
