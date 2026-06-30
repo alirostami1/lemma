@@ -98,7 +98,7 @@ block list is not borrowed as a nested table prompt.
 Block IDs are document-global across top-level blocks, nested container
 children, and primitive blocks inside table cells. This avoids ambiguous future
 references. Table row IDs, column IDs, and cell IDs remain table-scoped; future
-#87 table references should use structured addresses such as
+issue #87 table references should use structured addresses such as
 `{ tableBlockId, cellId, childBlockId }` when they need to target a primitive
 inside a table cell. The generalized hidden reference dependency graph is still
 future #87 work.
