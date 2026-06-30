@@ -19,7 +19,11 @@ import {
   type EditorSelection,
   selectedBlockIdFromSelection,
 } from "./editor-selection";
-import { InspectorPanel } from "./inspector";
+import {
+  type DocumentReadinessIssue,
+  InspectorPanel,
+  type ReferenceRecoveryItem,
+} from "./inspector";
 
 export function ComposedQuestionEditor({
   model,
@@ -27,6 +31,8 @@ export function ComposedQuestionEditor({
   sources,
   workbookSheetNamesBySourceId,
   referencePreviewCache = {},
+  documentIssues,
+  referenceRecoveryItems,
   disabled,
   inspectorStickyOffset,
 }: {
@@ -35,6 +41,8 @@ export function ComposedQuestionEditor({
   sources: QuestionBlueprintWorkbookSource[];
   workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
   referencePreviewCache?: ReferencePreviewCache;
+  documentIssues?: readonly DocumentReadinessIssue[];
+  referenceRecoveryItems?: readonly ReferenceRecoveryItem[];
   disabled?: boolean;
   inspectorStickyOffset?: number;
 }) {
@@ -151,10 +159,12 @@ export function ComposedQuestionEditor({
         />
         <InspectorPanel
           disabled={disabled}
+          documentIssues={documentIssues}
           model={model}
           onModelChange={onModelChange}
           onSelectionChange={setSelection}
           referencePreviewCache={referencePreviewCache}
+          referenceRecoveryItems={referenceRecoveryItems}
           selection={selection}
           sources={sources}
           stickyOffset={inspectorStickyOffset}

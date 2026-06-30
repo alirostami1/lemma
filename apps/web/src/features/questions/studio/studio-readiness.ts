@@ -1,14 +1,31 @@
-import type { ComposedEditorModel } from "#/domains/questions/authoring";
+import type {
+  ComposedEditorModel,
+  ReferenceUsage,
+} from "#/domains/questions/authoring";
 import {
   type BlueprintReadinessIssue,
   getBlueprintReadinessIssues,
 } from "#/domains/questions/blueprint-readiness";
 import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
+import {
+  getStudioSourceIntegrityIssues,
+  type StudioSourceIntegrityIssue,
+} from "./source/source-integrity";
+import type { StudioSource } from "./source/studio-source-model";
+import {
+  INSERTED_VALUES_CHECKING_MESSAGE,
+  INSERTED_VALUES_NEED_ATTENTION_MESSAGE,
+  REVIEW_AFFECTED_VALUES_BEFORE_PUBLISHING_MESSAGE,
+  WAIT_FOR_WORKBOOK_VALUES_BEFORE_PUBLISHING_MESSAGE,
+} from "./studio-reference-copy";
 
 export type StudioReadinessIssue = {
   id: string;
   severity: "error" | "warning" | "info";
   message: string;
+  publishMessage?: string;
+  blockedActions?: readonly StudioReadinessMessageAction[];
+  locations?: readonly ReferenceUsage[];
   actionLabel?: string;
   target?: {
     blockId?: string;
@@ -20,6 +37,7 @@ export type StudioReadinessIssue = {
 export type StudioReadinessContext = {
   questionName: string;
   attachedSources: QuestionBlueprintWorkbookSource[];
+  sources?: readonly StudioSource[];
   hasWorkbookSelection?: boolean;
 };
 
@@ -30,16 +48,25 @@ export type StudioReadiness = {
 };
 
 export type StudioReadinessAction = "save" | "generate_saved_blueprint";
+export type StudioReadinessMessageAction = StudioReadinessAction | "publish";
 
 export function getStudioReadiness(
   model: ComposedEditorModel,
   context: StudioReadinessContext,
 ): StudioReadiness {
-  const issues = getBlueprintReadinessIssues({
-    attachedSources: context.attachedSources,
-    model,
-    name: context.questionName,
-  }).map(mapBlueprintReadinessIssue);
+  const issues = [
+    ...getBlueprintReadinessIssues({
+      attachedSources: context.attachedSources,
+      model,
+      name: context.questionName,
+    }).map(mapBlueprintReadinessIssue),
+    ...(context.sources
+      ? getStudioSourceIntegrityIssues({
+          model,
+          sources: context.sources,
+        }).map(mapSourceIntegrityIssue)
+      : []),
+  ];
 
   return {
     canGenerate: !hasBlockingIssue(issues, "generate_saved_blueprint"),
@@ -50,14 +77,22 @@ export function getStudioReadiness(
 
 export function getFirstReadinessIssueMessage(
   readiness: StudioReadiness,
-  action: StudioReadinessAction,
+  action: StudioReadinessMessageAction,
 ) {
-  return (
-    readiness.issues.find(
-      (issue) =>
-        issue.severity === "error" && issueAppliesToAction(issue.id, action),
-    )?.message ?? null
+  const issue = readiness.issues.find(
+    (candidate) =>
+      candidate.blockedActions?.includes(action) ??
+      (candidate.severity === "error" &&
+        issueAppliesToAction(candidate.id, action)),
   );
+
+  if (!issue) {
+    return null;
+  }
+
+  return action === "publish"
+    ? (issue.publishMessage ?? issue.message)
+    : issue.message;
 }
 
 function hasBlockingIssue(
@@ -66,16 +101,46 @@ function hasBlockingIssue(
 ) {
   return issues.some(
     (issue) =>
-      issue.severity === "error" && issueAppliesToAction(issue.id, action),
+      issue.blockedActions?.includes(action) ??
+      (issue.severity === "error" && issueAppliesToAction(issue.id, action)),
   );
 }
 
-function issueAppliesToAction(issueId: string, action: StudioReadinessAction) {
+function issueAppliesToAction(
+  issueId: string,
+  action: StudioReadinessMessageAction,
+) {
   if (action === "save") {
     return issueId !== "missing_answers";
   }
 
   return true;
+}
+
+function mapSourceIntegrityIssue(
+  issue: StudioSourceIntegrityIssue,
+): StudioReadinessIssue {
+  if (issue.code === "inserted_value_checking") {
+    return {
+      blockedActions: ["publish", "generate_saved_blueprint"],
+      id: `inserted_value_checking_${issue.referenceId}`,
+      message: INSERTED_VALUES_CHECKING_MESSAGE,
+      locations: issue.locations,
+      publishMessage: WAIT_FOR_WORKBOOK_VALUES_BEFORE_PUBLISHING_MESSAGE,
+      severity: "warning",
+      target: { referenceId: issue.referenceId },
+    };
+  }
+
+  return {
+    blockedActions: ["save", "publish", "generate_saved_blueprint"],
+    id: `inserted_value_unavailable_${issue.referenceId}`,
+    locations: issue.locations,
+    message: INSERTED_VALUES_NEED_ATTENTION_MESSAGE,
+    publishMessage: REVIEW_AFFECTED_VALUES_BEFORE_PUBLISHING_MESSAGE,
+    severity: "error",
+    target: { referenceId: issue.referenceId },
+  };
 }
 
 function mapBlueprintReadinessIssue(

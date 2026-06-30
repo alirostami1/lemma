@@ -211,7 +211,16 @@ describe("composed authoring helpers", () => {
 
     expect(getReferenceUsage(model)).toEqual(
       new Map([
-        ["reference_1", [{ blockId: "text_1", type: "text_block" }]],
+        [
+          "reference_1",
+          [
+            {
+              blockId: "text_1",
+              inlineContentIndex: 0,
+              type: "text_block",
+            },
+          ],
+        ],
         [
           "answer_source",
           [
@@ -228,6 +237,7 @@ describe("composed authoring helpers", () => {
             {
               blockId: "table_1",
               cellId: "cell_1",
+              inlineContentIndex: 0,
               type: "table_content_cell",
             },
           ],

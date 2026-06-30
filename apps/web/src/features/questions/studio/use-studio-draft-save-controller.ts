@@ -115,6 +115,10 @@ export function useStudioDraftSaveController({
   const isSaving =
     isUploadingSources || isSavingDraft || publishServerDraft.isPending;
   const saveDocumentIssue = getFirstReadinessIssueMessage(readiness, "save");
+  const publishDocumentIssue = getFirstReadinessIssueMessage(
+    readiness,
+    "publish",
+  );
 
   useEffect(() => {
     setServerDraftRevision(initialDraftRevision);
@@ -124,9 +128,10 @@ export function useStudioDraftSaveController({
   const publishDialogState: PublishDraftDialogState = useMemo(
     () => ({
       currentName: blueprintName,
-      validationIssue: conflict?.message ?? saveDocumentIssue,
+      validationIssue:
+        conflict?.message ?? publishDocumentIssue ?? saveDocumentIssue,
     }),
-    [blueprintName, conflict?.message, saveDocumentIssue],
+    [blueprintName, conflict?.message, publishDocumentIssue, saveDocumentIssue],
   );
 
   const clearMessages = useCallback(() => {
@@ -271,8 +276,8 @@ export function useStudioDraftSaveController({
   async function publishDraft() {
     clearMessages();
     setConflict(null);
-    if (saveDocumentIssue) {
-      setSaveError(saveDocumentIssue);
+    if (publishDocumentIssue) {
+      setSaveError(publishDocumentIssue);
       return false;
     }
 

@@ -5,6 +5,7 @@ import type {
 import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import type { EditorSelection } from "../editor-selection";
+import type { DocumentReadinessIssue } from "./document-inspector";
 import { SelectedElementInspector } from "./selected-element-inspector";
 
 export function ElementsTab({
@@ -15,6 +16,7 @@ export function ElementsTab({
   workbookEnabled,
   sources,
   workbookSheetNamesBySourceId,
+  documentIssues,
   disabled,
   onModelChange,
   onSelectionChange,
@@ -26,6 +28,7 @@ export function ElementsTab({
   workbookEnabled: boolean;
   sources: QuestionBlueprintWorkbookSource[];
   workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
+  documentIssues?: readonly DocumentReadinessIssue[];
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onSelectionChange(selection: EditorSelection): void;
@@ -33,6 +36,7 @@ export function ElementsTab({
   return (
     <SelectedElementInspector
       disabled={disabled}
+      documentIssues={documentIssues}
       model={model}
       onModelChange={onModelChange}
       onSelectionChange={onSelectionChange}

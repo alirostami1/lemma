@@ -19,6 +19,7 @@ import type {
   StudioController,
   StudioRouteSearch,
 } from "./studio-controller-types";
+import { getStudioEditorReadinessViewModel } from "./studio-editor-readiness-view-model";
 import { getStudioReadiness } from "./studio-readiness";
 import { parseStudioRouteIntent } from "./studio-route-intent";
 import { getStudioState } from "./studio-state";
@@ -88,8 +89,18 @@ export function useStudioController(
       getStudioReadiness(draft.authoringModel, {
         attachedSources,
         questionName: draft.blueprintName,
+        sources: draftStorage.sources,
       }),
-    [attachedSources, draft.authoringModel, draft.blueprintName],
+    [
+      attachedSources,
+      draft.authoringModel,
+      draft.blueprintName,
+      draftStorage.sources,
+    ],
+  );
+  const editorReadiness = useMemo(
+    () => getStudioEditorReadinessViewModel(readiness),
+    [readiness],
   );
   const save = useStudioDraftSaveController({
     authoringModel: draft.authoringModel,
@@ -238,11 +249,13 @@ export function useStudioController(
     editor: {
       authoringModel: draft.authoringModel,
       canUseWorkbookTools,
+      documentIssues: editorReadiness.documentIssues,
       onAuthoringModelChange: (model) => {
         save.markDraftChanged();
         draft.setAuthoringModel(model);
       },
       referencePreviewCache: referencePreview.referencePreviewCache,
+      referenceRecoveryItems: editorReadiness.referenceRecoveryItems,
       sources: editorSources,
       workbookSheetNamesBySourceId,
     },

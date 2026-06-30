@@ -18,22 +18,26 @@ import {
 } from "@lemma/ui/components/select";
 import { FileQuestion, Plus } from "lucide-react";
 import type { ComposedEditorModel } from "#/domains/questions/authoring";
-import type { StudioReadiness } from "../../studio/studio-readiness";
 import {
   type InsertComposedBlockType,
   insertComposedBlock,
 } from "../composed-editor-operations";
 import type { EditorSelection } from "../editor-selection";
 
+export type DocumentReadinessIssue = {
+  id: string;
+  message: string;
+};
+
 export function DocumentInspector({
+  documentIssues = [],
   model,
-  readiness,
   disabled,
   onModelChange,
   onSelectionChange,
 }: {
+  documentIssues?: readonly DocumentReadinessIssue[];
   model: ComposedEditorModel;
-  readiness?: StudioReadiness;
   disabled?: boolean;
   onModelChange(model: ComposedEditorModel): void;
   onSelectionChange(selection: EditorSelection): void;
@@ -71,13 +75,13 @@ export function DocumentInspector({
       <div className="rounded-md border bg-muted/20 p-3">
         <p className="text-sm font-medium">Readiness</p>
         <p className="text-xs text-muted-foreground">
-          {readiness?.issues.length
-            ? `${readiness.issues.length} item${readiness.issues.length === 1 ? "" : "s"} to fix.`
-            : "Ready to save and generate."}
+          {documentIssues.length
+            ? `${documentIssues.length} item${documentIssues.length === 1 ? "" : "s"} to fix.`
+            : "No document issues."}
         </p>
-        {readiness?.issues.length ? (
+        {documentIssues.length ? (
           <ul className="mt-3 grid gap-2 text-xs text-muted-foreground">
-            {readiness.issues.slice(0, 4).map((issue) => (
+            {documentIssues.slice(0, 4).map((issue) => (
               <li key={issue.id}>{issue.message}</li>
             ))}
           </ul>

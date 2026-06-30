@@ -9,7 +9,10 @@ import type {
   ComposedEditorModel,
   ComposedResponseField,
 } from "../composed-model";
-import { createDefaultComposedEditorModel } from "../composed-model";
+import {
+  createDefaultComposedEditorModel,
+  stripUnusedComposedReferences,
+} from "../composed-model";
 import { plainTextToInlineContent } from "../inline-content";
 import { validateTableEditorModelAnswers } from "../table-model";
 import {
@@ -49,14 +52,15 @@ export function createDefaultQuestionBlueprintDocument(): QuestionBlueprintDocum
 export function composedEditorModelToQuestionBlueprintDocument(
   model: ComposedEditorModel,
 ): QuestionBlueprintDocument {
-  validateComposedEditorModel(model);
+  const modelForSave = stripUnusedComposedReferences(model);
+  validateComposedEditorModel(modelForSave);
   const responseFields: QuestionResponseField[] = [];
   const responseFieldIds = new Set<string>();
   const references: QuestionReference[] = [];
   const referenceIds = new Set<string>();
   const blocks: QuestionBlueprintBlock[] = [];
 
-  for (const reference of model.references) {
+  for (const reference of modelForSave.references) {
     pushUniqueReference(references, referenceIds, {
       id: reference.id,
       ...(reference.label === undefined ? {} : { label: reference.label }),
@@ -64,7 +68,7 @@ export function composedEditorModelToQuestionBlueprintDocument(
     });
   }
 
-  for (const block of model.blocks) {
+  for (const block of modelForSave.blocks) {
     if (block.type === "text") {
       blocks.push({
         content: block.content,
@@ -92,7 +96,7 @@ export function composedEditorModelToQuestionBlueprintDocument(
     }
 
     if (block.type === "response") {
-      const responseField = model.responseFields.find(
+      const responseField = modelForSave.responseFields.find(
         (field) => field.id === block.responseFieldId,
       );
       if (!responseField) {

@@ -235,7 +235,7 @@ function columnLabelToIndex(label: string) {
   );
 }
 
-function columnIndexToLabel(index: number) {
+export function columnIndexToLabel(index: number) {
   let value = index + 1;
   let label = "";
   while (value > 0) {
