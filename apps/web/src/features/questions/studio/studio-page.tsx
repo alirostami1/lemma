@@ -1,8 +1,7 @@
 import { Button } from "@lemma/ui/components/button";
 import { InlineError } from "@lemma/ui/components/inline-error";
 import { Link, useNavigate } from "@tanstack/react-router";
-import type { RefObject } from "react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { PageContainer } from "#/components/patterns";
 import { useQuestionBlueprintDraftQuery } from "#/domains/questions";
 import { ComposedQuestionEditor } from "#/features/questions/composed-editor";
@@ -31,9 +30,6 @@ import {
 import { useStudioEntryRoute } from "./use-studio-entry-route";
 
 export type { StudioRouteSearch };
-
-const stickyInspectorGap = 16;
-const initialStickyRegionBottom = 176;
 
 export function StudioPage(input: StudioRouteSearch = {}) {
   const routeIntent = parseStudioRouteIntent(input);
@@ -337,10 +333,6 @@ function StudioEntryRouteView({
 }
 
 function StudioEditorWorkbench({ studio }: { studio: StudioController }) {
-  const stickyRegionRef = useRef<HTMLDivElement>(null);
-  const stickyRegionBottom = useStickyRegionBottom(stickyRegionRef);
-  const inspectorStickyOffset = stickyRegionBottom + stickyInspectorGap;
-
   return (
     <WorkbookPickerProvider
       value={{ openWorkbookPicker: studio.workbookPicker.openWorkbookPicker }}
@@ -352,7 +344,6 @@ function StudioEditorWorkbench({ studio }: { studio: StudioController }) {
           <div
             className="grid gap-2 bg-background py-2 xl:sticky xl:top-0 xl:z-30 xl:bg-background/95 xl:backdrop-blur xl:supports-[backdrop-filter]:bg-background/80"
             data-testid="studio-editor-controls"
-            ref={stickyRegionRef}
           >
             <StudioCommandBar {...studio.commandBar} />
           </div>
@@ -361,7 +352,6 @@ function StudioEditorWorkbench({ studio }: { studio: StudioController }) {
             <div className="max-w-none">
               <ComposedQuestionEditor
                 documentIssues={studio.editor.documentIssues}
-                inspectorStickyOffset={inspectorStickyOffset}
                 model={studio.editor.authoringModel}
                 onModelChange={studio.editor.onAuthoringModelChange}
                 referencePreviewCache={studio.editor.referencePreviewCache}
@@ -406,50 +396,4 @@ function StudioEditorWorkbench({ studio }: { studio: StudioController }) {
       </AddReferenceActionsProvider>
     </WorkbookPickerProvider>
   );
-}
-
-function useStickyRegionBottom<TElement extends HTMLElement>(
-  ref: RefObject<TElement | null>,
-) {
-  const [bottom, setBottom] = useState(initialStickyRegionBottom);
-
-  useLayoutEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-    const observedElement = element;
-
-    let animationFrame = 0;
-
-    function readBottom() {
-      setBottom(Math.max(0, observedElement.getBoundingClientRect().bottom));
-    }
-
-    function scheduleBottomUpdate() {
-      window.cancelAnimationFrame(animationFrame);
-      animationFrame = window.requestAnimationFrame(readBottom);
-    }
-
-    readBottom();
-    window.addEventListener("scroll", scheduleBottomUpdate, { passive: true });
-    window.addEventListener("resize", scheduleBottomUpdate);
-
-    if (typeof ResizeObserver === "undefined") {
-      return () => {
-        window.cancelAnimationFrame(animationFrame);
-        window.removeEventListener("scroll", scheduleBottomUpdate);
-        window.removeEventListener("resize", scheduleBottomUpdate);
-      };
-    }
-
-    const observer = new ResizeObserver(scheduleBottomUpdate);
-    observer.observe(element);
-    return () => {
-      window.cancelAnimationFrame(animationFrame);
-      window.removeEventListener("scroll", scheduleBottomUpdate);
-      window.removeEventListener("resize", scheduleBottomUpdate);
-      observer.disconnect();
-    };
-  }, [ref]);
-
-  return bottom;
 }

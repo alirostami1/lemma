@@ -1,3 +1,2 @@
-export type { DocumentReadinessIssue } from "./document-inspector";
-export { InspectorPanel } from "./inspector-panel";
+export type { DocumentReadinessIssue } from "./document-readiness-issue";
 export type { ReferenceRecoveryItem } from "./reference-recovery-panel";

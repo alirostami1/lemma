@@ -18,9 +18,11 @@ import type { SortableRenderControls } from "./sortable-block-list";
 export function BlockShell({
   selected,
   editing,
+  subdued,
   blockId,
   blockLabel,
   bottomAction,
+  settingsAction,
   disabled,
   dragControls,
   canMoveUp,
@@ -37,9 +39,11 @@ export function BlockShell({
 }: {
   selected: boolean;
   editing?: boolean;
+  subdued?: boolean;
   blockId: string;
   blockLabel: string;
   bottomAction?: ReactNode;
+  settingsAction?: ReactNode;
   disabled?: boolean;
   dragControls: {
     attributes: SortableRenderControls["attributes"];
@@ -71,11 +75,13 @@ export function BlockShell({
           : selected
             ? "border-primary shadow-sm ring-2 ring-primary/20"
             : "border-border/70",
+        subdued ? "border-border/40 bg-muted/20 shadow-none" : undefined,
         dragControls.isDragging ? "shadow-lg" : undefined,
       )}
       data-editing={editing ? "true" : "false"}
       data-selected={selected ? "true" : "false"}
       data-studio-block-id={blockId}
+      data-subdued={subdued ? "true" : "false"}
       onPointerDown={onSelect}
       ref={dragControls.setNodeRef}
       style={dragControls.style}
@@ -280,6 +286,11 @@ export function BlockShell({
       >
         <div className="min-h-1">{children}</div>
       </div>
+      {settingsAction ? (
+        <div onPointerDown={(event) => event.stopPropagation()}>
+          {settingsAction}
+        </div>
+      ) : null}
       {bottomAction ? (
         <div
           className={cn(

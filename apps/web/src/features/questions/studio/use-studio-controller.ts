@@ -13,7 +13,6 @@ import { useSourceController } from "./source/use-source-controller";
 import {
   navigateToStudioBlueprint,
   navigateToStudioDraft,
-  toStudioSearch,
 } from "./studio-controller-helpers";
 import type {
   StudioController,
@@ -215,10 +214,13 @@ export function useStudioController(
     commandBar: {
       blueprintDescription: draft.blueprintDescription,
       blueprintName: draft.blueprintName,
-      canGenerate: studioState.canGenerate,
       canRedo: draft.canRedo,
       canUndo: draft.canUndo,
-      generateDisabledReason: studioState.generateDisabledReason,
+      generationAction: {
+        available: studioState.canGenerate,
+        disabledReason: studioState.generateDisabledReason,
+        onGenerate: null,
+      },
       isSaving: save.commandBarSave.isSaving,
       isPublishing: save.commandBarSave.isPublishing,
       onBlueprintDescriptionChange: (description) => {
@@ -236,11 +238,6 @@ export function useStudioController(
       onReset: draft.requestReset,
       onSaveDraft: save.commandBarSave.onSaveDraft,
       onUndo: handleUndo,
-      routeSearch: toStudioSearch(
-        routeIntent.type === "edit_draft"
-          ? { draftId: initialDraftId, kind: "draft" }
-          : { kind: "blank" },
-      ),
       saveError: studioState.saveError,
       saveConflict: save.conflict,
       saveState: studioState.saveState,

@@ -82,6 +82,7 @@ export function ReferenceRecoveryPanel({
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button
+                  disabled={disabled}
                   onClick={() =>
                     onSelectionChange(toEditorSelection(item.usage))
                   }

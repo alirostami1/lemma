@@ -5,20 +5,18 @@ import type { ReferencePreviewCache } from "#/domains/questions/reference-previe
 import type { TableEditorSelection } from "#/features/questions/table-block-editor";
 import { BlockEditor } from "./block-editor";
 import { getComposedBlockLabel } from "./block-labels";
-import { BlockLibrary } from "./block-library";
 import { BlockPreview } from "./block-preview";
+import { BlockSettingsDisclosure } from "./block-settings-disclosure";
 import { BlockShell } from "./block-shell";
-import { EditorToolbar } from "./editor-toolbar";
+import type { EditorSelection } from "./editor-selection";
 import { InsertBlockMenu, type InsertBlockType } from "./insert-block-menu";
 import { SortableBlockList } from "./sortable-block-list";
-import type {
-  StudioEditorCommand,
-  StudioEditorCommandAvailability,
-} from "./studio-editor-command-model";
+import type { StudioEditorCommandAvailability } from "./studio-editor-command-model";
 
 export function BlockList({
   commandAvailability,
   model,
+  selection,
   selectedBlockId,
   editingBlockId,
   disabled,
@@ -27,6 +25,7 @@ export function BlockList({
   sources = [],
   workbookSheetNamesBySourceId,
   onModelChange,
+  onSelectionChange,
   onSelectBlock,
   onSelectReference,
   onTableSelectionChange,
@@ -34,7 +33,6 @@ export function BlockList({
   onCancelEdit,
   onConfirmEdit,
   onEditBlock,
-  onRunCommand,
   onInsertBlock,
   onDuplicateBlock,
   onDeleteBlock,
@@ -42,6 +40,7 @@ export function BlockList({
 }: {
   commandAvailability: StudioEditorCommandAvailability;
   model: ComposedEditorModel;
+  selection: EditorSelection;
   selectedBlockId: string | null;
   editingBlockId?: string | null;
   disabled?: boolean;
@@ -50,6 +49,7 @@ export function BlockList({
   sources?: QuestionBlueprintWorkbookSource[];
   workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;
   onModelChange(model: ComposedEditorModel): void;
+  onSelectionChange(selection: EditorSelection): void;
   onSelectBlock(blockId: string): void;
   onSelectReference(referenceId: string): void;
   onTableSelectionChange(
@@ -60,7 +60,6 @@ export function BlockList({
   onCancelEdit(): void;
   onConfirmEdit(): void;
   onEditBlock(blockId: string): void;
-  onRunCommand(command: StudioEditorCommand): void;
   onInsertBlock(type: InsertBlockType, index: number): void;
   onDuplicateBlock(blockId: string): void;
   onDeleteBlock(blockId: string): void;
@@ -68,18 +67,6 @@ export function BlockList({
 }) {
   return (
     <div className="flex flex-col justify-start gap-3">
-      <div className="flex items-center justify-between gap-3 rounded-lg border bg-background p-3 shadow-sm">
-        <EditorToolbar
-          blockCount={model.blocks.length}
-          commandAvailability={commandAvailability}
-          onRunCommand={onRunCommand}
-        />
-        <BlockLibrary
-          disabled={disabled || !commandAvailability.insert_block}
-          onInsert={(type) => onInsertBlock(type, model.blocks.length)}
-        />
-      </div>
-
       {model.blocks.length === 0 ? (
         <div className="grid min-h-52 place-items-center rounded-lg border border-dashed bg-muted/20 p-6 text-center">
           <div className="grid gap-3">
@@ -110,6 +97,7 @@ export function BlockList({
         renderItem={(block, controls) => {
           const selected = block.id === selectedBlockId;
           const shouldRenderInteractiveBody = editingBlockId === block.id;
+          const focusedMode = editingBlockId !== null;
           const index = model.blocks.findIndex(
             (candidate) => candidate.id === block.id,
           );
@@ -144,6 +132,25 @@ export function BlockList({
                 onMoveUp={() => onMoveBlock(block.id, "up")}
                 onSelect={() => onSelectBlock(block.id)}
                 selected={selected}
+                settingsAction={
+                  selected ? (
+                    <BlockSettingsDisclosure
+                      block={block}
+                      disabled={disabled || editingBlockId !== null}
+                      model={model}
+                      onModelChange={onModelChange}
+                      onSelectionChange={onSelectionChange}
+                      referencePreviewCache={referencePreviewCache}
+                      selection={selection}
+                      sources={sources}
+                      workbookEnabled={workbookEnabled}
+                      workbookSheetNamesBySourceId={
+                        workbookSheetNamesBySourceId
+                      }
+                    />
+                  ) : null
+                }
+                subdued={focusedMode && editingBlockId !== block.id}
               >
                 {shouldRenderInteractiveBody ? (
                   <BlockEditor

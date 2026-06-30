@@ -1,5 +1,17 @@
 import { Badge } from "@lemma/ui/components/badge";
 import { Button } from "@lemma/ui/components/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@lemma/ui/components/collapsible";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@lemma/ui/components/dropdown-menu";
 import { InlineError } from "@lemma/ui/components/inline-error";
 import { Input } from "@lemma/ui/components/input";
 import {
@@ -11,27 +23,26 @@ import {
 import {
   AlertCircle,
   CheckCircle2,
+  ChevronDown,
   Cloud,
   FolderOpen,
   LoaderCircle,
+  MoreHorizontal,
   Redo2,
   RotateCcw,
   Send,
   Sparkles,
   Undo2,
 } from "lucide-react";
-import type { ReactNode } from "react";
-import type { StudioRouteSearch } from "./studio-controller-types";
+import type { StudioGenerationAction } from "./studio-controller-types";
 import type { DraftSaveConflict } from "./use-studio-draft-save-controller";
 
 export type StudioCommandBarProps = {
   blueprintDescription: string;
   blueprintName: string;
-  canGenerate: boolean;
   canRedo: boolean;
   canUndo: boolean;
-  generateDisabledReason: string | null;
-  routeSearch: StudioRouteSearch;
+  generationAction: StudioGenerationAction;
   isSaving: boolean;
   isPublishing: boolean;
   saveState: "saved" | "unsaved" | "saving" | "autosaved" | "failed";
@@ -51,11 +62,9 @@ export type StudioCommandBarProps = {
 export function StudioCommandBar({
   blueprintDescription,
   blueprintName,
-  canGenerate,
   canRedo,
   canUndo,
-  generateDisabledReason,
-  routeSearch,
+  generationAction,
   isSaving,
   isPublishing,
   saveState,
@@ -71,7 +80,7 @@ export function StudioCommandBar({
   onRedo,
   onUndo,
 }: StudioCommandBarProps) {
-  const status = getSaveStatusLabel({ routeSearch, saveState });
+  const status = getSaveStatusLabel(saveState);
   const StatusIcon = status.Icon;
   let publishButtonLabel = "Publish";
   if (isPublishing) {
@@ -83,102 +92,105 @@ export function StudioCommandBar({
   return (
     <TooltipProvider>
       <section className="rounded-lg border bg-background/95 shadow-sm">
-        <div className="flex flex-col gap-3 p-3 lg:flex-row lg:items-end lg:justify-between">
-          <div className="grid min-w-0 flex-1 gap-2">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <h1 className="text-base font-semibold">Studio</h1>
-              <Badge variant={status.variant}>
-                <StatusIcon />
-                {status.label}
-              </Badge>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-[minmax(12rem,24rem)_minmax(12rem,1fr)]">
-              <label className="sr-only" htmlFor="studio-blueprint-name">
-                Blueprint name
-              </label>
-              <Input
-                aria-label="Blueprint name"
-                className="h-9 font-medium"
-                id="studio-blueprint-name"
-                maxLength={160}
-                onChange={(event) =>
-                  onBlueprintNameChange(event.currentTarget.value)
-                }
-                value={blueprintName}
-              />
-              <label className="sr-only" htmlFor="studio-blueprint-description">
-                Blueprint description
-              </label>
-              <Input
-                aria-label="Blueprint description"
-                className="h-9"
-                id="studio-blueprint-description"
-                maxLength={500}
-                onChange={(event) =>
-                  onBlueprintDescriptionChange(event.currentTarget.value)
-                }
-                placeholder="Description"
-                value={blueprintDescription}
-              />
-            </div>
-          </div>
+        <Collapsible>
+          <div className="flex flex-col gap-2 p-2 sm:p-3">
+            <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <CollapsibleTrigger asChild>
+                  <Button
+                    aria-label="Blueprint details"
+                    className="size-8 shrink-0 rounded-md"
+                    size="icon"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <ChevronDown />
+                  </Button>
+                </CollapsibleTrigger>
+                <div className="min-w-0">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <h1 className="truncate text-base font-semibold">
+                      {blueprintName || "Studio"}
+                    </h1>
+                    <Badge
+                      className="hidden shrink-0 sm:inline-flex"
+                      variant={status.variant}
+                    >
+                      <StatusIcon />
+                      {status.label}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
 
-          <div className="flex flex-wrap items-center gap-2 lg:self-end">
-            <ToolbarIconButton
-              disabled={false}
-              icon={<FolderOpen />}
-              label="Saved blueprints"
-              onClick={onOpenSavedBlueprints}
-            />
-            <ToolbarIconButton
-              disabled={!canUndo}
-              icon={<Undo2 />}
-              label="Undo"
-              onClick={onUndo}
-            />
-            <ToolbarIconButton
-              disabled={!canRedo}
-              icon={<Redo2 />}
-              label="Redo"
-              onClick={onRedo}
-            />
-            <ToolbarIconButton
-              disabled={false}
-              icon={<RotateCcw />}
-              label="Reset Studio"
-              onClick={onReset}
-            />
-            <Button
-              disabled={isSaving || saveConflict !== null}
-              onClick={onSaveDraft}
-              size="lg"
-              type="button"
-              variant="outline"
-            >
-              <Cloud />
-              Save
-            </Button>
-            <Button
-              disabled={!canGenerate}
-              size="lg"
-              title={generateDisabledReason ?? undefined}
-              type="button"
-              variant="outline"
-            >
-              <Sparkles />
-              Generate
-            </Button>
-            <Button
-              disabled={isSaving || saveConflict !== null}
-              onClick={onOpenPublishDialog}
-              size="lg"
-              type="button"
-            >
-              <Send />
-              {publishButtonLabel}
-            </Button>
+              <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+                <Button
+                  disabled={isSaving || saveConflict !== null}
+                  onClick={onSaveDraft}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  <Cloud />
+                  Save
+                </Button>
+                <Button
+                  disabled={isSaving || saveConflict !== null}
+                  onClick={onOpenPublishDialog}
+                  size="sm"
+                  type="button"
+                >
+                  <Send />
+                  {publishButtonLabel}
+                </Button>
+                <SecondaryActionsMenu
+                  canRedo={canRedo}
+                  canUndo={canUndo}
+                  generationAction={generationAction}
+                  onOpenSavedBlueprints={onOpenSavedBlueprints}
+                  onRedo={onRedo}
+                  onReset={onReset}
+                  onUndo={onUndo}
+                />
+              </div>
+            </div>
+
+            <CollapsibleContent>
+              <div className="grid gap-2 border-t pt-3 sm:grid-cols-[minmax(12rem,24rem)_minmax(12rem,1fr)]">
+                <label className="sr-only" htmlFor="studio-blueprint-name">
+                  Blueprint name
+                </label>
+                <Input
+                  aria-label="Blueprint name"
+                  className="h-9 font-medium"
+                  id="studio-blueprint-name"
+                  maxLength={160}
+                  onChange={(event) =>
+                    onBlueprintNameChange(event.currentTarget.value)
+                  }
+                  value={blueprintName}
+                />
+                <label
+                  className="sr-only"
+                  htmlFor="studio-blueprint-description"
+                >
+                  Blueprint description
+                </label>
+                <Input
+                  aria-label="Blueprint description"
+                  className="h-9"
+                  id="studio-blueprint-description"
+                  maxLength={500}
+                  onChange={(event) =>
+                    onBlueprintDescriptionChange(event.currentTarget.value)
+                  }
+                  placeholder="Description"
+                  value={blueprintDescription}
+                />
+              </div>
+            </CollapsibleContent>
           </div>
-        </div>
+        </Collapsible>
         {saveConflict ? (
           <div className="grid gap-3 border-t p-3 sm:grid-cols-[1fr_auto] sm:items-center">
             <InlineError message={saveConflict.message} />
@@ -200,113 +212,110 @@ export function StudioCommandBar({
   );
 }
 
-function ToolbarIconButton({
-  disabled,
-  icon,
-  label,
-  onClick,
+function SecondaryActionsMenu({
+  canRedo,
+  canUndo,
+  generationAction,
+  onOpenSavedBlueprints,
+  onReset,
+  onRedo,
+  onUndo,
 }: {
-  disabled: boolean;
-  icon: ReactNode;
-  label: string;
-  onClick(): void;
+  canRedo: boolean;
+  canUndo: boolean;
+  generationAction: StudioGenerationAction;
+  onOpenSavedBlueprints(): void;
+  onReset(): void;
+  onRedo(): void;
+  onUndo(): void;
 }) {
+  const generateDisabled =
+    !generationAction.available || !generationAction.onGenerate;
+  const generateDisabledReason =
+    generationAction.disabledReason ?? "Generation is unavailable.";
+
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          aria-label={label}
-          disabled={disabled}
-          onClick={onClick}
-          size="icon-lg"
-          type="button"
-          variant="outline"
+    <DropdownMenu>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>
+            <Button
+              aria-label="More workspace actions"
+              className="size-8 rounded-md"
+              size="icon"
+              type="button"
+              variant="outline"
+            >
+              <MoreHorizontal />
+            </Button>
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        <TooltipContent>More workspace actions</TooltipContent>
+      </Tooltip>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuItem className="gap-2" onSelect={onOpenSavedBlueprints}>
+          <FolderOpen className="size-4" />
+          Saved blueprints
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="gap-2"
+          disabled={!canUndo}
+          onSelect={onUndo}
         >
-          {icon}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
+          <Undo2 className="size-4" />
+          Undo
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="gap-2"
+          disabled={!canRedo}
+          onSelect={onRedo}
+        >
+          <Redo2 className="size-4" />
+          Redo
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          aria-describedby={
+            generateDisabled ? "studio-generate-disabled-reason" : undefined
+          }
+          aria-label="Generate"
+          className="items-start gap-2"
+          disabled={generateDisabled}
+          onSelect={
+            generateDisabled
+              ? undefined
+              : (generationAction.onGenerate ?? undefined)
+          }
+        >
+          <Sparkles className="mt-0.5 size-4" />
+          <span className="grid gap-0.5">
+            <span>Generate</span>
+            {generateDisabled ? (
+              <span
+                className="text-xs text-muted-foreground"
+                id="studio-generate-disabled-reason"
+              >
+                {generateDisabledReason}
+              </span>
+            ) : null}
+          </span>
+        </DropdownMenuItem>
+        <DropdownMenuItem className="gap-2" onSelect={onReset}>
+          <RotateCcw className="size-4" />
+          Reset workspace
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
-function getSaveStatusLabel(input: {
-  routeSearch: StudioRouteSearch;
-  saveState: StudioCommandBarProps["saveState"];
-}): {
+function getSaveStatusLabel(saveState: StudioCommandBarProps["saveState"]): {
   label: string;
   variant: "default" | "secondary" | "destructive" | "outline";
   Icon: typeof CheckCircle2;
 } {
-  if (input.routeSearch.draftId) {
-    if (input.saveState === "saving") {
-      return {
-        Icon: LoaderCircle,
-        label: "Saving changes",
-        variant: "outline",
-      };
-    }
-    if (input.saveState === "failed") {
-      return {
-        Icon: AlertCircle,
-        label: "Save failed",
-        variant: "destructive",
-      };
-    }
-    if (input.saveState === "saved") {
-      return {
-        Icon: CheckCircle2,
-        label: "Changes saved",
-        variant: "secondary",
-      };
-    }
-    if (input.saveState === "autosaved") {
-      return { Icon: Cloud, label: "Autosaved locally", variant: "outline" };
-    }
-    return {
-      Icon: AlertCircle,
-      label: "Unsaved changes",
-      variant: "outline",
-    };
-  }
-
-  if (input.routeSearch.blueprintId) {
-    if (input.saveState === "saving") {
-      return {
-        Icon: LoaderCircle,
-        label: "Saving changes",
-        variant: "outline",
-      };
-    }
-    if (input.saveState === "failed") {
-      return {
-        Icon: AlertCircle,
-        label: "Save failed",
-        variant: "destructive",
-      };
-    }
-    if (input.saveState === "saved") {
-      return {
-        Icon: CheckCircle2,
-        label: "Changes saved",
-        variant: "secondary",
-      };
-    }
-    if (input.saveState === "autosaved") {
-      return {
-        Icon: CheckCircle2,
-        label: "Autosaved locally",
-        variant: "outline",
-      };
-    }
-    return {
-      Icon: CheckCircle2,
-      label: "Unsaved changes",
-      variant: "outline",
-    };
-  }
-
-  switch (input.saveState) {
+  switch (saveState) {
     case "saved":
       return {
         Icon: CheckCircle2,

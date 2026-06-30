@@ -420,7 +420,6 @@ function createControllerForRoute(routeSearch: StudioRouteSearch = {}) {
   const draftId = routeSearch.draftId ?? "draft-missing";
   return createReadyStudioControllerFixture({
     draftId,
-    routeSearch,
   });
 }
 

@@ -1,11 +1,9 @@
 import type { StudioController } from "./studio-controller-types";
-import type { StudioRouteSearch } from "./studio-route-intent";
 
 const noop = () => {};
 
 export type StudioControllerFixtureOverrides = {
   draftId?: string;
-  routeSearch?: StudioRouteSearch;
   commandBar?: Partial<StudioController["commandBar"]>;
   publishDialog?: Partial<StudioController["publishDialog"]>;
   savedBlueprints?: Partial<StudioController["savedBlueprints"]>;
@@ -19,7 +17,6 @@ export function createReadyStudioControllerFixture(
   overrides: StudioControllerFixtureOverrides = {},
 ): StudioController {
   const draftId = overrides.draftId ?? "draft-1";
-  const routeSearch = overrides.routeSearch ?? { draftId };
   const controller = {
     routeIntent: { draftId, type: "edit_draft" },
     state: {
@@ -37,10 +34,13 @@ export function createReadyStudioControllerFixture(
     commandBar: {
       blueprintDescription: "",
       blueprintName: "Current work",
-      canGenerate: false,
       canRedo: false,
       canUndo: false,
-      generateDisabledReason: null,
+      generationAction: {
+        available: false,
+        disabledReason: "Publish before generating questions.",
+        onGenerate: null,
+      },
       isPublishing: false,
       isSaving: false,
       onBlueprintDescriptionChange: noop,
@@ -52,7 +52,6 @@ export function createReadyStudioControllerFixture(
       onReset: noop,
       onSaveDraft: noop,
       onUndo: noop,
-      routeSearch,
       saveConflict: null,
       saveError: null,
       saveState: "saved",
