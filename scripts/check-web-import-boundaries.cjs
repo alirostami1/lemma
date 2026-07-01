@@ -9,8 +9,28 @@ const inlineBlueprintSourceRoot = path.join(
   root,
   "packages/questions/src/domain/blueprint-document",
 );
+const inputPrimitiveSourceRoot = path.join(
+  root,
+  "packages/questions/src/domain/input-primitive",
+);
 const sourceExtensions = new Set([".ts", ".tsx"]);
-const allowedQuestionsImports = new Set(["@lemma/questions/inline-blueprint"]);
+const questionsBrowserLeaves = [
+  {
+    importSpecifier: "@lemma/questions/inline-blueprint",
+    name: "inline-blueprint",
+    sourceRoot: inlineBlueprintSourceRoot,
+  },
+  {
+    importSpecifier: "@lemma/questions/input-primitive",
+    name: "input-primitive",
+    sourceRoot: inputPrimitiveSourceRoot,
+  },
+];
+const allowedQuestionsImports = new Set(
+  questionsBrowserLeaves.map((leaf) => leaf.importSpecifier),
+);
+const allowedQuestionsImportMessage =
+  "web may only import browser-safe @lemma/questions leaf exports from @lemma/questions";
 const forbiddenWebPackages = new Set([
   "@lemma/db",
   "@lemma/events",
@@ -184,7 +204,7 @@ function webImportViolation(specifier) {
 
   if (specifier === "@lemma/questions" || specifier.startsWith("@lemma/questions/")) {
     if (!allowedQuestionsImports.has(specifier)) {
-      return "web may only import @lemma/questions/inline-blueprint from @lemma/questions";
+      return allowedQuestionsImportMessage;
     }
     return null;
   }
@@ -233,7 +253,7 @@ function isPathInsideDirectory(filePath, directory) {
   return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
 }
 
-function inlineBlueprintImportViolation(filePath, specifier) {
+function questionsBrowserLeafImportViolation(leaf, filePath, specifier) {
   if (isNodeBuiltinSpecifier(specifier)) {
     if (
       isInlineBlueprintTestFile(filePath) &&
@@ -241,16 +261,16 @@ function inlineBlueprintImportViolation(filePath, specifier) {
     ) {
       return null;
     }
-    return "inline-blueprint implementation must not import Node builtins";
+    return `${leaf.name} implementation must not import Node builtins`;
   }
 
   if (specifier.includes("/generated/") || specifier.startsWith("@lemma/questions/generated")) {
-    return "inline-blueprint must not import generated DTOs";
+    return `${leaf.name} must not import generated DTOs`;
   }
 
   for (const packageName of forbiddenInlineBlueprintPackages) {
     if (importMatchesPackage(specifier, packageName)) {
-      return "inline-blueprint must stay browser-safe and dependency-light";
+      return `${leaf.name} must stay browser-safe and dependency-light`;
     }
   }
 
@@ -259,31 +279,55 @@ function inlineBlueprintImportViolation(filePath, specifier) {
       specifier,
     )
   ) {
-    return "inline-blueprint must not import server package surfaces";
+    return `${leaf.name} must not import server package surfaces`;
   }
 
   if (specifier.startsWith(".")) {
     const resolved = path.normalize(path.resolve(path.dirname(filePath), specifier));
-    if (!isPathInsideDirectory(resolved, inlineBlueprintSourceRoot)) {
-      return "inline-blueprint must not import outside its blueprint-document leaf";
+    if (!isPathInsideDirectory(resolved, leaf.sourceRoot)) {
+      return `${leaf.name} must not import outside its browser-safe leaf`;
     }
   }
 
   return null;
 }
 
-function inlineBlueprintImportUsageViolation(filePath, usage) {
+function inlineBlueprintImportViolation(filePath, specifier) {
+  return questionsBrowserLeafImportViolation(
+    questionsBrowserLeaves[0],
+    filePath,
+    specifier,
+  );
+}
+
+function inputPrimitiveImportViolation(filePath, specifier) {
+  return questionsBrowserLeafImportViolation(
+    questionsBrowserLeaves[1],
+    filePath,
+    specifier,
+  );
+}
+
+function questionsBrowserLeafImportUsageViolation(leaf, filePath, usage) {
   if (usage.kind === "dynamic" && usage.specifier === null) {
-    return "inline-blueprint must not use non-literal dynamic imports";
+    return `${leaf.name} must not use non-literal dynamic imports`;
   }
   if (usage.kind === "require") {
-    return "inline-blueprint must not use CommonJS require imports";
+    return `${leaf.name} must not use CommonJS require imports`;
   }
   if (usage.kind === "createRequire") {
-    return "inline-blueprint must not use createRequire";
+    return `${leaf.name} must not use createRequire`;
   }
   if (usage.specifier === null) return null;
-  return inlineBlueprintImportViolation(filePath, usage.specifier);
+  return questionsBrowserLeafImportViolation(leaf, filePath, usage.specifier);
+}
+
+function inlineBlueprintImportUsageViolation(filePath, usage) {
+  return questionsBrowserLeafImportUsageViolation(
+    questionsBrowserLeaves[0],
+    filePath,
+    usage,
+  );
 }
 
 function checkFiles(files, getViolation) {
@@ -317,6 +361,20 @@ function checkInlineBlueprintSourceText(filePath, sourceText) {
     .filter((violation) => violation.reason);
 }
 
+function checkInputPrimitiveSourceText(filePath, sourceText) {
+  return extractImportUsages(filePath, sourceText)
+    .map((usage) => ({
+      filePath,
+      reason: questionsBrowserLeafImportUsageViolation(
+        questionsBrowserLeaves[1],
+        filePath,
+        usage,
+      ),
+      usage,
+    }))
+    .filter((violation) => violation.reason);
+}
+
 function formatViolation(violation) {
   const relativePath = path.relative(root, violation.filePath);
   const importSubject =
@@ -331,8 +389,10 @@ function run() {
     ...checkFiles(collectSourceFiles(webSourceRoot), (_filePath, usage) =>
       webImportUsageViolation(usage),
     ),
-    ...checkFiles(collectSourceFiles(inlineBlueprintSourceRoot), (filePath, usage) =>
-      inlineBlueprintImportUsageViolation(filePath, usage),
+    ...questionsBrowserLeaves.flatMap((leaf) =>
+      checkFiles(collectSourceFiles(leaf.sourceRoot), (filePath, usage) =>
+        questionsBrowserLeafImportUsageViolation(leaf, filePath, usage),
+      ),
     ),
   ];
 
@@ -354,8 +414,10 @@ if (require.main === module) {
 
 module.exports = {
   checkInlineBlueprintSourceText,
+  checkInputPrimitiveSourceText,
   checkWebSourceText,
   inlineBlueprintImportViolation,
+  inputPrimitiveImportViolation,
   webImportUsageViolation,
   webImportViolation,
 };

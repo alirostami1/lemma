@@ -201,6 +201,42 @@ export type {
   QuestionSolution,
 } from "./question-grading.js";
 export { questionSolution } from "./question-grading.js";
+export type {
+  QuestionBlueprintInputPrimitive,
+  QuestionInputConfigError,
+  QuestionInputConfigErrorCode,
+  QuestionInputConfigValidationResult,
+  QuestionInputPrimitive,
+  QuestionInputSelectOption,
+  QuestionInputType,
+  QuestionInputValidation,
+  QuestionInputValidationError,
+  QuestionInputValidationErrorCode,
+  QuestionInputValidationResult,
+  QuestionInputValue,
+} from "./question-input-primitive.js";
+export {
+  coerceQuestionInputPrimitiveValue,
+  defaultMaterializedQuestionInputPrimitive,
+  defaultQuestionInputPrimitive,
+  extractQuestionInputPrimitiveReferenceIds,
+  getQuestionInputPrimitiveEffectiveValue,
+  materializeQuestionInputPrimitive,
+  parseQuestionInputAllowedValues,
+  parseQuestionInputSelectOptions,
+  QUESTION_INPUT_TYPES,
+  questionBlueprintInputPrimitive,
+  questionInputAcceptedValues,
+  questionInputOptions,
+  questionInputPrimitive,
+  questionInputSelectOptionsFromValue,
+  questionInputValue,
+  questionInputValueFromUnknown,
+  referenceIdFromQuestionInputSource,
+  validateQuestionBlueprintInputPrimitiveConfig,
+  validateQuestionInputPrimitiveConfig,
+  validateQuestionInputPrimitiveValue,
+} from "./question-input-primitive.js";
 export type { QuestionProducer } from "./question-producer.js";
 export { questionProducer } from "./question-producer.js";
 export type {

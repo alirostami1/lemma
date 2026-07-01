@@ -18,6 +18,7 @@ import type {
   QuestionsResult,
   SavedQuestionBlueprintDraftWorkbookSourceRevisionResult,
 } from "../application/index.js";
+import { questionInputOptions, questionInputValue } from "../domain/index.js";
 import type {
   CompleteQuestionBlueprintDraftWorkbookEditorUploadResponse,
   CreateQuestionBlueprintDraftWorkbookEditorUploadResponse,
@@ -27,6 +28,7 @@ import type {
   ListQuestionGenerationRunsResponse,
   ListQuestionSetsResponse,
   ListQuestionsResponse,
+  PublicQuestionBlueprintInputPrimitive,
   PublicQuestionBlueprintPrimitiveBlock,
   PublishQuestionBlueprintDraftResponse,
   QuestionBlueprintAuthoringResponse,
@@ -347,6 +349,7 @@ function toPublicQuestionBlueprintPrimitiveBlockDto(
   if (block.type === "input") {
     return {
       id: block.id,
+      input: toPublicQuestionBlueprintInputPrimitiveDto(block.input),
       kind: "primitive",
       responseFieldId: block.responseFieldId,
       type: block.type,
@@ -357,6 +360,58 @@ function toPublicQuestionBlueprintPrimitiveBlockDto(
     };
   }
   return block;
+}
+
+function toPublicQuestionBlueprintInputPrimitiveDto(
+  input: Extract<
+    QuestionBlueprintResult["questionBlueprint"]["document"]["blocks"][number],
+    { kind: "primitive"; type: "input" }
+  >["input"],
+): PublicQuestionBlueprintInputPrimitive {
+  const defaultValueStatus =
+    input.defaultValueSource === undefined
+      ? "none"
+      : input.defaultValueSource.type === "literal"
+        ? "literal"
+        : "source_backed";
+  const optionsStatus =
+    input.optionsSource === undefined
+      ? "none"
+      : input.optionsSource.type === "literal"
+        ? "literal"
+        : "source_backed";
+
+  return {
+    defaultValueStatus,
+    optionsStatus,
+    schemaVersion: 1,
+    type: input.type,
+    ...(input.validation?.required === undefined
+      ? {}
+      : { validation: { required: input.validation.required } }),
+    ...(input.defaultValueSource?.type === "literal"
+      ? {
+          defaultValue: questionInputValue(
+            input.defaultValueSource.value,
+            input.type,
+            "default value",
+            impossiblePublicInputFailure,
+          ),
+        }
+      : {}),
+    ...(input.optionsSource?.type === "literal"
+      ? {
+          options: questionInputOptions(
+            input.optionsSource.value,
+            impossiblePublicInputFailure,
+          ),
+        }
+      : {}),
+  };
+}
+
+function impossiblePublicInputFailure(message: string): never {
+  throw new Error(`invalid persisted input primitive: ${message}`);
 }
 
 function toPublicInlineContentDto(

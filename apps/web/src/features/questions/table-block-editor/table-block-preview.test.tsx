@@ -173,6 +173,56 @@ describe("TableBlockPreview", () => {
       answer_3: { a: [1, true] },
     });
   });
+
+  it("shows unresolved select options without rendering an empty choice list", () => {
+    const model: TableBlockPreviewModel = {
+      cells: [
+        {
+          blocks: [
+            {
+              id: "choice_input",
+              inputState: {
+                input: {
+                  optionsSource: {
+                    referenceId: "choice_options",
+                    type: "reference",
+                  },
+                  type: "select",
+                  validation: { allowedValues: ["a"], required: true },
+                },
+                message: "Options are not available in this preview.",
+                status: "unresolved_options",
+              },
+              responseFieldId: "choice",
+              type: "input",
+            },
+          ],
+          columnId: "column_1",
+          id: "cell_1",
+          rowId: "row_1",
+        },
+      ],
+      columns: [{ id: "column_1", label: "Column" }],
+      prompt: "",
+      responseFields: [{ id: "choice", label: "Choice", type: "select" }],
+      rows: [{ id: "row_1", label: "Row" }],
+      showColumnNames: true,
+      showRowNames: true,
+    };
+
+    render(
+      <TableBlockPreview answer={{}} model={model} onAnswerChange={() => {}} />,
+    );
+
+    expect(
+      screen.getByText("Options are not available in this preview."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: "Choice (Row, Column)" }),
+    ).toBeDisabled();
+    expect(screen.queryByText("Answer settings are invalid.")).toBeNull();
+    expect(screen.queryByText("Enter an answer.")).toBeNull();
+  });
 });
 
 function createPreviewModel(): TableBlockPreviewModel {
@@ -206,19 +256,16 @@ function createPreviewModel(): TableBlockPreviewModel {
       {
         id: "answer_1",
         label: "Student answer",
-        required: true,
         type: "text",
       },
       {
         id: "answer_2",
         label: "Amount",
-        required: true,
         type: "number",
       },
       {
         id: "answer_3",
         label: "Payload",
-        required: true,
         type: "text",
       },
     ],

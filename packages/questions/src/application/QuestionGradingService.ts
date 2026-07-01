@@ -3,8 +3,11 @@ import type {
   GradeResult,
   Question,
   QuestionAnswer,
+  QuestionBody,
   QuestionFieldRule,
+  QuestionInputBlock,
 } from "../domain/index.js";
+import { validateQuestionInputPrimitiveValue } from "../domain/index.js";
 import type { CustomQuestionGraderPort } from "./ports.js";
 
 export class QuestionGradingService {
@@ -35,15 +38,27 @@ function gradeQuestionSolution(
       response.value,
     ]),
   );
+  const inputBlocksByField = collectInputBlocksByField(question.body);
   let needsManualReview = false;
   const details = solution.rules.map((rule) => {
-    const userAnswer = byField.get(rule.responseFieldId) ?? null;
-    const earnedPoints = gradeRule(rule, userAnswer);
+    const inputBlock = inputBlocksByField.get(rule.responseFieldId);
+    const userAnswer = answerValueForField(
+      byField,
+      rule.responseFieldId,
+      inputBlock,
+    );
+    const validation = inputBlock
+      ? validateQuestionInputPrimitiveValue(inputBlock.input, userAnswer)
+      : { errors: [], valid: true };
+    const earnedPoints = validation.valid ? gradeRule(rule, userAnswer) : 0;
     if (earnedPoints === null) {
       needsManualReview = true;
     }
     const detail = {
       earnedPoints: earnedPoints ?? 0,
+      ...(validation.valid
+        ? {}
+        : { feedback: validation.errors[0]?.message ?? "Invalid answer." }),
       responseFieldId: rule.responseFieldId,
       totalPoints: rule.points,
       userAnswer,
@@ -66,6 +81,52 @@ function gradeQuestionSolution(
       0,
     ),
   };
+}
+
+function answerValueForField(
+  answersByField: ReadonlyMap<string, JsonValue>,
+  responseFieldId: string,
+  inputBlock: QuestionInputBlock | undefined,
+): JsonValue {
+  if (answersByField.has(responseFieldId)) {
+    return answersByField.get(responseFieldId) ?? null;
+  }
+  return inputBlock?.input.defaultValue ?? null;
+}
+
+function collectInputBlocksByField(
+  body: QuestionBody,
+): ReadonlyMap<string, QuestionInputBlock> {
+  const blocks = new Map<string, QuestionInputBlock>();
+  for (const block of body.blocks) {
+    collectInputBlocksFromBlock(block, blocks);
+  }
+  return blocks;
+}
+
+function collectInputBlocksFromBlock(
+  block: QuestionBody["blocks"][number],
+  blocks: Map<string, QuestionInputBlock>,
+): void {
+  if (block.kind === "primitive" && block.type === "input") {
+    blocks.set(block.responseFieldId, block);
+    return;
+  }
+  if (block.kind === "container") {
+    for (const childBlock of block.blocks) {
+      collectInputBlocksFromBlock(childBlock, blocks);
+    }
+    return;
+  }
+  if (block.kind === "complex") {
+    for (const cell of block.cells) {
+      for (const cellBlock of cell.blocks) {
+        if (cellBlock.type === "input") {
+          blocks.set(cellBlock.responseFieldId, cellBlock);
+        }
+      }
+    }
+  }
 }
 
 function gradeRule(

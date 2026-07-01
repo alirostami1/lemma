@@ -3,7 +3,9 @@ const path = require("node:path");
 const test = require("node:test");
 const {
   checkInlineBlueprintSourceText,
+  checkInputPrimitiveSourceText,
   checkWebSourceText,
+  inputPrimitiveImportViolation,
   inlineBlueprintImportViolation,
   webImportViolation,
 } = require("./check-web-import-boundaries.cjs");
@@ -12,6 +14,10 @@ const webFile = path.join(process.cwd(), "apps/web/src/example.ts");
 const inlineBlueprintFile = path.join(
   process.cwd(),
   "packages/questions/src/domain/blueprint-document/inline-blueprint.ts",
+);
+const inputPrimitiveFile = path.join(
+  process.cwd(),
+  "packages/questions/src/domain/input-primitive/index.ts",
 );
 
 function reasons(violations) {
@@ -22,14 +28,18 @@ test("allows web to import the inline blueprint surface", () => {
   assert.equal(webImportViolation("@lemma/questions/inline-blueprint"), null);
 });
 
+test("allows web to import the input primitive surface", () => {
+  assert.equal(webImportViolation("@lemma/questions/input-primitive"), null);
+});
+
 test("rejects unsafe questions package surfaces from web", () => {
   assert.match(
     webImportViolation("@lemma/questions/domain") ?? "",
-    /inline-blueprint/u,
+    /browser-safe @lemma\/questions leaf exports/u,
   );
   assert.match(
     webImportViolation("@lemma/questions/application") ?? "",
-    /inline-blueprint/u,
+    /browser-safe @lemma\/questions leaf exports/u,
   );
 });
 
@@ -174,6 +184,27 @@ test("rejects server imports from inline blueprint source", () => {
   );
 });
 
+test("rejects server imports from input primitive source", () => {
+  assert.match(
+    inputPrimitiveImportViolation(inputPrimitiveFile, "@lemma/workbook/domain") ??
+      "",
+    /browser-safe/u,
+  );
+  assert.match(
+    inputPrimitiveImportViolation(inputPrimitiveFile, "react") ?? "",
+    /browser-safe/u,
+  );
+  assert.match(
+    inputPrimitiveImportViolation(inputPrimitiveFile, "node:fs") ?? "",
+    /Node builtins/u,
+  );
+  assert.match(
+    inputPrimitiveImportViolation(inputPrimitiveFile, "../blueprint-document/index.js") ??
+      "",
+    /outside/u,
+  );
+});
+
 test("rejects bypass imports from inline blueprint source", () => {
   assert.match(
     reasons(
@@ -204,5 +235,30 @@ test("rejects bypass imports from inline blueprint source", () => {
   assert.match(
     reasons(checkInlineBlueprintSourceText(inlineBlueprintFile, 'await import("fs/promises");')),
     /Node builtins/u,
+  );
+});
+
+test("rejects bypass imports from input primitive source", () => {
+  assert.match(
+    reasons(
+      checkInputPrimitiveSourceText(
+        inputPrimitiveFile,
+        'await import("@lemma/" + "workbook/domain");',
+      ),
+    ),
+    /non-literal dynamic/u,
+  );
+  assert.match(
+    reasons(checkInputPrimitiveSourceText(inputPrimitiveFile, 'import fs from "fs";')),
+    /Node builtins/u,
+  );
+  assert.match(
+    reasons(
+      checkInputPrimitiveSourceText(
+        inputPrimitiveFile,
+        'import { createRequire } from "module";',
+      ),
+    ),
+    /createRequire/u,
   );
 });

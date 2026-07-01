@@ -228,6 +228,8 @@ function createStudioSourceUsageLocation(
           : "Question content",
       };
     case "response_answer":
+    case "response_input_default":
+    case "response_input_options":
       return {
         kind: "response_field",
         label: block ? createBlockLabel(block, blockTypeCount) : "Answer",
@@ -235,6 +237,8 @@ function createStudioSourceUsageLocation(
     case "table_content_cell":
       return { kind: "block", label: "Table content cell" };
     case "table_answer_cell":
+    case "table_input_default":
+    case "table_input_options":
       return { kind: "response_field", label: "Table answer cell" };
   }
 }

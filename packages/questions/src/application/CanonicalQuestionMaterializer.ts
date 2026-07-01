@@ -22,6 +22,7 @@ import type {
   RichListItemNode,
   RichTextNode,
 } from "../domain/index.js";
+import { materializeQuestionInputPrimitive } from "../domain/index.js";
 import {
   InvalidQuestionBlueprintError,
   WorkbookQuestionReferenceError,
@@ -205,8 +206,16 @@ export class CanonicalQuestionMaterializer {
       return block;
     }
     this.addRule(rules, block, referenceValues);
+    const input = materializeQuestionInputPrimitive(
+      block.input,
+      (source) => resolveQuestionValue(source, referenceValues),
+      (message) => {
+        throw new InvalidQuestionBlueprintError(message);
+      },
+    );
     return {
       id: block.id,
+      input,
       kind: "primitive",
       responseFieldId: block.responseFieldId,
       type: "input",

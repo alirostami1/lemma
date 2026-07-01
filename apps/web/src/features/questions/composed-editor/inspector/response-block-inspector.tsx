@@ -2,9 +2,11 @@ import {
   applyInputGrading,
   type ComposedEditorModel,
   type ComposedResponseEditorBlock,
-  type ComposedResponseField,
   createDefaultCorrectValueSource,
+  deriveResponseFieldRequiredFromInput,
+  normalizeInputPrimitiveForType,
   requiresCorrectValueSource,
+  setInputPrimitiveRequired,
   updateComposedBlock,
   updateComposedResponseField,
 } from "#/domains/questions/authoring";
@@ -14,6 +16,7 @@ import {
   AnswerFieldSettings,
   CorrectAnswerSettings,
   GradingSettings,
+  InputPrimitiveSettings,
 } from "../shared/answer-authoring-fields";
 import { InspectorSection } from "./inspector-section";
 
@@ -47,6 +50,7 @@ export function ResponseBlockInspector({
       </div>
     );
   }
+  const input = normalizeInputPrimitiveForType(block.input, responseField.type);
 
   function updateBlock(
     updater: (
@@ -60,14 +64,6 @@ export function ResponseBlockInspector({
         }
         return updater(current);
       }),
-    );
-  }
-
-  function updateField(
-    updater: (field: ComposedResponseField) => ComposedResponseField,
-  ) {
-    onModelChange(
-      updateComposedResponseField(model, block.responseFieldId, updater),
     );
   }
 
@@ -89,10 +85,50 @@ export function ResponseBlockInspector({
               placeholder,
             }))
           }
-          onResponseFieldChange={(field) => updateField(() => field)}
+          onRequiredChange={(required) =>
+            updateBlock((current) => ({
+              ...current,
+              input: setInputPrimitiveRequired(input, required),
+            }))
+          }
+          onResponseFieldChange={(field) =>
+            onModelChange(
+              updateComposedBlock(
+                updateComposedResponseField(
+                  model,
+                  block.responseFieldId,
+                  () => field,
+                ),
+                block.id,
+                (current) => {
+                  if (current.type !== "response") {
+                    throw new Error("Expected answer block.");
+                  }
+                  return {
+                    ...current,
+                    input: normalizeInputPrimitiveForType(
+                      current.input,
+                      field.type,
+                    ),
+                  };
+                },
+              ),
+            )
+          }
           placeholder={block.placeholder}
+          required={deriveResponseFieldRequiredFromInput(input) === true}
           responseField={responseField}
           showPromptFields={false}
+        />
+        <InputPrimitiveSettings
+          disabled={disabled}
+          input={input}
+          onInputChange={(input) =>
+            updateBlock((current) => ({
+              ...current,
+              input,
+            }))
+          }
         />
       </InspectorSection>
 

@@ -122,6 +122,33 @@ describe("TableCellInspector", () => {
     });
   });
 
+  it("updates required on the input primitive", async () => {
+    const user = userEvent.setup();
+    const onModelChange = vi.fn<(model: TableEditorModel) => void>();
+
+    renderTableCellInspector({
+      model: createAnswerModel(),
+      onModelChange,
+      referencePreviewCache: {},
+      workbookEnabled: false,
+    });
+
+    await user.click(screen.getByRole("switch"));
+
+    const nextModel = onModelChange.mock.calls.at(-1)?.[0];
+    const cell = nextModel?.cells[0];
+    if (!cell) {
+      throw new Error("Expected updated cell.");
+    }
+    expect(getPrimaryTableInputBlock(cell)).toMatchObject({
+      input: { validation: { required: false } },
+      type: "input",
+    });
+    expect(nextModel?.responseFields).toEqual([
+      { id: "answer_1", label: "Answer", type: "number" },
+    ]);
+  });
+
   it("shows a correct-answer repair path for non-manual input missing a source", () => {
     renderTableCellInspector({
       model: {
@@ -251,6 +278,10 @@ function createAnswerModel(): TableEditorModel {
             correctValueSource: { type: "literal", value: 7 },
             grading: { mode: "exact" },
             id: "cell_1_input",
+            input: {
+              type: "number",
+              validation: { required: true },
+            },
             label: "Answer",
             placeholder: "Student answer",
             points: 1,
@@ -263,9 +294,7 @@ function createAnswerModel(): TableEditorModel {
         rowId: "row_1",
       },
     ],
-    responseFields: [
-      { id: "answer_1", label: "Answer", required: true, type: "number" },
-    ],
+    responseFields: [{ id: "answer_1", label: "Answer", type: "number" }],
   };
 }
 

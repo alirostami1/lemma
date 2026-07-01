@@ -2,6 +2,7 @@ import type { Question } from "#/domains/questions";
 import {
   type ComposedEditorBlock,
   type ComposedPreviewModel,
+  inputPrimitivePreviewStateFromEditorInput,
   tableEditorModelToStaticPreviewModel,
 } from "#/domains/questions/authoring";
 import { questionBodyToComposedPreviewModel } from "#/domains/questions/authoring/canonical";
@@ -40,7 +41,7 @@ export function editorBlockToPresentableQuestion(
               {
                 id: block.responseFieldId,
                 label: block.label,
-                type: "text",
+                type: block.input?.type ?? "text",
               },
             ]
           : [],
@@ -60,6 +61,9 @@ function editorBlockToPresentableBlock(
   if (block.type === "response") {
     return {
       id: block.id,
+      inputState: inputPrimitivePreviewStateFromEditorInput(block.input, {
+        type: block.input?.type ?? "text",
+      }),
       label: block.label,
       placeholder: block.placeholder,
       responseFieldId: block.responseFieldId,

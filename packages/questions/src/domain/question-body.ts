@@ -9,14 +9,19 @@ import {
   assertUniqueIds,
   oneOf,
   type PlainObject,
-  responseFieldIds,
 } from "./canonical-validation.js";
 import { InvalidQuestionBodyError } from "./errors.js";
+import {
+  QUESTION_INPUT_TYPES,
+  type QuestionInputPrimitive,
+  type QuestionInputType,
+  questionInputPrimitive,
+} from "./question-input-primitive.js";
 import { assertQuestionReferenceId } from "./question-reference.js";
 
 export type QuestionResponseField = {
   id: string;
-  type: "text" | "number" | "boolean";
+  type: QuestionInputType;
   label?: string;
   required?: boolean;
 };
@@ -93,6 +98,7 @@ export type QuestionInputBlock = {
   kind: "primitive";
   type: "input";
   responseFieldId: string;
+  input: QuestionInputPrimitive;
   label?: string;
   placeholder?: string;
 };
@@ -152,9 +158,12 @@ export function questionBody(input: unknown): QuestionBody {
   assertPlainRecord(input, "question body must be an object", fail);
   assertSchemaVersion(input, fail, 2);
   const responseFields = validatedResponseFields(input, fail);
+  const responseFieldsById = new Map(
+    responseFields.map((field) => [field.id, field]),
+  );
   const blocks = validatedBlocks(
     input,
-    responseFieldIds(responseFields),
+    responseFieldsById,
     createBlockIdRegistry(),
     fail,
   );
@@ -182,7 +191,7 @@ export function validatedResponseFields(
     assertPlainRecord(field, "response field must be an object", failWith);
     const type = oneOf(
       field.type,
-      ["text", "number", "boolean"] as const,
+      QUESTION_INPUT_TYPES,
       "response field type",
       failWith,
     );
@@ -203,19 +212,19 @@ export function validatedResponseFields(
 
 export function validatedBlocks(
   value: PlainObject & { blocks?: unknown },
-  responseIds: ReadonlySet<string>,
+  responseFieldsById: ReadonlyMap<string, QuestionResponseField>,
   blockIds: BlockIdRegistry,
   failWith: (message: string) => never,
 ): QuestionBlock[] {
   assertArray(value.blocks, "blocks", failWith);
   return value.blocks.map((block) =>
-    validatedBlock(block, responseIds, blockIds, failWith),
+    validatedBlock(block, responseFieldsById, blockIds, failWith),
   );
 }
 
 function validatedBlock(
   block: unknown,
-  responseIds: ReadonlySet<string>,
+  responseFieldsById: ReadonlyMap<string, QuestionResponseField>,
   blockIds: BlockIdRegistry,
   failWith: (message: string) => never,
 ): QuestionBlock {
@@ -223,20 +232,25 @@ function validatedBlock(
   assertNonEmptyString(block.id, "block.id", failWith);
   blockIds.register(block.id, "block", failWith);
   if (block.kind === "primitive") {
-    return validatedPrimitiveBlock(block, responseIds, failWith);
+    return validatedPrimitiveBlock(block, responseFieldsById, failWith);
   }
   if (block.kind === "container") {
-    return validatedContainerBlock(block, responseIds, blockIds, failWith);
+    return validatedContainerBlock(
+      block,
+      responseFieldsById,
+      blockIds,
+      failWith,
+    );
   }
   if (block.kind === "complex" && block.type === "table") {
-    return validatedTableBlock(block, responseIds, blockIds, failWith);
+    return validatedTableBlock(block, responseFieldsById, blockIds, failWith);
   }
   failWith("block kind or type is invalid");
 }
 
 function validatedPrimitiveBlock(
   block: PlainObject,
-  responseIds: ReadonlySet<string>,
+  responseFieldsById: ReadonlyMap<string, QuestionResponseField>,
   failWith: (message: string) => never,
 ): QuestionPrimitiveBlock {
   if (block.type === "text") {
@@ -256,7 +270,7 @@ function validatedPrimitiveBlock(
     };
   }
   if (block.type === "input") {
-    return validatedInputBlock(block, responseIds, failWith);
+    return validatedInputBlock(block, responseFieldsById, failWith);
   }
   if (block.type === "separator") {
     return { id: block.id as string, kind: "primitive", type: "separator" };
@@ -266,7 +280,7 @@ function validatedPrimitiveBlock(
 
 function validatedContainerBlock(
   block: PlainObject,
-  responseIds: ReadonlySet<string>,
+  responseFieldsById: ReadonlyMap<string, QuestionResponseField>,
   blockIds: BlockIdRegistry,
   failWith: (message: string) => never,
 ): QuestionContainerBlock {
@@ -278,7 +292,7 @@ function validatedContainerBlock(
     assertString(block.title, "container.title", failWith);
   }
   return {
-    blocks: validatedBlocks(block, responseIds, blockIds, failWith),
+    blocks: validatedBlocks(block, responseFieldsById, blockIds, failWith),
     id: block.id as string,
     kind: "container",
     ...(block.title === undefined ? {} : { title: block.title }),
@@ -288,17 +302,32 @@ function validatedContainerBlock(
 
 function validatedInputBlock(
   block: PlainObject,
-  responseIds: ReadonlySet<string>,
+  responseFieldsById: ReadonlyMap<string, QuestionResponseField>,
   failWith: (message: string) => never,
 ): QuestionInputBlock {
   assertNonEmptyString(block.responseFieldId, "responseFieldId", failWith);
-  if (!responseIds.has(block.responseFieldId)) {
+  const responseField = responseFieldsById.get(block.responseFieldId);
+  if (!responseField) {
     failWith(
       `input block ${block.id} references unknown response field ${block.responseFieldId}`,
     );
   }
+  const input = questionInputPrimitive(
+    block.input,
+    {
+      required: responseField.required,
+      type: responseField.type,
+    },
+    failWith,
+  );
+  if (input.type !== responseField.type) {
+    failWith(
+      `input block ${block.id} type must match response field ${responseField.id}`,
+    );
+  }
   return {
     id: block.id as string,
+    input,
     kind: "primitive",
     responseFieldId: block.responseFieldId,
     type: "input",
@@ -308,7 +337,7 @@ function validatedInputBlock(
 
 function validatedTableBlock(
   block: PlainObject,
-  responseIds: ReadonlySet<string>,
+  responseFieldsById: ReadonlyMap<string, QuestionResponseField>,
   blockIds: BlockIdRegistry,
   failWith: (message: string) => never,
 ): QuestionTableBlock {
@@ -350,7 +379,7 @@ function validatedTableBlock(
         if (cellBlock.kind !== "primitive") {
           failWith("table cell blocks must be primitive blocks");
         }
-        return validatedPrimitiveBlock(cellBlock, responseIds, failWith);
+        return validatedPrimitiveBlock(cellBlock, responseFieldsById, failWith);
       }),
       columnId: cell.columnId,
       id: cell.id,

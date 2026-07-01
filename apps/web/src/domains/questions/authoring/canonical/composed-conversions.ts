@@ -16,6 +16,10 @@ import {
   stripUnusedComposedReferences,
 } from "../composed-model";
 import { plainTextToInlineContent } from "../inline-content";
+import {
+  deriveResponseFieldRequiredFromInput,
+  normalizeInputPrimitiveForType,
+} from "../input-primitive";
 import { validateTableEditorModelAnswers } from "../table-model";
 import {
   canonicalRichContentToComposed,
@@ -24,6 +28,8 @@ import {
   pushUniqueResponseField,
   questionReferenceToComposedReferenceDraft,
   questionResponseFieldToComposed,
+  toInputPrimitive,
+  toQuestionBlueprintInputPrimitive,
   toQuestionReferenceSource,
   toQuestionValueExpression,
   toValueExpression,
@@ -129,14 +135,19 @@ function composedBlocksToQuestionBlueprintBlocks(input: {
           `Response block ${block.id} references missing response field ${block.responseFieldId}.`,
         );
       }
-      pushUniqueResponseField(
-        input.responseFields,
-        input.responseFieldIds,
-        responseField,
+      const inputPrimitive = normalizeInputPrimitiveForType(
+        block.input,
+        responseField.type,
       );
+      const required = deriveResponseFieldRequiredFromInput(inputPrimitive);
+      pushUniqueResponseField(input.responseFields, input.responseFieldIds, {
+        ...responseField,
+        ...(required === undefined ? {} : { required }),
+      });
       blocks.push({
         grading: block.grading,
         id: block.id,
+        input: toQuestionBlueprintInputPrimitive(inputPrimitive),
         kind: "primitive",
         label: block.label,
         placeholder: block.placeholder,
@@ -310,6 +321,10 @@ function questionBlueprintBlocksToComposedEditorBlocks(input: {
       blocks.push({
         grading: block.grading,
         id: block.id,
+        input: toInputPrimitive(block.input, {
+          required: responseField.required,
+          type: responseField.type,
+        }),
         label: block.label,
         placeholder: block.placeholder,
         points: block.points,

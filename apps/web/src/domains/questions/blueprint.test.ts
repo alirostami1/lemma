@@ -12,6 +12,7 @@ import {
   coerceAnswerValue,
   coerceLiteralExpressionValue,
   createDefaultComposedEditorModel,
+  createResponseBlock,
   createTableBlock,
   createTableFromWorkbookRangeReference,
   extractUsedReferenceIdsFromComposedEditorModel,
@@ -41,12 +42,7 @@ describe("table answer values", () => {
   it("coerces by response field type", () => {
     expect(coerceAnswerValue("001", { id: "text", type: "text" })).toBe("001");
     expect(coerceAnswerValue("1.0", { id: "number", type: "number" })).toBe(1);
-    expect(coerceAnswerValue("true", { id: "bool", type: "boolean" })).toBe(
-      true,
-    );
-    expect(coerceAnswerValue("false", { id: "bool", type: "boolean" })).toBe(
-      false,
-    );
+    expect(coerceAnswerValue("a", { id: "select", type: "select" })).toBe("a");
   });
 
   it("coerces authored literal response values by response field type", () => {
@@ -56,10 +52,8 @@ describe("table answer values", () => {
     expect(
       coerceLiteralExpressionValue("1.0", { id: "number", type: "number" }),
     ).toBe(1);
-    expect(
-      coerceLiteralExpressionValue("false", { id: "bool", type: "boolean" }),
-    ).toBe(false);
     expect(coerceLiteralExpressionValue("1.0")).toBe(1);
+    expect(coerceLiteralExpressionValue("false")).toBe(false);
     expect(coerceLiteralExpressionValue('{"a":1}')).toBe('{"a":1}');
   });
 
@@ -355,7 +349,6 @@ describe("composed blueprint conversions", () => {
         {
           id: "answer_1",
           label: "Answer",
-          required: true,
           type: "number",
         },
       ],
@@ -378,6 +371,10 @@ describe("composed blueprint conversions", () => {
           },
           grading: { mode: "exact" },
           id: "response_1",
+          input: {
+            schemaVersion: 1,
+            type: "number",
+          },
           kind: "primitive",
           label: "Answer",
           placeholder: "Type a number",
@@ -396,7 +393,6 @@ describe("composed blueprint conversions", () => {
         {
           id: "answer_1",
           label: "Answer",
-          required: true,
           type: "number",
         },
       ],
@@ -650,6 +646,10 @@ describe("composed blueprint conversions", () => {
               },
               grading: { mode: "exact" },
               id: "cell_2",
+              input: {
+                type: "number",
+                validation: { required: true },
+              },
               points: 2,
               responseFieldId: "answer_1",
               rowId: "row_1",
@@ -661,7 +661,6 @@ describe("composed blueprint conversions", () => {
             {
               id: "answer_1",
               label: "Answer",
-              required: true,
               type: "number",
             },
           ],
@@ -983,6 +982,10 @@ describe("composed blueprint conversions", () => {
           correctValueSource: { type: "literal", value: 3 },
           grading: { mode: "exact" },
           id: "cell_2",
+          input: {
+            type: "number",
+            validation: { required: true },
+          },
           points: 2,
           responseFieldId: "answer_1",
           rowId: "row_1",
@@ -997,7 +1000,6 @@ describe("composed blueprint conversions", () => {
         {
           id: "answer_1",
           label: "Answer",
-          required: true,
           type: "number",
         },
       ],
@@ -1056,6 +1058,13 @@ describe("composed blueprint conversions", () => {
             correctValueSource: { schemaVersion: 1, type: "literal", value: 3 },
             grading: { mode: "exact" },
             id: "cell_2_input",
+            input: {
+              schemaVersion: 1,
+              type: "number",
+              validation: {
+                required: true,
+              },
+            },
             kind: "primitive",
             points: 2,
             responseFieldId: "table_1_answer_1",
@@ -1099,6 +1108,10 @@ describe("composed blueprint conversions", () => {
           },
           grading: { mode: "exact" },
           id: "response_1",
+          input: {
+            schemaVersion: 1,
+            type: "text",
+          },
           kind: "primitive",
           label: "Answer",
           placeholder: "Type here",
@@ -1134,6 +1147,10 @@ describe("composed blueprint conversions", () => {
           correctValueSource: { type: "literal", value: "42" },
           grading: { mode: "exact" },
           id: "response_1",
+          input: {
+            type: "text",
+            validation: { required: true },
+          },
           label: "Answer",
           placeholder: "Type here",
           points: 1,
@@ -1146,12 +1163,198 @@ describe("composed blueprint conversions", () => {
         {
           id: "answer_1",
           label: "Answer",
-          required: true,
           type: "text",
         },
       ],
       schemaVersion: 2,
     });
+  });
+
+  it("derives serialized required from the input primitive", () => {
+    const blueprint = composedEditorModelToQuestionBlueprintDocument({
+      blocks: [
+        {
+          correctValueSource: { type: "literal", value: "42" },
+          grading: { mode: "exact" },
+          id: "response_1",
+          input: {
+            type: "text",
+            validation: { required: false },
+          },
+          points: 1,
+          responseFieldId: "answer_1",
+          type: "response",
+        },
+      ],
+      references: [],
+      responseFields: [{ id: "answer_1", label: "Answer", type: "text" }],
+      schemaVersion: 2,
+    });
+
+    expect(blueprint.responseFields).toEqual([
+      {
+        id: "answer_1",
+        label: "Answer",
+        required: false,
+        type: "text",
+      },
+    ]);
+  });
+
+  it("derives table serialized required from the cell input primitive", () => {
+    const blueprint = composedEditorModelToQuestionBlueprintDocument({
+      blocks: [
+        {
+          id: "table_1",
+          table: {
+            cells: [
+              {
+                blocks: [
+                  {
+                    correctValueSource: { type: "literal", value: 4 },
+                    grading: { mode: "exact" },
+                    id: "cell_input_1",
+                    input: {
+                      type: "number",
+                      validation: { required: false },
+                    },
+                    points: 1,
+                    responseFieldId: "answer_1",
+                    type: "input",
+                  },
+                ],
+                columnId: "column_1",
+                id: "cell_1",
+                rowId: "row_1",
+              },
+            ],
+            columns: [{ id: "column_1", label: "Column" }],
+            prompt: "",
+            responseFields: [
+              { id: "answer_1", label: "Answer", type: "number" },
+            ],
+            rows: [{ id: "row_1", label: "Row" }],
+            showColumnNames: true,
+            showRowNames: true,
+          },
+          type: "table",
+        },
+      ],
+      references: [],
+      responseFields: [],
+      schemaVersion: 2,
+    });
+
+    expect(blueprint.responseFields).toContainEqual({
+      id: "table_1_answer_1",
+      label: "Answer",
+      required: false,
+      type: "number",
+    });
+  });
+
+  it("rejects canonical required mismatches on load", () => {
+    const blueprint: QuestionBlueprintDocument = {
+      blocks: [
+        {
+          correctValueSource: {
+            schemaVersion: 1,
+            type: "literal",
+            value: "42",
+          },
+          grading: { mode: "exact" },
+          id: "response_1",
+          input: {
+            schemaVersion: 1,
+            type: "text",
+            validation: { required: false },
+          },
+          kind: "primitive",
+          points: 1,
+          responseFieldId: "answer_1",
+          type: "input",
+        },
+      ],
+      references: [],
+      responseFields: [
+        {
+          id: "answer_1",
+          required: true,
+          type: "text",
+        },
+      ],
+      schemaVersion: 2,
+    };
+
+    expect(() =>
+      questionBlueprintDocumentToComposedEditorModel(blueprint),
+    ).toThrow("Input required setting must match response field.");
+  });
+
+  it("migrates table legacy response required into cell input validation", () => {
+    const blueprint: QuestionBlueprintDocument = {
+      blocks: [
+        {
+          cells: [
+            {
+              blocks: [
+                {
+                  correctValueSource: {
+                    schemaVersion: 1,
+                    type: "literal",
+                    value: 4,
+                  },
+                  grading: { mode: "exact" },
+                  id: "cell_input_1",
+                  input: {
+                    schemaVersion: 1,
+                    type: "number",
+                  },
+                  kind: "primitive",
+                  points: 1,
+                  responseFieldId: "table_1_answer_1",
+                  type: "input",
+                },
+              ],
+              columnId: "column_1",
+              id: "cell_1",
+              rowId: "row_1",
+            },
+          ],
+          columns: [{ id: "column_1", label: "Column" }],
+          id: "table_1",
+          kind: "complex",
+          rows: [{ id: "row_1", label: "Row" }],
+          showColumnNames: true,
+          showRowNames: true,
+          type: "table",
+        },
+      ],
+      references: [],
+      responseFields: [
+        {
+          id: "table_1_answer_1",
+          required: true,
+          type: "number",
+        },
+      ],
+      schemaVersion: 2,
+    };
+
+    const model = questionBlueprintDocumentToComposedEditorModel(blueprint);
+    const table = model.blocks[0];
+    if (table?.type !== "table") {
+      throw new Error("Expected table.");
+    }
+    const cellBlock = table.table.cells[0]?.blocks[0];
+
+    expect(cellBlock).toMatchObject({
+      input: { validation: { required: true } },
+      type: "input",
+    });
+    expect(table.table.responseFields).toEqual([
+      { id: "answer_1", type: "number" },
+    ]);
   });
 
   it("round-trips manual inputs without correct value sources", () => {
@@ -1160,6 +1363,10 @@ describe("composed blueprint conversions", () => {
         {
           grading: { mode: "manual" },
           id: "manual_input",
+          input: {
+            schemaVersion: 1,
+            type: "text",
+          },
           kind: "primitive",
           points: 1,
           responseFieldId: "answer_1",
@@ -1172,6 +1379,10 @@ describe("composed blueprint conversions", () => {
                 {
                   grading: { mode: "manual" },
                   id: "table_manual_input",
+                  input: {
+                    schemaVersion: 1,
+                    type: "text",
+                  },
                   kind: "primitive",
                   points: 1,
                   responseFieldId: "table_1_answer_1",
@@ -1222,6 +1433,53 @@ describe("composed blueprint conversions", () => {
         ? serialized.blocks[1].cells[0]?.blocks[0]
         : null,
     ).not.toHaveProperty("correctValueSource");
+  });
+
+  it("round-trips select input primitive config", () => {
+    const model: ComposedEditorModel = {
+      blocks: [
+        createResponseBlock("response_1", "answer_1", {
+          input: {
+            defaultValueSource: { type: "literal", value: "b" },
+            optionsSource: {
+              type: "literal",
+              value: [
+                { label: "Alpha", value: "a" },
+                { label: "Bravo", value: "b" },
+              ],
+            },
+            type: "select",
+            validation: { allowedValues: ["a", "b"], required: true },
+          },
+        }),
+      ],
+      references: [],
+      responseFields: [{ id: "answer_1", type: "select" }],
+      schemaVersion: 2,
+    };
+
+    const blueprint = composedEditorModelToQuestionBlueprintDocument(model);
+    expect(blueprint.blocks[0]).toMatchObject({
+      input: {
+        defaultValueSource: { schemaVersion: 1, type: "literal", value: "b" },
+        optionsSource: {
+          schemaVersion: 1,
+          type: "literal",
+          value: [
+            { label: "Alpha", value: "a" },
+            { label: "Bravo", value: "b" },
+          ],
+        },
+        schemaVersion: 1,
+        type: "select",
+        validation: { allowedValues: ["a", "b"], required: true },
+      },
+      type: "input",
+    });
+
+    expect(questionBlueprintDocumentToComposedEditorModel(blueprint)).toEqual(
+      model,
+    );
   });
 
   it("loads references from canonical blueprints", () => {
@@ -1476,6 +1734,7 @@ describe("table blueprint conversions", () => {
             {
               grading: { mode: "manual" },
               id: "cell_input_1",
+              input: { type: "text" },
               points: 1,
               responseFieldId: "answer_1",
               type: "input",
@@ -1540,6 +1799,10 @@ describe("table blueprint conversions", () => {
           correctValueSource: { type: "literal", value: 3 },
           grading: { mode: "exact" },
           id: "cell_2",
+          input: {
+            type: "number",
+            validation: { required: true },
+          },
           points: 2,
           responseFieldId: "answer_1",
           rowId: "row_1",
@@ -1554,7 +1817,6 @@ describe("table blueprint conversions", () => {
         {
           id: "answer_1",
           label: "Answer",
-          required: true,
           type: "number",
         },
       ],
@@ -1603,6 +1865,13 @@ describe("table blueprint conversions", () => {
           correctValueSource: { schemaVersion: 1, type: "literal", value: 3 },
           grading: { mode: "exact" },
           id: "cell_2_input",
+          input: {
+            schemaVersion: 1,
+            type: "number",
+            validation: {
+              required: true,
+            },
+          },
           kind: "primitive",
           points: 2,
           responseFieldId: "answer_1",
@@ -1643,6 +1912,10 @@ describe("table blueprint conversions", () => {
               blocks: [
                 {
                   id: "cell_2_input",
+                  input: {
+                    schemaVersion: 1,
+                    type: "text",
+                  },
                   kind: "primitive",
                   responseFieldId: "answer_1",
                   type: "input",
@@ -1694,6 +1967,15 @@ describe("table blueprint conversions", () => {
         blocks: [
           {
             id: "cell_2_input",
+            inputState: {
+              input: {
+                type: "text",
+                validation: {
+                  required: true,
+                },
+              },
+              status: "materialized",
+            },
             label: undefined,
             placeholder: undefined,
             responseFieldId: "answer_1",
@@ -1974,6 +2256,10 @@ describe("table blueprint response fields", () => {
                   },
                   grading: { mode: "exact" },
                   id: "cell_1_input",
+                  input: {
+                    schemaVersion: 1,
+                    type: "text",
+                  },
                   kind: "primitive",
                   points: 2,
                   responseFieldId: "answer_1",
@@ -2008,7 +2294,16 @@ describe("table blueprint response fields", () => {
 
     const model = questionBlueprintDocumentToTableEditorModel(blueprint);
 
-    expect(model.responseFields).toEqual(blueprint.responseFields);
+    expect(model.responseFields).toEqual([
+      {
+        id: "answer_1",
+        label: "Student answer",
+        type: "text",
+      },
+    ]);
+    expect(model.cells[0]?.blocks[0]).toMatchObject({
+      input: { validation: { required: false } },
+    });
     expect(
       tableEditorModelToQuestionBlueprintDocument(model).responseFields,
     ).toEqual(blueprint.responseFields);
@@ -2034,7 +2329,6 @@ describe("table blueprint response fields", () => {
         {
           id: "answer_1",
           label: "Amount",
-          required: true,
           type: "number",
         },
       ],
@@ -2049,7 +2343,6 @@ describe("table blueprint response fields", () => {
       {
         id: "answer_1",
         label: "Amount",
-        required: true,
         type: "number",
       },
     ]);
@@ -2170,6 +2463,10 @@ describe("table blueprint composed namespacing", () => {
                 correctValueSource: { type: "literal", value: 3 },
                 grading: { mode: "exact" },
                 id: "cell_1",
+                input: {
+                  type: "number",
+                  validation: { required: true },
+                },
                 points: 1,
                 responseFieldId: "answer_1",
                 rowId: "row_1",
@@ -2181,7 +2478,6 @@ describe("table blueprint composed namespacing", () => {
               {
                 id: "answer_1",
                 label: "Answer",
-                required: true,
                 type: "number",
               },
             ],
@@ -2212,7 +2508,6 @@ describe("table blueprint composed namespacing", () => {
               {
                 id: "answer_1",
                 label: "Answer",
-                required: true,
                 type: "number",
               },
             ],
@@ -2278,6 +2573,10 @@ describe("table blueprint composed namespacing", () => {
                 correctValueSource: { type: "literal", value: 3 },
                 grading: { mode: "exact" },
                 id: "cell_1",
+                input: {
+                  type: "number",
+                  validation: { required: true },
+                },
                 points: 1,
                 responseFieldId: "answer_1",
                 rowId: "row_1",
@@ -2289,7 +2588,6 @@ describe("table blueprint composed namespacing", () => {
               {
                 id: "answer_1",
                 label: "Answer",
-                required: true,
                 type: "number",
               },
             ],
@@ -2370,6 +2668,9 @@ function createInputTableCell(
         correctValueSource: input.correctValueSource,
         grading: input.grading,
         id: input.blockId,
+        ...(input.input ? { input: input.input } : {}),
+        ...(input.label ? { label: input.label } : {}),
+        ...(input.placeholder ? { placeholder: input.placeholder } : {}),
         points: input.points,
         responseFieldId: input.responseFieldId,
         type: "input",

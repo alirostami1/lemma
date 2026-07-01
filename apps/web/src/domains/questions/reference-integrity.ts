@@ -5,15 +5,17 @@ import {
   extractUsedReferenceIdsFromComposedEditorModel,
   getReferenceUsage,
   getTableCellPrimitiveBlocks,
+  type InputPrimitive,
   type ReferenceSourceDraft,
   type ReferenceUsage,
+  type TableEditorPrimitiveBlock,
   updateComposedBlock,
 } from "./authoring";
 import type {
   ComposedRichContentNode,
   ComposedRichListItem,
 } from "./authoring/rich-content-types";
-import { parseWorkbookRef } from "./workbook-reference";
+import { type ParsedWorkbookRef, parseWorkbookRef } from "./workbook-reference";
 
 export type ReferenceIntegrityAvailabilityStatus =
   | "available"
@@ -213,6 +215,18 @@ export function removeReferenceUsageFromComposedEditorModel(input: {
               correctValueSource: { type: "literal", value: "" },
             }
           : block;
+      case "response_input_default":
+      case "response_input_options":
+        return block.type === "response"
+          ? {
+              ...block,
+              input: removeInputPrimitiveReference({
+                input: block.input,
+                referenceId: input.referenceId,
+                usageType: usage.type,
+              }),
+            }
+          : block;
       case "table_content_cell":
         return block.type === "table"
           ? {
@@ -257,6 +271,8 @@ export function removeReferenceUsageFromComposedEditorModel(input: {
             }
           : block;
       case "table_answer_cell":
+      case "table_input_default":
+      case "table_input_options":
         return block.type === "table"
           ? {
               ...block,
@@ -268,20 +284,11 @@ export function removeReferenceUsageFromComposedEditorModel(input: {
                         ...cell,
                         blocks: getTableCellPrimitiveBlocks(cell).map(
                           (cellBlock) =>
-                            cellBlock.type === "input" &&
-                            cellBlock.id === usage.cellBlockId &&
-                            cellBlock.correctValueSource?.type ===
-                              "reference" &&
-                            cellBlock.correctValueSource.referenceId ===
-                              input.referenceId
-                              ? {
-                                  ...cellBlock,
-                                  correctValueSource: {
-                                    type: "literal",
-                                    value: "",
-                                  },
-                                }
-                              : cellBlock,
+                            removeTableInputReferenceUsage({
+                              cellBlock,
+                              referenceId: input.referenceId,
+                              usage,
+                            }),
                         ),
                       }
                     : cell,
@@ -293,6 +300,113 @@ export function removeReferenceUsageFromComposedEditorModel(input: {
         return assertNever(usage);
     }
   });
+}
+
+function removeTableInputReferenceUsage(input: {
+  cellBlock: TableEditorPrimitiveBlock;
+  referenceId: string;
+  usage: Extract<
+    ReferenceUsage,
+    {
+      type: "table_answer_cell" | "table_input_default" | "table_input_options";
+    }
+  >;
+}): TableEditorPrimitiveBlock {
+  if (
+    input.cellBlock.type !== "input" ||
+    input.cellBlock.id !== input.usage.cellBlockId
+  ) {
+    return input.cellBlock;
+  }
+  if (
+    input.usage.type === "table_answer_cell" &&
+    input.cellBlock.correctValueSource?.type === "reference" &&
+    input.cellBlock.correctValueSource.referenceId === input.referenceId
+  ) {
+    return {
+      ...input.cellBlock,
+      correctValueSource: {
+        type: "literal",
+        value: "",
+      },
+    };
+  }
+  if (
+    input.usage.type === "table_input_default" ||
+    input.usage.type === "table_input_options"
+  ) {
+    return {
+      ...input.cellBlock,
+      input: removeInputPrimitiveReference({
+        input: input.cellBlock.input,
+        referenceId: input.referenceId,
+        usageType: input.usage.type,
+      }),
+    };
+  }
+  return input.cellBlock;
+}
+
+function removeInputPrimitiveReference(input: {
+  input: InputPrimitive | undefined;
+  referenceId: string;
+  usageType:
+    | "response_input_default"
+    | "response_input_options"
+    | "table_input_default"
+    | "table_input_options";
+}): InputPrimitive | undefined {
+  if (!input.input) {
+    return input.input;
+  }
+  if (
+    (input.usageType === "response_input_default" ||
+      input.usageType === "table_input_default") &&
+    input.input.defaultValueSource?.type === "reference" &&
+    input.input.defaultValueSource.referenceId === input.referenceId
+  ) {
+    return { ...input.input, defaultValueSource: undefined };
+  }
+  if (
+    (input.usageType === "response_input_options" ||
+      input.usageType === "table_input_options") &&
+    input.input.optionsSource?.type === "reference" &&
+    input.input.optionsSource.referenceId === input.referenceId
+  ) {
+    return input.input.type === "select"
+      ? clearSelectOptionsReference(input.input)
+      : { ...input.input, optionsSource: undefined };
+  }
+  return input.input;
+}
+
+function clearSelectOptionsReference(input: InputPrimitive): InputPrimitive {
+  return {
+    ...input,
+    defaultValueSource: isEmptyLiteralDefault(input.defaultValueSource)
+      ? input.defaultValueSource
+      : undefined,
+    optionsSource: { type: "literal", value: [] },
+    validation: clearSelectAllowedValues(input.validation),
+  };
+}
+
+function clearSelectAllowedValues(
+  validation: InputPrimitive["validation"],
+): InputPrimitive["validation"] {
+  if (!validation?.allowedValues) {
+    return validation;
+  }
+  const next = { ...validation };
+  delete next.allowedValues;
+  return Object.keys(next).length === 0 ? undefined : next;
+}
+
+function isEmptyLiteralDefault(value: InputPrimitive["defaultValueSource"]) {
+  return (
+    value === undefined ||
+    (value.type === "literal" && (value.value === null || value.value === ""))
+  );
 }
 
 export function removeInlineReferenceUsageFromComposedEditorModel(input: {
@@ -369,7 +483,7 @@ function isCompleteWorkbookRangeAvailable(
     ReferenceIntegrityWorkbookSource["availability"],
     { status: "available" }
   >,
-  parsedRef: NonNullable<ReturnType<typeof parseWorkbookRef>>,
+  parsedRef: ParsedWorkbookRef,
 ): boolean {
   for (
     let rowIndex = parsedRef.startRowIndex;
@@ -576,7 +690,11 @@ function getUsageInlineContentIndex(usage: ReferenceUsage): number | null {
     case "table_content_cell":
       return usage.inlineContentIndex;
     case "response_answer":
+    case "response_input_default":
+    case "response_input_options":
     case "table_answer_cell":
+    case "table_input_default":
+    case "table_input_options":
       return null;
     default:
       return assertNever(usage);

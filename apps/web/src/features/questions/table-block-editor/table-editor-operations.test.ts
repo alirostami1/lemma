@@ -146,7 +146,6 @@ function createAnswerModel(): TableEditorModel {
       {
         id: "answer_1",
         label: "Student answer",
-        required: false,
         type: "text",
       },
     ],
@@ -232,7 +231,6 @@ describe("table editor operations", () => {
       expect.objectContaining({
         id: "answer_1",
         label: "Student answer",
-        required: true,
         type: "number",
       }),
     ]);
@@ -458,9 +456,7 @@ describe("table editor operations", () => {
           rowId: "row_1",
         },
       ],
-      responseFields: [
-        { id: "answer_1", label: "Payload", required: false, type: "text" },
-      ],
+      responseFields: [{ id: "answer_1", label: "Payload", type: "text" }],
     };
 
     const nextModel = duplicateTableRow(model, "row_1");
@@ -477,8 +473,8 @@ describe("table editor operations", () => {
     expect(duplicate?.rowId).not.toBe("row_1");
     expect(duplicateInput?.id).not.toBe("cell_1_input");
     expect(nextModel.responseFields).toEqual([
-      { id: "answer_1", label: "Payload", required: false, type: "text" },
-      { id: "answer_2", label: "Payload", required: false, type: "text" },
+      { id: "answer_1", label: "Payload", type: "text" },
+      { id: "answer_2", label: "Payload", type: "text" },
     ]);
     expect(() => validateTableEditorModelAnswers(nextModel)).not.toThrow();
   });
@@ -509,9 +505,7 @@ describe("table editor operations", () => {
         { id: "column_1", label: "Column 1" },
         { id: "column_2", label: "Column 2" },
       ],
-      responseFields: [
-        { id: "answer_1", label: "Checked", required: true, type: "boolean" },
-      ],
+      responseFields: [{ id: "answer_1", label: "Checked", type: "text" }],
     };
 
     const nextModel = duplicateTableColumn(model, "column_1");
@@ -528,8 +522,8 @@ describe("table editor operations", () => {
     expect(duplicate?.columnId).not.toBe("column_1");
     expect(duplicateInput?.id).not.toBe("cell_1_input");
     expect(nextModel.responseFields).toEqual([
-      { id: "answer_1", label: "Checked", required: true, type: "boolean" },
-      { id: "answer_2", label: "Checked", required: true, type: "boolean" },
+      { id: "answer_1", label: "Checked", type: "text" },
+      { id: "answer_2", label: "Checked", type: "text" },
     ]);
     expect(() => validateTableEditorModelAnswers(nextModel)).not.toThrow();
   });

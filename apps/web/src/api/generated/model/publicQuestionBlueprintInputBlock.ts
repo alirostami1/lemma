@@ -6,10 +6,12 @@
  */
 import type { PublicQuestionBlueprintInputBlockKind } from "./publicQuestionBlueprintInputBlockKind.ts";
 import type { PublicQuestionBlueprintInputBlockType } from "./publicQuestionBlueprintInputBlockType.ts";
+import type { PublicQuestionBlueprintInputPrimitive } from "./publicQuestionBlueprintInputPrimitive.ts";
 
 export interface PublicQuestionBlueprintInputBlock {
   /** @minLength 1 */
   id: string;
+  input: PublicQuestionBlueprintInputPrimitive;
   kind: PublicQuestionBlueprintInputBlockKind;
   label?: string;
   placeholder?: string;

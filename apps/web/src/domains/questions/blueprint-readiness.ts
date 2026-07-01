@@ -2,6 +2,7 @@ import {
   type ComposedEditorBlock,
   type ComposedEditorModel,
   extractInlineReferenceIds,
+  extractInputPrimitiveReferenceIdsByRole,
   extractReferenceIdsFromValueExpression,
   extractRichReferenceIds,
   extractUsedReferenceIdsFromComposedEditorModel,
@@ -9,7 +10,9 @@ import {
   getTableCellPrimitiveBlocks,
   isValidReferenceId,
   isValidWorkbookReferenceSource,
+  normalizeInputPrimitiveForType,
   requiresCorrectValueSource,
+  validateInputPrimitiveConfig,
 } from "#/domains/questions/authoring";
 import type { QuestionBlueprintWorkbookSource } from "./model";
 import { getBlueprintSourceRequirement } from "./source-requirements";
@@ -25,8 +28,14 @@ export type BlueprintReadinessIssueCode =
   | "missing_rich_text_reference"
   | "missing_response_field"
   | "missing_response_source"
+  | "invalid_response_input"
+  | "missing_response_input_default"
+  | "missing_response_input_options"
   | "missing_table_response_field"
   | "missing_table_response_source"
+  | "invalid_table_input"
+  | "missing_table_input_default"
+  | "missing_table_input_options"
   | "missing_source"
   | "missing_source_preview";
 
@@ -209,6 +218,19 @@ function getBlockIssues(model: ComposedEditorModel): BlueprintReadinessIssue[] {
           target: { blockId: block.id },
         });
       }
+      const responseField = model.responseFields.find(
+        (field) => field.id === block.responseFieldId,
+      );
+      const input =
+        responseField === undefined
+          ? block.input
+          : normalizeInputPrimitiveForType(block.input, responseField.type);
+      if (input && !validateInputPrimitiveConfig(input).valid) {
+        issues.push({
+          code: "invalid_response_input",
+          target: { blockId: block.id },
+        });
+      }
       if (
         requiresCorrectValueSource(block.grading) &&
         block.correctValueSource === undefined
@@ -224,6 +246,25 @@ function getBlockIssues(model: ComposedEditorModel): BlueprintReadinessIssue[] {
         if (!referenceIds.has(referenceId)) {
           issues.push({
             code: "missing_response_source",
+            target: { blockId: block.id, referenceId },
+          });
+        }
+      }
+      const inputReferenceIds = extractInputPrimitiveReferenceIdsByRole(
+        block.input,
+      );
+      for (const referenceId of inputReferenceIds.defaultValueSource) {
+        if (!referenceIds.has(referenceId)) {
+          issues.push({
+            code: "missing_response_input_default",
+            target: { blockId: block.id, referenceId },
+          });
+        }
+      }
+      for (const referenceId of inputReferenceIds.optionsSource) {
+        if (!referenceIds.has(referenceId)) {
+          issues.push({
+            code: "missing_response_input_options",
             target: { blockId: block.id, referenceId },
           });
         }
@@ -284,6 +325,19 @@ function getTableIssues(
           target: { blockId: block.id, cellId: cell.id },
         });
       }
+      const responseField = block.table.responseFields.find(
+        (field) => field.id === cellBlock.responseFieldId,
+      );
+      const input =
+        responseField === undefined
+          ? cellBlock.input
+          : normalizeInputPrimitiveForType(cellBlock.input, responseField.type);
+      if (input && !validateInputPrimitiveConfig(input).valid) {
+        issues.push({
+          code: "invalid_table_input",
+          target: { blockId: block.id, cellId: cell.id },
+        });
+      }
 
       if (
         requiresCorrectValueSource(cellBlock.grading) &&
@@ -301,6 +355,26 @@ function getTableIssues(
         if (!referenceIds.has(referenceId)) {
           issues.push({
             code: "missing_table_response_source",
+            target: { blockId: block.id, cellId: cell.id, referenceId },
+          });
+        }
+      }
+
+      const inputReferenceIds = extractInputPrimitiveReferenceIdsByRole(
+        cellBlock.input,
+      );
+      for (const referenceId of inputReferenceIds.defaultValueSource) {
+        if (!referenceIds.has(referenceId)) {
+          issues.push({
+            code: "missing_table_input_default",
+            target: { blockId: block.id, cellId: cell.id, referenceId },
+          });
+        }
+      }
+      for (const referenceId of inputReferenceIds.optionsSource) {
+        if (!referenceIds.has(referenceId)) {
+          issues.push({
+            code: "missing_table_input_options",
             target: { blockId: block.id, cellId: cell.id, referenceId },
           });
         }

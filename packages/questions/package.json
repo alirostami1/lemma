@@ -30,6 +30,13 @@
       "import": "./src/domain/blueprint-document/index.ts",
       "default": "./src/domain/blueprint-document/index.ts"
     },
+    "./input-primitive": {
+      "types": "./src/domain/input-primitive/index.ts",
+      "browser": "./src/domain/input-primitive/index.ts",
+      "source": "./src/domain/input-primitive/index.ts",
+      "import": "./src/domain/input-primitive/index.ts",
+      "default": "./src/domain/input-primitive/index.ts"
+    },
     "./infrastructure": {
       "types": "./src/infrastructure/index.ts",
       "source": "./src/infrastructure/index.ts",

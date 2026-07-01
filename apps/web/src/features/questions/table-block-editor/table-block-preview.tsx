@@ -1,6 +1,14 @@
 import { Input } from "@lemma/ui/components/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@lemma/ui/components/select";
 import { useMemo } from "react";
 import type {
+  InputPrimitivePreviewState,
   TableAnswerValue,
   TableBlockPreviewModel,
   TableBlockPreviewPrimitiveBlock,
@@ -9,8 +17,12 @@ import type {
 } from "#/domains/questions/authoring";
 import {
   coerceAnswerValue,
+  coerceInputPrimitiveValue,
+  createDefaultPreviewInputPrimitive,
   formatAnswerInputValue,
+  getInputPrimitiveEffectiveValue,
   getTablePreviewCellPrimitiveBlocks,
+  validateInputPrimitiveValue,
 } from "#/domains/questions/authoring";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import { InlineContentRenderer } from "#/features/questions/editor-shared";
@@ -150,11 +162,22 @@ function TableCellPrimitive({
 
   const field = responseFieldsById.get(block.responseFieldId);
   const currentAnswer = answer[block.responseFieldId];
+  const explicitInput = block.inputState !== undefined;
   return (
     <TableAnswerInput
       columnLabel={columnLabel}
       disabled={disabled}
+      explicitInput={explicitInput}
       field={field}
+      inputState={
+        block.inputState ?? {
+          input: createDefaultPreviewInputPrimitive({
+            required: true,
+            type: field?.type ?? "text",
+          }),
+          status: "materialized",
+        }
+      }
       onChange={(nextValue) =>
         onAnswerChange({
           ...answer,
@@ -177,6 +200,8 @@ function TableAnswerInput({
   rowLabel,
   columnLabel,
   field,
+  explicitInput,
+  inputState,
   value,
   disabled,
   onChange,
@@ -184,6 +209,8 @@ function TableAnswerInput({
   rowLabel: string;
   columnLabel: string;
   field?: TableResponseField;
+  explicitInput: boolean;
+  inputState: InputPrimitivePreviewState;
   value: TableAnswerValue | undefined;
   disabled?: boolean;
   onChange(value: TableAnswerValue): void;
@@ -191,20 +218,87 @@ function TableAnswerInput({
   const label = field?.label
     ? `${field.label} (${rowLabel}, ${columnLabel})`
     : `Answer for ${rowLabel}, ${columnLabel}`;
+  const inputId = field?.id ?? makeFallbackInputId(rowLabel, columnLabel);
+  const errorId = `${inputId}-error`;
+  if (inputState.status === "unresolved_options") {
+    const messageId = `${inputId}-options-message`;
+    return (
+      <div className="grid gap-1">
+        <Select disabled value={undefined}>
+          <SelectTrigger
+            aria-describedby={messageId}
+            aria-label={label}
+            id={inputId}
+          >
+            <SelectValue placeholder={field?.label ?? "Choose an option"} />
+          </SelectTrigger>
+          <SelectContent />
+        </Select>
+        <p className="text-xs text-muted-foreground" id={messageId}>
+          {inputState.message}
+        </p>
+      </div>
+    );
+  }
+
+  const input = inputState.input;
+  const effectiveValue = getInputPrimitiveEffectiveValue(input, value);
+  const validation = validateInputPrimitiveValue(input, effectiveValue);
   return (
     <div className="grid gap-1">
-      <Input
-        aria-label={label}
-        disabled={disabled}
-        id={field?.id ?? makeFallbackInputId(rowLabel, columnLabel)}
-        inputMode={field?.type === "number" ? "decimal" : undefined}
-        name={field?.id}
-        onChange={(event) =>
-          onChange(coerceAnswerValue(event.currentTarget.value, field))
-        }
-        type="text"
-        value={value == null ? "" : formatAnswerInputValue(value)}
-      />
+      {input.type === "select" ? (
+        <Select
+          disabled={disabled}
+          onValueChange={onChange}
+          value={
+            typeof effectiveValue === "string" && effectiveValue.length > 0
+              ? effectiveValue
+              : undefined
+          }
+        >
+          <SelectTrigger
+            aria-describedby={validation.valid ? undefined : errorId}
+            aria-invalid={!validation.valid}
+            aria-label={label}
+            id={inputId}
+          >
+            <SelectValue placeholder={field?.label ?? "Answer"} />
+          </SelectTrigger>
+          <SelectContent>
+            {(input.options ?? []).map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label ?? option.value}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : (
+        <Input
+          aria-describedby={validation.valid ? undefined : errorId}
+          aria-invalid={!validation.valid}
+          aria-label={label}
+          disabled={disabled}
+          id={inputId}
+          inputMode={input.type === "number" ? "decimal" : undefined}
+          name={field?.id}
+          onChange={(event) =>
+            onChange(
+              explicitInput
+                ? coerceInputPrimitiveValue(event.currentTarget.value, input)
+                : coerceAnswerValue(event.currentTarget.value, field),
+            )
+          }
+          type="text"
+          value={
+            effectiveValue == null ? "" : formatAnswerInputValue(effectiveValue)
+          }
+        />
+      )}
+      {!validation.valid ? (
+        <p className="text-xs text-destructive" id={errorId}>
+          {validation.errors[0].message}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -83,8 +83,6 @@ function createAnswerModel(): TableEditorModel {
         rowId: "row_1",
       },
     ],
-    responseFields: [
-      { id: "answer_1", label: "Answer", required: true, type: "number" },
-    ],
+    responseFields: [{ id: "answer_1", label: "Answer", type: "number" }],
   };
 }

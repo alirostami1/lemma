@@ -29,7 +29,6 @@ const question: PresentableQuestion = {
     {
       id: "answer",
       label: "Answer",
-      required: true,
       type: "number",
     },
   ],
@@ -73,6 +72,62 @@ const tableQuestion: PresentableQuestion = {
   responseFields: [],
 };
 
+const selectQuestion: PresentableQuestion = {
+  blocks: [
+    {
+      id: "choice",
+      inputState: {
+        input: {
+          options: [
+            { label: "Alpha", value: "a" },
+            { label: "Bravo", value: "b" },
+          ],
+          type: "select",
+          validation: { allowedValues: ["a", "b"], required: true },
+        },
+        status: "materialized",
+      },
+      label: "Choice",
+      responseFieldId: "choice",
+      type: "response",
+    },
+  ],
+  responseFields: [
+    {
+      id: "choice",
+      label: "Choice",
+      type: "select",
+    },
+  ],
+};
+
+const unresolvedSelectQuestion: PresentableQuestion = {
+  blocks: [
+    {
+      id: "choice",
+      inputState: {
+        input: {
+          optionsSource: { referenceId: "choice_options", type: "reference" },
+          type: "select",
+          validation: { allowedValues: ["a"], required: true },
+        },
+        message: "Options are not available in this preview.",
+        status: "unresolved_options",
+      },
+      label: "Choice",
+      responseFieldId: "choice",
+      type: "response",
+    },
+  ],
+  responseFields: [
+    {
+      id: "choice",
+      label: "Choice",
+      type: "select",
+    },
+  ],
+};
+
 describe("QuestionPlayer", () => {
   afterEach(() => cleanup());
 
@@ -105,6 +160,33 @@ describe("QuestionPlayer", () => {
     expect(screen.getByTestId("answer-json").textContent).toContain(
       '"responseFieldId":"table-answer"',
     );
+  });
+
+  it("renders select inputs and emits selected values", async () => {
+    const user = userEvent.setup();
+
+    render(<Harness mode="practice" question={selectQuestion} />);
+
+    expect(screen.getByText("Enter an answer.")).toBeInTheDocument();
+    await user.click(screen.getByRole("combobox", { name: "Choice" }));
+    await user.click(screen.getByRole("option", { name: "Bravo" }));
+
+    expect(screen.getByTestId("answer-json").textContent).toContain(
+      '"value":"b"',
+    );
+  });
+
+  it("shows unresolved select options without runtime validation", () => {
+    render(
+      <Harness mode="authoring-preview" question={unresolvedSelectQuestion} />,
+    );
+
+    expect(
+      screen.getByText("Options are not available in this preview."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Choice" })).toBeDisabled();
+    expect(screen.queryByText("Answer settings are invalid.")).toBeNull();
+    expect(screen.queryByText("Enter an answer.")).toBeNull();
   });
 
   it("disables authoring preview inputs", () => {

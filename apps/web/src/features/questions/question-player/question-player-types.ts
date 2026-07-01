@@ -3,6 +3,7 @@ import type {
   ComposedInlineContent,
   ComposedRenderedInlineContent,
   ComposedRichContent,
+  InputPrimitivePreviewState,
   TableBlockPreviewModel,
   TableResponseField,
 } from "#/domains/questions/authoring";
@@ -33,6 +34,7 @@ export type PresentableQuestionBlock =
       id: string;
       type: "response";
       responseFieldId: string;
+      inputState?: InputPrimitivePreviewState;
       label?: string;
       placeholder?: string;
     }

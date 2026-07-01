@@ -4,6 +4,7 @@ import {
   createTableBlock,
   richContentFromInlineContent,
 } from "./authoring";
+import { composedEditorModelToQuestionBlueprintDocument } from "./authoring/canonical";
 import { getTableCellPrimitiveBlocks } from "./authoring/table-model";
 import {
   getReferenceIntegrityIssues,
@@ -418,6 +419,93 @@ describe("reference integrity", () => {
     ).toEqual([{ referenceId: "range_ref", type: "reference" }]);
   });
 
+  it("removes top-level select options references into empty literal options", () => {
+    const model = modelWithResponseSelectInputReferences();
+    const usage = getReferenceUsageLocations(model).get("options_ref")?.[0];
+    if (usage?.type !== "response_input_options") {
+      throw new Error("Expected response options usage.");
+    }
+
+    const resolved = removeReferenceUsageFromComposedEditorModel({
+      model,
+      referenceId: "options_ref",
+      usage,
+    });
+    const block = resolved.blocks[0];
+    if (block?.type !== "response") {
+      throw new Error("Expected response block.");
+    }
+
+    expect(block.input).toMatchObject({
+      optionsSource: { type: "literal", value: [] },
+      type: "select",
+    });
+    expect(block.input?.defaultValueSource).toBeUndefined();
+    expect(block.input?.validation).toEqual({ required: true });
+    expect(() =>
+      composedEditorModelToQuestionBlueprintDocument(resolved),
+    ).not.toThrow();
+  });
+
+  it("removes table select options references into empty literal options", () => {
+    const model = modelWithTableSelectInputReferences();
+    const usage = getReferenceUsageLocations(model).get("options_ref")?.[0];
+    if (usage?.type !== "table_input_options") {
+      throw new Error("Expected table options usage.");
+    }
+
+    const resolved = removeReferenceUsageFromComposedEditorModel({
+      model,
+      referenceId: "options_ref",
+      usage,
+    });
+    const table = resolved.blocks[0];
+    if (table?.type !== "table") {
+      throw new Error("Expected table block.");
+    }
+    const cellBlock = table.table.cells[0]?.blocks[0];
+    if (cellBlock?.type !== "input") {
+      throw new Error("Expected table input block.");
+    }
+
+    expect(cellBlock.input).toMatchObject({
+      optionsSource: { type: "literal", value: [] },
+      type: "select",
+    });
+    expect(cellBlock.input?.defaultValueSource).toBeUndefined();
+    expect(cellBlock.input?.validation).toEqual({ required: true });
+    expect(() =>
+      composedEditorModelToQuestionBlueprintDocument(resolved),
+    ).not.toThrow();
+  });
+
+  it("removes default references without changing select options", () => {
+    const model = modelWithResponseSelectInputReferences();
+    const usage = getReferenceUsageLocations(model).get("default_ref")?.[0];
+    if (usage?.type !== "response_input_default") {
+      throw new Error("Expected response default usage.");
+    }
+
+    const resolved = removeReferenceUsageFromComposedEditorModel({
+      model,
+      referenceId: "default_ref",
+      usage,
+    });
+    const block = resolved.blocks[0];
+    if (block?.type !== "response") {
+      throw new Error("Expected response block.");
+    }
+
+    expect(block.input?.defaultValueSource).toBeUndefined();
+    expect(block.input?.optionsSource).toEqual({
+      referenceId: "options_ref",
+      type: "reference",
+    });
+    expect(() =>
+      composedEditorModelToQuestionBlueprintDocument(resolved),
+    ).not.toThrow();
+  });
+
   it("removes only one repeated range cell occurrence with the same offset", () => {
     const rangeCell = { columnOffset: 1, rowOffset: 0 };
     const model = modelWithRepeatedTextReferences(rangeCell);
@@ -500,9 +588,7 @@ function modelWithAllUsageLocations(): ComposedEditorModel {
           { id: "column_2", label: "Column 2" },
         ],
         prompt: "",
-        responseFields: [
-          { id: "answer_2", label: "Answer", required: true, type: "number" },
-        ],
+        responseFields: [{ id: "answer_2", label: "Answer", type: "number" }],
         rows: [{ id: "row_1", label: "Row 1" }],
         showColumnNames: true,
         showRowNames: true,
@@ -521,6 +607,96 @@ function modelWithAllUsageLocations(): ComposedEditorModel {
     responseFields: [{ id: "answer_1", label: "Answer", type: "number" }],
     schemaVersion: 2,
   };
+}
+
+function modelWithResponseSelectInputReferences(): ComposedEditorModel {
+  return {
+    blocks: [
+      {
+        correctValueSource: { type: "literal", value: "a" },
+        grading: { mode: "exact" },
+        id: "response_1",
+        input: {
+          defaultValueSource: { referenceId: "default_ref", type: "reference" },
+          optionsSource: { referenceId: "options_ref", type: "reference" },
+          type: "select",
+          validation: { allowedValues: ["a", "b"], required: true },
+        },
+        points: 1,
+        responseFieldId: "answer_1",
+        type: "response",
+      },
+    ],
+    references: selectInputReferences(),
+    responseFields: [{ id: "answer_1", label: "Answer", type: "select" }],
+    schemaVersion: 2,
+  };
+}
+
+function modelWithTableSelectInputReferences(): ComposedEditorModel {
+  return {
+    blocks: [
+      createTableBlock("table_1", {
+        cells: [
+          {
+            blocks: [
+              {
+                correctValueSource: { type: "literal", value: "a" },
+                grading: { mode: "exact" },
+                id: "table_input_1",
+                input: {
+                  defaultValueSource: {
+                    referenceId: "default_ref",
+                    type: "reference",
+                  },
+                  optionsSource: {
+                    referenceId: "options_ref",
+                    type: "reference",
+                  },
+                  type: "select",
+                  validation: { allowedValues: ["a", "b"], required: true },
+                },
+                points: 1,
+                responseFieldId: "answer_1",
+                type: "input",
+              },
+            ],
+            columnId: "column_1",
+            id: "cell_1",
+            rowId: "row_1",
+          },
+        ],
+        columns: [{ id: "column_1", label: "Column 1" }],
+        prompt: "",
+        responseFields: [{ id: "answer_1", label: "Answer", type: "select" }],
+        rows: [{ id: "row_1", label: "Row 1" }],
+        showColumnNames: true,
+        showRowNames: true,
+      }),
+    ],
+    references: selectInputReferences(),
+    responseFields: [],
+    schemaVersion: 2,
+  };
+}
+
+function selectInputReferences(): ComposedEditorModel["references"] {
+  return [
+    {
+      id: "default_ref",
+      source: { type: "literal", value: "a" },
+    },
+    {
+      id: "options_ref",
+      source: {
+        type: "literal",
+        value: [
+          { label: "Alpha", value: "a" },
+          { label: "Bravo", value: "b" },
+        ],
+      },
+    },
+  ];
 }
 
 function modelWithWholeRangeUsage(): ComposedEditorModel {
@@ -741,9 +917,7 @@ function modelWithTableRangeCells(): ComposedEditorModel {
           { id: "column_2", label: "Column 2" },
         ],
         prompt: "",
-        responseFields: [
-          { id: "answer_1", label: "Answer", required: true, type: "number" },
-        ],
+        responseFields: [{ id: "answer_1", label: "Answer", type: "number" }],
         rows: [{ id: "row_1", label: "Row 1" }],
         showColumnNames: true,
         showRowNames: true,

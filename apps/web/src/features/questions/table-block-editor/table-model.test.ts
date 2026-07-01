@@ -57,7 +57,6 @@ const baseModel: TableEditorModel = {
   responseFields: [
     {
       id: "answer_1",
-      required: true,
       type: "text",
     },
   ],

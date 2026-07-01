@@ -2,9 +2,53 @@ import { describe, expect, it } from "vitest";
 import {
   mapCompleteQuestionBlueprintDraftWorkbookEditorUploadResponse,
   mapCreateQuestionBlueprintDraftWorkbookEditorUploadResponse,
+  mapQuestionBlueprint,
   mapQuestionBlueprintDraftSummary,
   mapSaveQuestionBlueprintDraftWorkbookSourceRevisionResponse,
 } from "./mappers";
+
+describe("mapQuestionBlueprint", () => {
+  it("maps sanitized source-backed input status without authoring references", () => {
+    const blueprint = mapQuestionBlueprint({
+      archivedAt: null,
+      createdAt: "2026-06-20T00:00:00.000Z",
+      createdByUserId: "019e9315-6a87-715f-9861-8654df075001",
+      currentVersionId: "019e9315-6a87-715f-9861-8654df075002",
+      description: null,
+      document: {
+        blocks: [
+          {
+            id: "choice_input",
+            input: {
+              defaultValueStatus: "source_backed",
+              optionsStatus: "source_backed",
+              schemaVersion: 1,
+              type: "select",
+              validation: { required: true },
+            },
+            kind: "primitive",
+            responseFieldId: "choice_answer",
+            type: "input",
+          },
+        ],
+        responseFields: [{ id: "choice_answer", type: "select" }],
+        schemaVersion: 2,
+      },
+      id: "019e9315-6a87-715f-9861-8654df075003",
+      name: "Blueprint",
+      ownerUserId: "019e9315-6a87-715f-9861-8654df075001",
+      sources: [],
+      status: "active",
+      updatedAt: "2026-06-20T00:00:00.000Z",
+      visibility: "private",
+    });
+
+    expect(JSON.stringify(blueprint.document)).toContain(
+      '"optionsStatus":"source_backed"',
+    );
+    expect(JSON.stringify(blueprint.document)).not.toContain("referenceId");
+  });
+});
 
 describe("mapQuestionBlueprintDraftSummary", () => {
   it("maps status and required/nullable fields", () => {

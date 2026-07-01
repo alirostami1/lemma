@@ -88,6 +88,110 @@ const questionValueExpressionSchema: Schema = {
     ],
   },
 };
+const questionInputValidationSchema: Schema = {
+  name: "QuestionInputValidation",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      allowedValues: { items: { minLength: 1, type: "string" }, type: "array" },
+      max: { type: "number" },
+      min: { type: "number" },
+      regex: { type: "string" },
+      required: { type: "boolean" },
+    },
+    type: "object",
+  },
+};
+const questionInputSelectOptionSchema: Schema = {
+  name: "QuestionInputSelectOption",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      label: { type: "string" },
+      value: { minLength: 1, type: "string" },
+    },
+    required: ["value"],
+    type: "object",
+  },
+};
+const questionBlueprintInputPrimitiveSchema: Schema = {
+  name: "QuestionBlueprintInputPrimitive",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      defaultValueSource: schemaRef(questionValueExpressionSchema),
+      optionsSource: schemaRef(questionValueExpressionSchema),
+      schemaVersion: { enum: [1], type: "number" },
+      type: {
+        enum: ["text", "number", "select"],
+        type: "string",
+      },
+      validation: schemaRef(questionInputValidationSchema),
+    },
+    required: ["schemaVersion", "type"],
+    type: "object",
+  },
+};
+const questionInputPrimitiveSchema: Schema = {
+  name: "QuestionInputPrimitive",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      defaultValue: { type: ["string", "number", "null"] },
+      options: {
+        items: schemaRef(questionInputSelectOptionSchema),
+        type: "array",
+      },
+      schemaVersion: { enum: [1], type: "number" },
+      type: {
+        enum: ["text", "number", "select"],
+        type: "string",
+      },
+      validation: schemaRef(questionInputValidationSchema),
+    },
+    required: ["schemaVersion", "type"],
+    type: "object",
+  },
+};
+const publicQuestionInputValidationSchema: Schema = {
+  name: "PublicQuestionInputValidation",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      required: { type: "boolean" },
+    },
+    type: "object",
+  },
+};
+const publicQuestionBlueprintInputPrimitiveSchema: Schema = {
+  name: "PublicQuestionBlueprintInputPrimitive",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      defaultValue: { type: ["string", "number", "null"] },
+      defaultValueStatus: {
+        enum: ["none", "literal", "source_backed"],
+        type: "string",
+      },
+      options: {
+        items: schemaRef(questionInputSelectOptionSchema),
+        type: "array",
+      },
+      optionsStatus: {
+        enum: ["none", "literal", "source_backed"],
+        type: "string",
+      },
+      schemaVersion: { enum: [1], type: "number" },
+      type: {
+        enum: ["text", "number", "select"],
+        type: "string",
+      },
+      validation: schemaRef(publicQuestionInputValidationSchema),
+    },
+    required: ["schemaVersion", "type", "defaultValueStatus", "optionsStatus"],
+    type: "object",
+  },
+};
 const questionReferenceSourceSchema: Schema = {
   name: "QuestionReferenceSource",
   schema: {
@@ -418,7 +522,7 @@ const responseFieldSchema: Schema = {
       id: { type: "string" },
       label: { type: "string" },
       required: { type: "boolean" },
-      type: { enum: ["text", "number", "boolean"], type: "string" },
+      type: { enum: ["text", "number", "select"], type: "string" },
     },
     required: ["id", "type"],
     type: "object",
@@ -504,13 +608,14 @@ const questionInputBlockSchema: Schema = {
     additionalProperties: false,
     properties: {
       id: { minLength: 1, type: "string" },
+      input: schemaRef(questionInputPrimitiveSchema),
       kind: { enum: ["primitive"], type: "string" },
       label: { type: "string" },
       placeholder: { type: "string" },
       responseFieldId: { minLength: 1, type: "string" },
       type: { enum: ["input"], type: "string" },
     },
-    required: ["id", "kind", "type", "responseFieldId"],
+    required: ["id", "kind", "type", "responseFieldId", "input"],
     type: "object",
   },
 };
@@ -709,6 +814,7 @@ const questionBlueprintInputBlockSchema: Schema = {
       correctValueSource: schemaRef(questionValueExpressionSchema),
       grading: schemaRef(gradingSchema),
       id: { minLength: 1, type: "string" },
+      input: schemaRef(questionBlueprintInputPrimitiveSchema),
       kind: { enum: ["primitive"], type: "string" },
       label: { type: "string" },
       placeholder: { type: "string" },
@@ -716,7 +822,15 @@ const questionBlueprintInputBlockSchema: Schema = {
       responseFieldId: { minLength: 1, type: "string" },
       type: { enum: ["input"], type: "string" },
     },
-    required: ["id", "kind", "type", "responseFieldId", "points", "grading"],
+    required: [
+      "id",
+      "kind",
+      "type",
+      "responseFieldId",
+      "input",
+      "points",
+      "grading",
+    ],
     type: "object",
   },
 };
@@ -726,13 +840,14 @@ const publicQuestionBlueprintInputBlockSchema: Schema = {
     additionalProperties: false,
     properties: {
       id: { minLength: 1, type: "string" },
+      input: schemaRef(publicQuestionBlueprintInputPrimitiveSchema),
       kind: { enum: ["primitive"], type: "string" },
       label: { type: "string" },
       placeholder: { type: "string" },
       responseFieldId: { minLength: 1, type: "string" },
       type: { enum: ["input"], type: "string" },
     },
-    required: ["id", "kind", "type", "responseFieldId"],
+    required: ["id", "kind", "type", "responseFieldId", "input"],
     type: "object",
   },
 };
@@ -2020,6 +2135,12 @@ export const tags: readonly Tag[] = Object.freeze([questionTag]);
 export const schemas = Object.freeze([
   uuidSchema,
   questionValueExpressionSchema,
+  questionInputValidationSchema,
+  questionInputSelectOptionSchema,
+  questionBlueprintInputPrimitiveSchema,
+  questionInputPrimitiveSchema,
+  publicQuestionInputValidationSchema,
+  publicQuestionBlueprintInputPrimitiveSchema,
   questionReferenceSourceSchema,
   blueprintInlineTextSchema,
   blueprintInlineReferenceSchema,

@@ -11,6 +11,7 @@ import {
 import { useId } from "react";
 import type {
   ComposedEditorModel,
+  InputPrimitiveType,
   ValueExpression,
 } from "#/domains/questions/authoring";
 import {
@@ -31,7 +32,7 @@ type ValueExpressionInputProps = {
   value: ValueExpression;
   model: ComposedEditorModel;
   referencePreviewCache: ReferencePreviewCache;
-  valueType?: "text" | "number" | "boolean";
+  valueType?: InputPrimitiveType;
   workbookEnabled: boolean;
   sources?: QuestionBlueprintWorkbookSource[];
   workbookSheetNamesBySourceId?: Readonly<Record<string, readonly string[]>>;

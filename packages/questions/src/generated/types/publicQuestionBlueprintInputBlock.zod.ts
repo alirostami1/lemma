@@ -5,9 +5,11 @@
  * OpenAPI spec version: 0.1.0
  */
 import { z as zod } from "zod";
+import { PublicQuestionBlueprintInputPrimitive } from "./publicQuestionBlueprintInputPrimitive.zod.js";
 
 export const PublicQuestionBlueprintInputBlock = zod.strictObject({
   id: zod.string().min(1),
+  input: PublicQuestionBlueprintInputPrimitive,
   kind: zod.enum(["primitive"]),
   label: zod.string().optional(),
   placeholder: zod.string().optional(),

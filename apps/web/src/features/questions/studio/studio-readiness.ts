@@ -218,6 +218,27 @@ function mapBlueprintReadinessIssue(
         severity: "error",
         target: issue.target,
       };
+    case "invalid_response_input":
+      return {
+        id: `invalid_response_input_${issue.target?.blockId ?? "unknown"}`,
+        message: "Answer settings need attention.",
+        severity: "error",
+        target: issue.target,
+      };
+    case "missing_response_input_default":
+      return {
+        id: `missing_response_input_default_${issue.target?.blockId ?? "unknown"}`,
+        message: "An answer default uses a value that is no longer available.",
+        severity: "error",
+        target: issue.target,
+      };
+    case "missing_response_input_options":
+      return {
+        id: `missing_response_input_options_${issue.target?.blockId ?? "unknown"}`,
+        message: "Answer options use a value that is no longer available.",
+        severity: "error",
+        target: issue.target,
+      };
     case "missing_table_response_field":
       return {
         id: `missing_table_response_field_${issue.target?.blockId ?? "unknown"}_${issue.target?.cellId ?? "unknown"}`,
@@ -225,10 +246,33 @@ function mapBlueprintReadinessIssue(
         severity: "error",
         target: issue.target,
       };
+    case "missing_table_input_default":
+      return {
+        id: `missing_table_input_default_${issue.target?.blockId ?? "unknown"}_${issue.target?.cellId ?? "unknown"}`,
+        message:
+          "A table answer default uses a value that is no longer available.",
+        severity: "error",
+        target: issue.target,
+      };
+    case "missing_table_input_options":
+      return {
+        id: `missing_table_input_options_${issue.target?.blockId ?? "unknown"}_${issue.target?.cellId ?? "unknown"}`,
+        message:
+          "Table answer options use a value that is no longer available.",
+        severity: "error",
+        target: issue.target,
+      };
     case "missing_table_response_source":
       return {
         id: `missing_table_response_source_${issue.target?.blockId ?? "unknown"}_${issue.target?.cellId ?? "unknown"}`,
         message: "An answer cell uses a value that is no longer available.",
+        severity: "error",
+        target: issue.target,
+      };
+    case "invalid_table_input":
+      return {
+        id: `invalid_table_input_${issue.target?.blockId ?? "unknown"}_${issue.target?.cellId ?? "unknown"}`,
+        message: "Table answer settings need attention.",
         severity: "error",
         target: issue.target,
       };

@@ -1,5 +1,12 @@
 import type { ComposedRenderedInlineContent } from "./composed-model";
 import type { ComposedInlineContent } from "./inline-content";
+import {
+  createDefaultRequiredInputPrimitiveForNewAnswer,
+  type InputPrimitive,
+  type InputPrimitivePreviewState,
+  type InputPrimitiveType,
+  inputPrimitivePreviewStateFromEditorInput,
+} from "./input-primitive";
 import type { ComposedRichContent } from "./rich-content-types";
 
 export type TableCellValue = string | number | boolean | null;
@@ -82,9 +89,8 @@ export type TableAxis = {
 
 export type TableResponseField = {
   id: string;
-  type: "text" | "number" | "boolean";
+  type: InputPrimitiveType;
   label?: string;
-  required?: boolean;
 };
 
 export type TableEditorTextBlock = {
@@ -108,6 +114,7 @@ export type TableEditorInputBlock = {
   id: string;
   type: "input";
   responseFieldId: string;
+  input?: InputPrimitive;
   label?: string;
   placeholder?: string;
   correctValueSource?: ValueExpression;
@@ -152,6 +159,7 @@ export type TableBlockPreviewInputBlock = {
   id: string;
   type: "input";
   responseFieldId: string;
+  inputState?: InputPrimitivePreviewState;
   label?: string;
   placeholder?: string;
 };
@@ -224,6 +232,7 @@ export function createDefaultTableEditorModel(
             correctValueSource: { type: "literal", value: 3 },
             grading: { mode: "exact" },
             id: `${tableBlockId}_cell_2_input`,
+            input: createDefaultRequiredInputPrimitiveForNewAnswer("number"),
             points: 1,
             responseFieldId: "answer_1",
             type: "input",
@@ -267,7 +276,6 @@ export function createDefaultTableEditorModel(
       {
         id: "answer_1",
         label: "Answer",
-        required: true,
         type: "number",
       },
     ],
@@ -350,6 +358,7 @@ export function nextAvailableId(prefix: string, existingIds: Iterable<string>) {
 
 export function validateTableEditorModelAnswers(model: TableEditorModel): void {
   const responseFieldIds = new Set<string>();
+  const responseFieldsById = new Map<string, TableResponseField>();
   for (const field of model.responseFields) {
     if (!field.id) {
       throw new Error("Response field id must not be empty.");
@@ -360,11 +369,12 @@ export function validateTableEditorModelAnswers(model: TableEditorModel): void {
     if (
       field.type !== "text" &&
       field.type !== "number" &&
-      field.type !== "boolean"
+      field.type !== "select"
     ) {
       throw new Error(`Response field ${field.id} has an invalid type.`);
     }
     responseFieldIds.add(field.id);
+    responseFieldsById.set(field.id, field);
   }
 
   const usedResponseFieldIds = new Set<string>();
@@ -376,6 +386,16 @@ export function validateTableEditorModelAnswers(model: TableEditorModel): void {
       if (!responseFieldIds.has(block.responseFieldId)) {
         throw new Error(
           `Input block ${block.id} in cell ${cell.id} references missing response field ${block.responseFieldId}.`,
+        );
+      }
+      const responseField = responseFieldsById.get(block.responseFieldId);
+      if (
+        responseField &&
+        block.input &&
+        block.input.type !== responseField.type
+      ) {
+        throw new Error(
+          `Input block ${block.id} type must match response field ${responseField.id}.`,
         );
       }
       if (!Number.isFinite(block.points)) {
@@ -411,10 +431,15 @@ export function validateTableEditorModelAnswers(model: TableEditorModel): void {
 export function tableEditorModelToStaticPreviewModel(
   model: TableEditorModel,
 ): TableBlockPreviewModel {
+  const responseFieldsById = new Map(
+    model.responseFields.map((field) => [field.id, field]),
+  );
   return {
     cells: model.cells.map((cell) => ({
       ...cell,
-      blocks: cell.blocks.map(tableEditorPrimitiveToPreviewPrimitive),
+      blocks: cell.blocks.map((block) =>
+        tableEditorPrimitiveToPreviewPrimitive(block, responseFieldsById),
+      ),
     })),
     columns: [...model.columns],
     prompt: model.prompt,
@@ -457,10 +482,16 @@ export function getTablePreviewCellPrimitiveBlocks(
 
 function tableEditorPrimitiveToPreviewPrimitive(
   block: TableEditorPrimitiveBlock,
+  responseFieldsById: ReadonlyMap<string, TableResponseField>,
 ): TableBlockPreviewPrimitiveBlock {
   if (block.type === "input") {
+    const responseField = responseFieldsById.get(block.responseFieldId);
     return {
       id: block.id,
+      inputState: inputPrimitivePreviewStateFromEditorInput(block.input, {
+        required: true,
+        type: responseField?.type ?? "text",
+      }),
       label: block.label,
       placeholder: block.placeholder,
       responseFieldId: block.responseFieldId,

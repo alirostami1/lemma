@@ -267,9 +267,7 @@ function createResponseRecoveryModel(): ComposedEditorModel {
       },
     ],
     references: [workbookReference()],
-    responseFields: [
-      { id: "answer_1", label: "Answer", required: true, type: "number" },
-    ],
+    responseFields: [{ id: "answer_1", label: "Answer", type: "number" }],
     schemaVersion: 2,
   };
 }
@@ -303,7 +301,6 @@ function createTableAnswerRecoveryModel(): ComposedEditorModel {
             {
               id: "answer_1",
               label: "Answer",
-              required: true,
               type: "number",
             },
           ],

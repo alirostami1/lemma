@@ -108,19 +108,6 @@ function coerceByResponseFieldType(
       const parsed = Number(raw);
       return Number.isFinite(parsed) ? parsed : raw;
     }
-    case "boolean": {
-      if (raw === "") {
-        return null;
-      }
-      const normalized = raw.toLowerCase();
-      if (normalized === "true") {
-        return true;
-      }
-      if (normalized === "false") {
-        return false;
-      }
-      return raw;
-    }
     case "text":
       try {
         const trimmed = raw.trim();
@@ -134,6 +121,8 @@ function coerceByResponseFieldType(
       } catch {
         // Ignore parse failures and fall back to text mode.
       }
+      return raw;
+    case "select":
       return raw;
     default:
       return coerceLiteralValue(raw);

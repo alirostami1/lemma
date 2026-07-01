@@ -47,6 +47,10 @@ describe("question summary text", () => {
         question([
           {
             id: "answer_input",
+            input: {
+              schemaVersion: 1,
+              type: "text",
+            },
             kind: "primitive",
             responseFieldId: "answer",
             type: "input",
