@@ -3,11 +3,19 @@ import type { TableBlockEditorProps as DomainTableBlockEditorProps } from "#/dom
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import { TableCanvas } from "./table-canvas";
 import type { TableEditorSelection } from "./table-selection";
+import {
+  isTableSelectionEqual,
+  normalizeTableSelection,
+} from "./table-selection";
+import type { TableSelectionAnswerActionResult } from "./table-selection-actions";
 
 export type TableBlockEditorFeatureProps = DomainTableBlockEditorProps & {
   referencePreviewCache?: ReferencePreviewCache;
   selection?: TableEditorSelection;
   onSelectionChange?: (selection: TableEditorSelection) => void;
+  onConvertSelectionToAnswer?: () =>
+    | TableSelectionAnswerActionResult
+    | undefined;
 };
 
 export function TableBlockEditor({
@@ -15,6 +23,7 @@ export function TableBlockEditor({
   onModelChange,
   selection,
   onSelectionChange,
+  onConvertSelectionToAnswer,
   referencePreviewCache,
   disabled,
 }: TableBlockEditorFeatureProps) {
@@ -24,40 +33,25 @@ export function TableBlockEditor({
   );
 
   useEffect(() => {
-    if (!selection || isValidTableSelection(model, selection)) {
+    if (!selection) {
       return;
     }
 
-    onSelectionChange?.({ type: "table" });
+    const normalized = normalizeTableSelection(model, selection);
+    if (!isTableSelectionEqual(normalized, selection)) {
+      onSelectionChange?.(normalized);
+    }
   }, [model, onSelectionChange, selection]);
 
   return (
     <TableCanvas
       disabled={disabled}
       model={model}
+      onConvertSelectionToAnswer={onConvertSelectionToAnswer}
       onModelChange={onModelChange}
       onSelectionChange={(nextSelection) => onSelectionChange?.(nextSelection)}
       referencePreviewCache={referencePreviewCache ?? {}}
       selection={currentSelection}
     />
   );
-}
-
-function isValidTableSelection(
-  model: DomainTableBlockEditorProps["model"],
-  selection: TableEditorSelection,
-) {
-  if (selection.type === "table") {
-    return true;
-  }
-
-  if (selection.type === "row") {
-    return model.rows.some((row) => row.id === selection.rowId);
-  }
-
-  if (selection.type === "column") {
-    return model.columns.some((column) => column.id === selection.columnId);
-  }
-
-  return model.cells.some((cell) => cell.id === selection.cellId);
 }

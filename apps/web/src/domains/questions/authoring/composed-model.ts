@@ -32,7 +32,7 @@ import {
   createDefaultTableEditorModel,
   getTableCellPrimitiveBlocks,
   nextAvailableId as nextAvailableTableId,
-  validateTableEditorModelAnswers,
+  validateTableEditorModel,
 } from "./table-model";
 import { extractReferenceIdsFromValueExpression } from "./value-source";
 
@@ -1068,7 +1068,7 @@ function cloneComposedTableBlock(
   block: ComposedTableEditorBlock,
   context: ComposedCloneContext,
 ): ComposedTableEditorBlock {
-  validateTableEditorModelAnswers(block.table);
+  validateTableEditorModel(block.table);
   const id = context.allocateBlockId("table");
   const rowIds = new Map(
     block.table.rows.map((row, index) => [row.id, `${id}_row_${index + 1}`]),
@@ -1115,6 +1115,9 @@ function cloneComposedTableBlock(
             : {}),
         })),
         columnId: columnIds.get(cell.columnId) ?? cell.columnId,
+        ...(cell.formatting === undefined
+          ? {}
+          : { formatting: structuredClone(cell.formatting) }),
         id: `${id}_cell_${index + 1}`,
         rowId: rowIds.get(cell.rowId) ?? cell.rowId,
       })),

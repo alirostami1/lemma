@@ -873,6 +873,56 @@ describe("composed editor operations", () => {
     ).toEqual({ blockId: "table_1", type: "table" });
   });
 
+  it("preserves table cell range selection when coordinates exist", () => {
+    const model = createModelWithTable([
+      createTextBlock("text_1", "Prompt"),
+      createTableBlock("table_1"),
+    ]);
+
+    const selection = {
+      blockId: "table_1",
+      selection: {
+        activeCell: { columnId: "column_2", rowId: "row_2" },
+        ranges: [
+          {
+            end: { columnId: "column_2", rowId: "row_2" },
+            start: { columnId: "column_1", rowId: "row_1" },
+          },
+        ],
+        type: "cells" as const,
+      },
+      type: "table_cells" as const,
+    };
+
+    expect(normalizeComposedEditorSelection(model, selection)).toEqual(
+      selection,
+    );
+  });
+
+  it("normalizes invalid table cell range selection to the table", () => {
+    const model = createModelWithTable([
+      createTextBlock("text_1", "Prompt"),
+      createTableBlock("table_1"),
+    ]);
+
+    expect(
+      normalizeComposedEditorSelection(model, {
+        blockId: "table_1",
+        selection: {
+          activeCell: { columnId: "missing", rowId: "row_1" },
+          ranges: [
+            {
+              end: { columnId: "missing", rowId: "row_1" },
+              start: { columnId: "column_1", rowId: "row_1" },
+            },
+          ],
+          type: "cells",
+        },
+        type: "table_cells",
+      }),
+    ).toEqual({ blockId: "table_1", type: "table" });
+  });
+
   it("normalizes a missing table row to the table selection when the table still exists", () => {
     const model = createModelWithTable([
       createTextBlock("text_1", "Prompt"),

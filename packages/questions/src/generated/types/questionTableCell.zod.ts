@@ -6,10 +6,12 @@
  */
 import { z as zod } from "zod";
 import { QuestionPrimitiveBlock } from "./questionPrimitiveBlock.zod.js";
+import { QuestionTableCellFormatting } from "./questionTableCellFormatting.zod.js";
 
 export const QuestionTableCell = zod.strictObject({
   blocks: zod.array(QuestionPrimitiveBlock),
   columnId: zod.string().min(1),
+  formatting: QuestionTableCellFormatting.optional(),
   id: zod.string().min(1),
   rowId: zod.string().min(1),
 });

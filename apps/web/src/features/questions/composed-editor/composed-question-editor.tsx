@@ -134,6 +134,12 @@ export function ComposedQuestionEditor({
         columnId: tableSelection.columnId,
         type: "table_column",
       });
+    if (tableSelection.type === "cells")
+      return setSelection({
+        blockId,
+        selection: tableSelection,
+        type: "table_cells",
+      });
     setSelection({
       blockId,
       cellId: tableSelection.cellId,
@@ -150,6 +156,8 @@ export function ComposedQuestionEditor({
       return { columnId: selection.columnId, type: "column" };
     if (selection.type === "table_cell" && selection.blockId === blockId)
       return { cellId: selection.cellId, type: "cell" };
+    if (selection.type === "table_cells" && selection.blockId === blockId)
+      return selection.selection;
     return { type: "table" };
   }
 

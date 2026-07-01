@@ -87,6 +87,12 @@ export type TableAxis = {
   label: string;
 };
 
+export type TableCellFormatting = {
+  textAlign?: "left" | "center" | "right";
+  emphasis?: "normal" | "strong";
+  tone?: "default" | "muted" | "highlight";
+};
+
 export type TableResponseField = {
   id: string;
   type: InputPrimitiveType;
@@ -133,6 +139,7 @@ export type TableEditorCell = {
   rowId: string;
   columnId: string;
   blocks: TableEditorPrimitiveBlock[];
+  formatting?: TableCellFormatting;
 };
 
 export type TableEditorModel = {
@@ -175,6 +182,7 @@ export type TableBlockPreviewCell = {
   rowId: string;
   columnId: string;
   blocks: TableBlockPreviewPrimitiveBlock[];
+  formatting?: TableCellFormatting;
 };
 
 export type TableBlockPreviewModel = {
@@ -353,6 +361,115 @@ export function nextAvailableId(prefix: string, existingIds: Iterable<string>) {
     if (!ids.has(id)) {
       return id;
     }
+  }
+}
+
+export function validateTableEditorModel(model: TableEditorModel): void {
+  validateTableGrid(model);
+  validateTableEditorModelAnswers(model);
+}
+
+function validateTableGrid(model: TableEditorModel): void {
+  const rowIds = validateTableAxes("Row", model.rows);
+  const columnIds = validateTableAxes("Column", model.columns);
+  const cellIds = new Set<string>();
+  const primitiveBlockIds = new Set<string>();
+  const coordinateKeys = new Set<string>();
+
+  for (const cell of model.cells) {
+    if (!cell.id) {
+      throw new Error("Table cell id must not be empty.");
+    }
+    if (cellIds.has(cell.id)) {
+      throw new Error(`Table cell id ${cell.id} is duplicated.`);
+    }
+    cellIds.add(cell.id);
+
+    if (!cell.rowId) {
+      throw new Error(`Table cell ${cell.id} row id must not be empty.`);
+    }
+    if (!cell.columnId) {
+      throw new Error(`Table cell ${cell.id} column id must not be empty.`);
+    }
+    if (!rowIds.has(cell.rowId)) {
+      throw new Error(
+        `Table cell ${cell.id} references missing row ${cell.rowId}.`,
+      );
+    }
+    if (!columnIds.has(cell.columnId)) {
+      throw new Error(
+        `Table cell ${cell.id} references missing column ${cell.columnId}.`,
+      );
+    }
+
+    const coordinateKey = `${cell.rowId}:${cell.columnId}`;
+    if (coordinateKeys.has(coordinateKey)) {
+      throw new Error(
+        `Table cell coordinate ${cell.rowId}/${cell.columnId} is duplicated.`,
+      );
+    }
+    coordinateKeys.add(coordinateKey);
+
+    validateTableCellFormatting(cell);
+    for (const block of cell.blocks) {
+      if (!block.id) {
+        throw new Error(
+          `Primitive block id in table cell ${cell.id} must not be empty.`,
+        );
+      }
+      if (primitiveBlockIds.has(block.id)) {
+        throw new Error(`Primitive block id ${block.id} is duplicated.`);
+      }
+      primitiveBlockIds.add(block.id);
+    }
+  }
+}
+
+function validateTableAxes(
+  label: "Row" | "Column",
+  axes: TableAxis[],
+): Set<string> {
+  const ids = new Set<string>();
+  for (const axis of axes) {
+    if (!axis.id) {
+      throw new Error(`${label} id must not be empty.`);
+    }
+    if (ids.has(axis.id)) {
+      throw new Error(`${label} id ${axis.id} is duplicated.`);
+    }
+    ids.add(axis.id);
+  }
+  return ids;
+}
+
+function validateTableCellFormatting(cell: TableEditorCell): void {
+  const formatting = cell.formatting;
+  if (formatting === undefined) {
+    return;
+  }
+
+  if (
+    formatting.textAlign !== undefined &&
+    formatting.textAlign !== "left" &&
+    formatting.textAlign !== "center" &&
+    formatting.textAlign !== "right"
+  ) {
+    throw new Error(`Table cell ${cell.id} has invalid text alignment.`);
+  }
+  if (
+    formatting.emphasis !== undefined &&
+    formatting.emphasis !== "normal" &&
+    formatting.emphasis !== "strong"
+  ) {
+    throw new Error(`Table cell ${cell.id} has invalid emphasis.`);
+  }
+  if (
+    formatting.tone !== undefined &&
+    formatting.tone !== "default" &&
+    formatting.tone !== "muted" &&
+    formatting.tone !== "highlight"
+  ) {
+    throw new Error(`Table cell ${cell.id} has invalid tone.`);
   }
 }
 

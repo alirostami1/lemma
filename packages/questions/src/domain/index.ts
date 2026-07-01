@@ -146,6 +146,7 @@ export type {
   QuestionSeparatorBlock,
   QuestionTableBlock,
   QuestionTableCell,
+  QuestionTableCellFormatting,
   QuestionTextBlock,
   RangeCellOffset,
   RenderedInlineContent,

@@ -9,7 +9,10 @@ import {
 import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import type { TableEditorSelection } from "#/features/questions/table-block-editor";
-import { TableBlockEditor } from "#/features/questions/table-block-editor";
+import {
+  makeSelectedTableCellsResponseInComposedModelResult,
+  TableBlockEditor,
+} from "#/features/questions/table-block-editor";
 import { RichTextEditor } from "./rich-text-editor";
 import { TextAuthoringContent } from "./shared/text-authoring-content";
 
@@ -98,6 +101,17 @@ export function BlockEditor({
       <TableBlockEditor
         disabled={disabled}
         model={block.table}
+        onConvertSelectionToAnswer={() => {
+          const result = makeSelectedTableCellsResponseInComposedModelResult({
+            editorModel: model,
+            selection: getTableSelectionForBlock(block.id),
+            tableBlockId: block.id,
+          });
+          onModelChange(result.model);
+          return {
+            blockedRangeBackedCellCount: result.blockedRangeBackedCellCount,
+          };
+        }}
         onModelChange={(table) =>
           onModelChange(
             updateComposedBlock(model, block.id, (current) => ({

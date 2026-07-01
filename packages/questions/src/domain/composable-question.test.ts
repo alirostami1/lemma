@@ -179,6 +179,53 @@ describe("composable question canonical model", () => {
     );
   });
 
+  it("accepts table cell formatting on canonical table cells", () => {
+    const document = documentWithBlocks([
+      tableBlock("table_1", [
+        {
+          ...tableCell("cell_1", "row_1", "column_1", [
+            textBlock("text_1", "Cell"),
+          ]),
+          formatting: {
+            emphasis: "strong",
+            textAlign: "center",
+            tone: "highlight",
+          },
+        },
+      ]),
+    ]);
+
+    const table = document.blocks[0];
+    assert.deepEqual(table?.type === "table" ? table.cells[0] : null, {
+      blocks: [textBlock("text_1", "Cell")],
+      columnId: "column_1",
+      formatting: {
+        emphasis: "strong",
+        textAlign: "center",
+        tone: "highlight",
+      },
+      id: "cell_1",
+      rowId: "row_1",
+    });
+  });
+
+  it("rejects invalid table cell formatting", () => {
+    assert.throws(
+      () =>
+        documentWithBlocks([
+          tableBlock("table_1", [
+            {
+              ...tableCell("cell_1", "row_1", "column_1", [
+                textBlock("text_1", "Cell"),
+              ]),
+              formatting: { textAlign: "justify" },
+            },
+          ]),
+        ]),
+      /table cell textAlign must be one of left, center, right/,
+    );
+  });
+
   it("rejects duplicate document-global block ids", () => {
     assert.throws(
       () =>

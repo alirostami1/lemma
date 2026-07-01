@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { QuestionBlueprintDocument } from "#/api/generated/model";
+import type {
+  QuestionBlueprintDocument,
+  QuestionBlueprintTableBlock,
+} from "#/api/generated/model";
 import { QuestionBodySchemaVersion } from "#/api/generated/model/questionBodySchemaVersion";
 import type {
   ComposedInlineContent,
@@ -639,7 +642,7 @@ describe("composed blueprint conversions", () => {
             }),
             createInputTableCell({
               blockId: "cell_2_input",
-              columnId: "column_1",
+              columnId: "column_2",
               correctValueSource: {
                 referenceId: "answer_ref",
                 type: "reference",
@@ -655,7 +658,10 @@ describe("composed blueprint conversions", () => {
               rowId: "row_1",
             }),
           ],
-          columns: [{ id: "column_1", label: "Column 1" }],
+          columns: [
+            { id: "column_1", label: "Column 1" },
+            { id: "column_2", label: "Column 2" },
+          ],
           prompt: "",
           responseFields: [
             {
@@ -1720,6 +1726,107 @@ describe("composed blueprint conversions", () => {
 });
 
 describe("table blueprint conversions", () => {
+  it("rejects duplicate row ids on canonical table load", () => {
+    expectCanonicalTableLoadRejects((block) => {
+      block.rows = [
+        { id: "row_1", label: "Row 1" },
+        { id: "row_1", label: "Row 1 duplicate" },
+      ];
+    }, "Row id row_1 is duplicated.");
+  });
+
+  it("rejects duplicate column ids on canonical table load", () => {
+    expectCanonicalTableLoadRejects((block) => {
+      block.columns = [
+        { id: "column_1", label: "Column 1" },
+        { id: "column_1", label: "Column 1 duplicate" },
+      ];
+    }, "Column id column_1 is duplicated.");
+  });
+
+  it("rejects duplicate cell ids and coordinates on canonical table load", () => {
+    expectCanonicalTableLoadRejects((block) => {
+      const firstCell = requireCanonicalTableCell(block);
+      block.cells = [firstCell, { ...firstCell }];
+    }, "Table cell id cell_1 is duplicated.");
+
+    expectCanonicalTableLoadRejects((block) => {
+      const firstCell = requireCanonicalTableCell(block);
+      block.cells = [firstCell, { ...firstCell, id: "cell_2" }];
+    }, "Table cell coordinate row_1/column_1 is duplicated.");
+  });
+
+  it("rejects cells with missing axes on canonical table load", () => {
+    expectCanonicalTableLoadRejects((block) => {
+      block.cells = [
+        { ...requireCanonicalTableCell(block), rowId: "missing_row" },
+      ];
+    }, "Table cell cell_1 references missing row missing_row.");
+
+    expectCanonicalTableLoadRejects((block) => {
+      block.cells = [
+        { ...requireCanonicalTableCell(block), columnId: "missing_column" },
+      ];
+    }, "Table cell cell_1 references missing column missing_column.");
+  });
+
+  it("rejects invalid formatting values on canonical table load", () => {
+    expectCanonicalTableLoadRejects((block) => {
+      block.cells = [
+        {
+          ...requireCanonicalTableCell(block),
+          formatting: createInvalidCanonicalFormattingFixture(),
+        },
+      ];
+    }, "Table cell cell_1 has invalid text alignment.");
+  });
+
+  it("rejects input cells whose response field is missing on canonical table load", () => {
+    expectCanonicalTableLoadRejects((block) => {
+      block.cells = [
+        {
+          blocks: [
+            {
+              correctValueSource: {
+                schemaVersion: 1,
+                type: "literal",
+                value: "A",
+              },
+              grading: { mode: "exact" },
+              id: "cell_input",
+              input: {
+                schemaVersion: 1,
+                type: "text",
+                validation: { required: true },
+              },
+              kind: "primitive",
+              points: 1,
+              responseFieldId: "missing_answer",
+              type: "input",
+            },
+          ],
+          columnId: "column_1",
+          id: "cell_1",
+          rowId: "row_1",
+        },
+      ];
+    }, "Input block cell_input in cell cell_1 references missing response field missing_answer.");
+  });
+
+  it("rejects invalid nested table structures on composed blueprint load", () => {
+    const tableBlock = createCanonicalTableBlock();
+    tableBlock.rows = [
+      { id: "row_1", label: "Row 1" },
+      { id: "row_1", label: "Row 1 duplicate" },
+    ];
+
+    expect(() =>
+      questionBlueprintDocumentToComposedEditorModel(
+        nestedComposedTableBlueprint(tableBlock),
+      ),
+    ).toThrow("Row id row_1 is duplicated.");
+  });
+
   it("round-trips every ordered primitive in a composed table cell", () => {
     const table = createTableBlock("table_1", {
       blockId: "table_1",
@@ -1754,6 +1861,11 @@ describe("table blueprint conversions", () => {
             { id: "cell_separator_1", type: "separator" },
           ],
           columnId: "column_1",
+          formatting: {
+            emphasis: "strong",
+            textAlign: "center",
+            tone: "highlight",
+          },
           id: "cell_1",
           rowId: "row_1",
         },
@@ -1781,6 +1893,15 @@ describe("table blueprint conversions", () => {
         ? roundTrippedTable.table.cells[0]?.blocks
         : null,
     ).toEqual(table.table.cells[0]?.blocks);
+    expect(
+      roundTrippedTable?.type === "table"
+        ? roundTrippedTable.table.cells[0]?.formatting
+        : null,
+    ).toEqual({
+      emphasis: "strong",
+      textAlign: "center",
+      tone: "highlight",
+    });
   });
 
   it("keeps literal table content inline", () => {
@@ -1790,6 +1911,11 @@ describe("table blueprint conversions", () => {
           blockId: "cell_1_text",
           columnId: "column_1",
           content: [{ text: "Alpha", type: "text" }],
+          formatting: {
+            emphasis: "strong",
+            textAlign: "right",
+            tone: "muted",
+          },
           id: "cell_1",
           rowId: "row_1",
         }),
@@ -1856,6 +1982,11 @@ describe("table blueprint conversions", () => {
         },
       ],
       columnId: "column_1",
+      formatting: {
+        emphasis: "strong",
+        textAlign: "right",
+        tone: "muted",
+      },
       id: "cell_1",
       rowId: "row_1",
     });
@@ -2386,6 +2517,84 @@ describe("table blueprint response fields", () => {
     );
   });
 
+  it("rejects direct references in standalone rich-text table cells", () => {
+    const model = createModelWithResponseFields([]);
+    model.cells = [
+      {
+        blocks: [
+          {
+            content: richContentFromInlineContent([
+              { referenceId: "content_ref", type: "reference" },
+            ]),
+            id: "cell_1_rich",
+            type: "rich_text",
+          },
+        ],
+        columnId: "column_1",
+        id: "cell_1",
+        rowId: "row_1",
+      },
+    ];
+
+    expect(() => tableEditorModelToQuestionBlueprintDocument(model)).toThrow(
+      "Standalone table rich text block cell_1_rich references a reference, but standalone table conversion does not support references.",
+    );
+  });
+
+  it("rejects range-backed references in standalone rich-text table cells", () => {
+    const model = createModelWithResponseFields([]);
+    model.cells = [
+      {
+        blocks: [
+          {
+            content: richContentFromInlineContent([
+              {
+                rangeCell: { columnOffset: 1, rowOffset: 2 },
+                referenceId: "range_ref",
+                type: "reference",
+              },
+            ]),
+            id: "cell_1_rich",
+            type: "rich_text",
+          },
+        ],
+        columnId: "column_1",
+        id: "cell_1",
+        rowId: "row_1",
+      },
+    ];
+
+    expect(() => tableEditorModelToQuestionBlueprintDocument(model)).toThrow(
+      "Standalone table rich text block cell_1_rich references a reference, but standalone table conversion does not support references.",
+    );
+  });
+
+  it("round-trips reference-free rich text through standalone table conversion", () => {
+    const model = createModelWithResponseFields([]);
+    model.cells = [
+      {
+        blocks: [
+          {
+            content: richContentFromInlineContent([
+              { text: "Standalone detail", type: "text" },
+            ]),
+            id: "cell_1_rich",
+            type: "rich_text",
+          },
+        ],
+        columnId: "column_1",
+        id: "cell_1",
+        rowId: "row_1",
+      },
+    ];
+
+    const roundTripped = questionBlueprintDocumentToTableEditorModel(
+      tableEditorModelToQuestionBlueprintDocument(model),
+    );
+
+    expect(roundTripped.cells[0]?.blocks).toEqual(model.cells[0]?.blocks);
+  });
+
   it("rejects reference-backed answer cells in standalone table conversion", () => {
     const model = createModelWithResponseFields([
       { id: "answer_1", type: "number" },
@@ -2639,16 +2848,116 @@ function createModelWithResponseFields(
   };
 }
 
+function expectCanonicalTableLoadRejects(
+  update: (block: QuestionBlueprintTableBlock) => void,
+  message: string,
+) {
+  const block = createCanonicalTableBlock();
+  update(block);
+
+  expect(() =>
+    questionBlueprintDocumentToTableEditorModel(canonicalTableBlueprint(block)),
+  ).toThrow(message);
+}
+
+function createCanonicalTableBlock(): QuestionBlueprintTableBlock {
+  return {
+    cells: [
+      {
+        blocks: [
+          {
+            content: [{ text: "A", type: "text" }],
+            id: "cell_text",
+            kind: "primitive",
+            type: "text",
+          },
+        ],
+        columnId: "column_1",
+        id: "cell_1",
+        rowId: "row_1",
+      },
+    ],
+    columns: [{ id: "column_1", label: "Column 1" }],
+    id: "table",
+    kind: "complex",
+    rows: [{ id: "row_1", label: "Row 1" }],
+    showColumnNames: true,
+    showRowNames: true,
+    type: "table",
+  };
+}
+
+function canonicalTableBlueprint(
+  tableBlock: QuestionBlueprintTableBlock,
+): QuestionBlueprintDocument {
+  return {
+    blocks: [
+      {
+        content: [{ text: "Prompt", type: "text" }],
+        id: "prompt",
+        kind: "primitive",
+        type: "text",
+      },
+      tableBlock,
+    ],
+    references: [],
+    responseFields: [],
+    schemaVersion: 2,
+  };
+}
+
+function nestedComposedTableBlueprint(
+  tableBlock: QuestionBlueprintTableBlock,
+): QuestionBlueprintDocument {
+  return {
+    blocks: [
+      {
+        blocks: [tableBlock],
+        id: "page_1",
+        kind: "container",
+        title: "Page",
+        type: "page",
+      },
+    ],
+    references: [],
+    responseFields: [],
+    schemaVersion: 2,
+  };
+}
+
+function requireCanonicalTableCell(
+  block: QuestionBlueprintTableBlock,
+): QuestionBlueprintTableBlock["cells"][number] {
+  const cell = block.cells[0];
+  if (!cell) {
+    throw new Error("Expected canonical table cell.");
+  }
+  return cell;
+}
+
+function createInvalidCanonicalFormattingFixture(): NonNullable<
+  QuestionBlueprintTableBlock["cells"][number]["formatting"]
+> {
+  const formatting: NonNullable<
+    QuestionBlueprintTableBlock["cells"][number]["formatting"]
+  > = { textAlign: "left" };
+  // Persisted/API JSON can contain invalid enum strings TypeScript would reject.
+  Object.defineProperty(formatting, "textAlign", { value: "diagonal" });
+  return formatting;
+}
+
 function createTextTableCell(input: {
   blockId: string;
   columnId: string;
   content: ComposedInlineContent[];
+  formatting?: TableEditorCell["formatting"];
   id: string;
   rowId: string;
 }): TableEditorCell {
   return {
     blocks: [{ content: input.content, id: input.blockId, type: "text" }],
     columnId: input.columnId,
+    ...(input.formatting === undefined ? {} : { formatting: input.formatting }),
     id: input.id,
     rowId: input.rowId,
   };

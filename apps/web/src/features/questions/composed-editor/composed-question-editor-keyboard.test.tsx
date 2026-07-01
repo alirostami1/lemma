@@ -177,7 +177,9 @@ describe("ComposedQuestionEditor keyboard workflows", () => {
     const editingTable = screen.getByRole("group", {
       name: "Table block editor",
     });
-    await user.click(screen.getAllByRole("button", { name: "Empty" })[0]);
+    await user.click(
+      screen.getByRole("button", { name: "Cell Row 1, Column 1" }),
+    );
     expect(getTableCellCount(editor.getModel())).toBe(1);
     fireEvent.keyDown(editingTable, { ctrlKey: true, key: "." });
     await waitFor(() => expect(tableBlock).toHaveFocus());
@@ -239,8 +241,7 @@ describe("ComposedQuestionEditor keyboard workflows", () => {
     }
   });
 
-  it("does not run Studio shortcuts from text entry, local controls, menu, or table controls", async () => {
-    const user = userEvent.setup();
+  it("does not run Studio shortcuts from text and rich-text entry", async () => {
     const defaultModel = createDefaultComposedEditorModel();
     const firstBlock = defaultModel.blocks[0];
     const lastBlock = defaultModel.blocks[1];
@@ -249,16 +250,11 @@ describe("ComposedQuestionEditor keyboard workflows", () => {
     }
     renderEditor({
       ...defaultModel,
-      blocks: [
-        firstBlock,
-        createRichTextBlock("rich_text_1"),
-        createTableBlock("table_1"),
-        lastBlock,
-      ],
+      blocks: [firstBlock, createRichTextBlock("rich_text_1"), lastBlock],
     });
 
     getBlockFocus("Text").focus();
-    await user.keyboard("{Enter}");
+    fireEvent.keyDown(getBlockFocus("Text"), { key: "Enter" });
     const textarea = await screen.findByLabelText("Text segment 1");
     fireEvent.keyDown(textarea, { key: "ArrowDown" });
     fireEvent.keyDown(textarea, { key: "/" });
@@ -282,7 +278,7 @@ describe("ComposedQuestionEditor keyboard workflows", () => {
       ),
     );
 
-    await editBlockByButton(user, "Rich text");
+    editBlockByButton("Rich text");
     const richTextarea = document.querySelector(
       "textarea[data-studio-primary-editor-focus]",
     );
@@ -305,8 +301,12 @@ describe("ComposedQuestionEditor keyboard workflows", () => {
         "false",
       ),
     );
+  });
 
-    await editBlockByButton(user, "Answer");
+  it("does not run Studio shortcuts from answer controls", async () => {
+    renderEditor();
+
+    editBlockByButton("Answer");
     const responseLabelInput = await findPrimaryInput();
     if (!(responseLabelInput instanceof HTMLElement)) {
       throw new Error("Expected response label focus target.");
@@ -326,16 +326,32 @@ describe("ComposedQuestionEditor keyboard workflows", () => {
         "false",
       ),
     );
+  });
 
-    await user.click(screen.getAllByRole("button", { name: "Add block" })[0]);
-    const textMenuItem = await screen.findByRole("menuitem", { name: "Text" });
+  it("does not run Studio shortcuts from menus or table controls", () => {
+    const defaultModel = createDefaultComposedEditorModel();
+    const firstBlock = defaultModel.blocks[0];
+    const lastBlock = defaultModel.blocks[1];
+    if (!firstBlock || !lastBlock) {
+      throw new Error("Expected default model blocks.");
+    }
+    renderEditor({
+      ...defaultModel,
+      blocks: [firstBlock, createTableBlock("table_1"), lastBlock],
+    });
+
+    fireEvent.pointerDown(
+      screen.getAllByRole("button", { name: "Add block" })[0],
+      { button: 0 },
+    );
+    const textMenuItem = screen.getByRole("menuitem", { name: "Text" });
     fireEvent.keyDown(textMenuItem, { key: "/" });
     expect(
       screen.queryByRole("dialog", { name: "Studio commands" }),
     ).toBeNull();
-    await user.keyboard("{Escape}");
+    fireEvent.keyDown(textMenuItem, { key: "Escape" });
 
-    await editBlockByButton(user, "Table");
+    editBlockByButton("Table");
     const tableSurface = screen.getByRole("group", {
       name: "Table block editor",
     });
@@ -555,11 +571,8 @@ async function findPrimaryInput() {
   return document.querySelector("input[data-studio-primary-editor-focus]");
 }
 
-async function editBlockByButton(
-  user: ReturnType<typeof userEvent.setup>,
-  label: string,
-) {
-  await user.click(
+function editBlockByButton(label: string) {
+  fireEvent.click(
     within(getBlockShell(getBlockFocus(label))).getByRole("button", {
       name: "Edit block",
     }),

@@ -7,5 +7,6 @@ export * from "./rich-markdown";
 export * from "./table-cell-operations";
 export * from "./table-model";
 export * from "./table-range-operations";
+export * from "./table-selection-operations";
 export * from "./table-structure-operations";
 export * from "./value-source";

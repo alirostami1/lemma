@@ -87,6 +87,7 @@ export * from "./questionSet.zod.js";
 export * from "./questionSetResponse.zod.js";
 export * from "./questionTableBlock.zod.js";
 export * from "./questionTableCell.zod.js";
+export * from "./questionTableCellFormatting.zod.js";
 export * from "./questionTableColumn.zod.js";
 export * from "./questionTableRow.zod.js";
 export * from "./questionTextBlock.zod.js";

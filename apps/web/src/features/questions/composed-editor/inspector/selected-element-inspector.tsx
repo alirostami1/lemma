@@ -1,14 +1,18 @@
-import type {
-  ComposedEditorBlock,
-  ComposedEditorModel,
-  ComposedTableEditorBlock,
+import {
+  type ComposedEditorBlock,
+  type ComposedEditorModel,
+  type ComposedTableEditorBlock,
+  getTableCellAt,
+  updateComposedBlock,
 } from "#/domains/questions/authoring";
 import type { QuestionBlueprintWorkbookSource } from "#/domains/questions/model";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
+import { makeSelectedTableCellsResponseInComposedModelResult } from "#/features/questions/table-block-editor";
 import type { EditorSelection } from "../editor-selection";
 import { BlockInspector } from "./block-inspector";
 import { ResponseBlockInspector } from "./response-block-inspector";
 import { TableCellInspector } from "./table-cell-inspector";
+import { TableCellSelectionInspector } from "./table-cell-selection-inspector";
 import { TableColumnInspector } from "./table-column-inspector";
 import type { TableEditorSelection } from "./table-editor-selection";
 import { TableInspector } from "./table-inspector";
@@ -109,14 +113,11 @@ function TableSelectionInspector({
   onSelectionChange(selection: EditorSelection): void;
 }) {
   function updateTable(table: ComposedTableEditorBlock["table"]) {
-    onModelChange({
-      ...model,
-      blocks: model.blocks.map((candidate) =>
-        candidate.id === block.id && candidate.type === "table"
-          ? { ...candidate, table }
-          : candidate,
+    onModelChange(
+      updateComposedBlock(model, block.id, (candidate) =>
+        candidate.type === "table" ? { ...candidate, table } : candidate,
       ),
-    });
+    );
   }
 
   function setTableSelection(tableSelection: TableEditorSelection) {
@@ -137,6 +138,14 @@ function TableSelectionInspector({
         blockId: block.id,
         columnId: tableSelection.columnId,
         type: "table_column",
+      });
+      return;
+    }
+    if (tableSelection.type === "cells") {
+      onSelectionChange({
+        blockId: block.id,
+        selection: tableSelection,
+        type: "table_cells",
       });
       return;
     }
@@ -230,6 +239,64 @@ function TableSelectionInspector({
           workbookEnabled={workbookEnabled}
           workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
         />
+      </div>
+    );
+  }
+
+  if (selection.type === "table_cells" && selection.blockId === block.id) {
+    const activeCell = getTableCellAt(
+      block.table,
+      selection.selection.activeCell.rowId,
+      selection.selection.activeCell.columnId,
+    );
+
+    return (
+      <div className="grid gap-5">
+        <TableInspector
+          blockId={block.id}
+          disabled={disabled}
+          editorModel={model}
+          model={block.table}
+          onEditorModelChange={onModelChange}
+          onModelChange={updateTable}
+          onSelectionChange={setTableSelection}
+          referencePreviewCache={referencePreviewCache}
+          sources={sources}
+          workbookEnabled={workbookEnabled}
+          workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
+        />
+        <TableCellSelectionInspector
+          disabled={disabled}
+          model={block.table}
+          onConvertSelectionToAnswer={() => {
+            const result = makeSelectedTableCellsResponseInComposedModelResult({
+              editorModel: model,
+              selection: selection.selection,
+              tableBlockId: block.id,
+            });
+            onModelChange(result.model);
+            return {
+              blockedRangeBackedCellCount: result.blockedRangeBackedCellCount,
+            };
+          }}
+          onModelChange={updateTable}
+          selection={selection.selection}
+        />
+        {activeCell ? (
+          <TableCellInspector
+            cellId={activeCell.id}
+            disabled={disabled}
+            editorModel={model}
+            model={block.table}
+            onEditorModelChange={onModelChange}
+            onModelChange={updateTable}
+            referencePreviewCache={referencePreviewCache}
+            sources={sources}
+            tableBlockId={block.id}
+            workbookEnabled={workbookEnabled}
+            workbookSheetNamesBySourceId={workbookSheetNamesBySourceId}
+          />
+        ) : null}
       </div>
     );
   }

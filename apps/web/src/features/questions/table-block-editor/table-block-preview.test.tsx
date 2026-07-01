@@ -90,6 +90,7 @@ describe("TableBlockPreview", () => {
       ),
     ).toEqual(["Before", "DIV", "DIV", "HR", "After"]);
     expect(cell.querySelector("input")).not.toBeNull();
+    expect(cell.className).not.toContain("overflow-hidden");
     expect(cell.textContent).toContain("Before");
     expect(cell.textContent).toContain("Rich");
     expect(cell.textContent).toContain("After");

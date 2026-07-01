@@ -20,7 +20,7 @@ import {
   deriveResponseFieldRequiredFromInput,
   normalizeInputPrimitiveForType,
 } from "../input-primitive";
-import { validateTableEditorModelAnswers } from "../table-model";
+import { validateTableEditorModel } from "../table-model";
 import {
   canonicalRichContentToComposed,
   composedRichContentToCanonicalRichContent,
@@ -181,7 +181,7 @@ function composedBlocksToQuestionBlueprintBlocks(input: {
       continue;
     }
 
-    validateTableEditorModelAnswers(block.table);
+    validateTableEditorModel(block.table);
     if (block.table.prompt.length > 0) {
       blocks.push({
         content: plainTextToInlineContent(block.table.prompt),
