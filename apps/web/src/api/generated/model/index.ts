@@ -195,6 +195,7 @@ export * from "./questionTableBlock.ts";
 export * from "./questionTableBlockKind.ts";
 export * from "./questionTableBlockType.ts";
 export * from "./questionTableCell.ts";
+export * from "./questionTableCellFormatting.ts";
 export * from "./questionTableColumn.ts";
 export * from "./questionTableRow.ts";
 export * from "./questionTextBlock.ts";

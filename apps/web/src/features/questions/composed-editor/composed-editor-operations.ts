@@ -15,6 +15,7 @@ import {
   moveComposedBlock,
   nextAvailableComposedBlockId,
   nextAvailableResponseFieldId,
+  normalizeTableSelection,
   removeComposedBlock,
 } from "#/domains/questions/authoring";
 import type { EditorSelection } from "./editor-selection";
@@ -119,6 +120,20 @@ export function normalizeComposedEditorSelection(
 
       return block.table.cells.some((cell) => cell.id === selection.cellId)
         ? selection
+        : { blockId: block.id, type: "table" };
+    }
+    case "table_cells": {
+      const block = findBlock(model, selection.blockId);
+      if (block?.type !== "table") {
+        return selectFirstBlockOrDocument(model);
+      }
+
+      const normalized = normalizeTableSelection(
+        block.table,
+        selection.selection,
+      );
+      return normalized.type === "cells"
+        ? { blockId: block.id, selection: normalized, type: "table_cells" }
         : { blockId: block.id, type: "table" };
     }
     default:
@@ -229,6 +244,7 @@ export function getComposedEditorSelectedBlock(
     case "table_row":
     case "table_column":
     case "table_cell":
+    case "table_cells":
       return findBlock(model, selection.blockId);
     default:
       return assertNever(selection);

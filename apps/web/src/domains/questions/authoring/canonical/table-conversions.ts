@@ -10,6 +10,7 @@ import {
   inlineContentToPlainText,
   plainTextToInlineContent,
 } from "#/domains/questions/authoring/inline-content";
+import { extractRichReferenceIds } from "#/domains/questions/authoring/rich-content";
 import {
   deriveResponseFieldRequiredFromInput,
   extractReferenceIdsFromInputPrimitive,
@@ -26,6 +27,7 @@ import type {
 } from "../table-model";
 import {
   getTableCellPrimitiveBlocks,
+  validateTableEditorModel,
   validateTableEditorModelAnswers,
 } from "../table-model";
 import {
@@ -48,7 +50,7 @@ import {
 export function tableEditorModelToQuestionBlueprintDocument(
   model: TableEditorModel,
 ): QuestionBlueprintDocument {
-  validateTableEditorModelAnswers(model);
+  validateTableEditorModel(model);
   assertStandaloneTableHasOnlyLiteralValues(model);
 
   return {
@@ -92,6 +94,7 @@ export function tableEditorModelToQuestionBlueprintTableBlock(
   blockId: string,
   options?: { responseFieldIdPrefix?: string },
 ): QuestionBlueprintTableBlock {
+  validateTableEditorModel(model);
   const responseFieldsById = new Map(
     model.responseFields.map((field) => [field.id, field]),
   );
@@ -106,6 +109,7 @@ export function tableEditorModelToQuestionBlueprintTableBlock(
         ),
       ),
       columnId: cell.columnId,
+      ...(cell.formatting === undefined ? {} : { formatting: cell.formatting }),
       id: toCanonicalTableCellId(cell.id),
       rowId: cell.rowId,
     })),
@@ -145,6 +149,15 @@ function assertStandaloneTableHasOnlyLiteralValues(
         }
         throw new Error(
           `Standalone table input block ${block.id} references ${referenceIds[0]}, but standalone table conversion does not support references.`,
+        );
+      }
+
+      if (
+        block.type === "rich_text" &&
+        extractRichReferenceIds(block.content).length > 0
+      ) {
+        throw new Error(
+          `Standalone table rich text block ${block.id} references a reference, but standalone table conversion does not support references.`,
         );
       }
     }
@@ -228,7 +241,7 @@ export function questionBlueprintTableBlockToTableEditorModel(
         );
         if (!responseFieldIds.has(responseFieldId)) {
           throw new Error(
-            "Unsupported question blueprint document for composed editor.",
+            `Input block ${cellBlock.id} in cell ${cell.id} references missing response field ${responseFieldId}.`,
           );
         }
         const responseField = responseFieldsById.get(responseFieldId);
@@ -269,12 +282,13 @@ export function questionBlueprintTableBlockToTableEditorModel(
     return {
       blocks,
       columnId: cell.columnId,
+      ...(cell.formatting === undefined ? {} : { formatting: cell.formatting }),
       id: cell.id,
       rowId: cell.rowId,
     };
   });
 
-  return {
+  const model: TableEditorModel = {
     blockId: block.id,
     cells,
     columns: block.columns,
@@ -286,6 +300,8 @@ export function questionBlueprintTableBlockToTableEditorModel(
     showColumnNames: block.showColumnNames,
     showRowNames: block.showRowNames,
   };
+  validateTableEditorModel(model);
+  return model;
 }
 
 export function questionTableBlockToPreviewModel(
@@ -334,6 +350,7 @@ function tableQuestionCellToPreviewCell(
       ),
     ),
     columnId: cell.columnId,
+    ...(cell.formatting === undefined ? {} : { formatting: cell.formatting }),
     id: cell.id,
     rowId: cell.rowId,
   };

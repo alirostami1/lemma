@@ -27,5 +27,21 @@ describe("selectedBlockIdFromSelection", () => {
         type: "table_cell",
       }),
     ).toBe("table_1");
+    expect(
+      selectedBlockIdFromSelection({
+        blockId: "table_1",
+        selection: {
+          activeCell: { columnId: "column_1", rowId: "row_1" },
+          ranges: [
+            {
+              end: { columnId: "column_1", rowId: "row_1" },
+              start: { columnId: "column_1", rowId: "row_1" },
+            },
+          ],
+          type: "cells",
+        },
+        type: "table_cells",
+      }),
+    ).toBe("table_1");
   });
 });

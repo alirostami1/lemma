@@ -15,6 +15,22 @@ export {
 export { ReferenceChip } from "./reference-chip";
 export { RichContentPreview } from "./rich-content-preview";
 export {
+  addTableRangeToSelection,
+  describeTableSelection,
+  describeTableSelectionFromSummary,
+  extendTableSelection,
+  getCoordinatesInRange,
+  getSelectedTableCoordinateKeySet,
+  getSelectedTableCoordinates,
+  isActiveTableCell,
+  isCoordinateSelected,
   isTableSelectionEqual,
+  normalizeTableSelection,
+  selectTableCell,
+  selectTableRange,
+  type TableCellCoordinate,
+  type TableCellRange,
+  type TableCellSelection,
   type TableEditorSelection,
+  tableCoordinateKey,
 } from "./selection-types";

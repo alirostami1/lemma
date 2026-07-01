@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyInputGrading,
   type ComposedEditorModel,
+  cloneComposedBlockWithFreshIds,
   createDefaultComposedEditorModel,
   createDefaultTableEditorModel,
   createReferenceDraft,
@@ -31,6 +32,44 @@ describe("composed authoring helpers", () => {
     );
 
     expect(new Set(primitiveIds).size).toBe(primitiveIds.length);
+  });
+
+  it("preserves independent cell formatting when cloning a table", () => {
+    const table = createTableBlock("table_1");
+    const originalCell = table.table.cells[0];
+    if (!originalCell) {
+      throw new Error("Expected default table cell.");
+    }
+    originalCell.formatting = {
+      emphasis: "strong",
+      textAlign: "right",
+      tone: "highlight",
+    };
+    const model: ComposedEditorModel = {
+      blocks: [table],
+      references: [],
+      responseFields: [],
+      schemaVersion: 2,
+    };
+
+    const cloned = cloneComposedBlockWithFreshIds(model, table).block;
+    if (cloned.type !== "table") {
+      throw new Error("Expected cloned table.");
+    }
+
+    expect(cloned.id).not.toBe(table.id);
+    expect(cloned.table.cells[0]?.id).not.toBe(originalCell.id);
+    expect(cloned.table.cells[0]?.formatting).toEqual({
+      emphasis: "strong",
+      textAlign: "right",
+      tone: "highlight",
+    });
+    expect(cloned.table.cells[0]?.formatting).not.toBe(originalCell.formatting);
+    expect(originalCell.formatting).toEqual({
+      emphasis: "strong",
+      textAlign: "right",
+      tone: "highlight",
+    });
   });
 
   it("creates a default composed editor model", () => {

@@ -27,6 +27,7 @@ import {
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import { InlineContentRenderer } from "#/features/questions/editor-shared";
 import { RichTextBlockRenderer } from "#/features/questions/presentation/rich-text-block-renderer";
+import { tableCellFormattingClassName } from "./table-cell-view";
 
 type TableBlockPreviewWithReferencesProps = TableBlockPreviewProps & {
   referencePreviewCache?: ReferencePreviewCache;
@@ -84,7 +85,10 @@ export function TableBlockPreview({
                     return <td className="px-2 py-2" key={column.id} />;
                   }
                   return (
-                    <td className="space-y-2 px-2 py-2" key={cell.id}>
+                    <td
+                      className={`space-y-2 px-2 py-2 ${tableCellFormattingClassName(cell.formatting)}`}
+                      key={cell.id}
+                    >
                       {getTablePreviewCellPrimitiveBlocks(cell).length > 0 ? (
                         getTablePreviewCellPrimitiveBlocks(cell).map(
                           (cellBlock) => (

@@ -128,6 +128,13 @@ export type QuestionTableCell = {
   rowId: string;
   columnId: string;
   blocks: QuestionPrimitiveBlock[];
+  formatting?: QuestionTableCellFormatting;
+};
+
+export type QuestionTableCellFormatting = {
+  textAlign?: "left" | "center" | "right";
+  emphasis?: "normal" | "strong";
+  tone?: "default" | "muted" | "highlight";
 };
 
 export type QuestionTableBlock = {
@@ -382,6 +389,7 @@ function validatedTableBlock(
         return validatedPrimitiveBlock(cellBlock, responseFieldsById, failWith);
       }),
       columnId: cell.columnId,
+      ...optionalTableCellFormatting(cell, failWith),
       id: cell.id,
       rowId: cell.rowId,
     };
@@ -653,6 +661,46 @@ export function grading(
     failWith,
   );
   return { mode };
+}
+
+export function optionalTableCellFormatting(
+  cell: PlainObject,
+  failWith: (message: string) => never,
+): { formatting?: QuestionTableCellFormatting } {
+  const value = cell.formatting;
+  if (value === undefined) {
+    return {};
+  }
+
+  assertPlainRecord(value, "table cell formatting must be an object", failWith);
+
+  const formatting: QuestionTableCellFormatting = {};
+  if (value.textAlign !== undefined) {
+    formatting.textAlign = oneOf(
+      value.textAlign,
+      ["left", "center", "right"] as const,
+      "table cell textAlign",
+      failWith,
+    );
+  }
+  if (value.emphasis !== undefined) {
+    formatting.emphasis = oneOf(
+      value.emphasis,
+      ["normal", "strong"] as const,
+      "table cell emphasis",
+      failWith,
+    );
+  }
+  if (value.tone !== undefined) {
+    formatting.tone = oneOf(
+      value.tone,
+      ["default", "muted", "highlight"] as const,
+      "table cell tone",
+      failWith,
+    );
+  }
+
+  return { formatting };
 }
 
 function tableAxis(

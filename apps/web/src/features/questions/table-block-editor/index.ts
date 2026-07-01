@@ -1,9 +1,11 @@
 export type {
+  SelectedTableCoordinateSummary,
   TableAnswerState,
   TableAnswerValue,
   TableBlockEditorProps,
   TableBlockPreviewModel,
   TableBlockPreviewProps,
+  TableCellFormatting,
   TableEditorCell,
   TableEditorInputBlock,
   TableEditorModel,
@@ -28,25 +30,37 @@ export {
   reorderTableColumns,
   reorderTableRows,
   tableEditorModelToStaticPreviewModel,
+  validateTableEditorModel,
 } from "#/domains/questions/authoring";
 export { TableBlockEditor } from "./table-block-editor";
 export { TableBlockPreview } from "./table-block-preview";
 export { TableCanvas } from "./table-canvas";
 export { TableCellView } from "./table-cell-view";
+export {
+  makeSelectedTableCellsResponseInComposedModel,
+  makeSelectedTableCellsResponseInComposedModelResult,
+  type SelectedTableCellsResponseConversionResult,
+} from "./table-composed-operations";
 export { TableContextMenu } from "./table-context-menu";
 export {
   addTableColumn,
   addTableRow,
+  applyFormattingToSelectedCells,
+  clearFormattingFromSelectedCells,
   deleteTableColumn,
   deleteTableRow,
   duplicateTableColumn,
   duplicateTableRow,
   ensureResponseFieldForCell,
   ensureTableCell,
+  getFirstRangeBackedReferenceInTableCell,
+  getSelectedTableCoordinateSummary,
   getTableCell,
   getTableCellAt,
   makeContentCell,
   makeResponseCell,
+  makeSelectedCellsContent,
+  makeSelectedCellsResponse,
   moveColumnLeft,
   moveColumnRight,
   moveRowDown,
@@ -54,6 +68,8 @@ export {
   pruneUnusedResponseFields,
   repairMissingAnswerFieldForCell,
   resetTableLayout,
+  selectionHasRangeBackedReferences,
+  tableCellHasRangeBackedReference,
   updateContentCellContent,
   updateResponseCellCorrectValueSource,
   updateResponseFieldForCell,
@@ -69,7 +85,32 @@ export {
   createTableFromWorkbookRangeReference,
   getWorkbookCellRefAtOffset,
 } from "./table-range-operations";
-export type { TableEditorSelection } from "./table-selection";
+export {
+  addTableRangeToSelection,
+  describeTableSelection,
+  describeTableSelectionFromSummary,
+  extendTableSelection,
+  getCoordinatesInRange,
+  getSelectedTableCoordinateKeySet,
+  getSelectedTableCoordinates,
+  isActiveTableCell,
+  isCoordinateSelected,
+  isTableSelectionEqual,
+  normalizeTableSelection,
+  selectTableCell,
+  selectTableRange,
+  type TableCellCoordinate,
+  type TableCellRange,
+  type TableCellSelection,
+  type TableEditorSelection,
+  tableCoordinateKey,
+} from "./table-selection";
+export {
+  getTableSelectionActionState,
+  type TableSelectionActionState,
+  TableSelectionActions,
+  type TableSelectionAnswerActionResult,
+} from "./table-selection-actions";
 export type {
   WorkbookDimensionBounds,
   WorkbookPickerController,

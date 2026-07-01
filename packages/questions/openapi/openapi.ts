@@ -687,6 +687,35 @@ const containerBlockVariant = (blockSchemaName: string): OpenApiSchema => ({
   required: ["id", "kind", "type", "blocks"],
   type: "object",
 });
+const questionTableCellFormattingSchema: Schema = {
+  name: "QuestionTableCellFormatting",
+  schema: {
+    additionalProperties: false,
+    properties: {
+      emphasis: {
+        oneOf: [
+          { const: "normal", type: "string" },
+          { const: "strong", type: "string" },
+        ],
+      },
+      textAlign: {
+        oneOf: [
+          { const: "left", type: "string" },
+          { const: "center", type: "string" },
+          { const: "right", type: "string" },
+        ],
+      },
+      tone: {
+        oneOf: [
+          { const: "default", type: "string" },
+          { const: "muted", type: "string" },
+          { const: "highlight", type: "string" },
+        ],
+      },
+    },
+    type: "object",
+  },
+};
 const questionTableCellSchema: Schema = {
   name: "QuestionTableCell",
   schema: {
@@ -697,6 +726,7 @@ const questionTableCellSchema: Schema = {
         type: "array",
       },
       columnId: { minLength: 1, type: "string" },
+      formatting: schemaRef(questionTableCellFormattingSchema),
       id: { minLength: 1, type: "string" },
       rowId: { minLength: 1, type: "string" },
     },
@@ -883,6 +913,7 @@ const questionBlueprintTableCellSchema: Schema = {
         type: "array",
       },
       columnId: { minLength: 1, type: "string" },
+      formatting: schemaRef(questionTableCellFormattingSchema),
       id: { minLength: 1, type: "string" },
       rowId: { minLength: 1, type: "string" },
     },
@@ -900,6 +931,7 @@ const publicQuestionBlueprintTableCellSchema: Schema = {
         type: "array",
       },
       columnId: { minLength: 1, type: "string" },
+      formatting: schemaRef(questionTableCellFormattingSchema),
       id: { minLength: 1, type: "string" },
       rowId: { minLength: 1, type: "string" },
     },
@@ -2166,6 +2198,7 @@ export const schemas = Object.freeze([
   questionReferenceSchema,
   questionTableColumnSchema,
   questionTableRowSchema,
+  questionTableCellFormattingSchema,
   questionPrimitiveBlockSchema,
   questionTableCellSchema,
   questionTableBlockSchema,

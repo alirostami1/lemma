@@ -4,7 +4,10 @@ import {
   moveTableRow,
   reorderTableColumns,
   reorderTableRows,
+  type TableCellFormatting,
+  type TableEditorCell,
   type TableEditorModel,
+  validateTableEditorModel,
 } from "#/features/questions/table-block-editor";
 
 const baseModel: TableEditorModel = {
@@ -110,3 +113,143 @@ describe("table reorder helpers", () => {
     ]);
   });
 });
+
+describe("table model validation", () => {
+  it("accepts the valid base model", () => {
+    expect(() => validateTableEditorModel(baseModel)).not.toThrow();
+  });
+
+  it("rejects duplicate row and column ids", () => {
+    expect(() =>
+      validateTableEditorModel({
+        ...baseModel,
+        rows: [
+          baseModel.rows[0] ?? missingAxis(),
+          baseModel.rows[0] ?? missingAxis(),
+        ],
+      }),
+    ).toThrow("Row id row_1 is duplicated.");
+    expect(() =>
+      validateTableEditorModel({
+        ...baseModel,
+        columns: [
+          baseModel.columns[0] ?? missingAxis(),
+          baseModel.columns[0] ?? missingAxis(),
+        ],
+      }),
+    ).toThrow("Column id column_1 is duplicated.");
+  });
+
+  it("rejects duplicate cell ids and primitive ids", () => {
+    const firstCell = requireCell(0);
+    const secondCell = requireCell(1);
+
+    expect(() =>
+      validateTableEditorModel({
+        ...baseModel,
+        cells: [firstCell, { ...secondCell, id: firstCell.id }],
+      }),
+    ).toThrow("Table cell id cell_1 is duplicated.");
+    expect(() =>
+      validateTableEditorModel({
+        ...baseModel,
+        cells: [
+          firstCell,
+          {
+            ...secondCell,
+            blocks: [
+              {
+                content: [{ text: "Duplicate", type: "text" }],
+                id: "text_1",
+                type: "text",
+              },
+            ],
+          },
+        ],
+      }),
+    ).toThrow("Primitive block id text_1 is duplicated.");
+  });
+
+  it("rejects duplicate coordinates and missing axes", () => {
+    const firstCell = requireCell(0);
+    const secondCell = requireCell(1);
+
+    expect(() =>
+      validateTableEditorModel({
+        ...baseModel,
+        cells: [
+          firstCell,
+          {
+            ...secondCell,
+            columnId: firstCell.columnId,
+            rowId: firstCell.rowId,
+          },
+        ],
+      }),
+    ).toThrow("Table cell coordinate row_1/column_1 is duplicated.");
+    expect(() =>
+      validateTableEditorModel({
+        ...baseModel,
+        cells: [{ ...firstCell, rowId: "missing_row" }],
+      }),
+    ).toThrow("Table cell cell_1 references missing row missing_row.");
+    expect(() =>
+      validateTableEditorModel({
+        ...baseModel,
+        cells: [{ ...firstCell, columnId: "missing_column" }],
+      }),
+    ).toThrow("Table cell cell_1 references missing column missing_column.");
+  });
+
+  it("rejects invalid formatting and missing response fields", () => {
+    const firstCell = requireCell(0);
+    const secondCell = requireCell(1);
+
+    expect(() =>
+      validateTableEditorModel(modelWithInvalidFormatting(firstCell)),
+    ).toThrow("Table cell cell_1 has invalid text alignment.");
+    expect(() =>
+      validateTableEditorModel({
+        ...baseModel,
+        responseFields: [],
+        cells: [secondCell],
+      }),
+    ).toThrow(
+      "Input block input_1 in cell cell_2 references missing response field answer_1.",
+    );
+  });
+});
+
+function requireCell(index: number): TableEditorCell {
+  const cell = baseModel.cells[index];
+  if (!cell) {
+    throw new Error("Expected base table cell.");
+  }
+  return cell;
+}
+
+function missingAxis() {
+  throw new Error("Expected base axis.");
+}
+
+function createInvalidFormattingFixture(): TableCellFormatting {
+  const formatting: TableCellFormatting = { textAlign: "left" };
+  // Persisted/API JSON can contain invalid enum strings TypeScript would reject.
+  Object.defineProperty(formatting, "textAlign", { value: "diagonal" });
+  return formatting;
+}
+
+function modelWithInvalidFormatting(cell: TableEditorCell): TableEditorModel {
+  const formatting = createInvalidFormattingFixture();
+
+  return {
+    ...baseModel,
+    cells: [
+      {
+        ...cell,
+        formatting,
+      },
+    ],
+    responseFields: [],
+  };
+}

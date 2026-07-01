@@ -13,8 +13,10 @@ import {
   type BlueprintInlineContent,
   blueprintInlineContent,
   grading,
+  optionalTableCellFormatting,
   type QuestionGrading,
   type QuestionResponseField,
+  type QuestionTableCellFormatting,
   type RichContent,
   richContent,
   validatedResponseFields,
@@ -86,6 +88,7 @@ export type QuestionBlueprintTableCell = {
   rowId: string;
   columnId: string;
   blocks: QuestionBlueprintPrimitiveBlock[];
+  formatting?: QuestionTableCellFormatting;
 };
 
 export type QuestionBlueprintTableBlock = {
@@ -396,6 +399,7 @@ function validatedBlueprintTableBlock(
         );
       }),
       columnId: cell.columnId,
+      ...optionalTableCellFormatting(cell, failWith),
       id: cell.id,
       rowId: cell.rowId,
     };

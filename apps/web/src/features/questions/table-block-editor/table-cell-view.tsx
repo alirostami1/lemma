@@ -1,10 +1,13 @@
 import { cn } from "@lemma/ui/lib/utils";
+import type { KeyboardEvent, MouseEvent } from "react";
 import type {
   InputPrimitiveType,
+  TableCellFormatting,
   TableEditorCell,
   TableEditorPrimitiveBlock,
   TableResponseField,
 } from "#/domains/questions/authoring";
+
 import {
   getTableCellPrimitiveBlocks,
   normalizeInputPrimitiveForType,
@@ -13,37 +16,65 @@ import type { ReferencePreviewCache } from "#/domains/questions/reference-previe
 import { InlineContentRenderer } from "#/features/questions/editor-shared";
 import { RichTextBlockRenderer } from "#/features/questions/presentation/rich-text-block-renderer";
 
+export type TableCellActivation = {
+  shiftKey: boolean;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  source: "click" | "keyboard" | "pointer";
+};
+
 export function TableCellView({
   cell,
   responseField,
   referencePreviewCache,
   isSelected,
+  isActive,
+  selectOnClick = true,
   disabled,
+  ariaLabel,
   onSelect,
 }: {
   cell: TableEditorCell | null;
   responseField?: TableResponseField;
   referencePreviewCache?: ReferencePreviewCache;
   isSelected: boolean;
+  isActive?: boolean;
+  selectOnClick?: boolean;
   disabled?: boolean;
-  onSelect(): void;
+  ariaLabel?: string;
+  onSelect(activation: TableCellActivation): void;
 }) {
   return (
     <button
       aria-disabled={disabled}
+      aria-label={ariaLabel}
       className={cn(
-        "min-h-12 w-full rounded-md border border-border/70 bg-background p-2 text-left text-sm transition",
+        "h-full min-h-12 w-full overflow-hidden rounded-md border border-border/70 bg-background p-2 text-left text-sm transition",
+        cell ? tableCellFormattingClassName(cell.formatting) : null,
         disabled
           ? "cursor-default opacity-70"
           : "cursor-pointer hover:border-primary/60 focus:outline-none focus:ring-2 focus:ring-ring",
-        isSelected && "border-primary ring-2 ring-primary/20",
+        isSelected && "border-primary bg-primary/5",
+        isActive && "ring-2 ring-primary/30",
       )}
       disabled={disabled}
       onClick={(event) => {
         event.stopPropagation();
-        if (!disabled) {
-          onSelect();
+        if (!disabled && selectOnClick) {
+          onSelect(activationFromEvent(event, "click"));
         }
+      }}
+      onKeyDown={(event) => {
+        if (
+          disabled ||
+          !selectOnClick ||
+          (event.key !== "Enter" && event.key !== " ")
+        ) {
+          return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        onSelect(activationFromEvent(event, "keyboard"));
       }}
       type="button"
     >
@@ -57,6 +88,31 @@ export function TableCellView({
         <span className="text-muted-foreground">Empty</span>
       )}
     </button>
+  );
+}
+
+function activationFromEvent(
+  event: KeyboardEvent<HTMLButtonElement> | MouseEvent<HTMLButtonElement>,
+  source: TableCellActivation["source"],
+): TableCellActivation {
+  return {
+    ctrlKey: event.ctrlKey,
+    metaKey: event.metaKey,
+    shiftKey: event.shiftKey,
+    source,
+  };
+}
+
+export function tableCellFormattingClassName(
+  formatting: TableCellFormatting | undefined,
+) {
+  return cn(
+    formatting?.textAlign === "center" && "text-center",
+    formatting?.textAlign === "right" && "text-right",
+    formatting?.textAlign === "left" && "text-left",
+    formatting?.emphasis === "strong" && "font-semibold",
+    formatting?.tone === "muted" && "bg-muted/50",
+    formatting?.tone === "highlight" && "bg-primary/10",
   );
 }
 
@@ -75,7 +131,7 @@ function CellContent({
   }
 
   return (
-    <div className="grid gap-2">
+    <div className="grid max-h-full gap-2 overflow-hidden">
       {blocks.map((block) => (
         <PrimitiveCellContent
           block={block}
@@ -99,7 +155,7 @@ function PrimitiveCellContent({
 }) {
   if (block.type === "text") {
     return (
-      <div className="whitespace-pre-wrap">
+      <div className="overflow-hidden whitespace-pre-wrap">
         {block.content.length > 0 ? (
           <InlineContentRenderer
             content={block.content}
@@ -129,7 +185,7 @@ function PrimitiveCellContent({
     responseField?.type ?? "text",
   );
   return (
-    <div className="grid gap-1">
+    <div className="grid max-h-full gap-1 overflow-hidden">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-medium text-muted-foreground">
           {fieldLabel}

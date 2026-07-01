@@ -5,11 +5,13 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { PublicQuestionBlueprintPrimitiveBlock } from "./publicQuestionBlueprintPrimitiveBlock.ts";
+import type { QuestionTableCellFormatting } from "./questionTableCellFormatting.ts";
 
 export interface PublicQuestionBlueprintTableCell {
   blocks: PublicQuestionBlueprintPrimitiveBlock[];
   /** @minLength 1 */
   columnId: string;
+  formatting?: QuestionTableCellFormatting;
   /** @minLength 1 */
   id: string;
   /** @minLength 1 */
