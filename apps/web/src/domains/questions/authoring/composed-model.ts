@@ -6,6 +6,15 @@ import {
   replaceInlineReferenceId,
 } from "./inline-content";
 import {
+  createDefaultRequiredInputPrimitiveForNewAnswer,
+  extractInputPrimitiveReferenceIdsByRole,
+  extractReferenceIdsFromInputPrimitive,
+  type InputPrimitive,
+  type InputPrimitivePreviewState,
+  type InputPrimitiveType,
+  replaceReferenceIdInInputPrimitive,
+} from "./input-primitive";
+import {
   createDefaultRichContent,
   extractRichReferenceIds,
   replaceRichReferenceId,
@@ -35,9 +44,8 @@ export type {
 
 export type ComposedResponseField = {
   id: string;
-  type: "text" | "number" | "boolean";
+  type: InputPrimitiveType;
   label?: string;
-  required?: boolean;
 };
 
 export const COMPOSED_AUTHORING_SCHEMA_VERSION = 2;
@@ -70,6 +78,16 @@ export type ReferenceUsage =
       responseFieldId: string;
     }
   | {
+      type: "response_input_default";
+      blockId: string;
+      responseFieldId: string;
+    }
+  | {
+      type: "response_input_options";
+      blockId: string;
+      responseFieldId: string;
+    }
+  | {
       type: "table_content_cell";
       blockId: string;
       cellId: string;
@@ -80,6 +98,20 @@ export type ReferenceUsage =
     }
   | {
       type: "table_answer_cell";
+      blockId: string;
+      cellId: string;
+      cellBlockId: string;
+      responseFieldId: string;
+    }
+  | {
+      type: "table_input_default";
+      blockId: string;
+      cellId: string;
+      cellBlockId: string;
+      responseFieldId: string;
+    }
+  | {
+      type: "table_input_options";
       blockId: string;
       cellId: string;
       cellBlockId: string;
@@ -102,6 +134,7 @@ export type ComposedResponseEditorBlock = {
   id: string;
   type: "response";
   responseFieldId: string;
+  input?: InputPrimitive;
   label?: string;
   placeholder?: string;
   correctValueSource?: ValueExpression;
@@ -170,6 +203,7 @@ export type ComposedResponsePreviewBlock = {
   id: string;
   type: "response";
   responseFieldId: string;
+  inputState?: InputPrimitivePreviewState;
   label?: string;
   placeholder?: string;
 };
@@ -305,6 +339,9 @@ export function createResponseBlock(
     },
     grading: overrides.grading ?? { mode: "exact" },
     id,
+    input:
+      overrides.input ??
+      createDefaultRequiredInputPrimitiveForNewAnswer("text"),
     label: overrides.label,
     placeholder: overrides.placeholder,
     points: overrides.points ?? 1,
@@ -345,7 +382,6 @@ export function createDefaultComposedEditorModel(): ComposedEditorModel {
       {
         id: responseFieldId,
         label: "Answer",
-        required: true,
         type: "text",
       },
     ],
@@ -472,7 +508,7 @@ export function getReferenceUsage(
           });
         }
         break;
-      case "response":
+      case "response": {
         for (const referenceId of extractReferenceIdsFromValueExpression(
           block.correctValueSource,
         )) {
@@ -482,7 +518,25 @@ export function getReferenceUsage(
             type: "response_answer",
           });
         }
+        const inputReferenceIds = extractInputPrimitiveReferenceIdsByRole(
+          block.input,
+        );
+        for (const referenceId of inputReferenceIds.defaultValueSource) {
+          addReferenceUsage(usage, referenceId, {
+            blockId: block.id,
+            responseFieldId: block.responseFieldId,
+            type: "response_input_default",
+          });
+        }
+        for (const referenceId of inputReferenceIds.optionsSource) {
+          addReferenceUsage(usage, referenceId, {
+            blockId: block.id,
+            responseFieldId: block.responseFieldId,
+            type: "response_input_options",
+          });
+        }
         break;
+      }
       case "table":
         for (const cell of block.table.cells) {
           for (const cellBlock of getTableCellPrimitiveBlocks(cell)) {
@@ -531,6 +585,27 @@ export function getReferenceUsage(
                   cellBlockId: cellBlock.id,
                   responseFieldId: cellBlock.responseFieldId,
                   type: "table_answer_cell",
+                });
+              }
+              const inputReferenceIds = extractInputPrimitiveReferenceIdsByRole(
+                cellBlock.input,
+              );
+              for (const referenceId of inputReferenceIds.defaultValueSource) {
+                addReferenceUsage(usage, referenceId, {
+                  blockId: block.id,
+                  cellId: cell.id,
+                  cellBlockId: cellBlock.id,
+                  responseFieldId: cellBlock.responseFieldId,
+                  type: "table_input_default",
+                });
+              }
+              for (const referenceId of inputReferenceIds.optionsSource) {
+                addReferenceUsage(usage, referenceId, {
+                  blockId: block.id,
+                  cellId: cell.id,
+                  cellBlockId: cellBlock.id,
+                  responseFieldId: cellBlock.responseFieldId,
+                  type: "table_input_options",
                 });
               }
             }
@@ -678,7 +753,10 @@ function getReferenceIdsUsedByBlock(block: ComposedEditorBlock): string[] {
     case "rich_text":
       return extractRichReferenceIds(block.content);
     case "response":
-      return extractReferenceIdsFromValueExpression(block.correctValueSource);
+      return [
+        ...extractReferenceIdsFromValueExpression(block.correctValueSource),
+        ...extractReferenceIdsFromInputPrimitive(block.input),
+      ];
     case "table":
       return block.table.cells.flatMap((cell) =>
         getTableCellPrimitiveBlocks(cell).flatMap(
@@ -808,6 +886,11 @@ function replaceReferenceIdUsagesInComposedEditorModel(
               previousReferenceId,
               nextReferenceId,
             ),
+            input: replaceReferenceIdInInputPrimitive(
+              block.input,
+              previousReferenceId,
+              nextReferenceId,
+            ),
           };
         case "table":
           return {
@@ -851,7 +934,10 @@ function getReferenceIdsUsedByTablePrimitiveBlock(
     return extractRichReferenceIds(block.content);
   }
   if (block.type === "input") {
-    return extractReferenceIdsFromValueExpression(block.correctValueSource);
+    return [
+      ...extractReferenceIdsFromValueExpression(block.correctValueSource),
+      ...extractReferenceIdsFromInputPrimitive(block.input),
+    ];
   }
   return [];
 }
@@ -879,6 +965,11 @@ function replaceReferenceIdInTableCell(
           ...cellBlock,
           correctValueSource: replaceReferenceIdInValueExpression(
             cellBlock.correctValueSource,
+            previousReferenceId,
+            nextReferenceId,
+          ),
+          input: replaceReferenceIdInInputPrimitive(
+            cellBlock.input,
             previousReferenceId,
             nextReferenceId,
           ),
@@ -956,6 +1047,7 @@ function cloneComposedBlock(
         ...block,
         correctValueSource: structuredClone(block.correctValueSource),
         id: context.allocateBlockId("response"),
+        input: structuredClone(block.input),
         responseFieldId,
       };
     }

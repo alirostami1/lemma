@@ -1,3 +1,4 @@
+import { createDefaultRequiredInputPrimitiveForNewAnswer } from "./input-primitive";
 import {
   getPrimaryTableInputBlock,
   getPrimaryTableTextBlock,
@@ -168,8 +169,7 @@ export function repairMissingAnswerFieldForCell(
   const responseField: TableResponseField = {
     id: inputBlock.responseFieldId,
     label: inputBlock.label ?? nextTableAnswerLabel(model),
-    required: true,
-    type: DEFAULT_TABLE_ANSWER_FIELD_TYPE,
+    type: inputBlock.input?.type ?? DEFAULT_TABLE_ANSWER_FIELD_TYPE,
   };
 
   return {
@@ -331,7 +331,6 @@ function duplicateInputBlock(
     modelForDuplicate(responseFields),
     {
       label: block.label,
-      required: sourceField.required,
       type: sourceField.type,
     },
   );
@@ -340,6 +339,9 @@ function duplicateInputBlock(
   return {
     ...block,
     id,
+    input:
+      block.input ??
+      createDefaultRequiredInputPrimitiveForNewAnswer(responseField.type),
     label: block.label ?? responseField.label,
     responseFieldId: responseField.id,
   };
@@ -378,6 +380,9 @@ function createAnswerCellForPosition({
             `${model.blockId ?? "table"}_${cellId}_input`,
             model.cells.flatMap((cell) => cell.blocks.map((block) => block.id)),
           ),
+          input: createDefaultRequiredInputPrimitiveForNewAnswer(
+            responseField.type,
+          ),
           label: responseField.label,
           points: 1,
           responseFieldId: responseField.id,
@@ -411,7 +416,6 @@ function createNextTableAnswerField(
   input?: {
     label?: string;
     type?: TableResponseField["type"];
-    required?: boolean;
   },
 ): TableResponseField {
   const id = nextAvailableId("answer", getUsedTableAnswerFieldIds(model));
@@ -419,7 +423,6 @@ function createNextTableAnswerField(
   return {
     id,
     label: input?.label ?? nextTableAnswerLabel(model),
-    required: input?.required ?? true,
     type: input?.type ?? DEFAULT_TABLE_ANSWER_FIELD_TYPE,
   };
 }

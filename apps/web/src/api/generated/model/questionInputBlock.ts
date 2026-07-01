@@ -6,10 +6,12 @@
  */
 import type { QuestionInputBlockKind } from "./questionInputBlockKind.ts";
 import type { QuestionInputBlockType } from "./questionInputBlockType.ts";
+import type { QuestionInputPrimitive } from "./questionInputPrimitive.ts";
 
 export interface QuestionInputBlock {
   /** @minLength 1 */
   id: string;
+  input: QuestionInputPrimitive;
   kind: QuestionInputBlockKind;
   label?: string;
   placeholder?: string;

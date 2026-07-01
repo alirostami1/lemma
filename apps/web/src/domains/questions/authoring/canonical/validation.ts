@@ -13,6 +13,12 @@ import {
   flattenComposedBlocks,
 } from "../composed-model";
 import {
+  extractReferenceIdsFromInputPrimitive,
+  type InputPrimitive,
+  normalizeInputPrimitiveForType,
+  validateInputPrimitiveConfig,
+} from "../input-primitive";
+import {
   getTableCellPrimitiveBlocks,
   requiresCorrectValueSource,
   type TableEditorInputBlock,
@@ -177,6 +183,24 @@ export function validateComposedEditorModel(model: ComposedEditorModel) {
       continue;
     }
     if (block.type === "response") {
+      const responseField = model.responseFields.find(
+        (field) => field.id === block.responseFieldId,
+      );
+      if (
+        responseField &&
+        block.input &&
+        block.input.type !== responseField.type
+      ) {
+        throw new Error(
+          `Input block ${block.id} type must match response field ${responseField.id}.`,
+        );
+      }
+      validateEditorInputPrimitiveConfig(
+        responseField
+          ? normalizeInputPrimitiveForType(block.input, responseField.type)
+          : block.input,
+        `Input block ${block.id}`,
+      );
       if (
         requiresCorrectValueSource(block.grading) &&
         block.correctValueSource === undefined
@@ -186,7 +210,10 @@ export function validateComposedEditorModel(model: ComposedEditorModel) {
         );
       }
       validateReferenceIds(
-        extractReferenceIdsFromValueExpression(block.correctValueSource),
+        [
+          ...extractReferenceIdsFromValueExpression(block.correctValueSource),
+          ...extractReferenceIdsFromInputPrimitive(block.input),
+        ],
         referenceIds,
       );
       continue;
@@ -195,7 +222,33 @@ export function validateComposedEditorModel(model: ComposedEditorModel) {
       continue;
     }
     for (const cell of block.table.cells) {
+      const responseFieldsById = new Map(
+        block.table.responseFields.map((field) => [field.id, field]),
+      );
       for (const cellBlock of getTableCellPrimitiveBlocks(cell)) {
+        if (cellBlock.type === "input") {
+          const responseField = responseFieldsById.get(
+            cellBlock.responseFieldId,
+          );
+          if (
+            responseField &&
+            cellBlock.input &&
+            cellBlock.input.type !== responseField.type
+          ) {
+            throw new Error(
+              `Input block ${cellBlock.id} type must match response field ${responseField.id}.`,
+            );
+          }
+          validateEditorInputPrimitiveConfig(
+            responseField
+              ? normalizeInputPrimitiveForType(
+                  cellBlock.input,
+                  responseField.type,
+                )
+              : cellBlock.input,
+            `Input block ${cellBlock.id} in cell ${cell.id}`,
+          );
+        }
         const source =
           cellBlock.type === "text"
             ? extractInlineReferenceIds(cellBlock.content)
@@ -207,6 +260,21 @@ export function validateComposedEditorModel(model: ComposedEditorModel) {
         validateReferenceIds(source, referenceIds);
       }
     }
+  }
+}
+
+function validateEditorInputPrimitiveConfig(
+  input: InputPrimitive | undefined,
+  label: string,
+): void {
+  if (!input) {
+    return;
+  }
+  const result = validateInputPrimitiveConfig(input);
+  if (!result.valid) {
+    throw new Error(
+      `${label} settings are invalid: ${result.errors[0]?.message ?? "Answer settings are invalid."}`,
+    );
   }
 }
 
@@ -222,7 +290,10 @@ function extractTableInputReferenceIds(
       `Input block ${block.id} in cell ${cellId} is missing correct value source for ${block.grading.mode} grading.`,
     );
   }
-  return extractReferenceIdsFromValueExpression(block.correctValueSource);
+  return [
+    ...extractReferenceIdsFromValueExpression(block.correctValueSource),
+    ...extractReferenceIdsFromInputPrimitive(block.input),
+  ];
 }
 
 function validateReferenceIds(

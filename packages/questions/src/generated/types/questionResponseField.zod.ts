@@ -10,7 +10,7 @@ export const QuestionResponseField = zod.strictObject({
   id: zod.string(),
   label: zod.string().optional(),
   required: zod.boolean().optional(),
-  type: zod.enum(["text", "number", "boolean"]),
+  type: zod.enum(["text", "number", "select"]),
 });
 
 export type QuestionResponseField = zod.input<typeof QuestionResponseField>;

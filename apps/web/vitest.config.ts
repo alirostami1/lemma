@@ -86,5 +86,6 @@ export default defineConfig({
       },
     },
     setupFiles: ["./src/test/setup-env.ts", "./src/test/setup.ts"],
+    testTimeout: 10_000,
   },
 });

@@ -590,6 +590,10 @@ function documentWithResponseCorrectValueReference(input: {
         },
         grading: { mode: "exact" },
         id: "block_1",
+        input: {
+          schemaVersion: 1,
+          type: "text",
+        },
         kind: "primitive",
         points: 1,
         responseFieldId: "answer",
@@ -620,6 +624,10 @@ function documentWithTableResponseCorrectValueReference(input: {
                 },
                 grading: { mode: "exact" },
                 id: "cell_1_input",
+                input: {
+                  schemaVersion: 1,
+                  type: "text",
+                },
                 kind: "primitive",
                 points: 1,
                 responseFieldId: "answer",

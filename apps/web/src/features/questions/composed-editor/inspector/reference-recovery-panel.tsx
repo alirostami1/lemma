@@ -179,9 +179,13 @@ function toEditorSelection(usage: ReferenceUsage): EditorSelection {
     case "text_block":
     case "rich_text_block":
     case "response_answer":
+    case "response_input_default":
+    case "response_input_options":
       return { blockId: usage.blockId, type: "block" };
     case "table_content_cell":
     case "table_answer_cell":
+    case "table_input_default":
+    case "table_input_options":
       return {
         blockId: usage.blockId,
         cellId: usage.cellId,
@@ -201,10 +205,18 @@ function getUsageLabel(
       return `${getBlockLabel(model, usage.blockId, "rich_text", "Question block")} inserted value`;
     case "response_answer":
       return `${getBlockLabel(model, usage.blockId, "response", "Answer")} value`;
+    case "response_input_default":
+      return `${getBlockLabel(model, usage.blockId, "response", "Answer")} default`;
+    case "response_input_options":
+      return `${getBlockLabel(model, usage.blockId, "response", "Answer")} options`;
     case "table_content_cell":
       return "Table content cell inserted value";
     case "table_answer_cell":
       return "Table answer cell value";
+    case "table_input_default":
+      return "Table answer cell default";
+    case "table_input_options":
+      return "Table answer cell options";
   }
 }
 
@@ -228,7 +240,14 @@ function getBlockLabel(
 }
 
 function isAnswerUsage(usage: ReferenceUsage) {
-  return usage.type === "response_answer" || usage.type === "table_answer_cell";
+  return (
+    usage.type === "response_answer" ||
+    usage.type === "response_input_default" ||
+    usage.type === "response_input_options" ||
+    usage.type === "table_answer_cell" ||
+    usage.type === "table_input_default" ||
+    usage.type === "table_input_options"
+  );
 }
 
 function isInlineContentUsage(

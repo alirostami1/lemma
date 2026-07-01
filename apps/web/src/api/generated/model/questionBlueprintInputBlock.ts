@@ -7,6 +7,7 @@
 import type { QuestionBlueprintGrading } from "./questionBlueprintGrading.ts";
 import type { QuestionBlueprintInputBlockKind } from "./questionBlueprintInputBlockKind.ts";
 import type { QuestionBlueprintInputBlockType } from "./questionBlueprintInputBlockType.ts";
+import type { QuestionBlueprintInputPrimitive } from "./questionBlueprintInputPrimitive.ts";
 import type { QuestionValueExpression } from "./questionValueExpression.ts";
 
 export interface QuestionBlueprintInputBlock {
@@ -14,6 +15,7 @@ export interface QuestionBlueprintInputBlock {
   grading: QuestionBlueprintGrading;
   /** @minLength 1 */
   id: string;
+  input: QuestionBlueprintInputPrimitive;
   kind: QuestionBlueprintInputBlockKind;
   label?: string;
   placeholder?: string;

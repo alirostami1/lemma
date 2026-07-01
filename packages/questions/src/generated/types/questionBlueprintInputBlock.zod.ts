@@ -6,6 +6,7 @@
  */
 import { z as zod } from "zod";
 import { QuestionBlueprintGrading } from "./questionBlueprintGrading.zod.js";
+import { QuestionBlueprintInputPrimitive } from "./questionBlueprintInputPrimitive.zod.js";
 import { QuestionValueExpression } from "./questionValueExpression.zod.js";
 
 export const questionBlueprintInputBlockPointsExclusiveMin = 0;
@@ -14,6 +15,7 @@ export const QuestionBlueprintInputBlock = zod.strictObject({
   correctValueSource: QuestionValueExpression.optional(),
   grading: QuestionBlueprintGrading,
   id: zod.string().min(1),
+  input: QuestionBlueprintInputPrimitive,
   kind: zod.enum(["primitive"]),
   label: zod.string().optional(),
   placeholder: zod.string().optional(),

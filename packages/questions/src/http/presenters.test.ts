@@ -23,6 +23,7 @@ import {
 import {
   presentQuestion,
   presentQuestionBlueprint,
+  presentQuestionBlueprintAuthoring,
   presentQuestionGenerationRun,
 } from "./presenters.js";
 
@@ -174,6 +175,139 @@ describe("question presenters", () => {
     assert.equal(publicOutput.includes("top_level_input"), true);
     assert.equal(publicOutput.includes("container_input"), true);
     assert.equal(publicOutput.includes("table_input"), true);
+  });
+
+  it("sanitizes source-backed public blueprint input values", () => {
+    const questionBlueprint = createQuestionBlueprint(
+      {
+        createdByUserId: ownerUserId,
+        currentVersionId: blueprintVersionId,
+        description: questionBlueprintDescription(null),
+        document: questionBlueprintDocument({
+          blocks: [
+            {
+              ...privateInputBlock("choice_input", "choice_answer"),
+              input: {
+                defaultValueSource: {
+                  referenceId: "default_choice",
+                  schemaVersion: 1,
+                  type: "reference",
+                },
+                optionsSource: {
+                  referenceId: "choice_options",
+                  schemaVersion: 1,
+                  type: "reference",
+                },
+                schemaVersion: 1,
+                type: "select",
+                validation: { allowedValues: ["a"], required: true },
+              },
+            },
+          ],
+          references: [
+            {
+              id: "default_choice",
+              source: { schemaVersion: 1, type: "literal", value: "a" },
+            },
+            {
+              id: "choice_options",
+              source: {
+                schemaVersion: 1,
+                type: "literal",
+                value: [{ label: "Alpha", value: "a" }],
+              },
+            },
+          ],
+          responseFields: [{ id: "choice_answer", type: "select" }],
+          schemaVersion: 2,
+        }),
+        id: blueprintId,
+        name: questionBlueprintName("Blueprint"),
+        ownerUserId,
+        sources: [],
+        visibility: "private",
+      },
+      createdAt,
+    );
+    const response = presentQuestionBlueprint({ questionBlueprint });
+    const authoringResponse = presentQuestionBlueprintAuthoring({
+      questionBlueprint,
+    });
+
+    const publicOutput = JSON.stringify(response.questionBlueprint.document);
+    const authoringOutput = JSON.stringify(
+      authoringResponse.questionBlueprint.document,
+    );
+
+    assert.equal(publicOutput.includes("defaultValueSource"), false);
+    assert.equal(publicOutput.includes("optionsSource"), false);
+    assert.equal(publicOutput.includes("referenceId"), false);
+    assert.equal(publicOutput.includes("choice_options"), false);
+    assert.equal(
+      publicOutput.includes('"defaultValueStatus":"source_backed"'),
+      true,
+    );
+    assert.equal(
+      publicOutput.includes('"optionsStatus":"source_backed"'),
+      true,
+    );
+    assert.equal(publicOutput.includes('"options":[]'), false);
+    assert.equal(authoringOutput.includes("defaultValueSource"), true);
+    assert.equal(authoringOutput.includes("optionsSource"), true);
+  });
+
+  it("exposes public-safe literal input values", () => {
+    const response = presentQuestionBlueprint({
+      questionBlueprint: createQuestionBlueprint(
+        {
+          createdByUserId: ownerUserId,
+          currentVersionId: blueprintVersionId,
+          description: questionBlueprintDescription(null),
+          document: questionBlueprintDocument({
+            blocks: [
+              {
+                ...privateInputBlock("choice_input", "choice_answer"),
+                input: {
+                  defaultValueSource: {
+                    schemaVersion: 1,
+                    type: "literal",
+                    value: "a",
+                  },
+                  optionsSource: {
+                    schemaVersion: 1,
+                    type: "literal",
+                    value: [{ label: "Alpha", value: "a" }],
+                  },
+                  schemaVersion: 1,
+                  type: "select",
+                  validation: { allowedValues: ["a"], required: true },
+                },
+              },
+            ],
+            references: [],
+            responseFields: [{ id: "choice_answer", type: "select" }],
+            schemaVersion: 2,
+          }),
+          id: blueprintId,
+          name: questionBlueprintName("Blueprint"),
+          ownerUserId,
+          sources: [],
+          visibility: "private",
+        },
+        createdAt,
+      ),
+    });
+
+    const publicOutput = JSON.stringify(response.questionBlueprint.document);
+    assert.equal(publicOutput.includes('"defaultValue":"a"'), true);
+    assert.equal(publicOutput.includes('"defaultValueStatus":"literal"'), true);
+    assert.equal(
+      publicOutput.includes('"options":[{"label":"Alpha","value":"a"}]'),
+      true,
+    );
+    assert.equal(publicOutput.includes('"optionsStatus":"literal"'), true);
+    assert.equal(publicOutput.includes('"validation":{"required":true}'), true);
+    assert.equal(publicOutput.includes("allowedValues"), false);
   });
 });
 

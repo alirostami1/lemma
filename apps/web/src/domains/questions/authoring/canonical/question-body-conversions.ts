@@ -9,6 +9,7 @@ import {
   canonicalRichContentToComposed,
   questionResponseFieldToComposed,
   renderedContentToText,
+  toPreviewInputPrimitive,
 } from "./shared";
 import { questionTableBlockToPreviewModel } from "./table-conversions";
 
@@ -68,6 +69,16 @@ function questionBodyBlockToComposedPreviewBlock(
   }
   return {
     id: block.id,
+    inputState: {
+      input: toPreviewInputPrimitive(
+        block.input,
+        responseFields.find((field) => field.id === block.responseFieldId) ?? {
+          id: block.responseFieldId,
+          type: "text",
+        },
+      ),
+      status: "materialized",
+    },
     label: block.label,
     placeholder: block.placeholder,
     responseFieldId: block.responseFieldId,

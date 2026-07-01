@@ -141,7 +141,7 @@ function containerWithInvalidChild() {
   };
 }
 
-function validQuestionBody() {
+function validQuestionBody(publicInput = false) {
   return {
     blocks: [
       {
@@ -156,6 +156,16 @@ function validQuestionBody() {
               },
               {
                 id: "answer_input",
+                input: {
+                  ...(publicInput
+                    ? {
+                        defaultValueStatus: "none",
+                        optionsStatus: "none",
+                      }
+                    : {}),
+                  schemaVersion: 1,
+                  type: "text",
+                },
                 kind: "primitive",
                 responseFieldId: "answer",
                 type: "input",
@@ -177,7 +187,7 @@ function validQuestionBody() {
 }
 
 function validPublicBlueprintDocument() {
-  return validQuestionBody();
+  return validQuestionBody(true);
 }
 
 function validCreateDraftBody() {
@@ -197,6 +207,10 @@ function validCreateDraftBody() {
                 {
                   grading: { mode: "manual" },
                   id: "answer_input",
+                  input: {
+                    schemaVersion: 1,
+                    type: "text",
+                  },
                   kind: "primitive",
                   label: "Answer",
                   points: 1,
@@ -216,6 +230,10 @@ function validCreateDraftBody() {
                         {
                           grading: { mode: "manual" },
                           id: "cell_input",
+                          input: {
+                            schemaVersion: 1,
+                            type: "text",
+                          },
                           kind: "primitive",
                           points: 1,
                           responseFieldId: "cell_answer",

@@ -301,7 +301,6 @@ function createResponseField(id: string): ComposedResponseField {
   return {
     id,
     label: "Answer",
-    required: true,
     type: "text",
   };
 }

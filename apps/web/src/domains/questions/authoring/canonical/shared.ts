@@ -1,4 +1,6 @@
 import type {
+  QuestionBlueprintInputPrimitive as CanonicalQuestionBlueprintInputPrimitive,
+  QuestionInputPrimitive as CanonicalQuestionInputPrimitive,
   QuestionReference,
   QuestionReferenceSource,
   QuestionResponseField,
@@ -19,6 +21,16 @@ import type {
 } from "../composed-model";
 import type { ComposedInlineContent } from "../inline-content";
 import { formatInlineBlueprint, parseInlineBlueprint } from "../inline-content";
+import {
+  createDefaultInputPrimitive,
+  createDefaultPreviewInputPrimitive,
+  type InputPrimitive,
+  type InputPrimitiveType,
+  type InputPrimitiveValidation,
+  type InputSelectOption,
+  normalizeInputPrimitiveWithLegacyResponseFieldRequired,
+  type PreviewInputPrimitive,
+} from "../input-primitive";
 import type {
   ReferenceSourceDraft,
   TableAnswerValue,
@@ -41,7 +53,7 @@ export function pushUniqueResponseField(
   responseFields.push({
     id: field.id,
     label: field.label,
-    required: field.required,
+    required: "required" in field ? field.required : undefined,
     type: field.type,
   });
 }
@@ -77,7 +89,6 @@ export function questionResponseFieldToComposed(
   return {
     id: field.id,
     label: field.label,
-    required: field.required,
     type: toSupportedResponseFieldType(field.type),
   };
 }
@@ -88,7 +99,6 @@ export function questionResponseFieldToTable(
   return {
     id: field.id,
     label: field.label,
-    required: field.required,
     type: toSupportedResponseFieldType(field.type),
   };
 }
@@ -96,7 +106,7 @@ export function questionResponseFieldToTable(
 function toSupportedResponseFieldType(
   type: QuestionResponseField["type"],
 ): ComposedResponseField["type"] {
-  if (type === "text" || type === "number" || type === "boolean") {
+  if (type === "text" || type === "number" || type === "select") {
     return type;
   }
   throw new Error(`Unsupported response field type: ${type}`);
@@ -184,12 +194,118 @@ export function toValueExpression(
   }
 }
 
+export function toQuestionBlueprintInputPrimitive(
+  input: InputPrimitive,
+): CanonicalQuestionBlueprintInputPrimitive {
+  return {
+    schemaVersion: 1,
+    type: input.type,
+    ...(input.defaultValueSource === undefined
+      ? {}
+      : {
+          defaultValueSource: toQuestionValueExpression(
+            input.defaultValueSource,
+          ),
+        }),
+    ...(input.optionsSource === undefined
+      ? {}
+      : { optionsSource: toQuestionValueExpression(input.optionsSource) }),
+    ...(input.validation === undefined ? {} : { validation: input.validation }),
+  };
+}
+
+export function toInputPrimitive(
+  input: CanonicalQuestionBlueprintInputPrimitive | undefined,
+  fallback: { type: InputPrimitiveType; required?: boolean },
+): InputPrimitive {
+  if (!input) {
+    return createDefaultInputPrimitive(fallback);
+  }
+  const primitive: InputPrimitive = {
+    type: input.type,
+    ...(input.defaultValueSource === undefined
+      ? {}
+      : { defaultValueSource: toValueExpression(input.defaultValueSource) }),
+    ...(input.optionsSource === undefined
+      ? {}
+      : { optionsSource: toValueExpression(input.optionsSource) }),
+    ...inputValidation(input.validation),
+  };
+  return normalizeInputPrimitiveWithLegacyResponseFieldRequired(
+    primitive,
+    fallback,
+  );
+}
+
+export function toPreviewInputPrimitive(
+  input: CanonicalQuestionInputPrimitive | undefined,
+  fallback: { type: InputPrimitiveType; required?: boolean },
+): PreviewInputPrimitive {
+  if (!input) {
+    return createDefaultPreviewInputPrimitive(fallback);
+  }
+  const primitive: PreviewInputPrimitive = {
+    type: input.type,
+    ...(input.defaultValue === undefined
+      ? {}
+      : { defaultValue: toInputPrimitiveValue(input.defaultValue) }),
+    ...(input.options === undefined
+      ? {}
+      : { options: input.options.map(toInputSelectOption) }),
+    ...inputValidation(input.validation),
+  };
+  return normalizePreviewInputRequired(primitive, fallback);
+}
+
 export function renderedContentToText(content: RenderedInlineContent[]) {
   return content
     .map((item) =>
       item.type === "text" ? (item.text ?? "") : (item.displayValue ?? ""),
     )
     .join("");
+}
+
+function inputValidation(validation: InputPrimitiveValidation | undefined): {
+  validation?: InputPrimitiveValidation;
+} {
+  return validation === undefined ? {} : { validation };
+}
+
+function normalizePreviewInputRequired(
+  input: PreviewInputPrimitive,
+  fallback: { required?: boolean },
+): PreviewInputPrimitive {
+  if (fallback.required === undefined) {
+    return input;
+  }
+  if (input.validation?.required === undefined) {
+    return {
+      ...input,
+      validation: { ...(input.validation ?? {}), required: fallback.required },
+    };
+  }
+  if (input.validation?.required !== fallback.required) {
+    throw new Error("Input required setting must match response field.");
+  }
+  return input;
+}
+
+function toInputPrimitiveValue(value: unknown) {
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "number"
+  ) {
+    return value;
+  }
+  return null;
+}
+
+function toInputSelectOption(option: InputSelectOption): InputSelectOption {
+  return {
+    ...(option.label === undefined ? {} : { label: option.label }),
+    value: option.value,
+  };
 }
 
 export function assertNever(value: never): never {

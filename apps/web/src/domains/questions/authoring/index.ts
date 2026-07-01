@@ -1,5 +1,6 @@
 export * from "./composed-model";
 export * from "./inline-content";
+export * from "./input-primitive";
 export * from "./rich-content";
 export * from "./rich-content-types";
 export * from "./rich-markdown";

@@ -3,6 +3,7 @@ import {
   applyInputGrading,
   type ComposedEditorModel,
   createDefaultComposedEditorModel,
+  createDefaultTableEditorModel,
   createReferenceDraft,
   createResponseBlock,
   createTableBlock,
@@ -12,9 +13,13 @@ import {
   getComposedEditorReferenceUsage,
   getReferenceUsage,
   getUnusedComposedReferences,
+  type InputPrimitive,
+  inputPrimitivePreviewStateFromEditorInput,
+  normalizeInputPrimitiveForType,
   stripUnusedComposedReferences,
   type TableEditorInputBlock,
   tableEditorModelToStaticPreviewModel,
+  validateInputPrimitiveConfig,
 } from "#/domains/questions/authoring";
 import { validateComposedEditorModel } from "./canonical/validation";
 
@@ -40,6 +45,10 @@ describe("composed authoring helpers", () => {
           correctValueSource: { type: "literal", value: "" },
           grading: { mode: "exact" },
           id: "response_1",
+          input: {
+            type: "text",
+            validation: { required: true },
+          },
           label: undefined,
           placeholder: "Answer",
           points: 1,
@@ -52,11 +61,151 @@ describe("composed authoring helpers", () => {
         {
           id: "answer_1",
           label: "Answer",
-          required: true,
           type: "text",
         },
       ],
       schemaVersion: 2,
+    });
+  });
+
+  it("does not make missing input normalization required by default", () => {
+    expect(normalizeInputPrimitiveForType(undefined, "text")).toEqual({
+      type: "text",
+    });
+    expect(
+      normalizeInputPrimitiveForType(undefined, "text", {
+        requiredFallback: true,
+      }),
+    ).toEqual({
+      type: "text",
+      validation: { required: true },
+    });
+  });
+
+  it("creates new table answer cells as required through the creation path", () => {
+    const inputBlock = createDefaultTableEditorModel().cells[1]?.blocks[0];
+
+    expect(inputBlock).toMatchObject({
+      input: { validation: { required: true } },
+      type: "input",
+    });
+  });
+
+  it("marks reference-backed select options as unresolved in authoring preview", () => {
+    expect(
+      inputPrimitivePreviewStateFromEditorInput(
+        {
+          optionsSource: { referenceId: "choices", type: "reference" },
+          type: "select",
+          validation: { allowedValues: ["a"], required: true },
+        },
+        { type: "select" },
+      ),
+    ).toEqual({
+      input: {
+        optionsSource: { referenceId: "choices", type: "reference" },
+        type: "select",
+        validation: { allowedValues: ["a"], required: true },
+      },
+      message: "Options are not available in this preview.",
+      status: "unresolved_options",
+    });
+  });
+
+  it("materializes literal select options in authoring preview", () => {
+    expect(
+      inputPrimitivePreviewStateFromEditorInput(
+        {
+          optionsSource: {
+            type: "literal",
+            value: [{ label: "Alpha", value: "a" }],
+          },
+          type: "select",
+          validation: { allowedValues: ["a"] },
+        },
+        { type: "select" },
+      ),
+    ).toEqual({
+      input: {
+        options: [{ label: "Alpha", value: "a" }],
+        type: "select",
+        validation: { allowedValues: ["a"] },
+      },
+      status: "materialized",
+    });
+  });
+
+  it("validates reference-backed select options without materializing them", () => {
+    expect(
+      validateInputPrimitiveConfig({
+        optionsSource: { referenceId: "choices", type: "reference" },
+        type: "select",
+        validation: { allowedValues: ["a", "b"] },
+      }),
+    ).toEqual({ errors: [], valid: true });
+  });
+
+  it.each([
+    [
+      "duplicate allowed values",
+      { allowedValues: ["a", "a"] },
+      "Allowed value a is duplicated.",
+    ],
+    [
+      "literal default outside allowed values",
+      { allowedValues: ["a"] },
+      "Default answer must be one of the accepted values.",
+      "b",
+    ],
+    [
+      "regex validation",
+      { regex: "^a$" },
+      "Only text answers can use a required format.",
+    ],
+    [
+      "minimum validation",
+      { min: 1 },
+      "Only number answers can use a minimum.",
+    ],
+    [
+      "maximum validation",
+      { max: 1 },
+      "Only number answers can use a maximum.",
+    ],
+  ])("rejects reference-backed select %s", (_name, validation, message, defaultValue?) => {
+    const result = validateInputPrimitiveConfig({
+      ...(defaultValue === undefined
+        ? {}
+        : {
+            defaultValueSource: {
+              type: "literal" as const,
+              value: defaultValue,
+            },
+          }),
+      optionsSource: { referenceId: "choices", type: "reference" },
+      type: "select",
+      validation,
+    });
+
+    expect(result).toMatchObject({ valid: false });
+    expect(result.errors).toContainEqual(expect.objectContaining({ message }));
+  });
+
+  it("rejects invalid literal default types without coercing them", () => {
+    // Represents persisted or transport-corrupted data rejected by TypeScript.
+    const input = {
+      defaultValueSource: { type: "literal", value: { invalid: true } },
+      type: "text",
+    } as unknown as InputPrimitive;
+
+    expect(validateInputPrimitiveConfig(input)).toMatchObject({
+      errors: [
+        expect.objectContaining({
+          code: "invalid_default",
+          message: "default value must be a string",
+        }),
+      ],
+      valid: false,
     });
   });
 
@@ -95,6 +244,9 @@ describe("composed authoring helpers", () => {
         {
           grading: { mode: "exact" },
           id: "response_1",
+          input: {
+            type: "text",
+          },
           points: 1,
           responseFieldId: "answer_1",
           type: "response",
@@ -136,6 +288,135 @@ describe("composed authoring helpers", () => {
     expect(() => validateComposedEditorModel(model)).toThrow(
       "Input block response_1 is missing correct value source for case_insensitive_text grading.",
     );
+  });
+
+  it.each([
+    [
+      "invalid regex",
+      {
+        type: "text" as const,
+        validation: { regex: "[" },
+      },
+      "Answer format is invalid.",
+    ],
+    [
+      "number min greater than max",
+      {
+        type: "number" as const,
+        validation: { max: 1, min: 10 },
+      },
+      "Minimum must be no greater than maximum.",
+    ],
+    [
+      "duplicate select options",
+      {
+        optionsSource: {
+          type: "literal" as const,
+          value: [{ value: "a" }, { value: "a" }],
+        },
+        type: "select" as const,
+      },
+      "Option a is duplicated.",
+    ],
+    [
+      "duplicate allowed values",
+      {
+        optionsSource: {
+          type: "literal" as const,
+          value: [{ value: "a" }],
+        },
+        type: "select" as const,
+        validation: { allowedValues: ["a", "a"] },
+      },
+      "Allowed value a is duplicated.",
+    ],
+    [
+      "allowed value outside options",
+      {
+        optionsSource: {
+          type: "literal" as const,
+          value: [{ value: "a" }],
+        },
+        type: "select" as const,
+        validation: { allowedValues: ["b"] },
+      },
+      "Allowed values must match available options.",
+    ],
+    [
+      "default outside accepted select values",
+      {
+        defaultValueSource: { type: "literal" as const, value: "b" },
+        optionsSource: {
+          type: "literal" as const,
+          value: [{ value: "a" }],
+        },
+        type: "select" as const,
+      },
+      "Default answer must be one of the accepted values.",
+    ],
+    [
+      "regex on number",
+      {
+        type: "number" as const,
+        validation: { regex: "^a$" },
+      },
+      "Only text answers can use a required format.",
+    ],
+    [
+      "regex on select",
+      {
+        optionsSource: { type: "literal" as const, value: [] },
+        type: "select" as const,
+        validation: { regex: "^a$" },
+      },
+      "Only text answers can use a required format.",
+    ],
+    [
+      "min on text",
+      {
+        type: "text" as const,
+        validation: { min: 1 },
+      },
+      "Only number answers can use a minimum.",
+    ],
+    [
+      "max on select",
+      {
+        optionsSource: { type: "literal" as const, value: [] },
+        type: "select" as const,
+        validation: { max: 1 },
+      },
+      "Only number answers can use a maximum.",
+    ],
+    [
+      "options on text",
+      {
+        optionsSource: {
+          type: "literal" as const,
+          value: [{ value: "a" }],
+        },
+        type: "text" as const,
+      },
+      "Only choice answers can define an options source.",
+    ],
+  ])("rejects invalid primitive config: %s", (_name, input, message) => {
+    expect(() => validateComposedEditorModel(modelWithInput(input))).toThrow(
+      message,
+    );
+  });
+
+  it("rejects invalid table-cell primitive config", () => {
+    expect(() =>
+      validateComposedEditorModel(
+        modelWithTableInput({
+          optionsSource: {
+            type: "literal",
+            value: [{ value: "a" }, { value: "a" }],
+          },
+          type: "select",
+        }),
+      ),
+    ).toThrow("Option a is duplicated.");
   });
 
   it("rejects table non-manual inputs without a correct value source", () => {
@@ -323,6 +604,17 @@ describe("composed authoring helpers", () => {
           },
           grading: { mode: "exact" },
           id: "response_1",
+          input: {
+            defaultValueSource: {
+              referenceId: "answer_default",
+              type: "reference",
+            },
+            optionsSource: {
+              referenceId: "answer_options",
+              type: "reference",
+            },
+            type: "select",
+          },
           points: 1,
           responseFieldId: "answer_1",
           type: "response",
@@ -365,6 +657,17 @@ describe("composed authoring helpers", () => {
                     },
                     grading: { mode: "exact" },
                     id: "cell_input_1",
+                    input: {
+                      defaultValueSource: {
+                        referenceId: "table_default",
+                        type: "reference",
+                      },
+                      optionsSource: {
+                        referenceId: "table_options",
+                        type: "reference",
+                      },
+                      type: "select",
+                    },
                     points: 1,
                     responseFieldId: "table_answer_1",
                     type: "input",
@@ -380,7 +683,7 @@ describe("composed authoring helpers", () => {
             responseFields: [
               {
                 id: "table_answer_1",
-                type: "text",
+                type: "select",
               },
             ],
             rows: [{ id: "row_1", label: "Row 1" }],
@@ -404,8 +707,24 @@ describe("composed authoring helpers", () => {
           source: { type: "literal", value: "gamma" },
         },
         {
+          id: "answer_default",
+          source: { type: "literal", value: "a" },
+        },
+        {
+          id: "answer_options",
+          source: { type: "literal", value: ["a"] },
+        },
+        {
           id: "table_ref",
           source: { type: "literal", value: "delta" },
+        },
+        {
+          id: "table_default",
+          source: { type: "literal", value: "b" },
+        },
+        {
+          id: "table_options",
+          source: { type: "literal", value: ["b"] },
         },
         {
           id: "rich_ref",
@@ -415,7 +734,7 @@ describe("composed authoring helpers", () => {
       responseFields: [
         {
           id: "answer_1",
-          type: "text",
+          type: "select",
         },
       ],
       schemaVersion: 2,
@@ -440,6 +759,26 @@ describe("composed authoring helpers", () => {
               blockId: "response_1",
               responseFieldId: "answer_1",
               type: "response_answer",
+            },
+          ],
+        ],
+        [
+          "answer_default",
+          [
+            {
+              blockId: "response_1",
+              responseFieldId: "answer_1",
+              type: "response_input_default",
+            },
+          ],
+        ],
+        [
+          "answer_options",
+          [
+            {
+              blockId: "response_1",
+              responseFieldId: "answer_1",
+              type: "response_input_options",
             },
           ],
         ],
@@ -477,6 +816,30 @@ describe("composed authoring helpers", () => {
               cellBlockId: "cell_input_1",
               responseFieldId: "table_answer_1",
               type: "table_answer_cell",
+            },
+          ],
+        ],
+        [
+          "table_default",
+          [
+            {
+              blockId: "table_1",
+              cellId: "cell_1",
+              cellBlockId: "cell_input_1",
+              responseFieldId: "table_answer_1",
+              type: "table_input_default",
+            },
+          ],
+        ],
+        [
+          "table_options",
+          [
+            {
+              blockId: "table_1",
+              cellId: "cell_1",
+              cellBlockId: "cell_input_1",
+              responseFieldId: "table_answer_1",
+              type: "table_input_options",
             },
           ],
         ],
@@ -584,3 +947,58 @@ describe("composed authoring helpers", () => {
     });
   });
 });
+
+function modelWithInput(input: InputPrimitive): ComposedEditorModel {
+  return {
+    blocks: [
+      {
+        correctValueSource: { type: "literal", value: "" },
+        grading: { mode: "exact" },
+        id: "response_1",
+        input,
+        points: 1,
+        responseFieldId: "answer_1",
+        type: "response",
+      },
+    ],
+    references: [],
+    responseFields: [{ id: "answer_1", type: input.type }],
+    schemaVersion: 2,
+  };
+}
+
+function modelWithTableInput(input: InputPrimitive): ComposedEditorModel {
+  return {
+    blocks: [
+      createTableBlock("table_1", {
+        cells: [
+          {
+            blocks: [
+              {
+                correctValueSource: { type: "literal", value: "" },
+                grading: { mode: "exact" },
+                id: "cell_input_1",
+                input,
+                points: 1,
+                responseFieldId: "answer_1",
+                type: "input",
+              },
+            ],
+            columnId: "column_1",
+            id: "cell_1",
+            rowId: "row_1",
+          },
+        ],
+        columns: [{ id: "column_1", label: "Column" }],
+        prompt: "",
+        responseFields: [{ id: "answer_1", type: input.type }],
+        rows: [{ id: "row_1", label: "Row" }],
+        showColumnNames: true,
+        showRowNames: true,
+      }),
+    ],
+    references: [],
+    responseFields: [],
+    schemaVersion: 2,
+  };
+}

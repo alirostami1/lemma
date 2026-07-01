@@ -201,6 +201,450 @@ describe("blueprint readiness", () => {
     });
   });
 
+  it("flags missing top-level input default and options references", () => {
+    const model = readyModel();
+    const issues = getBlueprintReadinessIssues({
+      attachedSources: [],
+      model: {
+        ...model,
+        blocks: [
+          {
+            correctValueSource: { type: "literal", value: "a" },
+            grading: { mode: "exact" },
+            id: "response_1",
+            input: {
+              defaultValueSource: {
+                referenceId: "missing_default",
+                type: "reference",
+              },
+              optionsSource: {
+                referenceId: "missing_options",
+                type: "reference",
+              },
+              type: "select",
+            },
+            points: 1,
+            responseFieldId: "answer_1",
+            type: "response",
+          },
+        ],
+        responseFields: [{ id: "answer_1", label: "Answer", type: "select" }],
+      },
+      name: "Blueprint",
+    });
+
+    expect(issues).toContainEqual({
+      code: "missing_response_input_default",
+      target: { blockId: "response_1", referenceId: "missing_default" },
+    });
+    expect(issues).toContainEqual({
+      code: "missing_response_input_options",
+      target: { blockId: "response_1", referenceId: "missing_options" },
+    });
+  });
+
+  it("flags missing nested input default and options references", () => {
+    const model = readyModel();
+    const issues = getBlueprintReadinessIssues({
+      attachedSources: [],
+      model: {
+        ...model,
+        blocks: [
+          {
+            blocks: [
+              {
+                correctValueSource: { type: "literal", value: "a" },
+                grading: { mode: "exact" },
+                id: "response_1",
+                input: {
+                  defaultValueSource: {
+                    referenceId: "missing_default",
+                    type: "reference",
+                  },
+                  optionsSource: {
+                    referenceId: "missing_options",
+                    type: "reference",
+                  },
+                  type: "select",
+                },
+                points: 1,
+                responseFieldId: "answer_1",
+                type: "response",
+              },
+            ],
+            containerType: "page",
+            id: "page_1",
+            type: "container",
+          },
+        ],
+        responseFields: [{ id: "answer_1", label: "Answer", type: "select" }],
+      },
+      name: "Blueprint",
+    });
+
+    expect(issues).toContainEqual({
+      code: "missing_response_input_default",
+      target: { blockId: "response_1", referenceId: "missing_default" },
+    });
+    expect(issues).toContainEqual({
+      code: "missing_response_input_options",
+      target: { blockId: "response_1", referenceId: "missing_options" },
+    });
+  });
+
+  it("flags missing table-cell input default and options references", () => {
+    const model = readyModel();
+    const issues = getBlueprintReadinessIssues({
+      attachedSources: [],
+      model: {
+        ...model,
+        blocks: [
+          {
+            id: "table_1",
+            table: {
+              cells: [
+                {
+                  blocks: [
+                    {
+                      correctValueSource: { type: "literal", value: "a" },
+                      grading: { mode: "exact" },
+                      id: "cell_input_1",
+                      input: {
+                        defaultValueSource: {
+                          referenceId: "missing_default",
+                          type: "reference",
+                        },
+                        optionsSource: {
+                          referenceId: "missing_options",
+                          type: "reference",
+                        },
+                        type: "select",
+                      },
+                      points: 1,
+                      responseFieldId: "table_answer_1",
+                      type: "input",
+                    },
+                  ],
+                  columnId: "column_1",
+                  id: "cell_1",
+                  rowId: "row_1",
+                },
+              ],
+              columns: [{ id: "column_1", label: "Column" }],
+              prompt: "",
+              responseFields: [{ id: "table_answer_1", type: "select" }],
+              rows: [{ id: "row_1", label: "Row" }],
+              showColumnNames: true,
+              showRowNames: true,
+            },
+            type: "table",
+          },
+        ],
+      },
+      name: "Blueprint",
+    });
+
+    expect(issues).toContainEqual({
+      code: "missing_table_input_default",
+      target: {
+        blockId: "table_1",
+        cellId: "cell_1",
+        referenceId: "missing_default",
+      },
+    });
+    expect(issues).toContainEqual({
+      code: "missing_table_input_options",
+      target: {
+        blockId: "table_1",
+        cellId: "cell_1",
+        referenceId: "missing_options",
+      },
+    });
+  });
+
+  it("treats workbook refs in input defaults and options as used", () => {
+    const issues = getBlueprintReadinessIssues({
+      attachedSources: [
+        {
+          name: "Current workbook",
+          sourceId: "source_current",
+          type: "workbook",
+          workbookId: "workbook_current",
+        },
+      ],
+      model: {
+        ...readyModel(),
+        blocks: [
+          {
+            correctValueSource: { type: "literal", value: "a" },
+            grading: { mode: "exact" },
+            id: "response_1",
+            input: {
+              defaultValueSource: {
+                referenceId: "default_ref",
+                type: "reference",
+              },
+              optionsSource: {
+                referenceId: "options_ref",
+                type: "reference",
+              },
+              type: "select",
+            },
+            points: 1,
+            responseFieldId: "answer_1",
+            type: "response",
+          },
+        ],
+        references: [
+          {
+            id: "default_ref",
+            source: {
+              ref: "Sheet1!A1",
+              sourceId: "source_detached",
+              type: "workbook_cell",
+            },
+          },
+          {
+            id: "options_ref",
+            source: {
+              ref: "Sheet1!A2:A3",
+              sourceId: "source_detached",
+              type: "workbook_range",
+            },
+          },
+        ],
+        responseFields: [{ id: "answer_1", label: "Answer", type: "select" }],
+      },
+      name: "Blueprint",
+    });
+
+    expect(issues).toContainEqual({
+      code: "invalid_reference_source",
+      target: { referenceId: "default_ref" },
+    });
+    expect(issues).toContainEqual({
+      code: "invalid_reference_source",
+      target: { referenceId: "options_ref" },
+    });
+  });
+
+  it("flags invalid top-level input settings", () => {
+    const issues = getBlueprintReadinessIssues({
+      attachedSources: [],
+      model: {
+        ...readyModel(),
+        blocks: [
+          {
+            correctValueSource: { type: "literal", value: "ABC" },
+            grading: { mode: "exact" },
+            id: "response_1",
+            input: {
+              type: "text",
+              validation: { regex: "[" },
+            },
+            points: 1,
+            responseFieldId: "answer_1",
+            type: "response",
+          },
+        ],
+        responseFields: [{ id: "answer_1", label: "Answer", type: "text" }],
+      },
+      name: "Blueprint",
+    });
+
+    expect(issues).toContainEqual({
+      code: "invalid_response_input",
+      target: { blockId: "response_1" },
+    });
+  });
+
+  it("flags invalid table-cell input settings", () => {
+    const issues = getBlueprintReadinessIssues({
+      attachedSources: [],
+      model: {
+        ...readyModel(),
+        blocks: [
+          {
+            id: "table_1",
+            table: {
+              cells: [
+                {
+                  blocks: [
+                    {
+                      correctValueSource: { type: "literal", value: 4 },
+                      grading: { mode: "exact" },
+                      id: "cell_input_1",
+                      input: {
+                        type: "number",
+                        validation: { max: 1, min: 10 },
+                      },
+                      points: 1,
+                      responseFieldId: "table_answer_1",
+                      type: "input",
+                    },
+                  ],
+                  columnId: "column_1",
+                  id: "cell_1",
+                  rowId: "row_1",
+                },
+              ],
+              columns: [{ id: "column_1", label: "Column" }],
+              prompt: "",
+              responseFields: [{ id: "table_answer_1", type: "number" }],
+              rows: [{ id: "row_1", label: "Row" }],
+              showColumnNames: true,
+              showRowNames: true,
+            },
+            type: "table",
+          },
+        ],
+      },
+      name: "Blueprint",
+    });
+
+    expect(issues).toContainEqual({
+      code: "invalid_table_input",
+      target: { blockId: "table_1", cellId: "cell_1" },
+    });
+  });
+
+  it("flags invalid reference-backed top-level select settings", () => {
+    const issues = getBlueprintReadinessIssues({
+      attachedSources: [],
+      model: {
+        ...readyModel(),
+        blocks: [
+          {
+            correctValueSource: { type: "literal", value: "a" },
+            grading: { mode: "exact" },
+            id: "response_1",
+            input: {
+              optionsSource: {
+                referenceId: "options_ref",
+                type: "reference",
+              },
+              type: "select",
+              validation: { allowedValues: ["a", "a"] },
+            },
+            points: 1,
+            responseFieldId: "answer_1",
+            type: "response",
+          },
+        ],
+        references: [
+          {
+            id: "options_ref",
+            source: { type: "literal", value: [{ value: "a" }] },
+          },
+        ],
+        responseFields: [{ id: "answer_1", type: "select" }],
+      },
+      name: "Blueprint",
+    });
+
+    expect(issues).toContainEqual({
+      code: "invalid_response_input",
+      target: { blockId: "response_1" },
+    });
+  });
+
+  it("allows valid reference-backed top-level select settings", () => {
+    const issues = getBlueprintReadinessIssues({
+      attachedSources: [],
+      model: {
+        ...readyModel(),
+        blocks: [
+          {
+            grading: { mode: "manual" },
+            id: "response_1",
+            input: {
+              optionsSource: {
+                referenceId: "options_ref",
+                type: "reference",
+              },
+              type: "select",
+              validation: { allowedValues: ["a"] },
+            },
+            points: 1,
+            responseFieldId: "answer_1",
+            type: "response",
+          },
+        ],
+        references: [
+          {
+            id: "options_ref",
+            source: { type: "literal", value: [{ value: "a" }] },
+          },
+        ],
+        responseFields: [{ id: "answer_1", type: "select" }],
+      },
+      name: "Blueprint",
+    });
+
+    expect(issues).not.toContainEqual(
+      expect.objectContaining({ code: "invalid_response_input" }),
+    );
+  });
+
+  it("flags invalid reference-backed table select settings", () => {
+    const issues = getBlueprintReadinessIssues({
+      attachedSources: [],
+      model: {
+        ...readyModel(),
+        blocks: [
+          {
+            id: "table_1",
+            table: {
+              cells: [
+                {
+                  blocks: [
+                    {
+                      grading: { mode: "manual" },
+                      id: "cell_input_1",
+                      input: {
+                        optionsSource: {
+                          referenceId: "options_ref",
+                          type: "reference",
+                        },
+                        type: "select",
+                        validation: { min: 1 },
+                      },
+                      points: 1,
+                      responseFieldId: "table_answer_1",
+                      type: "input",
+                    },
+                  ],
+                  columnId: "column_1",
+                  id: "cell_1",
+                  rowId: "row_1",
+                },
+              ],
+              columns: [{ id: "column_1", label: "Column" }],
+              prompt: "",
+              responseFields: [{ id: "table_answer_1", type: "select" }],
+              rows: [{ id: "row_1", label: "Row" }],
+              showColumnNames: true,
+              showRowNames: true,
+            },
+            type: "table",
+          },
+        ],
+        references: [
+          {
+            id: "options_ref",
+            source: { type: "literal", value: [{ value: "a" }] },
+          },
+        ],
+      },
+      name: "Blueprint",
+    });
+
+    expect(issues).toContainEqual({
+      code: "invalid_table_input",
+      target: { blockId: "table_1", cellId: "cell_1" },
+    });
+  });
+
   it("allows manual inputs without a correct value source", () => {
     const model = readyModel();
     const issues = getBlueprintReadinessIssues({

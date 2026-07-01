@@ -24,7 +24,6 @@ const sharedResponseFields: ComposedResponseField[] = [
   {
     id: "answer_1",
     label: "Answer",
-    required: true,
     type: "number",
   },
 ];
@@ -652,7 +651,6 @@ describe("composed editor operations", () => {
       {
         id: "answer_1",
         label: "Answer",
-        required: true,
         type: "number",
       },
     ]);

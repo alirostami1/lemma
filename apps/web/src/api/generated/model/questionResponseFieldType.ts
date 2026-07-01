@@ -11,5 +11,5 @@ export type QuestionResponseFieldType =
 export const QuestionResponseFieldType = {
   text: "text",
   number: "number",
-  boolean: "boolean",
+  select: "select",
 } as const;

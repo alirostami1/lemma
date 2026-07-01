@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { Question } from "#/domains/questions";
-import { questionToPresentableQuestion } from "./question-player-model";
+import type { ComposedEditorBlock } from "#/domains/questions/authoring";
+import {
+  editorBlockToPresentableQuestion,
+  questionToPresentableQuestion,
+} from "./question-player-model";
 
 describe("question player model", () => {
   it("adapts generated question bodies to presentable questions", () => {
@@ -46,6 +50,51 @@ describe("question player model", () => {
     expect(JSON.stringify(presentable)).not.toContain("revenue");
     expect(JSON.stringify(presentable)).not.toContain("margin");
     expect(JSON.stringify(presentable)).not.toContain("reference_1");
+  });
+
+  it("adapts generated input bodies as materialized input state", () => {
+    const presentable = questionToPresentableQuestion(
+      generatedSelectQuestion(),
+    );
+
+    expect(presentable.blocks[0]).toEqual({
+      id: "choice",
+      inputState: {
+        input: {
+          options: [{ label: "Alpha", value: "a" }],
+          type: "select",
+          validation: { required: true },
+        },
+        status: "materialized",
+      },
+      label: undefined,
+      placeholder: undefined,
+      responseFieldId: "choice",
+      type: "response",
+    });
+  });
+
+  it("adapts editor source-backed select options as unresolved preview state", () => {
+    const block: ComposedEditorBlock = {
+      correctValueSource: { type: "literal", value: "a" },
+      grading: { mode: "exact" },
+      id: "choice",
+      input: {
+        optionsSource: { referenceId: "choice_options", type: "reference" },
+        type: "select",
+        validation: { required: true },
+      },
+      points: 1,
+      responseFieldId: "choice",
+      type: "response",
+    };
+
+    expect(editorBlockToPresentableQuestion(block).blocks[0]).toMatchObject({
+      inputState: {
+        message: "Options are not available in this preview.",
+        status: "unresolved_options",
+      },
+    });
   });
 });
 
@@ -107,6 +156,31 @@ function generatedRichHeadingQuestion(): Question {
         },
       ],
       responseFields: [],
+      schemaVersion: 2,
+    },
+  };
+}
+
+function generatedSelectQuestion(): Question {
+  const base = question();
+  return {
+    ...base,
+    body: {
+      blocks: [
+        {
+          id: "choice",
+          input: {
+            options: [{ label: "Alpha", value: "a" }],
+            schemaVersion: 1,
+            type: "select",
+            validation: { required: true },
+          },
+          kind: "primitive",
+          responseFieldId: "choice",
+          type: "input",
+        },
+      ],
+      responseFields: [{ id: "choice", label: "Choice", type: "select" }],
       schemaVersion: 2,
     },
   };

@@ -70,6 +70,143 @@ const sourceLineageBySourceId = new Map<
 ]);
 
 describe("CanonicalQuestionMaterializer", () => {
+  it("materializes reference-backed input defaults and options", async () => {
+    const materializer = new CanonicalQuestionMaterializer({
+      async resolveReference(): Promise<JsonValue> {
+        throw new Error("literal references should not call resolver");
+      },
+    });
+    const document = questionBlueprintDocument({
+      blocks: [
+        {
+          correctValueSource: {
+            schemaVersion: 1,
+            type: "literal",
+            value: "b",
+          },
+          grading: { mode: "exact" },
+          id: "answer",
+          input: {
+            defaultValueSource: {
+              referenceId: "default_choice",
+              schemaVersion: 1,
+              type: "reference",
+            },
+            optionsSource: {
+              referenceId: "choices",
+              schemaVersion: 1,
+              type: "reference",
+            },
+            schemaVersion: 1,
+            type: "select",
+            validation: { allowedValues: ["a", "b"], required: true },
+          },
+          kind: "primitive",
+          points: 1,
+          responseFieldId: "answer",
+          type: "input",
+        },
+      ],
+      references: [
+        {
+          id: "default_choice",
+          source: { schemaVersion: 1, type: "literal", value: "b" },
+        },
+        {
+          id: "choices",
+          source: {
+            schemaVersion: 1,
+            type: "literal",
+            value: [
+              { label: "Alpha", value: "a" },
+              { label: "Bravo", value: "b" },
+            ],
+          },
+        },
+      ],
+      responseFields: [{ id: "answer", type: "select" }],
+      schemaVersion: 2,
+    });
+
+    const result = await materializer.materialize({
+      document,
+      generationRunId,
+      questionIndex: 0,
+      sources: [],
+    });
+
+    assert.deepEqual(result.body.blocks[0], {
+      id: "answer",
+      input: {
+        defaultValue: "b",
+        options: [
+          { label: "Alpha", value: "a" },
+          { label: "Bravo", value: "b" },
+        ],
+        schemaVersion: 1,
+        type: "select",
+        validation: { allowedValues: ["a", "b"], required: true },
+      },
+      kind: "primitive",
+      responseFieldId: "answer",
+      type: "input",
+    });
+  });
+
+  it("fails when runtime input options cannot be materialized", async () => {
+    const materializer = new CanonicalQuestionMaterializer({
+      async resolveReference(): Promise<JsonValue> {
+        throw new Error("literal references should not call resolver");
+      },
+    });
+    const document = questionBlueprintDocument({
+      blocks: [
+        {
+          correctValueSource: {
+            schemaVersion: 1,
+            type: "literal",
+            value: "a",
+          },
+          grading: { mode: "exact" },
+          id: "answer",
+          input: {
+            optionsSource: {
+              referenceId: "choices",
+              schemaVersion: 1,
+              type: "reference",
+            },
+            schemaVersion: 1,
+            type: "select",
+            validation: { required: true },
+          },
+          kind: "primitive",
+          points: 1,
+          responseFieldId: "answer",
+          type: "input",
+        },
+      ],
+      references: [
+        {
+          id: "choices",
+          source: { schemaVersion: 1, type: "literal", value: null },
+        },
+      ],
+      responseFields: [{ id: "answer", type: "select" }],
+      schemaVersion: 2,
+    });
+
+    await assert.rejects(
+      () =>
+        materializer.materialize({
+          document,
+          generationRunId,
+          questionIndex: 0,
+          sources: [],
+        }),
+      /input options must be an array/,
+    );
+  });
+
   it("freezes literal and workbook references into body, solution, and source plan", async () => {
     const resolvedSources: QuestionReferenceSource[] = [];
     const materializer = new CanonicalQuestionMaterializer({

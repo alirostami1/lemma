@@ -7,7 +7,6 @@ import {
   assertString,
   assertUniqueIds,
   type PlainObject,
-  responseFieldIds,
 } from "./canonical-validation.js";
 import { InvalidQuestionBlueprintDocumentError } from "./errors.js";
 import {
@@ -20,6 +19,10 @@ import {
   richContent,
   validatedResponseFields,
 } from "./question-body.js";
+import {
+  type QuestionBlueprintInputPrimitive,
+  questionBlueprintInputPrimitive,
+} from "./question-input-primitive.js";
 import {
   assertQuestionReferenceId,
   type QuestionReference,
@@ -50,6 +53,7 @@ export type QuestionBlueprintInputBlock = {
   kind: "primitive";
   type: "input";
   responseFieldId: string;
+  input: QuestionBlueprintInputPrimitive;
   label?: string;
   placeholder?: string;
   correctValueSource?: QuestionValueExpression;
@@ -119,11 +123,14 @@ export function questionBlueprintDocument(
   );
   assertSchemaVersion(input, fail, 2);
   const responseFields = validatedResponseFields(input, fail);
+  const responseFieldsById = new Map(
+    responseFields.map((field) => [field.id, field]),
+  );
   const references = validatedReferences(input.references, fail);
   const referenceIds = new Set(references.map((reference) => reference.id));
   const blocks = validatedBlueprintBlocks(
     input.blocks,
-    responseFieldIds(responseFields),
+    responseFieldsById,
     referenceIds,
     createBlockIdRegistry(),
     fail,
@@ -177,7 +184,7 @@ function validatedReferences(
 
 function validatedBlueprintBlocks(
   blocks: unknown,
-  responseIds: ReadonlySet<string>,
+  responseFieldsById: ReadonlyMap<string, QuestionResponseField>,
   referenceIds: ReadonlySet<string>,
   blockIds: BlockIdRegistry,
   failWith: (message: string) => never,
@@ -190,7 +197,7 @@ function validatedBlueprintBlocks(
     if (block.kind === "primitive") {
       return validatedBlueprintPrimitiveBlock(
         block,
-        responseIds,
+        responseFieldsById,
         referenceIds,
         failWith,
       );
@@ -198,7 +205,7 @@ function validatedBlueprintBlocks(
     if (block.kind === "container") {
       return validatedBlueprintContainerBlock(
         block,
-        responseIds,
+        responseFieldsById,
         referenceIds,
         blockIds,
         failWith,
@@ -207,7 +214,7 @@ function validatedBlueprintBlocks(
     if (block.kind === "complex" && block.type === "table") {
       return validatedBlueprintTableBlock(
         block,
-        responseIds,
+        responseFieldsById,
         referenceIds,
         blockIds,
         failWith,
@@ -219,7 +226,7 @@ function validatedBlueprintBlocks(
 
 function validatedBlueprintPrimitiveBlock(
   block: PlainObject,
-  responseIds: ReadonlySet<string>,
+  responseFieldsById: ReadonlyMap<string, QuestionResponseField>,
   referenceIds: ReadonlySet<string>,
   failWith: (message: string) => never,
 ): QuestionBlueprintPrimitiveBlock {
@@ -242,7 +249,7 @@ function validatedBlueprintPrimitiveBlock(
   if (block.type === "input") {
     return validatedBlueprintInputBlock(
       block,
-      responseIds,
+      responseFieldsById,
       referenceIds,
       failWith,
     );
@@ -255,7 +262,7 @@ function validatedBlueprintPrimitiveBlock(
 
 function validatedBlueprintContainerBlock(
   block: PlainObject,
-  responseIds: ReadonlySet<string>,
+  responseFieldsById: ReadonlyMap<string, QuestionResponseField>,
   referenceIds: ReadonlySet<string>,
   blockIds: BlockIdRegistry,
   failWith: (message: string) => never,
@@ -270,7 +277,7 @@ function validatedBlueprintContainerBlock(
   return {
     blocks: validatedBlueprintBlocks(
       block.blocks,
-      responseIds,
+      responseFieldsById,
       referenceIds,
       blockIds,
       failWith,
@@ -284,12 +291,13 @@ function validatedBlueprintContainerBlock(
 
 function validatedBlueprintInputBlock(
   block: PlainObject,
-  responseIds: ReadonlySet<string>,
+  responseFieldsById: ReadonlyMap<string, QuestionResponseField>,
   referenceIds: ReadonlySet<string>,
   failWith: (message: string) => never,
 ): QuestionBlueprintInputBlock {
   assertNonEmptyString(block.responseFieldId, "responseFieldId", failWith);
-  if (!responseIds.has(block.responseFieldId)) {
+  const responseField = responseFieldsById.get(block.responseFieldId);
+  if (!responseField) {
     failWith(
       `input block ${block.id} references unknown response field ${block.responseFieldId}`,
     );
@@ -301,9 +309,24 @@ function validatedBlueprintInputBlock(
   ) {
     failWith(`non-manual input block ${block.id} requires correctValueSource`);
   }
+  const input = questionBlueprintInputPrimitive(
+    block.input,
+    {
+      required: responseField.required,
+      type: responseField.type,
+    },
+    failWith,
+    referenceIds,
+  );
+  if (input.type !== responseField.type) {
+    failWith(
+      `input block ${block.id} type must match response field ${responseField.id}`,
+    );
+  }
   const out: QuestionBlueprintInputBlock = {
     grading: inputGrading,
     id: block.id as string,
+    input,
     kind: "primitive",
     points: positiveNumber(block.points, "input block points", failWith),
     responseFieldId: block.responseFieldId,
@@ -322,7 +345,7 @@ function validatedBlueprintInputBlock(
 
 function validatedBlueprintTableBlock(
   block: PlainObject,
-  responseIds: ReadonlySet<string>,
+  responseFieldsById: ReadonlyMap<string, QuestionResponseField>,
   referenceIds: ReadonlySet<string>,
   blockIds: BlockIdRegistry,
   failWith: (message: string) => never,
@@ -367,7 +390,7 @@ function validatedBlueprintTableBlock(
         }
         return validatedBlueprintPrimitiveBlock(
           cellBlock,
-          responseIds,
+          responseFieldsById,
           referenceIds,
           failWith,
         );

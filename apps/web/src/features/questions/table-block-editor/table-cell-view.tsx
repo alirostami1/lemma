@@ -1,10 +1,14 @@
 import { cn } from "@lemma/ui/lib/utils";
 import type {
+  InputPrimitiveType,
   TableEditorCell,
   TableEditorPrimitiveBlock,
   TableResponseField,
 } from "#/domains/questions/authoring";
-import { getTableCellPrimitiveBlocks } from "#/domains/questions/authoring";
+import {
+  getTableCellPrimitiveBlocks,
+  normalizeInputPrimitiveForType,
+} from "#/domains/questions/authoring";
 import type { ReferencePreviewCache } from "#/domains/questions/reference-preview";
 import { InlineContentRenderer } from "#/features/questions/editor-shared";
 import { RichTextBlockRenderer } from "#/features/questions/presentation/rich-text-block-renderer";
@@ -120,6 +124,10 @@ function PrimitiveCellContent({
     return <hr className="border-border" />;
   }
   const fieldLabel = responseField?.label ?? "Answer";
+  const input = normalizeInputPrimitiveForType(
+    block.input,
+    responseField?.type ?? "text",
+  );
   return (
     <div className="grid gap-1">
       <div className="flex items-center justify-between gap-2">
@@ -127,7 +135,7 @@ function PrimitiveCellContent({
           {fieldLabel}
         </span>
         <span className="rounded-md border bg-muted/40 px-1.5 py-0.5 text-[11px] text-muted-foreground">
-          Answer
+          {inputTypeLabel(input.type)}
         </span>
       </div>
       <div className="min-h-8 rounded-md border border-dashed bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
@@ -138,4 +146,15 @@ function PrimitiveCellContent({
       </div>
     </div>
   );
+}
+
+function inputTypeLabel(type: InputPrimitiveType): string {
+  switch (type) {
+    case "text":
+      return "Text";
+    case "number":
+      return "Number";
+    case "select":
+      return "Choice";
+  }
 }
