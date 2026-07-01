@@ -76,6 +76,44 @@ describe("blueprint readiness", () => {
     );
   });
 
+  it("flags mismatched canonical workbook reference ids", () => {
+    const issues = getBlueprintReadinessIssues({
+      attachedSources: [],
+      model: {
+        ...readyModel(),
+        blocks: [
+          {
+            content: [
+              {
+                referenceId: "workbook:source_1:cell:Sheet1:A1",
+                type: "reference",
+              },
+            ],
+            id: "text_1",
+            type: "text",
+          },
+          ...readyModel().blocks,
+        ],
+        references: [
+          {
+            id: "workbook:source_1:cell:Sheet1:A1",
+            source: {
+              ref: "Sheet1!B1",
+              sourceId: "source_1",
+              type: "workbook_cell",
+            },
+          },
+        ],
+      },
+      name: "Blueprint",
+    });
+
+    expect(issues).toContainEqual({
+      code: "invalid_reference_id",
+      target: { referenceId: "workbook:source_1:cell:Sheet1:A1" },
+    });
+  });
+
   it("includes input primitives inside nested containers", () => {
     const model = readyModel();
     const issues = getBlueprintReadinessIssues({

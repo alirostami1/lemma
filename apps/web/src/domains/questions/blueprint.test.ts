@@ -930,6 +930,107 @@ describe("composed blueprint conversions", () => {
     );
   });
 
+  it("accepts canonical workbook reference ids when they match the source", () => {
+    const models: ComposedEditorModel[] = [
+      {
+        blocks: [],
+        references: [
+          {
+            id: "workbook:source_1:cell:Sheet1:A1",
+            source: {
+              ref: "Sheet1!A1",
+              sourceId: "source_1",
+              type: "workbook_cell",
+            },
+          },
+        ],
+        responseFields: [],
+        schemaVersion: 2,
+      },
+      {
+        blocks: [],
+        references: [
+          {
+            id: "workbook:source_1:range:Sheet1:A1:B2",
+            source: {
+              ref: "Sheet1!A1:B2",
+              sourceId: "source_1",
+              type: "workbook_range",
+            },
+          },
+        ],
+        responseFields: [],
+        schemaVersion: 2,
+      },
+      {
+        blocks: [],
+        references: [
+          {
+            id: "range_ref",
+            source: {
+              ref: "Sheet1!A1:B2",
+              sourceId: "source_1",
+              type: "workbook_range",
+            },
+          },
+        ],
+        responseFields: [],
+        schemaVersion: 2,
+      },
+    ];
+
+    for (const model of models) {
+      expect(() => validateComposedEditorModel(model)).not.toThrow();
+    }
+  });
+
+  it.each([
+    {
+      name: "literal source",
+      source: { type: "literal" as const, value: 123 },
+    },
+    {
+      name: "different workbook source",
+      source: {
+        ref: "Sheet1!A1",
+        sourceId: "source_2",
+        type: "workbook_cell" as const,
+      },
+    },
+    {
+      name: "different workbook cell",
+      source: {
+        ref: "Sheet1!B1",
+        sourceId: "source_1",
+        type: "workbook_cell" as const,
+      },
+    },
+    {
+      name: "workbook range source",
+      source: {
+        ref: "Sheet1!A1:B2",
+        sourceId: "source_1",
+        type: "workbook_range" as const,
+      },
+    },
+  ])("rejects canonical workbook reference ids with $name", ({ source }) => {
+    const model: ComposedEditorModel = {
+      blocks: [],
+      references: [
+        {
+          id: "workbook:source_1:cell:Sheet1:A1",
+          source,
+        },
+      ],
+      responseFields: [],
+      schemaVersion: 2,
+    };
+
+    expect(() => validateComposedEditorModel(model)).toThrow(
+      "Invalid reference id: workbook:source_1:cell:Sheet1:A1",
+    );
+  });
+
   it("allocates standalone response field IDs after table block IDs", () => {
     const model: ComposedEditorModel = {
       blocks: [
