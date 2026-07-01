@@ -8,7 +8,7 @@ import {
   extractUsedReferenceIdsFromComposedEditorModel,
   flattenComposedBlocks,
   getTableCellPrimitiveBlocks,
-  isValidReferenceId,
+  isValidComposedReference,
   isValidWorkbookReferenceSource,
   normalizeInputPrimitiveForType,
   requiresCorrectValueSource,
@@ -152,7 +152,7 @@ function getReferenceIssues(
     if (!usedReferenceIds.has(reference.id)) {
       continue;
     }
-    if (!isValidReferenceId(reference.id)) {
+    if (!isValidComposedReference(reference)) {
       issues.push({
         code: "invalid_reference_id",
         target: { referenceId: reference.id },

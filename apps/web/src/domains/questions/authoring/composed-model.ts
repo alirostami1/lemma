@@ -2,6 +2,7 @@ import { getReferenceIdForSource } from "../reference-names";
 import type { ComposedInlineContent, RangeCellOffset } from "./inline-content";
 import {
   extractInlineReferenceIds,
+  isValidReferenceId,
   plainTextToInlineContent,
   replaceInlineReferenceId,
 } from "./inline-content";
@@ -57,6 +58,20 @@ export type ComposedReferenceDraft = {
   source: ReferenceSourceDraft;
   label?: string;
 };
+
+export function isValidComposedReference(reference: ComposedReferenceDraft) {
+  if (isValidReferenceId(reference.id)) {
+    return true;
+  }
+
+  let canonicalReferenceId: string | null;
+  try {
+    canonicalReferenceId = getReferenceIdForSource(reference.source);
+  } catch {
+    return false;
+  }
+  return canonicalReferenceId !== null && reference.id === canonicalReferenceId;
+}
 
 export type ReferenceUsage =
   | {

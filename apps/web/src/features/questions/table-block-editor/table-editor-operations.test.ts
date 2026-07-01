@@ -11,6 +11,10 @@ import {
   validateTableEditorModel,
 } from "#/domains/questions/authoring";
 import {
+  composedEditorModelToQuestionBlueprintDocument,
+  questionBlueprintDocumentToComposedEditorModel,
+} from "#/domains/questions/authoring/canonical";
+import {
   getPrimaryTableInputBlock,
   getPrimaryTableTextBlock,
 } from "#/domains/questions/authoring/table-model";
@@ -37,6 +41,7 @@ import {
   updateTableCellInputBlockCorrectValueSource,
   updateTableCellTextBlockContent,
 } from "./table-editor-operations";
+import { createTableFromWorkbookRangeReference } from "./table-range-operations";
 import {
   addTableRangeToSelection,
   getSelectedTableCoordinateKeySet,
@@ -1067,6 +1072,113 @@ describe("table editor operations", () => {
       referenceId: directReference.id,
       type: "reference",
     });
+  });
+
+  it("converts non-adjacent cells from a range-created table without losing references", () => {
+    const rangeReference = {
+      id: "range_ref",
+      source: {
+        ref: "Sheet1!C2:D3",
+        sourceId: "source_1",
+        type: "workbook_range" as const,
+      },
+    };
+    const { table } = createTableFromWorkbookRangeReference({
+      currentModel: { ...createBaseModel(), blockId: "table_1" },
+      rangeReference,
+      values: [
+        ["C2", "D2"],
+        ["C3", "D3"],
+      ],
+    });
+    const model: ComposedEditorModel = {
+      blocks: [{ id: "table_1", table, type: "table" }],
+      references: [rangeReference],
+      responseFields: [],
+      schemaVersion: 2,
+    };
+    const selection = addTableRangeToSelection(
+      selectTableCell({ columnId: "column_1", rowId: "row_1" }),
+      {
+        end: { columnId: "column_2", rowId: "row_2" },
+        start: { columnId: "column_2", rowId: "row_2" },
+      },
+    );
+
+    const result = makeSelectedTableCellsResponseInComposedModelResult({
+      editorModel: model,
+      selection,
+      tableBlockId: "table_1",
+    });
+    const c2Reference = requireReferenceForWorkbookCell(
+      result.model,
+      "Sheet1!C2",
+    );
+    const d3Reference = requireReferenceForWorkbookCell(
+      result.model,
+      "Sheet1!D3",
+    );
+    const firstInput = getPrimaryTableInputBlock(
+      requireTableCell(result.model, 0),
+    );
+    const fourthInput = getPrimaryTableInputBlock(
+      requireTableCell(result.model, 3),
+    );
+    const secondText = getPrimaryTableTextBlock(
+      requireTableCell(result.model, 1),
+    );
+    const thirdText = getPrimaryTableTextBlock(
+      requireTableCell(result.model, 2),
+    );
+    const strippedModel = stripUnusedComposedReferences(result.model);
+
+    expect(result.convertedCellCount).toBe(2);
+    expect(result.blockedRangeBackedCellCount).toBe(0);
+    expect(c2Reference.id).toBe("workbook:source_1:cell:Sheet1:C2");
+    expect(d3Reference.id).toBe("workbook:source_1:cell:Sheet1:D3");
+    expect(firstInput?.correctValueSource).toEqual({
+      referenceId: c2Reference.id,
+      type: "reference",
+    });
+    expect(fourthInput?.correctValueSource).toEqual({
+      referenceId: d3Reference.id,
+      type: "reference",
+    });
+    expect(secondText?.content).toEqual([
+      {
+        fallbackText: "D2",
+        rangeCell: { columnOffset: 1, rowOffset: 0 },
+        referenceId: "range_ref",
+        type: "reference",
+      },
+    ]);
+    expect(thirdText?.content).toEqual([
+      {
+        fallbackText: "C3",
+        rangeCell: { columnOffset: 0, rowOffset: 1 },
+        referenceId: "range_ref",
+        type: "reference",
+      },
+    ]);
+    expect(strippedModel.references).toHaveLength(3);
+    expect(strippedModel.references).toEqual(
+      expect.arrayContaining([rangeReference, c2Reference, d3Reference]),
+    );
+
+    const roundTripped = questionBlueprintDocumentToComposedEditorModel(
+      composedEditorModelToQuestionBlueprintDocument(result.model),
+    );
+    expect(
+      getPrimaryTableInputBlock(requireTableCell(roundTripped, 0))
+        ?.correctValueSource,
+    ).toEqual({ referenceId: c2Reference.id, type: "reference" });
+    expect(
+      getPrimaryTableInputBlock(requireTableCell(roundTripped, 3))
+        ?.correctValueSource,
+    ).toEqual({ referenceId: d3Reference.id, type: "reference" });
+    expect(stripUnusedComposedReferences(roundTripped).references).toEqual(
+      expect.arrayContaining([rangeReference, c2Reference, d3Reference]),
+    );
   });
 
   it("converts a page-nested range-backed table to a direct workbook-cell answer source", () => {

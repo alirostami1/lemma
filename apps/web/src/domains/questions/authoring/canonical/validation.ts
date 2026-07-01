@@ -3,14 +3,12 @@ import type {
   QuestionBlueprintDocument,
   QuestionResponseField,
 } from "#/api/generated/model";
-import {
-  extractInlineReferenceIds,
-  isValidReferenceId,
-} from "#/domains/questions/authoring/inline-content";
+import { extractInlineReferenceIds } from "#/domains/questions/authoring/inline-content";
 import { extractRichReferenceIds } from "#/domains/questions/authoring/rich-content";
 import {
   type ComposedEditorModel,
   flattenComposedBlocks,
+  isValidComposedReference,
 } from "../composed-model";
 import {
   extractReferenceIdsFromInputPrimitive,
@@ -155,7 +153,7 @@ function validateBlockResponseFieldReferences(
 export function validateComposedEditorModel(model: ComposedEditorModel) {
   const referenceIds = new Set<string>();
   for (const reference of model.references) {
-    if (!isValidReferenceId(reference.id)) {
+    if (!isValidComposedReference(reference)) {
       throw new Error(`Invalid reference id: ${reference.id}`);
     }
     if (referenceIds.has(reference.id)) {
